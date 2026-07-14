@@ -1,0 +1,21 @@
+## .NET build output
+bin/
+obj/
+[Bb]uild/
+*.user
+*.suo
+
+## Flow logs (generated at runtime)
+*.log
+log.txt
+log.math.txt
+
+## Local secrets — set appsettings.json ApiKey locally; never commit real keys
+appsettings.*.local.json
+
+## IDE / OS
+.vs/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
