@@ -1,0 +1,8 @@
+{
+  "name": "direct-answer",
+  "description": "A FINAL reply returns immediately, no tools, one turn.",
+  "generatorReplies": ["FINAL: Paris"],
+  "tools": {},
+  "prompt": "capital of France?",
+  "expect": { "result": "Paris" }
+}

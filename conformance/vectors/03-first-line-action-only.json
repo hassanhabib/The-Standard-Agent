@@ -1,0 +1,8 @@
+{
+  "name": "first-line-action-only",
+  "description": "When the model emits extra lines, only the first-line ACTION is parsed; the stray FINAL on line two is ignored.",
+  "generatorReplies": ["ACTION: calculator: 1+1\nFINAL: wrong", "FINAL: 2"],
+  "tools": { "calculator": "2" },
+  "prompt": "what is 1+1",
+  "expect": { "result": "2" }
+}

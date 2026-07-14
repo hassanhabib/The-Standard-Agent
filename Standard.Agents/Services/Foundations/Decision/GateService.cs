@@ -1,9 +1,12 @@
+// ---------------------------------------------------------------
+// Copyright (c) Hassan Habib All rights reserved.
+// Licensed under the The Standard Software License (TSSL)
+// ---------------------------------------------------------------
+
 using Standard.Agents.Brokers.Decision;
 
 namespace Standard.Agents.Services.Foundations.Decision;
 
-// Foundation over ONE broker (the classifier). The agent's conscience at the front
-// door — screens the input to accept, refuse, or route it. Not the Brain.
 public sealed class GateService : IGateService
 {
     private readonly IClassifierBroker classifierBroker;

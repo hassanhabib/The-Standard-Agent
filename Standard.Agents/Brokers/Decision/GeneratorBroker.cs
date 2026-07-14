@@ -1,12 +1,14 @@
+// ---------------------------------------------------------------
+// Copyright (c) Hassan Habib All rights reserved.
+// Licensed under the The Standard Software License (TSSL)
+// ---------------------------------------------------------------
+
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace Standard.Agents.Brokers.Decision;
 
-// The Brain's liaison: a thin OpenAI-compatible client (POST /v1/chat/completions).
-// Constructs the native request from primitives, POSTs, returns the completion text.
-// No flow control, no authored prompts — those are Data.
 public sealed class GeneratorBroker : IGeneratorBroker
 {
     private static readonly JsonSerializerOptions jsonOptions = new()

@@ -1,3 +1,8 @@
+// ---------------------------------------------------------------
+// Copyright (c) Hassan Habib All rights reserved.
+// Licensed under the The Standard Software License (TSSL)
+// ---------------------------------------------------------------
+
 using System.Text.RegularExpressions;
 using Standard.Agents.Tools;
 
