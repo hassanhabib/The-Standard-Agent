@@ -1,9 +1,12 @@
+// ---------------------------------------------------------------
+// Copyright (c) Hassan Habib All rights reserved.
+// Licensed under the The Standard Software License (TSSL)
+// ---------------------------------------------------------------
+
 using Standard.Agents.Brokers.Data;
 
 namespace Standard.Agents.Services.Foundations.Data;
 
-// Foundation over ONE broker (the knowledge index). On-demand retrieval for the
-// current task — what the agent can look up.
 public sealed class KnowledgeService : IKnowledgeService
 {
     private readonly IKnowledgeBroker knowledgeBroker;

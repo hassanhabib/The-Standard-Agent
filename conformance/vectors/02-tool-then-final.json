@@ -1,0 +1,8 @@
+{
+  "name": "tool-then-final",
+  "description": "A tool result is fed back into Data; the next turn answers using it.",
+  "generatorReplies": ["ACTION: calculator: 1+1", "FINAL: 2"],
+  "tools": { "calculator": "2" },
+  "prompt": "what is 1+1",
+  "expect": { "result": "2" }
+}

@@ -1,8 +1,12 @@
+// ---------------------------------------------------------------
+// Copyright (c) Hassan Habib All rights reserved.
+// Licensed under the The Standard Software License (TSSL)
+// ---------------------------------------------------------------
+
 using Standard.Agents.Brokers.Data;
 
 namespace Standard.Agents.Services.Foundations.Data;
 
-// Foundation over ONE broker (the skill broker). Business language: Select → Retrieve.
 public sealed class SkillService : ISkillService
 {
     private readonly ISkillBroker skillBroker;

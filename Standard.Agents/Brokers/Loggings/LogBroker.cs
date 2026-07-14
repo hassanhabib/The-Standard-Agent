@@ -1,7 +1,10 @@
+// ---------------------------------------------------------------
+// Copyright (c) Hassan Habib All rights reserved.
+// Licensed under the The Standard Software License (TSSL)
+// ---------------------------------------------------------------
+
 namespace Standard.Agents.Brokers.Loggings;
 
-// Support broker: a thin liaison to the flow-log file. Reset wipes it per prompt;
-// Write appends. No flow control, no thinking.
 public sealed class LogBroker : ILogBroker
 {
     private readonly string logPath;

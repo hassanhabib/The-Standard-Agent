@@ -1,19 +1,13 @@
+// ---------------------------------------------------------------
+// Copyright (c) Hassan Habib All rights reserved.
+// Licensed under the The Standard Software License (TSSL)
+// ---------------------------------------------------------------
+
 using Microsoft.Extensions.Configuration;
 using Standard.Agents;
-using Standard.Agents.Brokers.Data;
-using Standard.Agents.Brokers.Decision;
-using Standard.Agents.Brokers.Direction;
-using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Demo.Tools;
-using Standard.Agents.Services.Coordinations;
-using Standard.Agents.Services.Foundations.Data;
-using Standard.Agents.Services.Foundations.Decision;
-using Standard.Agents.Services.Foundations.Direction;
-using Standard.Agents.Services.Orchestrations.Data;
-using Standard.Agents.Services.Orchestrations.Decision;
-using Standard.Agents.Services.Orchestrations.Direction;
-using Standard.Agents.Tools;
 
+// Read configuration (the endpoint and credentials for the brain).
 IConfiguration configuration = new ConfigurationBuilder()
     .SetBasePath(AppContext.BaseDirectory)
     .AddJsonFile("appsettings.json", optional: false)
@@ -21,56 +15,30 @@ IConfiguration configuration = new ConfigurationBuilder()
 
 IConfigurationSection peer = configuration.GetSection("PeerLLMConfigurations");
 
-// ---- the consumer's tools ----
-ITool calculator = new CalculatorTool();
-
-// ---- BROKERS (one resource each) ----
-ISkillBroker skillBroker = new SkillBroker("Skills");
-IMemoryBroker memoryBroker = new MemoryBroker();
-IKnowledgeBroker knowledgeBroker = new KnowledgeBroker();
-IClassifierBroker classifierBroker = new ClassifierBroker();
-IGeneratorBroker generatorBroker = new GeneratorBroker(
-    apiUrl: peer.GetValue<string>("ApiUrl")!,
-    apiKey: peer.GetValue<string>("ApiKey")!,
-    model: peer.GetValue<string>("Model")!,
-    temperature: peer.GetValue<double>("Temperature"),
-    maxTokens: peer.GetValue<int>("MaxTokens"));
-IVerifierBroker verifierBroker = new VerifierBroker();
-IToolBroker toolBroker = new ToolBroker([calculator]);
-IMcpBroker mcpBroker = new McpBroker();
-ILogBroker logBroker = new LogBroker("log.txt");
-
-// ---- FOUNDATIONS (nine, one broker each) ----
-ISkillService skillService = new SkillService(skillBroker);
-IMemoryService memoryService = new MemoryService(memoryBroker);
-IKnowledgeService knowledgeService = new KnowledgeService(knowledgeBroker);
-IGateService gateService = new GateService(classifierBroker);
-IBrainService brainService = new BrainService(generatorBroker);
-IJudgeService judgeService = new JudgeService(verifierBroker);
-IInternalToolService internalToolService = new InternalToolService(toolBroker);
-IExternalToolService externalToolService = new ExternalToolService(mcpBroker);
-IReturnService returnService = new ReturnService();
-
-// ---- ORCHESTRATIONS (three) ----
-IDataOrchestrationService dataOrchestration =
-    new DataOrchestrationService(skillService, memoryService, knowledgeService);
-IDecisionOrchestrationService decisionOrchestration =
-    new DecisionOrchestrationService(gateService, brainService, judgeService);
-IDirectionOrchestrationService directionOrchestration =
-    new DirectionOrchestrationService(internalToolService, externalToolService, returnService);
-
-// ---- COORDINATION (the Agent) ----
-IAgent agent = new AgentCoordinationService(
-    dataOrchestration, decisionOrchestration, directionOrchestration, logBroker);
+// The library wires every broker and service under the hood. The consumer supplies
+// only what is theirs: where the skills live, the brain (LLM) config, the tools it
+// offers, and where to write the flow log.
+IAgent agent = new AgentBuilder()
+    .Skills("Skills")
+    .Brain(
+        apiUrl: peer.GetValue<string>("ApiUrl")!,
+        apiKey: peer.GetValue<string>("ApiKey")!,
+        model: peer.GetValue<string>("Model")!,
+        temperature: peer.GetValue<double>("Temperature"),
+        maxTokens: peer.GetValue<int>("MaxTokens"))
+    .Tool(new CalculatorTool())
+    .LogTo("log.txt")
+    .Build();
 
 string apiUrl = peer.GetValue<string>("ApiUrl") ?? "(unset)";
 
 Console.WriteLine("Standard.Agents — Tri-Nature Agent");
-Console.WriteLine($"Brain -> local PeerLLM at {apiUrl}");
+Console.WriteLine($"Brain -> {apiUrl}");
 Console.WriteLine($"Flow log -> {Path.GetFullPath("log.txt")}");
 Console.WriteLine("Type a prompt (or 'exit'). Try: What is 89347 * 61293 + 4472?");
 Console.WriteLine();
 
+// The consumer's whole interaction with the framework is IAgent.ProcessPromptAsync.
 while (true)
 {
     Console.Write("Prompt: ");

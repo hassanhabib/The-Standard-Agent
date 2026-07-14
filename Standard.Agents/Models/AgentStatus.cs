@@ -1,7 +1,10 @@
+// ---------------------------------------------------------------
+// Copyright (c) Hassan Habib All rights reserved.
+// Licensed under the The Standard Software License (TSSL)
+// ---------------------------------------------------------------
+
 namespace Standard.Agents.Models;
 
-// The agent's lifecycle state. Working means keep looping; every other value is a
-// terminal Direction — a reason the loop ended.
 public enum AgentStatus
 {
     Working,

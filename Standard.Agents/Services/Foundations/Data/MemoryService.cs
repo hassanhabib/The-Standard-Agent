@@ -1,9 +1,12 @@
+// ---------------------------------------------------------------
+// Copyright (c) Hassan Habib All rights reserved.
+// Licensed under the The Standard Software License (TSSL)
+// ---------------------------------------------------------------
+
 using Standard.Agents.Brokers.Data;
 
 namespace Standard.Agents.Services.Foundations.Data;
 
-// Foundation over ONE broker (the memory store). Persistent memory lives outside the
-// agent; this is the only way it enters (Recall) and is written (Remember).
 public sealed class MemoryService : IMemoryService
 {
     private readonly IMemoryBroker memoryBroker;
