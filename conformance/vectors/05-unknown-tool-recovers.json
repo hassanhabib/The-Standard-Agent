@@ -1,0 +1,8 @@
+{
+  "name": "unknown-tool-recovers",
+  "description": "An unknown tool routes to External; its result feeds back as an observation, and the agent recovers on the next turn.",
+  "generatorReplies": ["ACTION: weather: today", "FINAL: could not get weather"],
+  "tools": {},
+  "prompt": "weather today?",
+  "expect": { "result": "could not get weather" }
+}

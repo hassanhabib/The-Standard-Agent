@@ -1,10 +1,12 @@
+// ---------------------------------------------------------------
+// Copyright (c) Hassan Habib All rights reserved.
+// Licensed under the The Standard Software License (TSSL)
+// ---------------------------------------------------------------
+
 using Standard.Agents.Tools;
 
 namespace Standard.Agents.Brokers.Direction;
 
-// Liaison to the in-process tool registry. Holds the registered ITools and runs one
-// by name. Which tool to run (and whether it's internal vs external) is the
-// Direction orchestration's decision, not the broker's.
 public sealed class ToolBroker : IToolBroker
 {
     private readonly IReadOnlyDictionary<string, ITool> tools;

@@ -1,13 +1,14 @@
+// ---------------------------------------------------------------
+// Copyright (c) Hassan Habib All rights reserved.
+// Licensed under the The Standard Software License (TSSL)
+// ---------------------------------------------------------------
+
 using System.Text;
 using Standard.Agents.Models;
 using Standard.Agents.Services.Foundations.Decision;
 
 namespace Standard.Agents.Services.Orchestrations.Decision;
 
-// DECISION — Think. Coordinates the conscience-wrapped Brain: Gate screens the input,
-// the one Brain reasons, the Judge screens the output. It authors no prompt text
-// (that is Data); it frames the task, reads the reply, and interprets it into the
-// next direction.
 public sealed class DecisionOrchestrationService : IDecisionOrchestrationService
 {
     private readonly IGateService gateService;
@@ -26,7 +27,6 @@ public sealed class DecisionOrchestrationService : IDecisionOrchestrationService
 
     public async ValueTask<AgentContext> ThinkAsync(AgentContext context)
     {
-        // GATE — the conscience at the front door.
         string verdict = await this.gateService.ScreenAsync(context.SystemPrompt, context.Prompt);
 
         if (verdict.Equals("refuse", StringComparison.OrdinalIgnoreCase))
@@ -40,15 +40,12 @@ public sealed class DecisionOrchestrationService : IDecisionOrchestrationService
             };
         }
 
-        // BRAIN — the one brain reasons.
         string userMessage = BuildUserMessage(context);
         string reply =
             (await this.brainService.GenerateAsync(context.SystemPrompt, userMessage)).Trim();
 
         AgentContext decided = Interpret(context, reply);
 
-        // JUDGE — reflective check on a final answer (the stub verifier approves
-        // everything today; a low score would loop instead of returning).
         if (decided.DirectionType.Equals("ReturnResponse", StringComparison.OrdinalIgnoreCase))
         {
             double score = await this.judgeService.EvaluateAsync(context.SystemPrompt, decided.Payload);

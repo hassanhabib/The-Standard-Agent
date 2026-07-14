@@ -1,3 +1,8 @@
+// ---------------------------------------------------------------
+// Copyright (c) Hassan Habib All rights reserved.
+// Licensed under the The Standard Software License (TSSL)
+// ---------------------------------------------------------------
+
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models;
 using Standard.Agents.Services.Orchestrations.Data;
@@ -6,9 +11,6 @@ using Standard.Agents.Services.Orchestrations.Direction;
 
 namespace Standard.Agents.Services.Coordinations;
 
-// The Agent: pure composition. It binds the three orchestrations in a loop, flowing
-// one AgentContext through Recall → Think → Act until a terminal Status. It holds no
-// nature logic — the loop, and observing the loop (the flow log), is all it does.
 public sealed class AgentCoordinationService : IAgentCoordinationService
 {
     private const int MaxTurns = 7;

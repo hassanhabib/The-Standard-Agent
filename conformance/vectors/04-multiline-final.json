@@ -1,0 +1,8 @@
+{
+  "name": "multiline-final",
+  "description": "A FINAL answer may span multiple lines.",
+  "generatorReplies": ["FINAL: line one\nline two"],
+  "tools": {},
+  "prompt": "give me two lines",
+  "expect": { "result": "line one\nline two" }
+}

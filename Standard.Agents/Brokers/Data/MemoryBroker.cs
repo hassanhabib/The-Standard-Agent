@@ -1,7 +1,10 @@
+// ---------------------------------------------------------------
+// Copyright (c) Hassan Habib All rights reserved.
+// Licensed under the The Standard Software License (TSSL)
+// ---------------------------------------------------------------
+
 namespace Standard.Agents.Brokers.Data;
 
-// STUB — the durable, external memory store (SQLite / JSON / Redis / vector).
-// Today a no-op so the tier is wired end to end; swap the body for a real store.
 public sealed class MemoryBroker : IMemoryBroker
 {
     public ValueTask<IReadOnlyList<string>> SelectMemoriesAsync() =>

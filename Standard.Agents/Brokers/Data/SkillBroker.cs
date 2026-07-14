@@ -1,7 +1,10 @@
+// ---------------------------------------------------------------
+// Copyright (c) Hassan Habib All rights reserved.
+// Licensed under the The Standard Software License (TSSL)
+// ---------------------------------------------------------------
+
 namespace Standard.Agents.Brokers.Data;
 
-// Liaison to ONE resource: the skill files on disk. Reads every *.md, orders by
-// name, composes the instruction document. It only reads; a LINQ query, not a loop.
 public sealed class SkillBroker : ISkillBroker
 {
     private readonly string skillsPath;

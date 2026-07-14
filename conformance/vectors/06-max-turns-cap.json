@@ -1,0 +1,8 @@
+{
+  "name": "max-turns-cap",
+  "description": "A Brain that never terminates is capped by the loop; the last result is returned.",
+  "generatorReplies": ["ACTION: loop: x"],
+  "tools": { "loop": "again" },
+  "prompt": "loop forever",
+  "expect": { "result": "again" }
+}
