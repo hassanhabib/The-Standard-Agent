@@ -1,10 +1,12 @@
+// ---------------------------------------------------------------
+// Copyright (c) Hassan Habib All rights reserved.
+// Licensed under the The Standard Software License (TSSL)
+// ---------------------------------------------------------------
+
 using Standard.Agents.Brokers.Decision;
 
 namespace Standard.Agents.Services.Foundations.Decision;
 
-// Foundation over ONE broker (the generator). The one Brain — it produces the
-// reasoning. Interpreting that reply into a decision is the Decision orchestration's
-// job; this service just generates.
 public sealed class BrainService : IBrainService
 {
     private readonly IGeneratorBroker generatorBroker;

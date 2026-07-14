@@ -1,9 +1,12 @@
+// ---------------------------------------------------------------
+// Copyright (c) Hassan Habib All rights reserved.
+// Licensed under the The Standard Software License (TSSL)
+// ---------------------------------------------------------------
+
 using Standard.Agents.Brokers.Direction;
 
 namespace Standard.Agents.Services.Foundations.Direction;
 
-// Foundation over ONE broker (the tool registry). Acts WITHIN the agent's own
-// environment — in-process tools.
 public sealed class InternalToolService : IInternalToolService
 {
     private readonly IToolBroker toolBroker;

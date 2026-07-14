@@ -1,11 +1,13 @@
+// ---------------------------------------------------------------
+// Copyright (c) Hassan Habib All rights reserved.
+// Licensed under the The Standard Software License (TSSL)
+// ---------------------------------------------------------------
+
 using Standard.Agents.Models;
 using Standard.Agents.Services.Foundations.Data;
 
 namespace Standard.Agents.Services.Orchestrations.Data;
 
-// DATA — Recall. Coordinates the three Data foundations (Skills, Memory, Knowledge)
-// and folds what the agent HAS into the context. Skills become the system prompt;
-// recalled memory + retrieved knowledge seed the working observations.
 public sealed class DataOrchestrationService : IDataOrchestrationService
 {
     private readonly ISkillService skillService;

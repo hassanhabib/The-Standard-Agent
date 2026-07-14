@@ -1,6 +1,10 @@
+// ---------------------------------------------------------------
+// Copyright (c) Hassan Habib All rights reserved.
+// Licensed under the The Standard Software License (TSSL)
+// ---------------------------------------------------------------
+
 namespace Standard.Agents.Services.Coordinations;
 
-// The Agent. Coordinates the three orchestrations in a loop. It IS an IAgent.
 public interface IAgentCoordinationService : IAgent
 {
 }
