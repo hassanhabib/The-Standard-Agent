@@ -34,18 +34,16 @@ The library wires every broker and service under the hood. A consumer provides o
 what is theirs:
 
 ```csharp
-IAgent agent = new AgentBuilder()
+var agent = new StandardAgent()
     .Skills("Skills")              // where the skill files live
     .Brain(apiUrl, apiKey, model)  // the LLM
-    .Tool(new CalculatorTool())    // the tools it offers
-    .LogTo("log.txt")
-    .Build();
+    .Tool(new CalculatorTool());   // the tools it offers
 
 string answer = await agent.ProcessPromptAsync("What is 89347 * 61293 + 4472?");
 ```
 
-`AgentBuilder` also exposes `UseMemory`, `UseKnowledge`, `UseGate`, `UseJudge`, `UseMcp`,
-`UseGenerator`, and `UseLog` to swap the default brokers for real implementations.
+`StandardAgent` also exposes `UseMemory`, `UseKnowledge`, `UseGate`, `UseJudge`, `UseMcp`,
+`UseGenerator`, `UseLog`, and `LogTo` to swap the default brokers for real implementations.
 
 ## Architecture — the 1·3·9 tiers
 

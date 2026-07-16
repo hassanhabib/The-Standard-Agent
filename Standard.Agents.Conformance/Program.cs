@@ -62,12 +62,11 @@ async Task<string> RunAsync(Vector vector)
     IEnumerable<ITool> tools =
         (vector.Tools ?? []).Select(pair => (ITool)new StubTool(pair.Key, pair.Value));
 
-    IAgent agent = new AgentBuilder()
+    IAgent agent = new StandardAgent()
         .UseSkills(new StubSkillBroker())
         .UseGenerator(new ScriptedGeneratorBroker(vector.GeneratorReplies))
         .Tools(tools)
-        .UseLog(new NullLogBroker())
-        .Build();
+        .UseLog(new NullLogBroker());
 
     return await agent.ProcessPromptAsync(vector.Prompt);
 }
