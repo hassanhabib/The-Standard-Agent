@@ -18,7 +18,7 @@ using Standard.Agents.Tools;
 
 namespace Standard.Agents;
 
-public sealed class AgentBuilder
+public sealed class StandardAgent : IAgent
 {
     private readonly List<ITool> tools = [];
 
@@ -39,13 +39,16 @@ public sealed class AgentBuilder
     private IMcpBroker? mcpBroker;
     private ILogBroker? logBroker;
 
-    public AgentBuilder Skills(string path)
+    private IAgent? agent;
+
+    public StandardAgent Skills(string path)
     {
         this.skillsPath = path;
+        this.agent = null;
         return this;
     }
 
-    public AgentBuilder Brain(
+    public StandardAgent Brain(
         string apiUrl,
         string apiKey,
         string model,
@@ -57,76 +60,94 @@ public sealed class AgentBuilder
         this.model = model;
         this.temperature = temperature;
         this.maxTokens = maxTokens;
+        this.agent = null;
         return this;
     }
 
-    public AgentBuilder Tool(ITool tool)
+    public StandardAgent Tool(ITool tool)
     {
         this.tools.Add(tool);
+        this.agent = null;
         return this;
     }
 
-    public AgentBuilder Tools(IEnumerable<ITool> tools)
+    public StandardAgent Tools(IEnumerable<ITool> tools)
     {
         this.tools.AddRange(tools);
+        this.agent = null;
         return this;
     }
 
-    public AgentBuilder LogTo(string path)
+    public StandardAgent LogTo(string path)
     {
         this.logPath = path;
+        this.agent = null;
         return this;
     }
 
-    public AgentBuilder UseSkills(ISkillBroker broker)
+    public StandardAgent UseSkills(ISkillBroker broker)
     {
         this.skillBroker = broker;
+        this.agent = null;
         return this;
     }
 
-    public AgentBuilder UseGenerator(IGeneratorBroker broker)
+    public StandardAgent UseGenerator(IGeneratorBroker broker)
     {
         this.generatorBroker = broker;
+        this.agent = null;
         return this;
     }
 
-    public AgentBuilder UseMemory(IMemoryBroker broker)
+    public StandardAgent UseMemory(IMemoryBroker broker)
     {
         this.memoryBroker = broker;
+        this.agent = null;
         return this;
     }
 
-    public AgentBuilder UseKnowledge(IKnowledgeBroker broker)
+    public StandardAgent UseKnowledge(IKnowledgeBroker broker)
     {
         this.knowledgeBroker = broker;
+        this.agent = null;
         return this;
     }
 
-    public AgentBuilder UseGate(IClassifierBroker broker)
+    public StandardAgent UseGate(IClassifierBroker broker)
     {
         this.classifierBroker = broker;
+        this.agent = null;
         return this;
     }
 
-    public AgentBuilder UseJudge(IVerifierBroker broker)
+    public StandardAgent UseJudge(IVerifierBroker broker)
     {
         this.verifierBroker = broker;
+        this.agent = null;
         return this;
     }
 
-    public AgentBuilder UseMcp(IMcpBroker broker)
+    public StandardAgent UseMcp(IMcpBroker broker)
     {
         this.mcpBroker = broker;
+        this.agent = null;
         return this;
     }
 
-    public AgentBuilder UseLog(ILogBroker broker)
+    public StandardAgent UseLog(ILogBroker broker)
     {
         this.logBroker = broker;
+        this.agent = null;
         return this;
     }
 
-    public IAgent Build()
+    public ValueTask<string> ProcessPromptAsync(string prompt)
+    {
+        this.agent ??= Compose();
+        return this.agent.ProcessPromptAsync(prompt);
+    }
+
+    private IAgent Compose()
     {
         ISkillBroker skill = this.skillBroker ?? new SkillBroker(this.skillsPath);
         IGeneratorBroker generator = this.generatorBroker

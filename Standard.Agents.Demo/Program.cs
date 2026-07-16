@@ -18,7 +18,7 @@ IConfigurationSection peer = configuration.GetSection("PeerLLMConfigurations");
 // The library wires every broker and service under the hood. The consumer supplies
 // only what is theirs: where the skills live, the brain (LLM) config, the tools it
 // offers, and where to write the flow log.
-IAgent agent = new AgentBuilder()
+var agent = new StandardAgent()
     .Skills("Skills")
     .Brain(
         apiUrl: peer.GetValue<string>("ApiUrl")!,
@@ -27,8 +27,7 @@ IAgent agent = new AgentBuilder()
         temperature: peer.GetValue<double>("Temperature"),
         maxTokens: peer.GetValue<int>("MaxTokens"))
     .Tool(new CalculatorTool())
-    .LogTo("log.txt")
-    .Build();
+    .LogTo("log.txt");
 
 string apiUrl = peer.GetValue<string>("ApiUrl") ?? "(unset)";
 
