@@ -1,0 +1,43 @@
+// ---------------------------------------------------------------
+// Copyright (c) Hassan Habib All rights reserved.
+// Licensed under the The Standard Software License (TSSL)
+// ---------------------------------------------------------------
+
+using MinimalAgent.Models;
+using MinimalAgent.Services.Foundations.Data;
+
+namespace MinimalAgent.Services.Orchestrations.Data;
+
+public sealed class DataOrchestrationService : IDataOrchestrationService
+{
+    private readonly ISkillService skillService;
+    private readonly IMemoryService memoryService;
+    private readonly IKnowledgeService knowledgeService;
+
+    public DataOrchestrationService(
+        ISkillService skillService,
+        IMemoryService memoryService,
+        IKnowledgeService knowledgeService)
+    {
+        this.skillService = skillService;
+        this.memoryService = memoryService;
+        this.knowledgeService = knowledgeService;
+    }
+
+    public async ValueTask<AgentContext> RecallAsync(AgentContext context)
+    {
+        string skills = await this.skillService.RetrieveSkillsAsync();
+        IReadOnlyList<string> memories = await this.memoryService.RecallMemoriesAsync();
+        IReadOnlyList<string> knowledge = await this.knowledgeService.RetrieveKnowledgeAsync(context.Prompt);
+
+        IReadOnlyList<string> recalled = [.. memories, .. knowledge];
+
+        return context with
+        {
+            SystemPrompt = skills,
+            Observations = context.Observations.Count == 0 && recalled.Count > 0
+                ? recalled
+                : context.Observations
+        };
+    }
+}

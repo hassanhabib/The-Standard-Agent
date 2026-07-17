@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/MinimalAgent/MinimalAgent.csproj" />
+  </Folder>
   <Project Path="Standard.Agents.Conformance/Standard.Agents.Conformance.csproj" />
   <Project Path="Standard.Agents.Demo/Standard.Agents.Demo.csproj" />
   <Project Path="Standard.Agents/Standard.Agents.csproj" />
