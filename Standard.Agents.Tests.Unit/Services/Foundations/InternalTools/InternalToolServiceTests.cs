@@ -1,0 +1,37 @@
+// ---------------------------------------------------------------
+// Copyright (c) Hassan Habib All rights reserved.
+// Licensed under the The Standard Software License (TSSL)
+// ---------------------------------------------------------------
+
+using Moq;
+using Standard.Agents.Brokers.Loggings;
+using Standard.Agents.Brokers.Tools;
+using Standard.Agents.Services.Foundations.InternalTools;
+using System.Linq.Expressions;
+using Tynamix.ObjectFiller;
+using Xeptions;
+
+namespace Standard.Agents.Tests.Unit.Services.Foundations.InternalTools;
+
+public partial class InternalToolServiceTests
+{
+    private readonly Mock<IToolBroker> toolBrokerMock;
+    private readonly Mock<ILoggingBroker> loggingBrokerMock;
+    private readonly IInternalToolService internalToolService;
+
+    public InternalToolServiceTests()
+    {
+        this.toolBrokerMock = new Mock<IToolBroker>();
+        this.loggingBrokerMock = new Mock<ILoggingBroker>();
+
+        this.internalToolService = new InternalToolService(
+            toolBroker: this.toolBrokerMock.Object,
+            loggingBroker: this.loggingBrokerMock.Object);
+    }
+
+    private static string CreateRandomString() =>
+        new MnemonicString().GetValue();
+
+    private static Expression<Func<Xeption, bool>> SameExceptionAs(Xeption expectedException) =>
+        actualException => actualException.SameExceptionAs(expectedException);
+}

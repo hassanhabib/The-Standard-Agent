@@ -1,0 +1,31 @@
+// ---------------------------------------------------------------
+// Copyright (c) Hassan Habib All rights reserved.
+// Licensed under the The Standard Software License (TSSL)
+// ---------------------------------------------------------------
+
+using Standard.Agents.Brokers.Loggings;
+using Standard.Agents.Brokers.Mcps;
+
+namespace Standard.Agents.Services.Foundations.ExternalTools;
+
+public partial class ExternalToolService : IExternalToolService
+{
+    private readonly IMcpBroker mcpBroker;
+    private readonly ILoggingBroker loggingBroker;
+
+    public ExternalToolService(
+        IMcpBroker mcpBroker,
+        ILoggingBroker loggingBroker)
+    {
+        this.mcpBroker = mcpBroker;
+        this.loggingBroker = loggingBroker;
+    }
+
+    public ValueTask<string> CallAsync(string name, string input) =>
+    TryCatch(async () =>
+    {
+        ValidateName(name);
+
+        return await this.mcpBroker.CallAsync(name, input);
+    });
+}

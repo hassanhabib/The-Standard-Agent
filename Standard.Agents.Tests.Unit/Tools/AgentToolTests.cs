@@ -5,6 +5,7 @@
 
 using FluentAssertions;
 using Moq;
+using Standard.Agents.Brokers.Logs;
 using Standard.Agents.Tools;
 using Tynamix.ObjectFiller;
 using Xunit;
@@ -59,7 +60,7 @@ public class AgentToolTests
 
         var researcher = new AgentTool("researcher", innerAgent.Object);
 
-                var outerBrain = new Mock<Brokers.Decision.IGeneratorBroker>();
+                var outerBrain = new Mock<Brokers.Generators.IGeneratorBroker>();
         var replies = new Queue<string>(
         [
             "ACTION: researcher: capital of France",
@@ -70,17 +71,17 @@ public class AgentToolTests
             broker.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(() => replies.Dequeue());
 
-        var skills = new Mock<Brokers.Data.ISkillBroker>();
+        var skills = new Mock<Brokers.Skills.ISkillBroker>();
         skills.Setup(b => b.SelectSkillsAsync()).ReturnsAsync("you are an agent");
 
-        var memory = new Mock<Brokers.Data.IMemoryBroker>();
+        var memory = new Mock<Brokers.Memorys.IMemoryBroker>();
         memory.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
 
-        var gate = new Mock<Brokers.Decision.IClassifierBroker>();
+        var gate = new Mock<Brokers.Classifiers.IClassifierBroker>();
         gate.Setup(b => b.ClassifyAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync("allow");
 
-        var judge = new Mock<Brokers.Decision.IVerifierBroker>();
+        var judge = new Mock<Brokers.Verifiers.IVerifierBroker>();
         judge.Setup(b => b.VerifyAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(1.0);
 
@@ -88,11 +89,11 @@ public class AgentToolTests
             .UseSkills(skills.Object)
             .UseGenerator(outerBrain.Object)
             .UseMemory(memory.Object)
-            .UseKnowledge(new Mock<Brokers.Data.IKnowledgeBroker>().Object)
+            .UseKnowledge(new Mock<Brokers.Knowledges.IKnowledgeBroker>().Object)
             .UseGate(gate.Object)
             .UseJudge(judge.Object)
-            .UseMcp(new Mock<Brokers.Direction.IMcpBroker>().Object)
-            .UseLog(new Mock<Brokers.Loggings.ILogBroker>().Object)
+            .UseMcp(new Mock<Brokers.Mcps.IMcpBroker>().Object)
+            .UseLog(new Mock<Brokers.Logs.ILogBroker>().Object)
             .Tool(researcher);
 
         // when

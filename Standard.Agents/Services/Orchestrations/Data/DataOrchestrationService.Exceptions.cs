@@ -4,7 +4,7 @@
 // ---------------------------------------------------------------
 
 using Standard.Agents.Models.Foundations.Knowledges.Exceptions;
-using Standard.Agents.Models.Foundations.Memories.Exceptions;
+using Standard.Agents.Models.Foundations.Memorys.Exceptions;
 using Standard.Agents.Models.Foundations.Skills.Exceptions;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Models.Orchestrations.Agents.Exceptions;
