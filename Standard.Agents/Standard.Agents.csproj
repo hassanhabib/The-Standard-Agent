@@ -6,10 +6,52 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <PackageId>Standard.Agents</PackageId>
+
+    <!-- The Standard's release format is v1.2.3.4 — model . service/routine . fix/config
+         . automated build. Deliberately NOT semver; the segments say what KIND of change
+         happened. First release: the initial model. -->
+    <Version>1.0.0.0</Version>
+
+    <Authors>Hassan Habib</Authors>
+    <Company>Hassan Habib</Company>
+    <Product>The Standard for Agents</Product>
+    <Title>The Standard for Agents</Title>
+
+    <Description>
+      The C# reference implementation of The Standard for Agents.
+      Agent = Orchestration(Data, Decision, Direction) — a four-tier agent framework
+      (Coordination, Orchestration, Foundation, Broker) built to a normative,
+      language-neutral specification and certified against its conformance vectors.
+      No DI container required; the composition root is hand-wired and readable.
+    </Description>
+
+    <PackageIcon>the-standard-agent-icon.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+
+    <!-- TSSL is not an SPDX identifier, so the license travels as a file rather than an
+         expression. The file is named LICENSE.txt rather than LICENSE because NuGet
+         requires an extension; GitHub detects either. -->
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+
+    <PackageProjectUrl>https://github.com/hassanhabib/The-Standard-Agent</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/hassanhabib/The-Standard-Agent</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>agent;ai;llm;the-standard;tri-nature;standard-agents;orchestration;mcp</PackageTags>
+    <Copyright>Copyright (c) Hassan Habib. All rights reserved.</Copyright>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
     <PackageReference Include="RESTFulSense" Version="3.2.0" />
     <PackageReference Include="Xeption" Version="2.9.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\assets\the-standard-agent-icon.png" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="..\README.md" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="..\LICENSE.txt" Pack="true" PackagePath="\" Visible="false" />
   </ItemGroup>
 
 </Project>

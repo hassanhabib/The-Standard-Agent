@@ -1,16 +1,48 @@
+<div align="center">
+
+<img src="https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-icon.png" alt="The Standard for Agents" width="180" />
+
 # The Standard for Agents
+
+**`Agent = Orchestration(Data, Decision, Direction)`**
 
 The C# reference implementation of **[The Standard for Agents](https://github.com/hassanhabib/The-Standard-Agent-Specs)**.
 
-```
-Agent = Orchestration(Data, Decision, Direction)
-```
+[![Build](https://github.com/hassanhabib/The-Standard-Agent/actions/workflows/dotnet.yml/badge.svg)](https://github.com/hassanhabib/The-Standard-Agent/actions/workflows/dotnet.yml)
+[![NuGet](https://img.shields.io/nuget/v/Standard.Agents.svg)](https://www.nuget.org/packages/Standard.Agents)
+[![License: TSSL](https://img.shields.io/badge/license-TSSL%20v1.1-blue.svg)](https://github.com/hassanhabib/The-Standard-Agent/blob/main/LICENSE.txt)
+
+</div>
+
+---
+
+The mark is the thing itself: three arcs — **Data**, **Decision**, **Direction** — orbiting a
+single core. One brain at the center, the three natures turning around it.
 
 - **Data** — what the agent *has* (skills, memory, knowledge) · verb: **Recall**
 - **Decision** — what the agent *thinks* (one brain, wrapped in a Gate and a Judge) · verb: **Think**
 - **Direction** — what the agent *does* (act internally, act externally, or return) · verb: **Act**
 
 Orchestration is not a fourth nature. It is the composition operator — the loop.
+
+## Install
+
+```bash
+dotnet add package Standard.Agents
+```
+
+```csharp
+var agent = new StandardAgent()
+    .Skills("Skills")
+    .Brain(apiUrl: "https://api.openai.com/v1/", apiKey: key, model: "gpt-4o-mini")
+    .Tool(new CalculatorTool())
+    .LogTo("log.txt");
+
+string answer = await agent.ProcessPromptAsync("What is 47 * 89?");
+```
+
+No DI container. `Compose()` hand-wires the whole graph — SPEC.md §9: *"DI is OPTIONAL. A
+hand-wired composition root is fully conformant."*
 
 ## The 1·3·9
 
@@ -19,10 +51,10 @@ Orchestration is not a fourth nature. It is the composition operator — the loo
 | **Coordination** | 1 | `AgentCoordinationService` — the only loop: Recall → Think → Act |
 | **Orchestration** | 3 | Data · Decision · Direction |
 | **Foundation** | 9 | Skills, Memory, Knowledge / Gate, Brain, Judge / Internal, External, Return |
-| **Broker** | 8+1 | one liaison per resource, plus the logging support broker |
+| **Broker** | 8+2 | one liaison per resource, plus logging |
 
-Nine foundations, eight brokers: `ReturnService` has no broker. It is the dead end — the terminal
-Direction hands the result back and touches nothing.
+Nine foundations, eight nature brokers: `ReturnService` has no broker. It is the dead end — the
+terminal Direction hands the result back and touches nothing.
 
 Flow is forward only. A tier never calls the tier above it.
 
@@ -31,12 +63,12 @@ Flow is forward only. A tier never calls the tier above it.
 Two rulebooks, and they compose:
 
 - **[SPEC.md](https://github.com/hassanhabib/The-Standard-Agent-Specs/blob/main/SPEC.md)** owns
-  **contracts and behavior**. It is normative and language-neutral.
+  **contracts and behavior**. Normative, language-neutral.
 - **[The Standard](https://github.com/hassanhabib/The-Standard)** owns **structure, exceptions,
-  and process** — brokers, foundations, orchestrations, the `Xeption` model, and FAIL/PASS TDD.
+  and process** — brokers, foundations, orchestrations, the `Xeption` model, FAIL/PASS TDD.
 
-They do not collide: SPEC.md §1 states that *"conformance is about contracts and behavior, not file
-layout or language idiom."*
+They do not collide: SPEC.md §1 states that *"conformance is about contracts and behavior, not
+file layout or language idiom."*
 
 The theory is settled in
 **[THE-TRI-NATURE-OF-AGENT.md](https://github.com/hassanhabib/The-Standard-Agent-Specs/blob/main/THE-TRI-NATURE-OF-AGENT.md)**
@@ -52,14 +84,18 @@ Standard.Agents/                  the library
   |-- Services/{Foundations,Orchestrations,Coordinations}
   |-- Tools/                                ITool, AgentTool — the fractal bridge
 Standard.Agents.Tests.Unit/       unit tests, mirroring the service tree
+Standard.Agents.Conformance/      the vector runner
+Standard.Agents.Demo/             a console agent you can run
 conformance/                      language-neutral behavioral vectors
 ```
 
 ## Conformance
 
 Agent behavior involves an LLM and is non-deterministic, so it cannot be asserted directly.
-[`conformance/`](conformance/CONFORMANCE.md) instead pins the **deterministic** contracts — the loop,
-reply interpretation, tool routing, and the feed-back of results into Data — by scripting the Brain.
+[`conformance/`](https://github.com/hassanhabib/The-Standard-Agent/blob/main/conformance/CONFORMANCE.md) instead pins the **deterministic** contracts — the
+loop, reply interpretation, tool routing, and the feed-back of results into Data — by scripting
+the Brain. Every double replaces a **broker**, never a service: the whole 1·3·9 under test is the
+real library.
 
 ```bash
 dotnet test                                        # unit tests
@@ -68,6 +104,18 @@ dotnet run --project Standard.Agents.Conformance   # spec certification; exit 0 
 
 A **Core** implementation is a minimal viable agent. A **Full** implementation adds real memory,
 knowledge, guardian gate/judge, and external tools.
+
+## The fractal
+
+An agent satisfies `ITool`, so an agent can be a tool of another agent. Theory Ch.4 — *turtles up*:
+
+```csharp
+var researcher = new AgentTool("researcher", innerAgent);
+var outerAgent = new StandardAgent().Brain(...).Tool(researcher);
+```
+
+Nesting needs no new machinery because the shapes already agree. It is also how a guardian scales:
+a compliance sub-agent is a distinct conscience, rather than the same brain grading itself.
 
 ## Contributing
 
@@ -84,4 +132,4 @@ This repo follows [The Standard's practices](https://github.com/hassanhabib/The-
 
 ## License
 
-[The Standard Software License (TSSL) v1.1](LICENSE).
+[The Standard Software License (TSSL) v1.1](https://github.com/hassanhabib/The-Standard-Agent/blob/main/LICENSE.txt).
