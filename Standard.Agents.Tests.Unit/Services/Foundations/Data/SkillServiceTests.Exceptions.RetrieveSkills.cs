@@ -12,16 +12,24 @@ namespace Standard.Agents.Tests.Unit.Services.Foundations.Data;
 
 public partial class SkillServiceTests
 {
-    [Fact]
-    public async Task ShouldThrowDependencyExceptionOnRetrieveSkillsIfFileNotFoundErrorOccursAndLogItAsync()
+    public static TheoryData<Exception> CriticalDependencyExceptions() =>
+        new()
+        {
+            new FileNotFoundException(),
+            new DirectoryNotFoundException(),
+            new UnauthorizedAccessException()
+        };
+
+    [Theory]
+    [MemberData(nameof(CriticalDependencyExceptions))]
+    public async Task ShouldThrowDependencyExceptionOnRetrieveSkillsIfCriticalErrorOccursAndLogItAsync(
+        Exception criticalDependencyException)
     {
         // given
-        var fileNotFoundException = new FileNotFoundException();
-
         var failedSkillDependencyException =
             new FailedSkillDependencyException(
                 message: "Failed skill dependency error occurred, contact support.",
-                innerException: fileNotFoundException);
+                innerException: criticalDependencyException);
 
         var expectedSkillDependencyException =
             new SkillDependencyException(
@@ -30,7 +38,7 @@ public partial class SkillServiceTests
 
         this.skillBrokerMock.Setup(broker =>
             broker.SelectSkillsAsync())
-                .ThrowsAsync(fileNotFoundException);
+                .ThrowsAsync(criticalDependencyException);
 
         // when
         ValueTask<string> retrieveSkillsTask =
