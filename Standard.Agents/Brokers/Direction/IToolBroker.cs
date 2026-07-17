@@ -8,4 +8,6 @@ namespace Standard.Agents.Brokers.Direction;
 public interface IToolBroker
 {
     ValueTask<bool> HasAsync(string name);
+
+    ValueTask<string> RunAsync(string name, string input);
 }
