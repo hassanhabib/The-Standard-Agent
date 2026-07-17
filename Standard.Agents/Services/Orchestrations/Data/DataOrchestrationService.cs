@@ -26,6 +26,18 @@ public partial class DataOrchestrationService : IDataOrchestrationService
         this.knowledgeService = knowledgeService;
     }
 
-    public ValueTask<AgentContext> RecallAsync(AgentContext context) =>
-        throw new NotImplementedException();
+    public async ValueTask<AgentContext> RecallAsync(AgentContext context)
+    {
+        string systemPrompt = await this.skillService.RetrieveSkillsAsync();
+        IReadOnlyList<string> memories = await this.memoryService.RecallMemoriesAsync();
+
+        // Appended, never replaced. Recall runs every turn (SPEC.md 5), so replacing
+        // observations would wipe the tool results Direction fed back before the
+        // Brain ever read them — and vector 02 could not pass.
+        return context with
+        {
+            SystemPrompt = systemPrompt,
+            Observations = [.. context.Observations, .. memories]
+        };
+    }
 }
