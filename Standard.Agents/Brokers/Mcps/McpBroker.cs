@@ -6,6 +6,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using RESTFulSense.Clients;
+using Standard.Agents.Models.Brokers.Mcps;
 
 namespace Standard.Agents.Brokers.Mcps;
 
@@ -85,29 +86,4 @@ public sealed class McpBroker : IMcpBroker
                 ValueTask.FromResult(JsonSerializer.Serialize(value, jsonOptions)),
             deserializationFunction: json =>
                 ValueTask.FromResult(JsonSerializer.Deserialize<TResult>(json, jsonOptions)!));
-
-    private sealed record JsonRpcRequest(
-        [property: JsonPropertyName("jsonrpc")] string JsonRpc,
-        int Id,
-        string Method,
-        ToolCallParams Params);
-
-    private sealed record ToolCallParams(
-        string Name,
-        IReadOnlyDictionary<string, string> Arguments);
-
-    private sealed record JsonRpcResponse(
-        ToolCallResult? Result,
-        JsonRpcError? Error);
-
-    private sealed record ToolCallResult(
-        IReadOnlyList<ToolCallContent> Content);
-
-    private sealed record ToolCallContent(
-        string Type,
-        string Text);
-
-    private sealed record JsonRpcError(
-        int Code,
-        string Message);
         }
