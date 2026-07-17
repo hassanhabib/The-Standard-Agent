@@ -9,7 +9,7 @@ namespace Standard.Agents.Services.Foundations.ExternalTools;
 
 public partial class ExternalToolService
 {
-                private static void ValidateName(string name)
+    private static void ValidateName(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
         {

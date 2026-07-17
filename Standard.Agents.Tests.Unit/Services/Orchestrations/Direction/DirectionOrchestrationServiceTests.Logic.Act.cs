@@ -12,7 +12,7 @@ namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Direction;
 
 public partial class DirectionOrchestrationServiceTests
 {
-        [Fact]
+    [Fact]
     public async Task ShouldReturnAndTerminateOnActIfDirectionTypeIsReturnResponseAsync()
     {
         // given
@@ -41,7 +41,7 @@ public partial class DirectionOrchestrationServiceTests
         this.externalToolServiceMock.VerifyNoOtherCalls();
     }
 
-            [Fact]
+    [Fact]
     public async Task ShouldRefuseAndTerminateOnActIfDirectionTypeIsRefuseAsync()
     {
         // given
@@ -66,7 +66,7 @@ public partial class DirectionOrchestrationServiceTests
         this.externalToolServiceMock.VerifyNoOtherCalls();
     }
 
-            [Fact]
+    [Fact]
     public async Task ShouldRunInternalToolAndAppendObservationOnActAsync()
     {
         // given
@@ -94,7 +94,7 @@ public partial class DirectionOrchestrationServiceTests
                 Times.Never);
     }
 
-                    [Fact]
+    [Fact]
     public async Task ShouldRouteToExternalAndRecoverOnActIfToolIsUnknownAsync()
     {
         // given
@@ -126,7 +126,7 @@ public partial class DirectionOrchestrationServiceTests
                 Times.Never);
     }
 
-            [Fact]
+    [Fact]
     public async Task ShouldPreserveExistingObservationsOnActAsync()
     {
         // given
@@ -157,7 +157,7 @@ public partial class DirectionOrchestrationServiceTests
         actualContext.Observations.Should().Contain(priorObservation);
     }
 
-                [Fact]
+    [Fact]
     public async Task ShouldKeepWorkingOnActIfToolReportsAnErrorAsync()
     {
         // given
@@ -182,7 +182,7 @@ public partial class DirectionOrchestrationServiceTests
             .ContainSingle(o => o.Contains("could not parse expression"));
     }
 
-                                [Fact]
+    [Fact]
     public async Task ShouldSetResultToToolOutputOnActEvenIfNonTerminalAsync()
     {
         // given
@@ -206,7 +206,7 @@ public partial class DirectionOrchestrationServiceTests
         actualContext.Status.Should().Be(AgentStatus.Working);
     }
 
-            [Fact]
+    [Fact]
     public async Task ShouldNameToolInObservationOnActAsync()
     {
         // given

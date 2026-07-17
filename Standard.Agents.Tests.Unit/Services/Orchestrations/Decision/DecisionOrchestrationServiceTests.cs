@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Linq.Expressions;
 using Moq;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models.Orchestrations.Agents;
@@ -10,7 +11,6 @@ using Standard.Agents.Services.Foundations.Brains;
 using Standard.Agents.Services.Foundations.Gates;
 using Standard.Agents.Services.Foundations.Judges;
 using Standard.Agents.Services.Orchestrations.Decision;
-using System.Linq.Expressions;
 using Tynamix.ObjectFiller;
 using Xeptions;
 using Xunit;
@@ -49,10 +49,10 @@ public partial class DecisionOrchestrationServiceTests
             SystemPrompt = CreateRandomString()
         };
 
-            private void SetupGateAllows() =>
-        this.gateServiceMock.Setup(service =>
-            service.ScreenAsync(It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync("allow");
+    private void SetupGateAllows() =>
+this.gateServiceMock.Setup(service =>
+    service.ScreenAsync(It.IsAny<string>(), It.IsAny<string>()))
+        .ReturnsAsync("allow");
 
     private void SetupJudgeApproves() =>
         this.judgeServiceMock.Setup(service =>
@@ -62,9 +62,9 @@ public partial class DecisionOrchestrationServiceTests
     private static Expression<Func<Xeption, bool>> SameExceptionAs(Xeption expectedException) =>
         actualException => actualException.SameExceptionAs(expectedException);
 
-            public static TheoryData<Xeption> DependencyValidationExceptions() =>
-        new()
-        {
+    public static TheoryData<Xeption> DependencyValidationExceptions() =>
+new()
+{
             new Models.Foundations.Gates.Exceptions.GateValidationException(
                 "gate validation", new Xeption("inner")),
 
@@ -76,7 +76,7 @@ public partial class DecisionOrchestrationServiceTests
 
             new Models.Foundations.Brains.Exceptions.BrainDependencyValidationException(
                 "brain dependency validation", new Xeption("inner"))
-        };
+};
 
     public static TheoryData<Xeption> DependencyExceptions() =>
         new()

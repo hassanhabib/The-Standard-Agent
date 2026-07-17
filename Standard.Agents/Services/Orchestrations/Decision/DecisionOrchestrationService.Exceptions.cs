@@ -16,8 +16,8 @@ public partial class DecisionOrchestrationService
 {
     private delegate ValueTask<AgentContext> ReturningContextFunction();
 
-                private async ValueTask<AgentContext> TryCatch(
-        ReturningContextFunction returningContextFunction)
+    private async ValueTask<AgentContext> TryCatch(
+ReturningContextFunction returningContextFunction)
     {
         try
         {

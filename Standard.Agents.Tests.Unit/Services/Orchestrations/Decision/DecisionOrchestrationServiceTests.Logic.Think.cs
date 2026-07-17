@@ -34,7 +34,7 @@ public partial class DecisionOrchestrationServiceTests
         actualContext.RawReply.Should().Be("FINAL: 42");
     }
 
-                [Fact]
+    [Fact]
     public async Task ShouldParseActionFromFirstLineOnlyOnThinkAsync()
     {
         // given
@@ -53,10 +53,10 @@ public partial class DecisionOrchestrationServiceTests
         actualContext.DirectionType.Should().Be("calculator");
         actualContext.Payload.Should().Be("1+1");
 
-                actualContext.Payload.Should().NotContain("wrong");
+        actualContext.Payload.Should().NotContain("wrong");
     }
 
-            [Fact]
+    [Fact]
     public async Task ShouldPreserveMultilineFinalOnThinkAsync()
     {
         // given
@@ -77,7 +77,7 @@ public partial class DecisionOrchestrationServiceTests
         actualContext.Payload.Should().Be("line one\nline two");
     }
 
-                [Fact]
+    [Fact]
     public async Task ShouldPreserveColonsInToolInputOnThinkAsync()
     {
         // given
@@ -97,7 +97,7 @@ public partial class DecisionOrchestrationServiceTests
         actualContext.Payload.Should().Be("https://example.com:8080/a?b=1");
     }
 
-                [Fact]
+    [Fact]
     public async Task ShouldSetIntentToToolNameOnThinkIfActionAsync()
     {
         // given
@@ -136,7 +136,7 @@ public partial class DecisionOrchestrationServiceTests
         actualContext.Intent.Should().Be("Respond");
     }
 
-                [Fact]
+    [Fact]
     public async Task ShouldTreatNonProtocolReplyAsAnswerOnThinkAsync()
     {
         // given
@@ -157,7 +157,7 @@ public partial class DecisionOrchestrationServiceTests
         actualContext.Payload.Should().Be("just an answer, no prefix");
     }
 
-                [Fact]
+    [Fact]
     public async Task ShouldPassObservationsToBrainOnThinkAsync()
     {
         // given

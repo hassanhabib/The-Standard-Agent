@@ -12,12 +12,12 @@ namespace Standard.Agents.Tests.Unit.Services.Foundations.Knowledges;
 
 public partial class KnowledgeServiceTests
 {
-                [Theory]
+    [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData(" ")]
     public async Task ShouldThrowValidationExceptionOnRetrieveKnowledgeIfQueryIsInvalidAndLogItAsync(
-        string? invalidQuery)
+string? invalidQuery)
     {
         // given
         var invalidKnowledgeException =

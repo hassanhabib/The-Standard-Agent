@@ -10,7 +10,7 @@ namespace Standard.Agents.Services.Orchestrations.Data;
 
 public partial class DataOrchestrationService
 {
-            private static void ValidateContext(AgentContext context)
+    private static void ValidateContext(AgentContext context)
     {
         if (context is null)
         {

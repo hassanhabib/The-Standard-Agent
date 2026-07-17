@@ -14,8 +14,8 @@ public sealed class LoggingBroker : ILoggingBroker
     public LoggingBroker(ILogger<LoggingBroker> logger) =>
         this.logger = logger;
 
-            public async ValueTask LogInformationAsync(string message) =>
-        this.logger.LogInformation(message);
+    public async ValueTask LogInformationAsync(string message) =>
+this.logger.LogInformation(message);
 
     public async ValueTask LogTraceAsync(string message) =>
         this.logger.LogTrace(message);

@@ -12,7 +12,7 @@ public partial class ReturnService
 {
     private delegate ValueTask<string> ReturningStringFunction();
 
-            private async ValueTask<string> TryCatch(ReturningStringFunction returningStringFunction)
+    private async ValueTask<string> TryCatch(ReturningStringFunction returningStringFunction)
     {
         try
         {

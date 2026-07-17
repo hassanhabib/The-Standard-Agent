@@ -13,7 +13,7 @@ public sealed class GeneratorBroker : IGeneratorBroker
 {
     private const string ChatCompletionsRelativeUrl = "chat/completions";
 
-        private const string JsonMediaType = "application/json";
+    private const string JsonMediaType = "application/json";
 
     private static readonly JsonSerializerOptions jsonOptions = new()
     {
@@ -82,12 +82,12 @@ public sealed class GeneratorBroker : IGeneratorBroker
             deserializationFunction: json =>
                 ValueTask.FromResult(JsonSerializer.Deserialize<TResult>(json, jsonOptions)!));
 
-        private sealed record ChatCompletionRequest(
-        string Model,
-        IReadOnlyList<ChatMessage> Messages,
-        bool Stream,
-        double Temperature,
-        int MaxTokens);
+    private sealed record ChatCompletionRequest(
+    string Model,
+    IReadOnlyList<ChatMessage> Messages,
+    bool Stream,
+    double Temperature,
+    int MaxTokens);
 
     private sealed record ChatMessage(
         string Role,

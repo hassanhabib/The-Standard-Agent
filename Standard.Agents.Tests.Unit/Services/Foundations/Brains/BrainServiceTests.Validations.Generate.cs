@@ -48,20 +48,20 @@ public partial class BrainServiceTests
                 expectedBrainValidationException))),
                     Times.Once);
 
-                this.generatorBrokerMock.Verify(broker =>
-            broker.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()),
-                Times.Never);
+        this.generatorBrokerMock.Verify(broker =>
+    broker.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()),
+        Times.Never);
 
         this.generatorBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-                [Theory]
+    [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData(" ")]
     public async Task ShouldGenerateOnGenerateEvenIfSystemPromptIsEmptyAsync(
-        string? emptySystemPrompt)
+string? emptySystemPrompt)
     {
         // given
         string randomUserPrompt = CreateRandomString();

@@ -56,7 +56,7 @@ public partial class InternalToolServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-            [Theory]
+    [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData(" ")]

@@ -70,11 +70,11 @@ public sealed class VerifierBroker : IVerifierBroker
         return ToScore(chatCompletionResponse.Choices[0].Message.Content);
     }
 
-                        private static double ToScore(string content) =>
-        double.Parse(
-            content.Trim(),
-            NumberStyles.Float,
-            CultureInfo.InvariantCulture);
+    private static double ToScore(string content) =>
+double.Parse(
+content.Trim(),
+NumberStyles.Float,
+CultureInfo.InvariantCulture);
 
     private async ValueTask<TResult> PostAsync<TContent, TResult>(
         string relativeUrl,

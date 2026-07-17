@@ -19,9 +19,9 @@ public sealed class SkillBroker : ISkillBroker
     {
         List<string> skills = [];
 
-                IOrderedEnumerable<string> skillFilePaths =
-            Directory.EnumerateFiles(this.skillsPath, SkillFilePattern)
-                .OrderBy(skillFilePath => skillFilePath, StringComparer.Ordinal);
+        IOrderedEnumerable<string> skillFilePaths =
+    Directory.EnumerateFiles(this.skillsPath, SkillFilePattern)
+        .OrderBy(skillFilePath => skillFilePath, StringComparer.Ordinal);
 
         foreach (string skillFilePath in skillFilePaths)
         {

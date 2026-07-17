@@ -9,9 +9,9 @@ namespace Standard.Agents;
 
 public sealed partial class StandardAgent
 {
-                            private void ValidateComposition()
+    private void ValidateComposition()
     {
-                if (this.generatorBroker is null && this.brainSettings is null)
+        if (this.generatorBroker is null && this.brainSettings is null)
         {
             throw new InvalidAgentCompositionException(
                 message:
@@ -19,7 +19,7 @@ public sealed partial class StandardAgent
                         + "or UseGenerator(broker) before processing a prompt.");
         }
 
-                        if (this.classifierBroker is null && this.gateSettings is null && this.brainSettings is null)
+        if (this.classifierBroker is null && this.gateSettings is null && this.brainSettings is null)
         {
             throw new InvalidAgentCompositionException(
                 message:

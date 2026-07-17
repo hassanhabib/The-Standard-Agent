@@ -41,7 +41,7 @@ public partial class GateServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-                [Theory]
+    [Theory]
     [InlineData("allow")]
     [InlineData("refuse")]
     [InlineData("refuse: asks for credentials")]
@@ -71,7 +71,7 @@ public partial class GateServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-                [Fact]
+    [Fact]
     public async Task ShouldPassGatePromptThroughUnalteredOnScreenAsync()
     {
         // given

@@ -13,7 +13,7 @@ public partial class JudgeService
 {
     private delegate ValueTask<double> ReturningScoreFunction();
 
-                private async ValueTask<double> TryCatch(ReturningScoreFunction returningScoreFunction)
+    private async ValueTask<double> TryCatch(ReturningScoreFunction returningScoreFunction)
     {
         try
         {

@@ -12,12 +12,12 @@ namespace Standard.Agents.Tests.Unit.Services.Foundations.Gates;
 
 public partial class GateServiceTests
 {
-                [Theory]
+    [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData(" ")]
     public async Task ShouldThrowValidationExceptionOnScreenIfGatePromptIsInvalidAndLogItAsync(
-        string? invalidGatePrompt)
+string? invalidGatePrompt)
     {
         // given
         string randomInput = CreateRandomString();

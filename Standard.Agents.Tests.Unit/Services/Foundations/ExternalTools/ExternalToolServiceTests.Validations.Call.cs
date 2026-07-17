@@ -48,9 +48,9 @@ public partial class ExternalToolServiceTests
                 expectedExternalToolValidationException))),
                     Times.Once);
 
-                        this.mcpBrokerMock.Verify(broker =>
-            broker.CallAsync(It.IsAny<string>(), It.IsAny<string>()),
-                Times.Never);
+        this.mcpBrokerMock.Verify(broker =>
+broker.CallAsync(It.IsAny<string>(), It.IsAny<string>()),
+Times.Never);
 
         this.mcpBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();

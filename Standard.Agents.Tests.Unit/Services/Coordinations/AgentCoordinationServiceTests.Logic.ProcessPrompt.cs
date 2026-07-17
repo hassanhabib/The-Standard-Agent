@@ -12,7 +12,7 @@ namespace Standard.Agents.Tests.Unit.Services.Coordinations;
 
 public partial class AgentCoordinationServiceTests
 {
-        [Fact]
+    [Fact]
     public async Task ShouldProcessPromptAsync()
     {
         // given
@@ -30,7 +30,7 @@ public partial class AgentCoordinationServiceTests
         actualResult.Should().Be(expectedResult);
     }
 
-                [Fact]
+    [Fact]
     public async Task ShouldSeedContextWithPromptOnProcessPromptAsync()
     {
         // given
@@ -50,7 +50,7 @@ public partial class AgentCoordinationServiceTests
                         Times.Once);
     }
 
-                    [Fact]
+    [Fact]
     public async Task ShouldCallRecallThinkActInOrderOnProcessPromptAsync()
     {
         // given
@@ -78,13 +78,13 @@ public partial class AgentCoordinationServiceTests
         actualResult.Should().Be("done");
     }
 
-                [Theory]
+    [Theory]
     [InlineData(AgentStatus.Responded)]
     [InlineData(AgentStatus.Refused)]
     [InlineData(AgentStatus.Failed)]
     [InlineData(AgentStatus.AwaitingInput)]
     public async Task ShouldBreakLoopOnProcessPromptIfStatusIsNotWorkingAsync(
-        AgentStatus terminalStatus)
+AgentStatus terminalStatus)
     {
         // given
         string randomPrompt = CreateRandomString();
@@ -107,7 +107,7 @@ public partial class AgentCoordinationServiceTests
                 Times.Once);
     }
 
-                [Fact]
+    [Fact]
     public async Task ShouldCapTurnsOnProcessPromptIfBrainNeverTerminatesAsync()
     {
         // given
@@ -122,16 +122,16 @@ public partial class AgentCoordinationServiceTests
         // then
         actualResult.Should().Be("again");
 
-                        this.dataOrchestrationServiceMock.Verify(service =>
-            service.RecallAsync(It.IsAny<AgentContext>()),
-                Times.Exactly(7));
+        this.dataOrchestrationServiceMock.Verify(service =>
+service.RecallAsync(It.IsAny<AgentContext>()),
+Times.Exactly(7));
 
         this.decisionOrchestrationServiceMock.Verify(service =>
             service.ThinkAsync(It.IsAny<AgentContext>()),
                 Times.Exactly(7));
     }
 
-            [Fact]
+    [Fact]
     public async Task ShouldRecallEveryTurnOnProcessPromptAsync()
     {
         // given
@@ -146,16 +146,16 @@ public partial class AgentCoordinationServiceTests
             service.ThinkAsync(It.IsAny<AgentContext>()))
                 .ReturnsAsync((AgentContext context) => context);
 
-                this.directionOrchestrationServiceMock.Setup(service =>
-            service.ActAsync(It.IsAny<AgentContext>()))
-                .ReturnsAsync((AgentContext context) =>
-                {
-                    turn++;
+        this.directionOrchestrationServiceMock.Setup(service =>
+    service.ActAsync(It.IsAny<AgentContext>()))
+        .ReturnsAsync((AgentContext context) =>
+        {
+            turn++;
 
-                    return turn < 3
-                        ? context with { Result = "working", Status = AgentStatus.Working }
-                        : context with { Result = "done", Status = AgentStatus.Responded };
-                });
+            return turn < 3
+                ? context with { Result = "working", Status = AgentStatus.Working }
+                : context with { Result = "done", Status = AgentStatus.Responded };
+        });
 
         // when
         string actualResult =
@@ -169,7 +169,7 @@ public partial class AgentCoordinationServiceTests
                 Times.Exactly(3));
     }
 
-            [Fact]
+    [Fact]
     public async Task ShouldResetLogOnProcessPromptAsync()
     {
         // given
@@ -186,7 +186,7 @@ public partial class AgentCoordinationServiceTests
                 Times.Once);
     }
 
-            [Fact]
+    [Fact]
     public async Task ShouldWriteTurnToLogOnProcessPromptAsync()
     {
         // given
@@ -203,7 +203,7 @@ public partial class AgentCoordinationServiceTests
                 Times.AtLeastOnce);
     }
 
-                    [Fact]
+    [Fact]
     public async Task ShouldNotLeakStateBetweenPromptsOnProcessPromptAsync()
     {
         // given
@@ -238,6 +238,6 @@ public partial class AgentCoordinationServiceTests
         recalledContexts[0].Prompt.Should().Be(firstPrompt);
         recalledContexts[1].Prompt.Should().Be(secondPrompt);
 
-                recalledContexts[1].Observations.Should().BeEmpty();
+        recalledContexts[1].Observations.Should().BeEmpty();
     }
 }

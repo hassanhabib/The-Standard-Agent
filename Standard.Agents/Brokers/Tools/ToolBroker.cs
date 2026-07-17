@@ -11,10 +11,10 @@ public sealed class ToolBroker : IToolBroker
 {
     private readonly IReadOnlyDictionary<string, ITool> tools;
 
-        public ToolBroker(IEnumerable<ITool> tools) =>
-        this.tools = tools.ToDictionary(
-            tool => tool.Name,
-            StringComparer.OrdinalIgnoreCase);
+    public ToolBroker(IEnumerable<ITool> tools) =>
+    this.tools = tools.ToDictionary(
+        tool => tool.Name,
+        StringComparer.OrdinalIgnoreCase);
 
     public ValueTask<bool> HasAsync(string name) =>
         ValueTask.FromResult(this.tools.ContainsKey(name));

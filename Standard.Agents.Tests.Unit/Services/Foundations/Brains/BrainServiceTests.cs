@@ -3,11 +3,11 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Linq.Expressions;
 using Moq;
 using Standard.Agents.Brokers.Generators;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Services.Foundations.Brains;
-using System.Linq.Expressions;
 using Tynamix.ObjectFiller;
 using Xeptions;
 

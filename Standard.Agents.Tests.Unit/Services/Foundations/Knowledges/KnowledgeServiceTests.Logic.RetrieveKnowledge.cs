@@ -40,7 +40,7 @@ public partial class KnowledgeServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-                [Fact]
+    [Fact]
     public async Task ShouldRetrieveNoKnowledgeOnRetrieveKnowledgeIfNothingMatchesAsync()
     {
         // given

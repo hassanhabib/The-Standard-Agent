@@ -13,7 +13,7 @@ public partial class InternalToolService
     private delegate ValueTask<bool> ReturningBooleanFunction();
     private delegate ValueTask<string> ReturningStringFunction();
 
-            private async ValueTask<bool> TryCatch(ReturningBooleanFunction returningBooleanFunction)
+    private async ValueTask<bool> TryCatch(ReturningBooleanFunction returningBooleanFunction)
     {
         try
         {
@@ -34,7 +34,7 @@ public partial class InternalToolService
         }
     }
 
-        private async ValueTask<string> TryCatch(ReturningStringFunction returningStringFunction)
+    private async ValueTask<string> TryCatch(ReturningStringFunction returningStringFunction)
     {
         try
         {

@@ -12,13 +12,13 @@ namespace Standard.Agents.Tests.Unit.Services.Foundations.Knowledges;
 
 public partial class KnowledgeServiceTests
 {
-        public static TheoryData<Exception> CriticalDependencyExceptions() =>
-        new()
-        {
+    public static TheoryData<Exception> CriticalDependencyExceptions() =>
+    new()
+    {
             new FileNotFoundException(),
             new DirectoryNotFoundException(),
             new UnauthorizedAccessException()
-        };
+    };
 
     [Theory]
     [MemberData(nameof(CriticalDependencyExceptions))]
@@ -159,4 +159,4 @@ public partial class KnowledgeServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-            }
+}

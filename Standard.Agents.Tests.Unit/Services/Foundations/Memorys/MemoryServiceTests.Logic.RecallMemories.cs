@@ -38,7 +38,7 @@ public partial class MemoryServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-            [Fact]
+    [Fact]
     public async Task ShouldRecallNoMemoriesOnRecallMemoriesIfStoreIsEmptyAsync()
     {
         // given

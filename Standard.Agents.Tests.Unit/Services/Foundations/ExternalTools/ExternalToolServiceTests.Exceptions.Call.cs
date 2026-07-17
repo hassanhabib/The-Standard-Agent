@@ -30,10 +30,10 @@ public partial class ExternalToolServiceTests
             new HttpResponseServiceUnavailableException()
         };
 
-                [Theory]
+    [Theory]
     [MemberData(nameof(CriticalDependencyExceptions))]
     public async Task ShouldThrowCriticalDependencyExceptionOnCallIfCriticalErrorOccursAndLogItAsync(
-        Exception criticalDependencyException)
+Exception criticalDependencyException)
     {
         // given
         string randomName = CreateRandomString();
