@@ -22,5 +22,10 @@ public partial class KnowledgeService : IKnowledgeService
     }
 
     public ValueTask<IReadOnlyList<string>> RetrieveKnowledgeAsync(string query) =>
-        throw new NotImplementedException();
+    TryCatch(async () =>
+    {
+        ValidateQuery(query);
+
+        return await this.knowledgeBroker.SelectKnowledgeAsync(query);
+    });
 }
