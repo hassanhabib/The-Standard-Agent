@@ -19,3 +19,10 @@ appsettings.*.local.json
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Agent runtime artifacts — a durable store and a turn trace are things the agent
+# WRITES, not things the repo carries. Committing memory.txt would ship one machine's
+# recollections to everyone who clones.
+memory.txt
+log.txt
+Knowledge/
