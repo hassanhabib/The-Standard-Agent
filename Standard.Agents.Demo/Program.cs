@@ -15,7 +15,8 @@ IConfiguration configuration = new ConfigurationBuilder()
 
 IConfigurationSection settings = configuration.GetSection("PeerLLMConfigurations");
 
-string apiKey = "9dS3/n8C58piIhaqemEnfhjlEZ5blXJQ+RxlMI+LRa0=";
+string apiKey =
+    Environment.GetEnvironmentVariable("STANDARD_AGENTS_APIKEY") ?? string.Empty;
 
 var agent = new StandardAgent()
     .Skills("Skills")
@@ -49,7 +50,7 @@ try
 }
 catch (Exception exception)
 {
-    Console.Error.WriteLine($"{exception.GetType().Name}: {exception.Message}");
+                    Console.Error.WriteLine($"{exception.GetType().Name}: {exception.Message}");
 
     if (exception.InnerException is not null)
     {
