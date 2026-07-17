@@ -1,0 +1,35 @@
+name: Standard.Agents Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Pulling Code
+      uses: actions/checkout@v4
+
+    - name: Installing .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Restoring Packages
+      run: dotnet restore
+
+    - name: Building Solution
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Running Tests
+      run: dotnet test --no-build --configuration Release --verbosity normal
+
+    # Spec certification, not just unit tests. The vectors are the contract SPEC.md
+    # defines; a green suite that no longer conforms is worth catching on the PR that
+    # breaks it rather than on the next release.
+    - name: Certifying Conformance
+      run: dotnet run --project Standard.Agents.Conformance --no-build --configuration Release
