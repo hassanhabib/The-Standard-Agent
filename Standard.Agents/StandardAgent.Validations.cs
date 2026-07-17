@@ -9,19 +9,41 @@ namespace Standard.Agents;
 
 public sealed partial class StandardAgent
 {
-    // An agent with no Brain is not an agent. Theory Ch.5: "An agent has one brain."
-    // Zero is not a valid count, and failing at composition says so at the moment the
-    // mistake was made rather than as a null-reference on the first prompt.
+    // Validates what each DEFAULT broker needs, not what the agent "should" have. A
+    // swapped-in broker needs no settings at all — that is the whole point of Use*,
+    // and it is how the conformance harness composes an agent with no endpoint.
     //
-    // A swapped-in generator counts — UseGenerator(broker) is a Brain.
+    // Each check names the missing piece, so a composition mistake reads as itself
+    // rather than as a null-reference from inside a broker constructor.
     private void ValidateComposition()
     {
+        // Theory Ch.5: "An agent has one brain." Zero is not a valid count.
         if (this.generatorBroker is null && this.brainSettings is null)
         {
             throw new InvalidAgentCompositionException(
                 message:
                     "Agent has no brain. Call Brain(apiUrl, apiKey, model) "
                         + "or UseGenerator(broker) before processing a prompt.");
+        }
+
+        // Gate and Judge fall back to the Brain's settings, so they are only
+        // unsatisfiable when the Brain was swapped in rather than configured.
+        if (this.classifierBroker is null && this.gateSettings is null && this.brainSettings is null)
+        {
+            throw new InvalidAgentCompositionException(
+                message:
+                    "Agent has no gate. Call Gate(apiUrl, apiKey, model) or "
+                        + "UseGate(broker) — a swapped-in brain leaves the gate "
+                        + "nothing to fall back to.");
+        }
+
+        if (this.verifierBroker is null && this.judgeSettings is null && this.brainSettings is null)
+        {
+            throw new InvalidAgentCompositionException(
+                message:
+                    "Agent has no judge. Call Judge(apiUrl, apiKey, model) or "
+                        + "UseJudge(broker) — a swapped-in brain leaves the judge "
+                        + "nothing to fall back to.");
         }
     }
 }

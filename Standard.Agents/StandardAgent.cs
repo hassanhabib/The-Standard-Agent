@@ -154,11 +154,15 @@ public sealed partial class StandardAgent : IAgent
     public StandardAgent UseLogging(ILoggingBroker broker) =>
         Set(() => this.loggingBroker = broker);
 
-    public ValueTask<string> ProcessPromptAsync(string prompt)
+    // async, so a composition failure surfaces on await rather than being thrown
+    // synchronously out of a method whose signature promises a ValueTask. A caller
+    // doing `var task = agent.ProcessPromptAsync(p); ... await task;` would otherwise
+    // be hit at the assignment, nowhere near the await they were guarding.
+    public async ValueTask<string> ProcessPromptAsync(string prompt)
     {
         this.agent ??= Compose();
 
-        return this.agent.ProcessPromptAsync(prompt);
+        return await this.agent.ProcessPromptAsync(prompt);
     }
 
     // Every builder method drops the cached composition, so configuration set after a
@@ -177,16 +181,18 @@ public sealed partial class StandardAgent : IAgent
         ValidateComposition();
 
         // Gate and Judge fall back to the Brain's endpoint — collapsible substrate.
-        InferenceSettings brain = this.brainSettings!;
-        InferenceSettings gate = this.gateSettings ?? brain;
-        InferenceSettings judge = this.judgeSettings ?? brain;
+        // These stay nullable: ValidateComposition has already proved that any of the
+        // three that is still null has a swapped-in broker and will never be read.
+        InferenceSettings? brain = this.brainSettings;
+        InferenceSettings? gate = this.gateSettings ?? brain;
+        InferenceSettings? judge = this.judgeSettings ?? brain;
 
         ISkillBroker skill =
             this.skillBroker ?? new SkillBroker(this.skillsPath);
 
         IGeneratorBroker generator =
             this.generatorBroker ?? new GeneratorBroker(
-                brain.ApiUrl, brain.ApiKey, brain.Model,
+                brain!.ApiUrl, brain.ApiKey, brain.Model,
                 brain.Temperature, brain.MaxTokens, brain.TimeoutSeconds);
 
         IMemoryBroker memory =
@@ -198,12 +204,12 @@ public sealed partial class StandardAgent : IAgent
 
         IClassifierBroker classifier =
             this.classifierBroker ?? new ClassifierBroker(
-                gate.ApiUrl, gate.ApiKey, gate.Model,
+                gate!.ApiUrl, gate.ApiKey, gate.Model,
                 gate.Temperature, gate.MaxTokens, gate.TimeoutSeconds);
 
         IVerifierBroker verifier =
             this.verifierBroker ?? new VerifierBroker(
-                judge.ApiUrl, judge.ApiKey, judge.Model,
+                judge!.ApiUrl, judge.ApiKey, judge.Model,
                 judge.Temperature, judge.MaxTokens, judge.TimeoutSeconds);
 
         IToolBroker toolBroker = new ToolBroker(this.tools);
