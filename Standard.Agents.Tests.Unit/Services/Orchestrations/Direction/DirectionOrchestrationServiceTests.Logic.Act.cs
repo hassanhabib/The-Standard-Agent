@@ -196,6 +196,37 @@ public partial class DirectionOrchestrationServiceTests
             .ContainSingle(o => o.Contains("could not parse expression"));
     }
 
+    // ⚠️ Result is written on EVERY turn, not only terminal ones. SPEC.md 3 says
+    // "result: written by Act" with no terminal-only qualifier.
+    //
+    // Vector 06 is what needs this: a Brain that never terminates is capped by the
+    // loop, and SPEC.md 5 then returns context.result. If Act only wrote Result on a
+    // terminal turn, a capped loop would return "" — the vector expects the last
+    // tool output. Result always holds the most recent thing Direction produced.
+    [Fact]
+    public async Task ShouldSetResultToToolOutputOnActEvenIfNonTerminalAsync()
+    {
+        // given
+        AgentContext inputContext =
+            CreateContextWithDirection("loop", "x");
+
+        this.internalToolServiceMock.Setup(service =>
+            service.HandlesAsync("loop"))
+                .ReturnsAsync(true);
+
+        this.internalToolServiceMock.Setup(service =>
+            service.RunAsync("loop", "x"))
+                .ReturnsAsync("again");
+
+        // when
+        AgentContext actualContext =
+            await this.directionOrchestrationService.ActAsync(inputContext);
+
+        // then
+        actualContext.Result.Should().Be("again");
+        actualContext.Status.Should().Be(AgentStatus.Working);
+    }
+
     // The observation names the tool, not just its output. With several tools in
     // flight, a bare "2" tells the Brain nothing about which question it answers.
     [Fact]
