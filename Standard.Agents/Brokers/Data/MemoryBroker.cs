@@ -31,6 +31,12 @@ public sealed class MemoryBroker : IMemoryBroker
     public async ValueTask<IReadOnlyList<string>> SelectMemoriesAsync() =>
         await File.ReadAllLinesAsync(this.memoryPath);
 
+    // Append, never rewrite — the store only grows. Forgetting is a business
+    // decision and would arrive as its own routine, not as a side effect of
+    // remembering.
+    public async ValueTask InsertMemoryAsync(string memory) =>
+        await File.AppendAllLinesAsync(this.memoryPath, [memory]);
+
     private static void EnsureStoreExists(string memoryPath)
     {
         string directoryPath = Path.GetDirectoryName(memoryPath)!;
