@@ -11,8 +11,7 @@ public sealed class ToolBroker : IToolBroker
 {
     private readonly IReadOnlyDictionary<string, ITool> tools;
 
-    // Tool names come from a model's text output, so matching is case-insensitive.
-    public ToolBroker(IEnumerable<ITool> tools) =>
+        public ToolBroker(IEnumerable<ITool> tools) =>
         this.tools = tools.ToDictionary(
             tool => tool.Name,
             StringComparer.OrdinalIgnoreCase);

@@ -41,10 +41,7 @@ public partial class GateServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-    // The verdict is returned verbatim, including a refusal. The Gate reports what
-    // the guardian said; acting on it is ThinkAsync's job (#33). A foundation that
-    // swallowed "refuse" into a bool would throw away the reason.
-    [Theory]
+                [Theory]
     [InlineData("allow")]
     [InlineData("refuse")]
     [InlineData("refuse: asks for credentials")]
@@ -74,10 +71,7 @@ public partial class GateServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-    // Invariant 7.2 — the gate prompt is Data, passed through untouched. If this
-    // service ever authored or amended the screening rules, the rules would live in
-    // Decision instead of Data and could not be audited or changed without a deploy.
-    [Fact]
+                [Fact]
     public async Task ShouldPassGatePromptThroughUnalteredOnScreenAsync()
     {
         // given

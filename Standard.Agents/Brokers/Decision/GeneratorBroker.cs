@@ -13,8 +13,7 @@ public sealed class GeneratorBroker : IGeneratorBroker
 {
     private const string ChatCompletionsRelativeUrl = "chat/completions";
 
-    // RESTFulSense defaults mediaType to "text/json"; OpenAI-compatible endpoints reject it.
-    private const string JsonMediaType = "application/json";
+        private const string JsonMediaType = "application/json";
 
     private static readonly JsonSerializerOptions jsonOptions = new()
     {
@@ -83,8 +82,7 @@ public sealed class GeneratorBroker : IGeneratorBroker
             deserializationFunction: json =>
                 ValueTask.FromResult(JsonSerializer.Deserialize<TResult>(json, jsonOptions)!));
 
-    // The wire protocol stays private so it cannot leak into the layers above.
-    private sealed record ChatCompletionRequest(
+        private sealed record ChatCompletionRequest(
         string Model,
         IReadOnlyList<ChatMessage> Messages,
         bool Stream,

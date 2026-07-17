@@ -13,9 +13,7 @@ public partial class InternalToolService
     private delegate ValueTask<bool> ReturningBooleanFunction();
     private delegate ValueTask<string> ReturningStringFunction();
 
-    // HandlesAsync only reads the registry, so it has no dependency category —
-    // a lookup either answers or the service itself is broken.
-    private async ValueTask<bool> TryCatch(ReturningBooleanFunction returningBooleanFunction)
+            private async ValueTask<bool> TryCatch(ReturningBooleanFunction returningBooleanFunction)
     {
         try
         {
@@ -36,8 +34,7 @@ public partial class InternalToolService
         }
     }
 
-    // RunAsync executes someone else's code, so it does have a dependency category.
-    private async ValueTask<string> TryCatch(ReturningStringFunction returningStringFunction)
+        private async ValueTask<string> TryCatch(ReturningStringFunction returningStringFunction)
     {
         try
         {

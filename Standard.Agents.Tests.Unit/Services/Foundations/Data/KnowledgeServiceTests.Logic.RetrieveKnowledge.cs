@@ -40,10 +40,7 @@ public partial class KnowledgeServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-    // Finding nothing is an answer, not a failure. A query with no hits means the
-    // agent looked and there was nothing there — which is exactly what Recall should
-    // report, rather than throwing and killing a turn that could proceed without it.
-    [Fact]
+                [Fact]
     public async Task ShouldRetrieveNoKnowledgeOnRetrieveKnowledgeIfNothingMatchesAsync()
     {
         // given

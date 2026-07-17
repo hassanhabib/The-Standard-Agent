@@ -9,8 +9,6 @@ using Standard.Agents.Services.Foundations.Data;
 
 namespace Standard.Agents.Services.Orchestrations.Data;
 
-// The Data nature — refresh what the agent HAS. Three foundations, which satisfies
-// the Two-Three rule exactly.
 public partial class DataOrchestrationService : IDataOrchestrationService
 {
     private readonly ISkillService skillService;
@@ -38,10 +36,7 @@ public partial class DataOrchestrationService : IDataOrchestrationService
         string systemPrompt = await this.skillService.RetrieveSkillsAsync();
         IReadOnlyList<string> memories = await this.memoryService.RecallMemoriesAsync();
 
-        // Appended, never replaced. Recall runs every turn (SPEC.md 5), so replacing
-        // observations would wipe the tool results Direction fed back before the
-        // Brain ever read them — and vector 02 could not pass.
-        return context with
+                                return context with
         {
             SystemPrompt = systemPrompt,
             Observations = [.. context.Observations, .. memories]

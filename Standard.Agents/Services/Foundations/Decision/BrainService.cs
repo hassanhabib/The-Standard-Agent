@@ -8,8 +8,6 @@ using Standard.Agents.Brokers.Loggings;
 
 namespace Standard.Agents.Services.Foundations.Decision;
 
-// The one reasoning engine — the singular waist of the hourglass. An agent has one
-// brain; multiplicity of brains is the fractal, not an intra-agent feature.
 public partial class BrainService : IBrainService
 {
     private readonly IGeneratorBroker generatorBroker;

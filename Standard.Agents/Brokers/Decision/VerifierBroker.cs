@@ -10,8 +10,6 @@ using RESTFulSense.Clients;
 
 namespace Standard.Agents.Brokers.Decision;
 
-// The Judge's substrate. Separately configured from the Brain so a deployment can
-// honour invariant 7.6 — no self-certification — without touching the library.
 public sealed class VerifierBroker : IVerifierBroker
 {
     private const string ChatCompletionsRelativeUrl = "chat/completions";
@@ -72,12 +70,7 @@ public sealed class VerifierBroker : IVerifierBroker
         return ToScore(chatCompletionResponse.Choices[0].Message.Content);
     }
 
-    // Constructing the declared native from the wire's primitive — a broker's job.
-    // Unparseable text throws FormatException; JudgeService localizes it. Coercing a
-    // bad score to 0.0 or 1.0 here would be the broker inventing a verdict, and a
-    // fabricated 1.0 would silently approve output no judge ever passed.
-    // Range is NOT enforced here: that is a rule, and rules live in JudgeService.
-    private static double ToScore(string content) =>
+                        private static double ToScore(string content) =>
         double.Parse(
             content.Trim(),
             NumberStyles.Float,

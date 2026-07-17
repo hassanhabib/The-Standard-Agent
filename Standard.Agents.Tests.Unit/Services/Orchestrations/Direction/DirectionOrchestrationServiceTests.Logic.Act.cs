@@ -12,8 +12,7 @@ namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Direction;
 
 public partial class DirectionOrchestrationServiceTests
 {
-    // ReturnResponse is terminal -> Responded. SPEC.md 6.
-    [Fact]
+        [Fact]
     public async Task ShouldReturnAndTerminateOnActIfDirectionTypeIsReturnResponseAsync()
     {
         // given
@@ -42,9 +41,7 @@ public partial class DirectionOrchestrationServiceTests
         this.externalToolServiceMock.VerifyNoOtherCalls();
     }
 
-    // Refuse is terminal -> Refused. SPEC.md 6. It still goes through ReturnService,
-    // because a refusal IS the agent's answer — the caller gets told, not stonewalled.
-    [Fact]
+            [Fact]
     public async Task ShouldRefuseAndTerminateOnActIfDirectionTypeIsRefuseAsync()
     {
         // given
@@ -69,9 +66,7 @@ public partial class DirectionOrchestrationServiceTests
         this.externalToolServiceMock.VerifyNoOtherCalls();
     }
 
-    // Vector 02. A known tool runs Internal, and its result MUST become an
-    // observation with status Working — that feed-back is how the next Think sees it.
-    [Fact]
+            [Fact]
     public async Task ShouldRunInternalToolAndAppendObservationOnActAsync()
     {
         // given
@@ -99,11 +94,7 @@ public partial class DirectionOrchestrationServiceTests
                 Times.Never);
     }
 
-    // Vector 05. An unknown tool routes to EXTERNAL and the agent recovers — it does
-    // not throw and does not terminate. Anything the agent cannot do locally might
-    // still be doable across the boundary, so a miss is a routing decision, not a
-    // failure.
-    [Fact]
+                    [Fact]
     public async Task ShouldRouteToExternalAndRecoverOnActIfToolIsUnknownAsync()
     {
         // given
@@ -135,9 +126,7 @@ public partial class DirectionOrchestrationServiceTests
                 Times.Never);
     }
 
-    // Observations accumulate. Direction appends its result to what is already there
-    // rather than replacing it — the turn history is the Brain's working memory.
-    [Fact]
+            [Fact]
     public async Task ShouldPreserveExistingObservationsOnActAsync()
     {
         // given
@@ -168,10 +157,7 @@ public partial class DirectionOrchestrationServiceTests
         actualContext.Observations.Should().Contain(priorObservation);
     }
 
-    // A tool that RETURNS an error string is a result, not a failure. It becomes an
-    // observation and the loop keeps going — the Brain gets to read the error and
-    // try something else. Only a THROWING tool is a dependency failure.
-    [Fact]
+                [Fact]
     public async Task ShouldKeepWorkingOnActIfToolReportsAnErrorAsync()
     {
         // given
@@ -196,14 +182,7 @@ public partial class DirectionOrchestrationServiceTests
             .ContainSingle(o => o.Contains("could not parse expression"));
     }
 
-    // ⚠️ Result is written on EVERY turn, not only terminal ones. SPEC.md 3 says
-    // "result: written by Act" with no terminal-only qualifier.
-    //
-    // Vector 06 is what needs this: a Brain that never terminates is capped by the
-    // loop, and SPEC.md 5 then returns context.result. If Act only wrote Result on a
-    // terminal turn, a capped loop would return "" — the vector expects the last
-    // tool output. Result always holds the most recent thing Direction produced.
-    [Fact]
+                                [Fact]
     public async Task ShouldSetResultToToolOutputOnActEvenIfNonTerminalAsync()
     {
         // given
@@ -227,9 +206,7 @@ public partial class DirectionOrchestrationServiceTests
         actualContext.Status.Should().Be(AgentStatus.Working);
     }
 
-    // The observation names the tool, not just its output. With several tools in
-    // flight, a bare "2" tells the Brain nothing about which question it answers.
-    [Fact]
+            [Fact]
     public async Task ShouldNameToolInObservationOnActAsync()
     {
         // given

@@ -45,8 +45,7 @@ public partial class AgentCoordinationServiceTests
     private static string CreateRandomString() =>
         new MnemonicString().GetValue();
 
-    // Pass-through Recall and Think; Direction decides how the turn ends.
-    private void SetupOrchestrationsPassThrough()
+        private void SetupOrchestrationsPassThrough()
     {
         this.dataOrchestrationServiceMock.Setup(service =>
             service.RecallAsync(It.IsAny<AgentContext>()))
@@ -63,8 +62,7 @@ public partial class AgentCoordinationServiceTests
                 .ReturnsAsync((AgentContext context) =>
                     context with { Result = result, Status = AgentStatus.Responded });
 
-    // Never terminates — every turn stays Working, as vector 06's scripted Brain does.
-    private void SetupDirectionNeverTerminates(string result) =>
+        private void SetupDirectionNeverTerminates(string result) =>
         this.directionOrchestrationServiceMock.Setup(service =>
             service.ActAsync(It.IsAny<AgentContext>()))
                 .ReturnsAsync((AgentContext context) =>

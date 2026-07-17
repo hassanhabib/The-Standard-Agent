@@ -9,10 +9,7 @@ namespace Standard.Agents.Services.Foundations.Direction;
 
 public partial class ExternalToolService
 {
-    // Only the name. An external tool may legitimately take no arguments, so
-    // validating the input would reject valid work — same reasoning as
-    // InternalToolService.
-    private static void ValidateName(string name)
+                private static void ValidateName(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
         {

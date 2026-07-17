@@ -36,9 +36,7 @@ public partial class MemoryService
         {
             throw await CreateAndLogCriticalDependencyExceptionAsync(unauthorizedAccessException);
         }
-        // Below the three above — they all derive from IOException and would be
-        // swallowed here, downgrading a deployment fault to a transient error.
-        catch (IOException ioException)
+                        catch (IOException ioException)
         {
             throw await CreateAndLogDependencyExceptionAsync(ioException);
         }
@@ -53,10 +51,7 @@ public partial class MemoryService
         }
     }
 
-    // RememberAsync returns nothing, so it needs its own overload. The catch list is
-    // identical by necessity, not by copy-paste: a shared generic TryCatch cannot
-    // span ValueTask and ValueTask<T>.
-    private async ValueTask TryCatch(ReturningNothingFunction returningNothingFunction)
+                private async ValueTask TryCatch(ReturningNothingFunction returningNothingFunction)
     {
         try
         {

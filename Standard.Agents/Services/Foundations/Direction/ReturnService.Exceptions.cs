@@ -12,9 +12,7 @@ public partial class ReturnService
 {
     private delegate ValueTask<string> ReturningStringFunction();
 
-    // No dependency catches: Return has no broker, so there is no external
-    // resource that can fail. Validation and the catch-all is the whole surface.
-    private async ValueTask<string> TryCatch(ReturningStringFunction returningStringFunction)
+            private async ValueTask<string> TryCatch(ReturningStringFunction returningStringFunction)
     {
         try
         {

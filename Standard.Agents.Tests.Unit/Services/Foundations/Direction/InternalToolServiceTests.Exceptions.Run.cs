@@ -12,10 +12,7 @@ namespace Standard.Agents.Tests.Unit.Services.Foundations.Direction;
 
 public partial class InternalToolServiceTests
 {
-    // A THROWING tool is a dependency failure — distinct from a tool that returns
-    // an error string, which ShouldReturnToolOutputOnRunEvenIfToolReportsAnError
-    // pins as a normal result.
-    [Fact]
+                [Fact]
     public async Task ShouldThrowDependencyExceptionOnRunIfToolErrorOccursAndLogItAsync()
     {
         // given
@@ -64,11 +61,7 @@ public partial class InternalToolServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-    // A tool asked for by a name the registry does not hold. The broker indexes
-    // directly (#17), so this surfaces as KeyNotFoundException. Direction is
-    // expected to ask HandlesAsync first, but the foundation must still categorise
-    // it rather than let a raw native escape.
-    [Fact]
+                    [Fact]
     public async Task ShouldThrowDependencyExceptionOnRunIfToolIsNotFoundAndLogItAsync()
     {
         // given

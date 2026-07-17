@@ -8,9 +8,6 @@ using Standard.Agents.Brokers.Loggings;
 
 namespace Standard.Agents.Services.Foundations.Decision;
 
-// The Gate screens the INPUT — accept, refuse, or route in. Invariant 7.6: a
-// guardian must not be the Brain. That is enforced by composition (this takes the
-// classifier, never the generator), not by a runtime check.
 public partial class GateService : IGateService
 {
     private readonly IClassifierBroker classifierBroker;

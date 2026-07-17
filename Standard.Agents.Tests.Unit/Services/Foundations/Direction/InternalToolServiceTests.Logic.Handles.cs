@@ -11,9 +11,7 @@ namespace Standard.Agents.Tests.Unit.Services.Foundations.Direction;
 
 public partial class InternalToolServiceTests
 {
-    // An unknown tool is a legitimate false, never an exception — conformance vector
-    // 05-unknown-tool-recovers needs that false to route the call to External.
-    [Theory]
+            [Theory]
     [InlineData(true)]
     [InlineData(false)]
     public async Task ShouldHandlesAsync(bool brokerHasTool)

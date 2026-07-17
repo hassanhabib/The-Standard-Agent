@@ -12,10 +12,7 @@ namespace Standard.Agents.Tests.Unit.Services.Foundations.Data;
 
 public partial class KnowledgeServiceTests
 {
-    // An empty query is not a search. The default broker matches by substring, and
-    // every document contains the empty string — so an unvalidated empty query would
-    // return the entire corpus and quietly flood the context window.
-    [Theory]
+                [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData(" ")]

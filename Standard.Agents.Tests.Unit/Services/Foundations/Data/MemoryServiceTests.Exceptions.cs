@@ -12,8 +12,7 @@ namespace Standard.Agents.Tests.Unit.Services.Foundations.Data;
 
 public partial class MemoryServiceTests
 {
-    // The store is unreachable or unwritable — deployment or permissions, not a blip.
-    public static TheoryData<Exception> CriticalDependencyExceptions() =>
+        public static TheoryData<Exception> CriticalDependencyExceptions() =>
         new()
         {
             new FileNotFoundException(),
@@ -156,10 +155,7 @@ public partial class MemoryServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-    // A failed write must throw, never be swallowed. Invariant 7.4 puts memory
-    // outside the agent — if a write is lost silently, the agent believes it
-    // remembered something it did not, and only discovers otherwise next session.
-    [Fact]
+                [Fact]
     public async Task ShouldThrowDependencyExceptionOnRememberIfDependencyErrorOccursAndLogItAsync()
     {
         // given

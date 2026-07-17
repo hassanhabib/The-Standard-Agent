@@ -41,10 +41,7 @@ public partial class InternalToolServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-    // A tool that RETURNS an error string is a normal result, not a failure. It
-    // becomes an observation and the loop carries on — vector 05 depends on this.
-    // Only a tool that THROWS is a dependency failure.
-    [Fact]
+                [Fact]
     public async Task ShouldReturnToolOutputOnRunEvenIfToolReportsAnErrorAsync()
     {
         // given

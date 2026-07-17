@@ -25,8 +25,7 @@ public partial class BrainService
         }
         catch (HttpResponseBadRequestException httpResponseBadRequestException)
         {
-            // A 400 means we sent something wrong — our fault, not the endpoint's.
-            var invalidBrainException =
+                        var invalidBrainException =
                 new InvalidBrainException(
                     message: "Invalid brain request. Please correct the error and try again.");
 

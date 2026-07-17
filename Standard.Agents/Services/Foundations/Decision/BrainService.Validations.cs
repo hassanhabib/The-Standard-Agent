@@ -9,9 +9,7 @@ namespace Standard.Agents.Services.Foundations.Decision;
 
 public partial class BrainService
 {
-    // Only the user prompt. An agent with no skills configured has an empty system
-    // prompt and is still a legal agent, so validating that would reject valid work.
-    private static void ValidateUserPrompt(string userPrompt)
+            private static void ValidateUserPrompt(string userPrompt)
     {
         if (string.IsNullOrWhiteSpace(userPrompt))
         {

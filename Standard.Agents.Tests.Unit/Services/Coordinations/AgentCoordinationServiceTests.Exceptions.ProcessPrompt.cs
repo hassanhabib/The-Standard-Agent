@@ -46,16 +46,11 @@ public partial class AgentCoordinationServiceTests
             broker.LogErrorAsync(It.Is(SameExceptionAs(expectedException))),
                 Times.Once);
 
-        // Nothing ran — not even the log reset. An empty prompt is rejected before
-        // the loop touches anything.
-        this.logBrokerMock.VerifyNoOtherCalls();
+                        this.logBrokerMock.VerifyNoOtherCalls();
         this.dataOrchestrationServiceMock.VerifyNoOtherCalls();
     }
 
-    // An unrecoverable failure reaches the caller as one typed exception. This is the
-    // other half of the #34 decision: nothing sets AgentStatus.Failed, so THIS is
-    // where a failed turn surfaces.
-    [Theory]
+                [Theory]
     [MemberData(nameof(DependencyExceptions))]
     public async Task ShouldThrowDependencyExceptionOnProcessPromptIfDependencyErrorOccursAndLogItAsync(
         Xeption orchestrationException)

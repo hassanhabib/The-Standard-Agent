@@ -19,16 +19,6 @@ using Standard.Agents.Tools;
 
 namespace Standard.Agents;
 
-// The composition root. SPEC.md 9: "DI is OPTIONAL. A hand-wired composition root is
-// fully conformant." Compose() IS that root — the whole 1-3-9 graph in one readable
-// method, no container, nothing to chase. That is No Magic taken literally.
-//
-// Two ways to configure each nature:
-//   Brain/Gate/Judge/Memory/... — build the default broker from primitives
-//   Use*(broker)                — swap the broker entirely
-//
-// The second is what makes invariant 7.6 reachable: point Gate and Judge at a
-// different model, or a deterministic rule, without touching the library.
 public sealed partial class StandardAgent : IAgent
 {
     private readonly List<ITool> tools = [];
@@ -180,9 +170,6 @@ public sealed partial class StandardAgent : IAgent
     {
         ValidateComposition();
 
-        // Gate and Judge fall back to the Brain's endpoint — collapsible substrate.
-        // These stay nullable: ValidateComposition has already proved that any of the
-        // three that is still null has a swapped-in broker and will never be read.
         InferenceSettings? brain = this.brainSettings;
         InferenceSettings? gate = this.gateSettings ?? brain;
         InferenceSettings? judge = this.judgeSettings ?? brain;
@@ -214,9 +201,6 @@ public sealed partial class StandardAgent : IAgent
 
         IToolBroker toolBroker = new ToolBroker(this.tools);
 
-        // No endpoint configured means a Core-profile agent, which SPEC.md 8.1 says
-        // has no External. It still needs something on the far side of Act's unknown-
-        // tool route, so it gets a broker that says so honestly (#81).
         IMcpBroker mcp =
             this.mcpBroker ?? (string.IsNullOrWhiteSpace(this.mcpEndpointUrl)
                 ? new NotConfiguredMcpBroker()
@@ -225,8 +209,6 @@ public sealed partial class StandardAgent : IAgent
 
         ILogBroker log = this.logBroker ?? new LogBroker(this.logPath);
 
-        // Null by default: diagnostics are the host's to wire, and the exception
-        // ladder still throws whether or not anyone is listening.
         ILoggingBroker logging =
             this.loggingBroker ?? new LoggingBroker(new NullLogger<LoggingBroker>());
 

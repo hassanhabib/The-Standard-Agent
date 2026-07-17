@@ -7,8 +7,6 @@ using Standard.Agents.Brokers.Loggings;
 
 namespace Standard.Agents.Services.Foundations.Direction;
 
-// The one foundation with no broker — the dead end. Return hands the result back
-// and touches no external resource, so it has no dependency exceptions to map.
 public partial class ReturnService : IReturnService
 {
     private readonly ILoggingBroker loggingBroker;

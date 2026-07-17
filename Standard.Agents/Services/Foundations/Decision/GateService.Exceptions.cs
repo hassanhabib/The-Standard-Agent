@@ -13,10 +13,6 @@ public partial class GateService
 {
     private delegate ValueTask<string> ReturningStringFunction();
 
-    // Every path here throws. None returns a verdict. A guardian that cannot reach
-    // its classifier must fail loudly — falling back to "allow" would let an
-    // unreachable endpoint silently disable screening, and the agent would look
-    // healthy while running unguarded.
     private async ValueTask<string> TryCatch(ReturningStringFunction returningStringFunction)
     {
         try

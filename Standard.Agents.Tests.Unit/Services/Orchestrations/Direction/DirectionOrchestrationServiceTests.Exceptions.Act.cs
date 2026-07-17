@@ -56,10 +56,7 @@ public partial class DirectionOrchestrationServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-    // Unwrap the foundation's categorical exception, preserve its LOCAL exception as
-    // the inner, rewrap in this layer's category. The local exception must survive so
-    // detail is not lost climbing the tiers.
-    [Theory]
+                [Theory]
     [MemberData(nameof(DependencyValidationExceptions))]
     public async Task ShouldThrowDependencyValidationExceptionOnActIfDependencyValidationErrorOccursAndLogItAsync(
         Xeption foundationException)

@@ -47,9 +47,7 @@ public partial class DecisionOrchestrationServiceTests
             SystemPrompt = CreateRandomString()
         };
 
-    // Gate allows, so the Brain is reached. Used by every test that is not about
-    // the Gate itself.
-    private void SetupGateAllows() =>
+            private void SetupGateAllows() =>
         this.gateServiceMock.Setup(service =>
             service.ScreenAsync(It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync("allow");
@@ -62,9 +60,7 @@ public partial class DecisionOrchestrationServiceTests
     private static Expression<Func<Xeption, bool>> SameExceptionAs(Xeption expectedException) =>
         actualException => actualException.SameExceptionAs(expectedException);
 
-    // Exceptions from any of Decision's three foundations, unified into one
-    // orchestration category.
-    public static TheoryData<Xeption> DependencyValidationExceptions() =>
+            public static TheoryData<Xeption> DependencyValidationExceptions() =>
         new()
         {
             new Models.Foundations.Gates.Exceptions.GateValidationException(

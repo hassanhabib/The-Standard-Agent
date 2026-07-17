@@ -30,10 +30,7 @@ public partial class ExternalToolServiceTests
             new HttpResponseServiceUnavailableException()
         };
 
-    // A THROWING external tool is a dependency failure — distinct from one that
-    // returns an error string, which ShouldReturnToolOutputOnCallEvenIfToolReports-
-    // AnError pins as a normal result.
-    [Theory]
+                [Theory]
     [MemberData(nameof(CriticalDependencyExceptions))]
     public async Task ShouldThrowCriticalDependencyExceptionOnCallIfCriticalErrorOccursAndLogItAsync(
         Exception criticalDependencyException)

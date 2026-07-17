@@ -13,10 +13,7 @@ public partial class JudgeService
 {
     private delegate ValueTask<double> ReturningScoreFunction();
 
-    // Every path throws; none returns a score. A Judge that fell back to 1.0 when its
-    // verifier was unreachable would approve every draft — invariant 7.5 says output
-    // must not cross a boundary un-vetted, and a fabricated pass is not vetting.
-    private async ValueTask<double> TryCatch(ReturningScoreFunction returningScoreFunction)
+                private async ValueTask<double> TryCatch(ReturningScoreFunction returningScoreFunction)
     {
         try
         {

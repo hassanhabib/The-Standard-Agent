@@ -12,8 +12,7 @@ namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Data;
 
 public partial class DataOrchestrationServiceTests
 {
-    // SPEC.md 4.3: recall MUST set systemPrompt from SkillService.
-    [Fact]
+        [Fact]
     public async Task ShouldSetSystemPromptFromSkillServiceOnRecallAsync()
     {
         // given
@@ -41,9 +40,7 @@ public partial class DataOrchestrationServiceTests
                 Times.Once);
     }
 
-    // Copy-on-write: SPEC.md 3 makes it a MUST. The input instance must come back
-    // untouched, and the returned one must be a different object.
-    [Fact]
+            [Fact]
     public async Task ShouldNotMutateInputContextOnRecallAsync()
     {
         // given
@@ -70,9 +67,7 @@ public partial class DataOrchestrationServiceTests
         actualContext.Prompt.Should().BeEquivalentTo(originalPrompt);
     }
 
-    // recall MAY seed observations from Memory. Memories arrive as observations the
-    // Brain can read on the next Think.
-    [Fact]
+            [Fact]
     public async Task ShouldSeedObservationsFromMemoriesOnRecallAsync()
     {
         // given
@@ -100,11 +95,7 @@ public partial class DataOrchestrationServiceTests
                 Times.Once);
     }
 
-    // Observations accumulate across turns. Recall runs EVERY turn (SPEC.md 5), so
-    // if it replaced observations instead of preserving them, every tool result
-    // Direction fed back would be wiped before the Brain ever saw it — and vector
-    // 02 (tool-then-final) could never pass.
-    [Fact]
+                    [Fact]
     public async Task ShouldPreserveExistingObservationsOnRecallAsync()
     {
         // given

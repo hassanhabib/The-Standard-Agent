@@ -12,10 +12,7 @@ namespace Standard.Agents.Tests.Unit.Services.Foundations.Decision;
 
 public partial class GateServiceTests
 {
-    // Both are validated, unlike Brain where the system prompt may be empty. A Gate
-    // with no gatePrompt has no rules to screen against, so it cannot screen — and a
-    // guardian that cannot screen must fail loudly rather than wave input through.
-    [Theory]
+                [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData(" ")]

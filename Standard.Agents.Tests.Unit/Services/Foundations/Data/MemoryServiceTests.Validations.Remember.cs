@@ -12,9 +12,7 @@ namespace Standard.Agents.Tests.Unit.Services.Foundations.Data;
 
 public partial class MemoryServiceTests
 {
-    // An empty memory is not a memory. Writing one would append a blank line the
-    // store would read back forever as a memory that says nothing.
-    [Theory]
+            [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData(" ")]

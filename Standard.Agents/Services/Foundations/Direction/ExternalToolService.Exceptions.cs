@@ -13,10 +13,7 @@ public partial class ExternalToolService
 {
     private delegate ValueTask<string> ReturningStringFunction();
 
-    // A throwing tool is a dependency failure. A tool that RETURNS an error string
-    // never reaches here — that is a result, and it becomes an observation so the
-    // loop can recover (vector 05).
-    private async ValueTask<string> TryCatch(ReturningStringFunction returningStringFunction)
+                private async ValueTask<string> TryCatch(ReturningStringFunction returningStringFunction)
     {
         try
         {

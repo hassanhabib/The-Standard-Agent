@@ -101,8 +101,7 @@ public partial class SkillServiceTests
             broker.SelectSkillsAsync(),
                 Times.Once);
 
-        // Error, not Critical — a transient IO failure may well succeed on retry.
-        this.loggingBrokerMock.Verify(broker =>
+                this.loggingBrokerMock.Verify(broker =>
             broker.LogErrorAsync(It.Is(SameExceptionAs(
                 expectedSkillDependencyException))),
                     Times.Once);
