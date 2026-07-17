@@ -23,6 +23,11 @@ public partial class BrainService : IBrainService
         this.loggingBroker = loggingBroker;
     }
 
-    public async ValueTask<string> GenerateAsync(string systemPrompt, string userPrompt) =>
-        await this.generatorBroker.GenerateAsync(systemPrompt, userPrompt);
+    public ValueTask<string> GenerateAsync(string systemPrompt, string userPrompt) =>
+    TryCatch(async () =>
+    {
+        ValidateUserPrompt(userPrompt);
+
+        return await this.generatorBroker.GenerateAsync(systemPrompt, userPrompt);
+    });
 }
