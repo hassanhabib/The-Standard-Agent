@@ -17,7 +17,7 @@ public partial class InternalToolServiceTests
     [InlineData("")]
     [InlineData(" ")]
     public async Task ShouldThrowValidationExceptionOnRunIfNameIsInvalidAndLogItAsync(
-        string invalidName)
+        string? invalidName)
     {
         // given
         string randomInput = CreateRandomString();
@@ -33,7 +33,7 @@ public partial class InternalToolServiceTests
 
         // when
         ValueTask<string> runTask =
-            this.internalToolService.RunAsync(invalidName, randomInput);
+            this.internalToolService.RunAsync(invalidName!, randomInput);
 
         InternalToolValidationException actualInternalToolValidationException =
             await Assert.ThrowsAsync<InternalToolValidationException>(
@@ -62,7 +62,7 @@ public partial class InternalToolServiceTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData(" ")]
-    public async Task ShouldRunOnRunEvenIfInputIsEmptyAsync(string emptyInput)
+    public async Task ShouldRunOnRunEvenIfInputIsEmptyAsync(string? emptyInput)
     {
         // given
         string randomName = CreateRandomString();
@@ -71,18 +71,18 @@ public partial class InternalToolServiceTests
         string expectedOutput = randomOutput;
 
         this.toolBrokerMock.Setup(broker =>
-            broker.RunAsync(inputName, emptyInput))
+            broker.RunAsync(inputName, emptyInput!))
                 .ReturnsAsync(randomOutput);
 
         // when
         string actualOutput =
-            await this.internalToolService.RunAsync(inputName, emptyInput);
+            await this.internalToolService.RunAsync(inputName, emptyInput!);
 
         // then
         actualOutput.Should().BeEquivalentTo(expectedOutput);
 
         this.toolBrokerMock.Verify(broker =>
-            broker.RunAsync(inputName, emptyInput),
+            broker.RunAsync(inputName, emptyInput!),
                 Times.Once);
 
         this.toolBrokerMock.VerifyNoOtherCalls();

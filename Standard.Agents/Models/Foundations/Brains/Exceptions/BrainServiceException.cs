@@ -9,7 +9,7 @@ namespace Standard.Agents.Models.Foundations.Brains.Exceptions;
 
 public class BrainServiceException : Xeption
 {
-    public BrainServiceException(string message, Xeption innerException)
+    public BrainServiceException(string message, Xeption? innerException)
         : base(message, innerException)
     { }
 }

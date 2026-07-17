@@ -18,7 +18,7 @@ public partial class DataOrchestrationServiceTests
     public async Task ShouldThrowValidationExceptionOnRecallIfContextIsNullAndLogItAsync()
     {
         // given
-        AgentContext nullContext = null;
+        AgentContext? nullContext = null;
 
         var nullAgentContextException =
             new NullAgentContextException(
@@ -31,7 +31,7 @@ public partial class DataOrchestrationServiceTests
 
         // when
         ValueTask<AgentContext> recallTask =
-            this.dataOrchestrationService.RecallAsync(nullContext);
+            this.dataOrchestrationService.RecallAsync(nullContext!);
 
         AgentOrchestrationValidationException actualException =
             await Assert.ThrowsAsync<AgentOrchestrationValidationException>(

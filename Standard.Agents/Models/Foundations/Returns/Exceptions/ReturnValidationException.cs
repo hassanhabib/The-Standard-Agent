@@ -9,7 +9,7 @@ namespace Standard.Agents.Models.Foundations.Returns.Exceptions;
 
 public class ReturnValidationException : Xeption
 {
-    public ReturnValidationException(string message, Xeption innerException)
+    public ReturnValidationException(string message, Xeption? innerException)
         : base(message, innerException)
     { }
 }

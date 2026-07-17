@@ -86,7 +86,7 @@ public partial class JudgeService
     }
 
     private async ValueTask<JudgeValidationException> CreateAndLogValidationExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var gateValidationException =
             new JudgeValidationException(
@@ -99,7 +99,7 @@ public partial class JudgeService
     }
 
     private async ValueTask<JudgeDependencyValidationException> CreateAndLogDependencyValidationExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var gateDependencyValidationException =
             new JudgeDependencyValidationException(
@@ -148,7 +148,7 @@ public partial class JudgeService
     }
 
     private async ValueTask<JudgeServiceException> CreateAndLogServiceExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var gateServiceException =
             new JudgeServiceException(

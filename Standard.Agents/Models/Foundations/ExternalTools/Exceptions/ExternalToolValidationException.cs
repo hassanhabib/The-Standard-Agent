@@ -9,7 +9,7 @@ namespace Standard.Agents.Models.Foundations.ExternalTools.Exceptions;
 
 public class ExternalToolValidationException : Xeption
 {
-    public ExternalToolValidationException(string message, Xeption innerException)
+    public ExternalToolValidationException(string message, Xeption? innerException)
         : base(message, innerException)
     { }
 }

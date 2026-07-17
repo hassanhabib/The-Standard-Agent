@@ -17,7 +17,7 @@ public partial class ExternalToolServiceTests
     [InlineData("")]
     [InlineData(" ")]
     public async Task ShouldThrowValidationExceptionOnCallIfNameIsInvalidAndLogItAsync(
-        string invalidName)
+        string? invalidName)
     {
         // given
         string randomInput = CreateRandomString();
@@ -33,7 +33,7 @@ public partial class ExternalToolServiceTests
 
         // when
         ValueTask<string> callTask =
-            this.externalToolService.CallAsync(invalidName, randomInput);
+            this.externalToolService.CallAsync(invalidName!, randomInput);
 
         ExternalToolValidationException actualExternalToolValidationException =
             await Assert.ThrowsAsync<ExternalToolValidationException>(

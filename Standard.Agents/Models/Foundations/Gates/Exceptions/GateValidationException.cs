@@ -9,7 +9,7 @@ namespace Standard.Agents.Models.Foundations.Gates.Exceptions;
 
 public class GateValidationException : Xeption
 {
-    public GateValidationException(string message, Xeption innerException)
+    public GateValidationException(string message, Xeption? innerException)
         : base(message, innerException)
     { }
 }

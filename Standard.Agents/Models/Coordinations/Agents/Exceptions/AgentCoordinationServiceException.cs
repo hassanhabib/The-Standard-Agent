@@ -9,7 +9,7 @@ namespace Standard.Agents.Models.Coordinations.Agents.Exceptions;
 
 public class AgentCoordinationServiceException : Xeption
 {
-    public AgentCoordinationServiceException(string message, Xeption innerException)
+    public AgentCoordinationServiceException(string message, Xeption? innerException)
         : base(message, innerException)
     { }
 }

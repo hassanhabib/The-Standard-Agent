@@ -17,7 +17,7 @@ public partial class BrainServiceTests
     [InlineData("")]
     [InlineData(" ")]
     public async Task ShouldThrowValidationExceptionOnGenerateIfUserPromptIsInvalidAndLogItAsync(
-        string invalidUserPrompt)
+        string? invalidUserPrompt)
     {
         // given
         string randomSystemPrompt = CreateRandomString();
@@ -33,7 +33,7 @@ public partial class BrainServiceTests
 
         // when
         ValueTask<string> generateTask =
-            this.brainService.GenerateAsync(randomSystemPrompt, invalidUserPrompt);
+            this.brainService.GenerateAsync(randomSystemPrompt, invalidUserPrompt!);
 
         BrainValidationException actualBrainValidationException =
             await Assert.ThrowsAsync<BrainValidationException>(
@@ -65,7 +65,7 @@ public partial class BrainServiceTests
     [InlineData("")]
     [InlineData(" ")]
     public async Task ShouldGenerateOnGenerateEvenIfSystemPromptIsEmptyAsync(
-        string emptySystemPrompt)
+        string? emptySystemPrompt)
     {
         // given
         string randomUserPrompt = CreateRandomString();
@@ -73,18 +73,18 @@ public partial class BrainServiceTests
         string expectedReply = randomReply;
 
         this.generatorBrokerMock.Setup(broker =>
-            broker.GenerateAsync(emptySystemPrompt, randomUserPrompt))
+            broker.GenerateAsync(emptySystemPrompt!, randomUserPrompt))
                 .ReturnsAsync(randomReply);
 
         // when
         string actualReply =
-            await this.brainService.GenerateAsync(emptySystemPrompt, randomUserPrompt);
+            await this.brainService.GenerateAsync(emptySystemPrompt!, randomUserPrompt);
 
         // then
         actualReply.Should().BeEquivalentTo(expectedReply);
 
         this.generatorBrokerMock.Verify(broker =>
-            broker.GenerateAsync(emptySystemPrompt, randomUserPrompt),
+            broker.GenerateAsync(emptySystemPrompt!, randomUserPrompt),
                 Times.Once);
 
         this.generatorBrokerMock.VerifyNoOtherCalls();

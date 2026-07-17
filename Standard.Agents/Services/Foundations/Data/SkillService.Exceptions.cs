@@ -73,7 +73,7 @@ public partial class SkillService
     }
 
     private async ValueTask<SkillDependencyException> CreateAndLogCriticalDependencyExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var skillDependencyException =
             new SkillDependencyException(
@@ -86,7 +86,7 @@ public partial class SkillService
     }
 
     private async ValueTask<SkillDependencyException> CreateAndLogDependencyExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var skillDependencyException =
             new SkillDependencyException(
@@ -99,7 +99,7 @@ public partial class SkillService
     }
 
     private async ValueTask<SkillServiceException> CreateAndLogServiceExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var skillServiceException =
             new SkillServiceException(

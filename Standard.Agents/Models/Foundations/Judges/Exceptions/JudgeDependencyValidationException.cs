@@ -9,7 +9,7 @@ namespace Standard.Agents.Models.Foundations.Judges.Exceptions;
 
 public class JudgeDependencyValidationException : Xeption
 {
-    public JudgeDependencyValidationException(string message, Xeption innerException)
+    public JudgeDependencyValidationException(string message, Xeption? innerException)
         : base(message, innerException)
     { }
 }

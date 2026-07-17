@@ -53,7 +53,7 @@ public partial class KnowledgeService
     }
 
     private async ValueTask<KnowledgeValidationException> CreateAndLogValidationExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var knowledgeValidationException =
             new KnowledgeValidationException(
@@ -102,7 +102,7 @@ public partial class KnowledgeService
     }
 
     private async ValueTask<KnowledgeServiceException> CreateAndLogServiceExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var knowledgeServiceException =
             new KnowledgeServiceException(

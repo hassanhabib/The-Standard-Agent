@@ -9,7 +9,7 @@ namespace Standard.Agents.Models.Foundations.Memories.Exceptions;
 
 public class MemoryServiceException : Xeption
 {
-    public MemoryServiceException(string message, Xeption innerException)
+    public MemoryServiceException(string message, Xeption? innerException)
         : base(message, innerException)
     { }
 }

@@ -9,7 +9,7 @@ namespace Standard.Agents.Models.Foundations.Brains.Exceptions;
 
 public class BrainDependencyValidationException : Xeption
 {
-    public BrainDependencyValidationException(string message, Xeption innerException)
+    public BrainDependencyValidationException(string message, Xeption? innerException)
         : base(message, innerException)
     { }
 }

@@ -19,7 +19,7 @@ public partial class AgentCoordinationServiceTests
     [InlineData("")]
     [InlineData(" ")]
     public async Task ShouldThrowValidationExceptionOnProcessPromptIfPromptIsInvalidAndLogItAsync(
-        string invalidPrompt)
+        string? invalidPrompt)
     {
         // given
         var invalidAgentException =
@@ -33,7 +33,7 @@ public partial class AgentCoordinationServiceTests
 
         // when
         ValueTask<string> processTask =
-            this.agentCoordinationService.ProcessPromptAsync(invalidPrompt);
+            this.agentCoordinationService.ProcessPromptAsync(invalidPrompt!);
 
         AgentCoordinationValidationException actualException =
             await Assert.ThrowsAsync<AgentCoordinationValidationException>(

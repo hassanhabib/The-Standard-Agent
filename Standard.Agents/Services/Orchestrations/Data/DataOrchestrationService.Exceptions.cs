@@ -84,7 +84,7 @@ public partial class DataOrchestrationService
     }
 
     private async ValueTask<AgentOrchestrationValidationException> CreateAndLogValidationExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var agentOrchestrationValidationException =
             new AgentOrchestrationValidationException(
@@ -97,7 +97,7 @@ public partial class DataOrchestrationService
     }
 
     private async ValueTask<AgentOrchestrationDependencyValidationException> CreateAndLogDependencyValidationExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var agentOrchestrationDependencyValidationException =
             new AgentOrchestrationDependencyValidationException(
@@ -110,7 +110,7 @@ public partial class DataOrchestrationService
     }
 
     private async ValueTask<AgentOrchestrationDependencyException> CreateAndLogDependencyExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var agentOrchestrationDependencyException =
             new AgentOrchestrationDependencyException(
@@ -123,7 +123,7 @@ public partial class DataOrchestrationService
     }
 
     private async ValueTask<AgentOrchestrationServiceException> CreateAndLogServiceExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var agentOrchestrationServiceException =
             new AgentOrchestrationServiceException(
