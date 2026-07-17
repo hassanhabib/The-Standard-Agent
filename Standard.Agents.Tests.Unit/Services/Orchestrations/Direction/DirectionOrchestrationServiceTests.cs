@@ -59,25 +59,31 @@ public partial class DirectionOrchestrationServiceTests
         new()
         {
             new Models.Foundations.InternalTools.Exceptions.InternalToolValidationException(
-                "internal tool validation", new Xeption("inner")),
+                message: "internal tool validation",
+                innerException: new Xeption(message: "inner")),
 
             new Models.Foundations.ExternalTools.Exceptions.ExternalToolValidationException(
-                "external tool validation", new Xeption("inner"))
+                message: "external tool validation",
+                innerException: new Xeption(message: "inner"))
         };
 
     public static TheoryData<Xeption> DependencyExceptions() =>
         new()
         {
             new Models.Foundations.InternalTools.Exceptions.InternalToolDependencyException(
-                "internal tool dependency", new Xeption("inner")),
+                message: "internal tool dependency",
+                innerException: new Xeption(message: "inner")),
 
             new Models.Foundations.InternalTools.Exceptions.InternalToolServiceException(
-                "internal tool service", new Xeption("inner")),
+                message: "internal tool service",
+                innerException: new Xeption(message: "inner")),
 
             new Models.Foundations.ExternalTools.Exceptions.ExternalToolDependencyException(
-                "external tool dependency", new Xeption("inner")),
+                message: "external tool dependency",
+                innerException: new Xeption(message: "inner")),
 
             new Models.Foundations.Returns.Exceptions.ReturnServiceException(
-                "return service", new Xeption("inner"))
+                message: "return service",
+                innerException: new Xeption(message: "inner"))
         };
-}
+        }

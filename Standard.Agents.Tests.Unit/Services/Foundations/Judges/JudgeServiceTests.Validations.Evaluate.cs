@@ -149,4 +149,4 @@ double outOfRangeScore)
         this.verifierBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
-}
+    }

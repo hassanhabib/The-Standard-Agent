@@ -50,7 +50,7 @@ public partial class DecisionOrchestrationServiceTests
         };
 
     private void SetupGateAllows() =>
-this.gateServiceMock.Setup(service =>
+        this.gateServiceMock.Setup(service =>
     service.ScreenAsync(It.IsAny<string>(), It.IsAny<string>()))
         .ReturnsAsync("allow");
 
@@ -63,34 +63,42 @@ this.gateServiceMock.Setup(service =>
         actualException => actualException.SameExceptionAs(expectedException);
 
     public static TheoryData<Xeption> DependencyValidationExceptions() =>
-new()
-{
+        new()
+        {
             new Models.Foundations.Gates.Exceptions.GateValidationException(
-                "gate validation", new Xeption("inner")),
+                message: "gate validation",
+                innerException: new Xeption(message: "inner")),
 
             new Models.Foundations.Brains.Exceptions.BrainValidationException(
-                "brain validation", new Xeption("inner")),
+                message: "brain validation",
+                innerException: new Xeption(message: "inner")),
 
             new Models.Foundations.Judges.Exceptions.JudgeValidationException(
-                "judge validation", new Xeption("inner")),
+                message: "judge validation",
+                innerException: new Xeption(message: "inner")),
 
             new Models.Foundations.Brains.Exceptions.BrainDependencyValidationException(
-                "brain dependency validation", new Xeption("inner"))
-};
+                message: "brain dependency validation",
+                innerException: new Xeption(message: "inner"))
+        };
 
     public static TheoryData<Xeption> DependencyExceptions() =>
         new()
         {
             new Models.Foundations.Gates.Exceptions.GateDependencyException(
-                "gate dependency", new Xeption("inner")),
+                message: "gate dependency",
+                innerException: new Xeption(message: "inner")),
 
             new Models.Foundations.Gates.Exceptions.GateServiceException(
-                "gate service", new Xeption("inner")),
+                message: "gate service",
+                innerException: new Xeption(message: "inner")),
 
             new Models.Foundations.Brains.Exceptions.BrainDependencyException(
-                "brain dependency", new Xeption("inner")),
+                message: "brain dependency",
+                innerException: new Xeption(message: "inner")),
 
             new Models.Foundations.Judges.Exceptions.JudgeDependencyException(
-                "judge dependency", new Xeption("inner"))
+                message: "judge dependency",
+                innerException: new Xeption(message: "inner"))
         };
-}
+        }

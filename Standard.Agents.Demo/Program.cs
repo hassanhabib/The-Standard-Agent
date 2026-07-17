@@ -19,7 +19,7 @@ string apiKey =
     Environment.GetEnvironmentVariable("STANDARD_AGENTS_APIKEY") ?? string.Empty;
 
 var agent = new StandardAgent()
-    .Skills("Skills")
+    .Skills(path: "Skills")
     .Brain(
         apiUrl: settings.GetValue<string>("ApiUrl")!,
         apiKey: apiKey,
@@ -27,7 +27,7 @@ var agent = new StandardAgent()
         temperature: settings.GetValue<double>("Temperature"),
         maxTokens: settings.GetValue<int>("MaxTokens"))
     .Tool(new CalculatorTool())
-    .LogTo("log.txt");
+    .LogTo(path: "log.txt");
 
 string prompt = args.Length > 0
     ? string.Join(' ', args)
@@ -58,4 +58,4 @@ catch (Exception exception)
     }
 
     return 1;
-}
+    }

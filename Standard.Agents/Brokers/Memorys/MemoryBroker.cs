@@ -20,7 +20,7 @@ public sealed class MemoryBroker : IMemoryBroker
         await File.ReadAllLinesAsync(this.memoryPath);
 
     public async ValueTask InsertMemoryAsync(string memory) =>
-await File.AppendAllLinesAsync(this.memoryPath, [memory]);
+        await File.AppendAllLinesAsync(this.memoryPath, [memory]);
 
     private static void EnsureStoreExists(string memoryPath)
     {
@@ -30,4 +30,4 @@ await File.AppendAllLinesAsync(this.memoryPath, [memory]);
 
         File.AppendAllText(memoryPath, string.Empty);
     }
-}
+    }

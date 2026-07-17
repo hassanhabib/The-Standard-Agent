@@ -49,28 +49,34 @@ public partial class DataOrchestrationServiceTests
         actualException => actualException.SameExceptionAs(expectedException);
 
     public static TheoryData<Xeption> DependencyValidationExceptions() =>
-new()
-{
+        new()
+        {
             new Models.Foundations.Memorys.Exceptions.MemoryValidationException(
-                "memory validation", new Xeption("inner")),
+                message: "memory validation",
+                innerException: new Xeption(message: "inner")),
 
             new Models.Foundations.Knowledges.Exceptions.KnowledgeValidationException(
-                "knowledge validation", new Xeption("inner"))
-};
+                message: "knowledge validation",
+                innerException: new Xeption(message: "inner"))
+        };
 
     public static TheoryData<Xeption> DependencyExceptions() =>
         new()
         {
             new Models.Foundations.Skills.Exceptions.SkillDependencyException(
-                "skill dependency", new Xeption("inner")),
+                message: "skill dependency",
+                innerException: new Xeption(message: "inner")),
 
             new Models.Foundations.Skills.Exceptions.SkillServiceException(
-                "skill service", new Xeption("inner")),
+                message: "skill service",
+                innerException: new Xeption(message: "inner")),
 
             new Models.Foundations.Memorys.Exceptions.MemoryDependencyException(
-                "memory dependency", new Xeption("inner")),
+                message: "memory dependency",
+                innerException: new Xeption(message: "inner")),
 
             new Models.Foundations.Knowledges.Exceptions.KnowledgeDependencyException(
-                "knowledge dependency", new Xeption("inner"))
+                message: "knowledge dependency",
+                innerException: new Xeption(message: "inner"))
         };
-}
+        }

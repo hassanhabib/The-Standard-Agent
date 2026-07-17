@@ -40,7 +40,7 @@ public sealed class ClassifierBroker : IClassifierBroker
         };
 
         httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", apiKey);
+            new AuthenticationHeaderValue(scheme: "Bearer", parameter: apiKey);
 
         this.apiClient = new RESTFulApiFactoryClient(httpClient);
         this.model = model;
@@ -54,8 +54,8 @@ public sealed class ClassifierBroker : IClassifierBroker
             Model: this.model,
             Messages:
             [
-                new ChatMessage("system", systemPrompt),
-                new ChatMessage("user", input)
+                new ChatMessage(Role: "system", Content: systemPrompt),
+                new ChatMessage(Role: "user", Content: input)
             ],
             Stream: false,
             Temperature: this.temperature,
@@ -97,4 +97,4 @@ public sealed class ClassifierBroker : IClassifierBroker
 
     private sealed record ChatChoice(
         ChatMessage Message);
-}
+    }

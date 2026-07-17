@@ -17,4 +17,4 @@ public partial class KnowledgeService
                 message: "Invalid knowledge query. Please correct the error and try again.");
         }
     }
-}
+        }

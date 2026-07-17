@@ -67,4 +67,4 @@ public partial class KnowledgeServiceTests
         this.knowledgeBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
-}
+    }

@@ -92,7 +92,8 @@ ReturningContextFunction returningContextFunction)
         return agentOrchestrationValidationException;
     }
 
-    private async ValueTask<AgentOrchestrationDependencyValidationException> CreateAndLogDependencyValidationExceptionAsync(
+    private async ValueTask<AgentOrchestrationDependencyValidationException>
+        CreateAndLogDependencyValidationExceptionAsync(
         Xeption? exception)
     {
         var agentOrchestrationDependencyValidationException =
@@ -130,4 +131,4 @@ ReturningContextFunction returningContextFunction)
 
         return agentOrchestrationServiceException;
     }
-}
+    }

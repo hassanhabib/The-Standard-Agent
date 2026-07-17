@@ -76,9 +76,11 @@ public partial class AgentCoordinationServiceTests
         new()
         {
             new Models.Orchestrations.Agents.Exceptions.AgentOrchestrationDependencyException(
-                "orchestration dependency", new Xeption("inner")),
+                message: "orchestration dependency",
+                innerException: new Xeption(message: "inner")),
 
             new Models.Orchestrations.Agents.Exceptions.AgentOrchestrationServiceException(
-                "orchestration service", new Xeption("inner"))
+                message: "orchestration service",
+                innerException: new Xeption(message: "inner"))
         };
-}
+        }

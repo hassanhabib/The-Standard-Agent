@@ -28,4 +28,4 @@ public partial class BrainService : IBrainService
 
         return await this.generatorBroker.GenerateAsync(systemPrompt, userPrompt);
     });
-}
+    }

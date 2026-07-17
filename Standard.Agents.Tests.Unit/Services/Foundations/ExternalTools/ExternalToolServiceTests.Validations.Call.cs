@@ -55,4 +55,4 @@ Times.Never);
         this.mcpBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
-}
+    }

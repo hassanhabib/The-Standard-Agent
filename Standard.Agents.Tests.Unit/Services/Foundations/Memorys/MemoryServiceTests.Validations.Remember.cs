@@ -53,4 +53,4 @@ string? invalidMemory)
         this.memoryBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
-}
+    }

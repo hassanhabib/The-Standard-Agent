@@ -30,4 +30,4 @@ public partial class ReturnServiceTests
 
     private static Expression<Func<Xeption, bool>> SameExceptionAs(Xeption expectedException) =>
         actualException => actualException.SameExceptionAs(expectedException);
-}
+    }

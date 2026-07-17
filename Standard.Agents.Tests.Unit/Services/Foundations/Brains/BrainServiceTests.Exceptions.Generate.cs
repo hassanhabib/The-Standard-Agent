@@ -14,21 +14,21 @@ namespace Standard.Agents.Tests.Unit.Services.Foundations.Brains;
 public partial class BrainServiceTests
 {
     public static TheoryData<Exception> CriticalDependencyExceptions() =>
-new()
-{
+        new()
+        {
             new HttpResponseUnauthorizedException(),
             new HttpResponseForbiddenException(),
             new HttpResponseNotFoundException(),
             new HttpResponseUrlNotFoundException(),
             new HttpRequestException()
-};
+        };
 
     public static TheoryData<Exception> DependencyExceptions() =>
-new()
-{
+        new()
+        {
             new HttpResponseInternalServerErrorException(),
             new HttpResponseServiceUnavailableException()
-};
+        };
 
     [Theory]
     [MemberData(nameof(CriticalDependencyExceptions))]
@@ -218,4 +218,4 @@ new()
         this.generatorBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
-}
+    }

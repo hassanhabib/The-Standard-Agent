@@ -31,7 +31,7 @@ public class AgentToolTests
             agent.ProcessPromptAsync(randomInput))
                 .ReturnsAsync(randomAnswer);
 
-        var agentTool = new AgentTool(randomName, nestedAgentMock.Object);
+        var agentTool = new AgentTool(name: randomName, agent: nestedAgentMock.Object);
 
         // when
         string actualOutput = await agentTool.ExecuteAsync(randomInput);
@@ -57,7 +57,7 @@ public class AgentToolTests
             agent.ProcessPromptAsync(It.IsAny<string>()))
                 .ReturnsAsync("the capital is Paris");
 
-        var researcher = new AgentTool("researcher", innerAgent.Object);
+        var researcher = new AgentTool(name: "researcher", agent: innerAgent.Object);
 
         var outerBrain = new Mock<Brokers.Generators.IGeneratorBroker>();
         var replies = new Queue<string>(
@@ -96,13 +96,13 @@ public class AgentToolTests
             .Tool(researcher);
 
         // when
-        string actualResult = await outerAgent.ProcessPromptAsync("what is the capital of France?");
+        string actualResult = await outerAgent.ProcessPromptAsync(prompt: "what is the capital of France?");
 
         // then
         actualResult.Should().Be("Paris");
 
         innerAgent.Verify(agent =>
-    agent.ProcessPromptAsync("capital of France"),
+    agent.ProcessPromptAsync(prompt: "capital of France"),
         Times.Once);
     }
 
@@ -111,16 +111,16 @@ public class AgentToolTests
     {
         // given
         var nestedAgentMock = new Mock<IAgent>();
-        var nestedFailure = new InvalidOperationException("inner agent failed");
+        var nestedFailure = new InvalidOperationException(message: "inner agent failed");
 
         nestedAgentMock.Setup(agent =>
             agent.ProcessPromptAsync(It.IsAny<string>()))
                 .ThrowsAsync(nestedFailure);
 
-        var agentTool = new AgentTool("nested", nestedAgentMock.Object);
+        var agentTool = new AgentTool(name: "nested", agent: nestedAgentMock.Object);
 
         // when
-        ValueTask<string> executeTask = agentTool.ExecuteAsync("anything");
+        ValueTask<string> executeTask = agentTool.ExecuteAsync(input: "anything");
 
         InvalidOperationException actualException =
             await Assert.ThrowsAsync<InvalidOperationException>(
@@ -129,4 +129,4 @@ public class AgentToolTests
         // then
         actualException.Message.Should().Be("inner agent failed");
     }
-}
+    }
