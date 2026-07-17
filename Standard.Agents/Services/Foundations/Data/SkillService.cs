@@ -21,6 +21,7 @@ public partial class SkillService : ISkillService
         this.loggingBroker = loggingBroker;
     }
 
-    public async ValueTask<string> RetrieveSkillsAsync() =>
-        await this.skillBroker.SelectSkillsAsync();
+    public ValueTask<string> RetrieveSkillsAsync() =>
+    TryCatch(async () =>
+        await this.skillBroker.SelectSkillsAsync());
 }
