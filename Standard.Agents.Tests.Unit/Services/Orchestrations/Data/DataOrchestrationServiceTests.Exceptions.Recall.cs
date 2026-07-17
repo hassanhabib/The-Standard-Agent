@@ -41,6 +41,11 @@ public partial class DataOrchestrationServiceTests
         actualException.Should()
             .BeEquivalentTo(expectedAgentOrchestrationValidationException);
 
+        this.loggingBrokerMock.Verify(broker =>
+            broker.LogErrorAsync(It.Is(SameExceptionAs(
+                expectedAgentOrchestrationValidationException))),
+                    Times.Once);
+
         this.skillServiceMock.Verify(service =>
             service.RetrieveSkillsAsync(),
                 Times.Never);
@@ -48,6 +53,7 @@ public partial class DataOrchestrationServiceTests
         this.skillServiceMock.VerifyNoOtherCalls();
         this.memoryServiceMock.VerifyNoOtherCalls();
         this.knowledgeServiceMock.VerifyNoOtherCalls();
+        this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
     // Unwrap the foundation's categorical exception, preserve its LOCAL exception as
@@ -80,6 +86,12 @@ public partial class DataOrchestrationServiceTests
 
         // then
         actualException.Should().BeEquivalentTo(expectedException);
+
+        this.loggingBrokerMock.Verify(broker =>
+            broker.LogErrorAsync(It.Is(SameExceptionAs(expectedException))),
+                Times.Once);
+
+        this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
     [Theory]
@@ -109,6 +121,12 @@ public partial class DataOrchestrationServiceTests
 
         // then
         actualException.Should().BeEquivalentTo(expectedException);
+
+        this.loggingBrokerMock.Verify(broker =>
+            broker.LogErrorAsync(It.Is(SameExceptionAs(expectedException))),
+                Times.Once);
+
+        this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -142,5 +160,11 @@ public partial class DataOrchestrationServiceTests
 
         // then
         actualException.Should().BeEquivalentTo(expectedException);
+
+        this.loggingBrokerMock.Verify(broker =>
+            broker.LogErrorAsync(It.Is(SameExceptionAs(expectedException))),
+                Times.Once);
+
+        this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 }

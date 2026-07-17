@@ -5,6 +5,7 @@
 
 using System.Linq.Expressions;
 using Moq;
+using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Services.Foundations.Data;
 using Standard.Agents.Services.Orchestrations.Data;
@@ -19,6 +20,7 @@ public partial class DataOrchestrationServiceTests
     private readonly Mock<ISkillService> skillServiceMock;
     private readonly Mock<IMemoryService> memoryServiceMock;
     private readonly Mock<IKnowledgeService> knowledgeServiceMock;
+    private readonly Mock<ILoggingBroker> loggingBrokerMock;
     private readonly IDataOrchestrationService dataOrchestrationService;
 
     public DataOrchestrationServiceTests()
@@ -26,11 +28,13 @@ public partial class DataOrchestrationServiceTests
         this.skillServiceMock = new Mock<ISkillService>();
         this.memoryServiceMock = new Mock<IMemoryService>();
         this.knowledgeServiceMock = new Mock<IKnowledgeService>();
+        this.loggingBrokerMock = new Mock<ILoggingBroker>();
 
         this.dataOrchestrationService = new DataOrchestrationService(
             skillService: this.skillServiceMock.Object,
             memoryService: this.memoryServiceMock.Object,
-            knowledgeService: this.knowledgeServiceMock.Object);
+            knowledgeService: this.knowledgeServiceMock.Object,
+            loggingBroker: this.loggingBrokerMock.Object);
     }
 
     private static string CreateRandomString() =>

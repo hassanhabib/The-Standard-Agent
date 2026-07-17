@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Services.Foundations.Data;
 
@@ -15,19 +16,25 @@ public partial class DataOrchestrationService : IDataOrchestrationService
     private readonly ISkillService skillService;
     private readonly IMemoryService memoryService;
     private readonly IKnowledgeService knowledgeService;
+    private readonly ILoggingBroker loggingBroker;
 
     public DataOrchestrationService(
         ISkillService skillService,
         IMemoryService memoryService,
-        IKnowledgeService knowledgeService)
+        IKnowledgeService knowledgeService,
+        ILoggingBroker loggingBroker)
     {
         this.skillService = skillService;
         this.memoryService = memoryService;
         this.knowledgeService = knowledgeService;
+        this.loggingBroker = loggingBroker;
     }
 
-    public async ValueTask<AgentContext> RecallAsync(AgentContext context)
+    public ValueTask<AgentContext> RecallAsync(AgentContext context) =>
+    TryCatch(async () =>
     {
+        ValidateContext(context);
+
         string systemPrompt = await this.skillService.RetrieveSkillsAsync();
         IReadOnlyList<string> memories = await this.memoryService.RecallMemoriesAsync();
 
@@ -39,5 +46,5 @@ public partial class DataOrchestrationService : IDataOrchestrationService
             SystemPrompt = systemPrompt,
             Observations = [.. context.Observations, .. memories]
         };
-    }
+    });
 }
