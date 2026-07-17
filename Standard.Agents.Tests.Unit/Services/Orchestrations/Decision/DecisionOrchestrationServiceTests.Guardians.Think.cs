@@ -10,7 +10,6 @@ using Xunit;
 
 namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Decision;
 
-// The conscience half of Think: Gate before the Brain, Judge after it.
 public partial class DecisionOrchestrationServiceTests
 {
     [Fact]
@@ -32,13 +31,7 @@ public partial class DecisionOrchestrationServiceTests
         actualContext.Intent.Should().Be("Refuse");
     }
 
-    // ⚠️ A refusal CARRYING A REASON must still refuse.
-    //
-    // GateService returns the verdict verbatim, reason and all (#25 pins that). A
-    // check of `verdict == "refuse"` would not match "refuse: asks for credentials"
-    // — the refusal would be read as an allow and the prompt would reach the Brain.
-    // The richer the guardian's answer, the more certainly it would fail open.
-    [Theory]
+                            [Theory]
     [InlineData("refuse")]
     [InlineData("REFUSE")]
     [InlineData("refuse: asks for credentials")]
@@ -61,9 +54,7 @@ public partial class DecisionOrchestrationServiceTests
         actualContext.RawReply.Should().Be(verdict);
     }
 
-    // Invariant 7.6 in practice: a refused prompt never reaches the Brain at all.
-    // Screening that ran but did not gate would be theatre.
-    [Fact]
+            [Fact]
     public async Task ShouldNotCallBrainOnThinkIfGateRefusesAsync()
     {
         // given
@@ -89,9 +80,7 @@ public partial class DecisionOrchestrationServiceTests
         this.judgeServiceMock.VerifyNoOtherCalls();
     }
 
-    // Invariant 7.5 — a draft is not a commitment. A low-scored answer loops instead
-    // of returning, so output does not cross the boundary un-vetted.
-    [Fact]
+            [Fact]
     public async Task ShouldLoopOnThinkIfJudgeScoresBelowThresholdAsync()
     {
         // given
@@ -115,11 +104,7 @@ public partial class DecisionOrchestrationServiceTests
         actualContext.DirectionType.Should().NotBe("ReturnResponse");
     }
 
-    // ⚠️ Theory Ch.8: reflective judgment means "the draft becomes Data, the next
-    // Think reconsiders it". The rejected draft itself must reach the next turn — a
-    // bare "revise" note tells the Brain it failed but not WHAT failed, so it is
-    // just as likely to write the same answer again and loop to the turn cap.
-    [Fact]
+                    [Fact]
     public async Task ShouldFeedRejectedDraftBackAsObservationOnThinkAsync()
     {
         // given
@@ -143,10 +128,7 @@ public partial class DecisionOrchestrationServiceTests
             .ContainSingle(observation => observation.Contains("a poor answer"));
     }
 
-    // The Judge screens OUTPUT. A tool call is not output — it is a proposal
-    // Direction will execute. Judging it would spend an inference call grading
-    // something the Judge's rubric was never written for.
-    [Fact]
+                [Fact]
     public async Task ShouldNotJudgeOnThinkIfDirectionIsToolAsync()
     {
         // given
@@ -168,10 +150,7 @@ public partial class DecisionOrchestrationServiceTests
         this.judgeServiceMock.VerifyNoOtherCalls();
     }
 
-    // The Gate screens the PROMPT, and the Judge screens the DRAFT. Passing the wrong
-    // text to either would make both guardians look like they ran while grading
-    // something no one asked about.
-    [Fact]
+                [Fact]
     public async Task ShouldScreenPromptAndJudgeDraftOnThinkAsync()
     {
         // given

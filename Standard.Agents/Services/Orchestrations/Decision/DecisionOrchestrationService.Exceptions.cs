@@ -16,10 +16,7 @@ public partial class DecisionOrchestrationService
 {
     private delegate ValueTask<AgentContext> ReturningContextFunction();
 
-    // Unwrap the foundation's categorical exception, preserve the local exception
-    // inside as the inner, rewrap in this tier's category. Decision must not leak
-    // Gate's, Brain's or Judge's vocabulary upward to Coordination.
-    private async ValueTask<AgentContext> TryCatch(
+                private async ValueTask<AgentContext> TryCatch(
         ReturningContextFunction returningContextFunction)
     {
         try

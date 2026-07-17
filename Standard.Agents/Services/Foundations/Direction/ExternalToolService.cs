@@ -8,8 +8,6 @@ using Standard.Agents.Brokers.Loggings;
 
 namespace Standard.Agents.Services.Foundations.Direction;
 
-// Act outward, across the boundary. Invariant 7.8: external state enters only as
-// Data via a Direction that reached out, and effects leave only via Direction.
 public partial class ExternalToolService : IExternalToolService
 {
     private readonly IMcpBroker mcpBroker;

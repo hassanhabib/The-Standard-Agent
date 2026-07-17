@@ -29,10 +29,7 @@ public partial class InternalToolService : IInternalToolService
         return await this.toolBroker.HasAsync(name);
     });
 
-    // The tool's output is returned verbatim, whatever it says. A tool reporting
-    // an error is a result, not a failure — it becomes an observation and the
-    // loop carries on. Only a throwing tool is a dependency failure.
-    public ValueTask<string> RunAsync(string name, string input) =>
+                public ValueTask<string> RunAsync(string name, string input) =>
     TryCatch(async () =>
     {
         ValidateName(name);

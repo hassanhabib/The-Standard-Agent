@@ -12,8 +12,7 @@ namespace Standard.Agents.Tests.Unit.Services.Coordinations;
 
 public partial class AgentCoordinationServiceTests
 {
-    // Vector 01 in miniature: one turn, terminal, answer returned.
-    [Fact]
+        [Fact]
     public async Task ShouldProcessPromptAsync()
     {
         // given
@@ -31,10 +30,7 @@ public partial class AgentCoordinationServiceTests
         actualResult.Should().Be(expectedResult);
     }
 
-    // The prompt reaches Recall as the context's Prompt, and Status starts Working —
-    // SPEC.md 3 requires Working to be the initial value, and 5 starts the loop from
-    // a fresh context carrying only the prompt.
-    [Fact]
+                [Fact]
     public async Task ShouldSeedContextWithPromptOnProcessPromptAsync()
     {
         // given
@@ -54,11 +50,7 @@ public partial class AgentCoordinationServiceTests
                         Times.Once);
     }
 
-    // Enforced order. All three take and return AgentContext, so the sequence is NOT
-    // encoded in their signatures — nothing would stop Act running before Think and
-    // the types would still line up. The Standard requires an explicit order test
-    // exactly when order is not naturally encoded.
-    [Fact]
+                    [Fact]
     public async Task ShouldCallRecallThinkActInOrderOnProcessPromptAsync()
     {
         // given
@@ -86,10 +78,7 @@ public partial class AgentCoordinationServiceTests
         actualResult.Should().Be("done");
     }
 
-    // The loop stops on any non-Working status. SPEC.md 3: "continues while
-    // status == Working and stops on any other value" — so a new terminal state can
-    // be added to the enum without touching the loop.
-    [Theory]
+                [Theory]
     [InlineData(AgentStatus.Responded)]
     [InlineData(AgentStatus.Refused)]
     [InlineData(AgentStatus.Failed)]
@@ -118,10 +107,7 @@ public partial class AgentCoordinationServiceTests
                 Times.Once);
     }
 
-    // Vector 06. A Brain that never terminates MUST be capped — SPEC.md 5 makes the
-    // cap a MUST. Without it this test would hang forever rather than fail, which is
-    // why the loop is the one place a bound is not optional.
-    [Fact]
+                [Fact]
     public async Task ShouldCapTurnsOnProcessPromptIfBrainNeverTerminatesAsync()
     {
         // given
@@ -136,9 +122,7 @@ public partial class AgentCoordinationServiceTests
         // then
         actualResult.Should().Be("again");
 
-        // Capped, not infinite. The exact bound is ours (SPEC.md 5: finite, SHOULD be
-        // small); what matters is that it is finite and the same on every path.
-        this.dataOrchestrationServiceMock.Verify(service =>
+                        this.dataOrchestrationServiceMock.Verify(service =>
             service.RecallAsync(It.IsAny<AgentContext>()),
                 Times.Exactly(7));
 
@@ -147,9 +131,7 @@ public partial class AgentCoordinationServiceTests
                 Times.Exactly(7));
     }
 
-    // Recall runs every turn, not once. SPEC.md 5 puts it inside the loop so skills
-    // refresh per turn; hoisting it out as an optimisation would break that.
-    [Fact]
+            [Fact]
     public async Task ShouldRecallEveryTurnOnProcessPromptAsync()
     {
         // given
@@ -164,8 +146,7 @@ public partial class AgentCoordinationServiceTests
             service.ThinkAsync(It.IsAny<AgentContext>()))
                 .ReturnsAsync((AgentContext context) => context);
 
-        // Two working turns, then terminate.
-        this.directionOrchestrationServiceMock.Setup(service =>
+                this.directionOrchestrationServiceMock.Setup(service =>
             service.ActAsync(It.IsAny<AgentContext>()))
                 .ReturnsAsync((AgentContext context) =>
                 {
@@ -188,9 +169,7 @@ public partial class AgentCoordinationServiceTests
                 Times.Exactly(3));
     }
 
-    // The log is reset once per prompt, at the top — SPEC.md 5. Each prompt's trace
-    // is its own narrative, not an append to the last one's.
-    [Fact]
+            [Fact]
     public async Task ShouldResetLogOnProcessPromptAsync()
     {
         // given
@@ -207,9 +186,7 @@ public partial class AgentCoordinationServiceTests
                 Times.Once);
     }
 
-    // SPEC.md 4.4: Coordination MUST hold no nature logic beyond sequencing and
-    // observing. This is the observing half — one line per turn.
-    [Fact]
+            [Fact]
     public async Task ShouldWriteTurnToLogOnProcessPromptAsync()
     {
         // given
@@ -226,11 +203,7 @@ public partial class AgentCoordinationServiceTests
                 Times.AtLeastOnce);
     }
 
-    // ⭐ Invariant 7.4 — the agent instance is ephemeral and MUST be stateless across
-    // prompts. Two sequential prompts on the SAME instance must not leak: if the
-    // second saw the first's observations, the agent would answer a question nobody
-    // asked and the leak would grow with every prompt.
-    [Fact]
+                    [Fact]
     public async Task ShouldNotLeakStateBetweenPromptsOnProcessPromptAsync()
     {
         // given
@@ -265,7 +238,6 @@ public partial class AgentCoordinationServiceTests
         recalledContexts[0].Prompt.Should().Be(firstPrompt);
         recalledContexts[1].Prompt.Should().Be(secondPrompt);
 
-        // The second prompt starts clean — no observations carried from the first.
-        recalledContexts[1].Observations.Should().BeEmpty();
+                recalledContexts[1].Observations.Should().BeEmpty();
     }
 }

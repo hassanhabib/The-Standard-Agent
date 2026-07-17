@@ -46,8 +46,7 @@ public partial class InternalToolServiceTests
                 expectedInternalToolValidationException))),
                     Times.Once);
 
-        // Validation runs before the dependency call — the broker is never reached.
-        this.toolBrokerMock.Verify(broker =>
+                this.toolBrokerMock.Verify(broker =>
             broker.HasAsync(It.IsAny<string>()),
                 Times.Never);
 

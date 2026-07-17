@@ -10,9 +10,7 @@ namespace Standard.Agents.Services.Orchestrations.Data;
 
 public partial class DataOrchestrationService
 {
-    // Circuit-breaking: a null context has nothing to read and nothing to copy, so
-    // continuing would only produce a null-reference somewhere less obvious.
-    private static void ValidateContext(AgentContext context)
+            private static void ValidateContext(AgentContext context)
     {
         if (context is null)
         {

@@ -16,11 +16,7 @@ public partial class DataOrchestrationService
 {
     private delegate ValueTask<AgentContext> ReturningContextFunction();
 
-    // An orchestration does not localize natives — its foundations already did that.
-    // It UNWRAPS each foundation's categorical exception, PRESERVES the local
-    // exception inside as the inner, and REWRAPS in this tier's category. Data must
-    // not leak Skills' or Memory's vocabulary upward to Coordination.
-    private async ValueTask<AgentContext> TryCatch(
+                    private async ValueTask<AgentContext> TryCatch(
         ReturningContextFunction returningContextFunction)
     {
         try

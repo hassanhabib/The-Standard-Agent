@@ -46,14 +46,7 @@ public partial class DataOrchestrationServiceTests
     private static Expression<Func<Xeption, bool>> SameExceptionAs(Xeption expectedException) =>
         actualException => actualException.SameExceptionAs(expectedException);
 
-    // Exceptions from any of the three foundations, unified into one orchestration
-    // category. Theory-driven so one test covers all of them, per The Standard.
-    //
-    // No SkillValidationException here — RetrieveSkillsAsync takes no input, so
-    // Skills has no validation category at all. The asymmetry is real, not an
-    // oversight; asserting on a type that does not exist would be inventing a
-    // failure the system cannot produce.
-    public static TheoryData<Xeption> DependencyValidationExceptions() =>
+                                public static TheoryData<Xeption> DependencyValidationExceptions() =>
         new()
         {
             new Models.Foundations.Memories.Exceptions.MemoryValidationException(

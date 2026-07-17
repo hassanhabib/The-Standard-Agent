@@ -40,18 +40,14 @@ public class AgentToolTests
         actualOutput.Should().Be(expectedOutput);
         agentTool.Name.Should().Be(randomName);
 
-        // The tool's input becomes the nested agent's PROMPT — that is the bridge.
-        nestedAgentMock.Verify(agent =>
+                nestedAgentMock.Verify(agent =>
             agent.ProcessPromptAsync(randomInput),
                 Times.Once);
 
         nestedAgentMock.VerifyNoOtherCalls();
     }
 
-    // ⭐ The fractal, actually exercised: an agent registered as a tool of another
-    // agent. The outer agent asks for "researcher" and cannot tell whether a function
-    // or a whole mind answered — which is the point of Theory Ch.4.
-    [Fact]
+                [Fact]
     public async Task ShouldNestAgentInsideAgentAsync()
     {
         // given — the inner agent answers anything with a fixed finding
@@ -63,8 +59,7 @@ public class AgentToolTests
 
         var researcher = new AgentTool("researcher", innerAgent.Object);
 
-        // the outer agent uses it once, then answers
-        var outerBrain = new Mock<Brokers.Decision.IGeneratorBroker>();
+                var outerBrain = new Mock<Brokers.Decision.IGeneratorBroker>();
         var replies = new Queue<string>(
         [
             "ACTION: researcher: capital of France",
@@ -106,16 +101,12 @@ public class AgentToolTests
         // then
         actualResult.Should().Be("Paris");
 
-        // The nested agent ran its own loop, driven by the outer agent's tool call.
-        innerAgent.Verify(agent =>
+                innerAgent.Verify(agent =>
             agent.ProcessPromptAsync("capital of France"),
                 Times.Once);
     }
 
-    // A nested agent that fails is a tool that fails. The exception is not swallowed
-    // into a plausible-looking answer — the outer agent's Direction categorises it
-    // like any other dependency failure.
-    [Fact]
+                [Fact]
     public async Task ShouldPropagateOnExecuteIfNestedAgentThrowsAsync()
     {
         // given

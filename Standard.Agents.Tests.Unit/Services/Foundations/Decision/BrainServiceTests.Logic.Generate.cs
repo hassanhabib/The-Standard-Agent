@@ -41,10 +41,7 @@ public partial class BrainServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-    // Invariant 7.2 — the Brain does not author prompts. Both prompts pass through
-    // untouched, exactly as Data supplied them. If this service ever prepends,
-    // trims, or templates anything, prompts stop being Data and this test fails.
-    [Fact]
+                [Fact]
     public async Task ShouldPassPromptsThroughUnalteredOnGenerateAsync()
     {
         // given

@@ -8,9 +8,6 @@ using Standard.Agents.Brokers.Loggings;
 
 namespace Standard.Agents.Services.Foundations.Decision;
 
-// The Judge screens the OUTPUT. Invariant 7.6 is enforced by composition: this
-// takes the verifier and cannot reach the generator, so a draft is never graded by
-// the mind that wrote it.
 public partial class JudgeService : IJudgeService
 {
     private readonly IVerifierBroker verifierBroker;

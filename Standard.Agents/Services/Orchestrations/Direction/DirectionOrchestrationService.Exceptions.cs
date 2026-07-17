@@ -16,10 +16,7 @@ public partial class DirectionOrchestrationService
 {
     private delegate ValueTask<AgentContext> ReturningContextFunction();
 
-    // Unwrap the foundation's categorical exception, preserve the local exception
-    // inside as the inner, rewrap in this tier's category. Direction must not leak
-    // its tools' vocabulary upward to Coordination.
-    private async ValueTask<AgentContext> TryCatch(
+                private async ValueTask<AgentContext> TryCatch(
         ReturningContextFunction returningContextFunction)
     {
         try

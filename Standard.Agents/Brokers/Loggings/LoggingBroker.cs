@@ -14,9 +14,7 @@ public sealed class LoggingBroker : ILoggingBroker
     public LoggingBroker(ILogger<LoggingBroker> logger) =>
         this.logger = logger;
 
-    // ILogger<T> is synchronous. These are async ValueTask for the uniform contract
-    // (The Standard 1.5.1) and call straight through — never Task.Run.
-    public async ValueTask LogInformationAsync(string message) =>
+            public async ValueTask LogInformationAsync(string message) =>
         this.logger.LogInformation(message);
 
     public async ValueTask LogTraceAsync(string message) =>

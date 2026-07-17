@@ -35,9 +35,7 @@ public partial class KnowledgeService
         {
             throw await CreateAndLogCriticalDependencyExceptionAsync(unauthorizedAccessException);
         }
-        // Below the three above — they all derive from IOException and would be
-        // swallowed here, downgrading a deployment fault to a transient error.
-        catch (IOException ioException)
+                        catch (IOException ioException)
         {
             throw await CreateAndLogDependencyExceptionAsync(ioException);
         }

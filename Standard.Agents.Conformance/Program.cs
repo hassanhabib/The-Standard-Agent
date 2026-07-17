@@ -8,14 +8,6 @@ using Standard.Agents;
 using Standard.Agents.Conformance;
 using Standard.Agents.Tools;
 
-// The reference conformance runner. It loads the language-neutral vectors, builds an
-// agent whose BROKERS are scripted but whose 1-3-9 is the real library, runs each
-// prompt, and compares the returned result.
-//
-// Exit code 0 = every vector passes = Standard-Agents Conformant at the Core profile.
-// An implementation in any other language mirrors this harness against the same
-// vectors (CONFORMANCE.md, "Adding a language").
-
 string vectorsPath = args.Length > 0
     ? args[0]
     : Path.Combine(FindRepositoryRoot(), "conformance", "vectors");
@@ -68,8 +60,6 @@ Console.WriteLine($"{passed} passed, {failed} failed");
 
 return failed == 0 ? 0 : 1;
 
-// Every broker is a double; everything above the broker line is the real library,
-// composed through StandardAgent — the same composition a real consumer uses.
 async Task<string> RunVectorAsync(Vector vector)
 {
     IEnumerable<ITool> tools =
@@ -89,7 +79,6 @@ async Task<string> RunVectorAsync(Vector vector)
     return await agent.ProcessPromptAsync(vector.Prompt);
 }
 
-// Newlines shown escaped, so a multi-line mismatch (vector 04) is legible on one line.
 static string Show(string value) =>
     value.Replace("\n", "\\n").Replace("\r", "\\r");
 

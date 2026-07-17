@@ -11,8 +11,7 @@ namespace Standard.Agents.Tests.Unit.Services.Foundations.Decision;
 
 public partial class JudgeServiceTests
 {
-    // The bounds are legal values, not edge cases to be nudged inward.
-    [Theory]
+        [Theory]
     [InlineData(0.0)]
     [InlineData(0.3)]
     [InlineData(1.0)]
@@ -42,9 +41,7 @@ public partial class JudgeServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-    // Invariant 7.2 — the rubric is Data. A Judge that authored its own rubric would
-    // be grading against rules nobody can inspect or change without a deploy.
-    [Fact]
+            [Fact]
     public async Task ShouldPassJudgePromptThroughUnalteredOnEvaluateAsync()
     {
         // given

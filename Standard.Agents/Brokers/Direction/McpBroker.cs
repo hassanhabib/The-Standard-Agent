@@ -9,12 +9,6 @@ using RESTFulSense.Clients;
 
 namespace Standard.Agents.Brokers.Direction;
 
-// The door across the boundary. Invariant 7.8: external state enters only as Data
-// via a Direction that reached out, and effects leave only via Direction. This
-// broker is that door.
-//
-// The default speaks MCP over JSON-RPC 2.0. Swap it via IMcpBroker for stdio
-// transport, a bare REST API, or another agent.
 public sealed class McpBroker : IMcpBroker
 {
     private const string JsonMediaType = "application/json";
@@ -69,12 +63,7 @@ public sealed class McpBroker : IMcpBroker
         return ToText(jsonRpcResponse);
     }
 
-    // JSON-RPC reports failure in a 200 body, so HTTP status alone cannot see it.
-    // Surfacing it as a native exception is the transport saying "no" — the same
-    // role SqlException plays for a storage broker. ExternalToolService localizes
-    // it (#30). Returning the error text as if it were a result would hand the
-    // Brain a failure dressed up as an answer.
-    private static string ToText(JsonRpcResponse jsonRpcResponse)
+                        private static string ToText(JsonRpcResponse jsonRpcResponse)
     {
         if (jsonRpcResponse.Error is not null)
         {

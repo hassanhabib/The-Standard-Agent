@@ -13,9 +13,7 @@ namespace Standard.Agents.Tests.Unit.Services.Foundations.Decision;
 
 public partial class BrainServiceTests
 {
-    // The endpoint is unreachable or inaccessible — configuration or infrastructure.
-    // Nothing retries these into working, so they log Critical.
-    public static TheoryData<Exception> CriticalDependencyExceptions() =>
+            public static TheoryData<Exception> CriticalDependencyExceptions() =>
         new()
         {
             new HttpResponseUnauthorizedException(),
@@ -25,9 +23,7 @@ public partial class BrainServiceTests
             new HttpRequestException()
         };
 
-    // The endpoint answered, but badly. These may well succeed on retry, so they
-    // log Error — an operator paging on a 503 that cleared itself is noise.
-    public static TheoryData<Exception> DependencyExceptions() =>
+            public static TheoryData<Exception> DependencyExceptions() =>
         new()
         {
             new HttpResponseInternalServerErrorException(),
@@ -130,9 +126,7 @@ public partial class BrainServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-    // A 400 means we sent a bad request — our fault, not the endpoint's. It is a
-    // DependencyValidation, which is why Brains carries a category Skills does not.
-    [Fact]
+            [Fact]
     public async Task ShouldThrowDependencyValidationExceptionOnGenerateIfBadRequestErrorOccursAndLogItAsync()
     {
         // given

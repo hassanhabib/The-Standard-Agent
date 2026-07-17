@@ -56,9 +56,7 @@ public partial class InternalToolServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-    // Only the NAME is validated. An empty input is a legitimate call — a tool may
-    // take no arguments — so validating it would reject valid work.
-    [Theory]
+            [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData(" ")]

@@ -17,10 +17,7 @@ namespace Standard.Agents.Tests.Unit.Clients;
 
 public class StandardAgentTests
 {
-    // Every broker swapped, so nothing reaches a network. This is also exactly what
-    // the conformance harness does (#39) — if the facade cannot be fully stubbed, the
-    // vectors cannot run.
-    private static StandardAgent CreateFullyStubbedAgent(string brainReply)
+                private static StandardAgent CreateFullyStubbedAgent(string brainReply)
     {
         var skillBroker = new Mock<ISkillBroker>();
         skillBroker.Setup(b => b.SelectSkillsAsync()).ReturnsAsync("you are an agent");
@@ -70,9 +67,7 @@ public class StandardAgentTests
         actualResult.Should().Be("42");
     }
 
-    // The builder is fluent — every method returns the same instance, so a chain
-    // configures one agent rather than silently building several.
-    [Fact]
+            [Fact]
     public void ShouldReturnSameInstanceOnEachBuilderMethod()
     {
         // given
@@ -91,10 +86,7 @@ public class StandardAgentTests
         chained.Should().BeSameAs(agent);
     }
 
-    // ⭐ Configuration set AFTER a prompt must take effect. The composition is cached,
-    // so a builder method that did not drop it would return `this` and silently ignore
-    // the change — the caller would see the old agent and no error explaining why.
-    [Fact]
+                [Fact]
     public async Task ShouldRecomposeAfterConfigurationChangesAsync()
     {
         // given
@@ -115,10 +107,7 @@ public class StandardAgentTests
         secondResult.Should().Be("second");
     }
 
-    // An agent with no brain is not an agent. Theory Ch.5: "An agent has one brain."
-    // Zero is not a valid count, and failing at composition names the mistake where it
-    // was made rather than as a null-reference on the first prompt.
-    [Fact]
+                [Fact]
     public async Task ShouldThrowCompositionExceptionOnProcessPromptIfBrainIsNotConfiguredAsync()
     {
         // given
@@ -135,13 +124,7 @@ public class StandardAgentTests
         actualException.Message.Should().Contain("no brain");
     }
 
-    // ⚠️ A swapped generator with no Brain() settings must still compose.
-    //
-    // Gate and Judge fall back to the Brain's endpoint settings, so a caller who
-    // supplies a generator broker but never calls Brain() leaves those settings null.
-    // Building the default Classifier/Verifier from them would dereference null — and
-    // the conformance harness (#39) is exactly this caller.
-    [Fact]
+                            [Fact]
     public async Task ShouldComposeOnProcessPromptIfGeneratorIsSwappedWithoutBrainSettingsAsync()
     {
         // given
@@ -166,8 +149,7 @@ public class StandardAgentTests
         var knowledgeBroker = new Mock<IKnowledgeBroker>();
         var logBroker = new Mock<ILogBroker>();
 
-        // No Brain(...) call anywhere.
-        var agent = new StandardAgent()
+                var agent = new StandardAgent()
             .UseSkills(skillBroker.Object)
             .UseGenerator(generatorBroker.Object)
             .UseGate(classifierBroker.Object)
@@ -184,10 +166,7 @@ public class StandardAgentTests
         actualResult.Should().Be("ok");
     }
 
-    // A swapped generator with an UNSWAPPED gate has nowhere to get the gate's
-    // endpoint from. That must be a named composition error, not a null-reference from
-    // inside a broker constructor.
-    [Fact]
+                [Fact]
     public async Task ShouldThrowCompositionExceptionOnProcessPromptIfGateHasNoSettingsAsync()
     {
         // given
@@ -207,13 +186,7 @@ public class StandardAgentTests
         actualException.Message.Should().Contain("gate");
     }
 
-    // ⭐ A Core-profile agent must compose. SPEC.md 8.1 lists Core's Direction as
-    // InternalToolService + ToolBroker and ReturnService — no External at all.
-    //
-    // Nothing here calls UseMcp, and that is the point: every other test in this file
-    // does, which is exactly why they all missed #81. Compose() built new McpBroker("")
-    // and new Uri("") threw before the loop ever started.
-    [Fact]
+                            [Fact]
     public async Task ShouldComposeCoreProfileAgentOnProcessPromptWithoutMcpConfiguredAsync()
     {
         // given
@@ -235,8 +208,7 @@ public class StandardAgentTests
         var memory = new Mock<IMemoryBroker>();
         memory.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
 
-        // No UseMcp, no Mcp(...).
-        var agent = new StandardAgent()
+                var agent = new StandardAgent()
             .UseSkills(skillBroker.Object)
             .UseGenerator(generatorBroker.Object)
             .UseGate(gate.Object)
@@ -252,9 +224,7 @@ public class StandardAgentTests
         actualResult.Should().Be("composed");
     }
 
-    // ...and an unknown tool on that agent must still RECOVER, not die. Vector 05's
-    // contract has to hold for a real Core agent, not only inside the harness.
-    [Fact]
+            [Fact]
     public async Task ShouldRecoverFromUnknownToolWithoutMcpConfiguredAsync()
     {
         // given — the Brain calls a tool that does not exist, then answers

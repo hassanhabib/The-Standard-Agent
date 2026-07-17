@@ -48,8 +48,7 @@ public partial class BrainServiceTests
                 expectedBrainValidationException))),
                     Times.Once);
 
-        // Never spend an inference call on a prompt we already know is empty.
-        this.generatorBrokerMock.Verify(broker =>
+                this.generatorBrokerMock.Verify(broker =>
             broker.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()),
                 Times.Never);
 
@@ -57,10 +56,7 @@ public partial class BrainServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-    // The system prompt is NOT validated. An agent with no skills configured has an
-    // empty system prompt and is still a legal agent — SPEC.md 8.1 lets Core run
-    // with Gate and Judge pass-through, and says nothing about requiring skills.
-    [Theory]
+                [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData(" ")]

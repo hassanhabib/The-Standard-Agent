@@ -9,9 +9,7 @@ namespace Standard.Agents.Services.Foundations.Data;
 
 public partial class MemoryService
 {
-    // Only the write. An empty memory is not a memory — writing one appends a blank
-    // line the store reads back forever as a memory that says nothing.
-    private static void ValidateMemory(string memory)
+            private static void ValidateMemory(string memory)
     {
         if (string.IsNullOrWhiteSpace(memory))
         {

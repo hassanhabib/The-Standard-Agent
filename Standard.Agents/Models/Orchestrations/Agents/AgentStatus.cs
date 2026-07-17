@@ -7,8 +7,7 @@ namespace Standard.Agents.Models.Orchestrations.Agents;
 
 public enum AgentStatus
 {
-    // Working is first so it is the default — the loop runs while a context is Working.
-    Working = 0,
+        Working = 0,
     Responded = 1,
     AwaitingInput = 2,
     Refused = 3,

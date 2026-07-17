@@ -38,9 +38,7 @@ public partial class MemoryServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-    // An agent that has never remembered anything recalls nothing. That is a
-    // legitimate state, not a failure — every agent starts here on its first run.
-    [Fact]
+            [Fact]
     public async Task ShouldRecallNoMemoriesOnRecallMemoriesIfStoreIsEmptyAsync()
     {
         // given

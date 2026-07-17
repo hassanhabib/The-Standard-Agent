@@ -9,10 +9,7 @@ namespace Standard.Agents.Services.Foundations.Data;
 
 public partial class KnowledgeService
 {
-    // An empty query is not a search. The default broker matches by substring and
-    // every document contains the empty string, so an unvalidated empty query would
-    // return the whole corpus and flood the context window.
-    private static void ValidateQuery(string query)
+                private static void ValidateQuery(string query)
     {
         if (string.IsNullOrWhiteSpace(query))
         {

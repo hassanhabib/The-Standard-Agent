@@ -19,8 +19,7 @@ public sealed class SkillBroker : ISkillBroker
     {
         List<string> skills = [];
 
-        // Ordinal filename order — the "00-", "10-" prefixes are how authors sequence skills.
-        IOrderedEnumerable<string> skillFilePaths =
+                IOrderedEnumerable<string> skillFilePaths =
             Directory.EnumerateFiles(this.skillsPath, SkillFilePattern)
                 .OrderBy(skillFilePath => skillFilePath, StringComparer.Ordinal);
 

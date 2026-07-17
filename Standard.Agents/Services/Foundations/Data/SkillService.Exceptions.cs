@@ -18,9 +18,7 @@ public partial class SkillService
         {
             return await returningStringFunction();
         }
-        // FileNotFound and DirectoryNotFound both derive from IOException, so they
-        // must be caught above any IOException block or it would swallow them.
-        catch (FileNotFoundException fileNotFoundException)
+                        catch (FileNotFoundException fileNotFoundException)
         {
             var failedSkillDependencyException =
                 new FailedSkillDependencyException(

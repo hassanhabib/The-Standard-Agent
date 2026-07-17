@@ -30,10 +30,7 @@ public partial class GateServiceTests
             new HttpResponseServiceUnavailableException()
         };
 
-    // A guardian that cannot reach its classifier MUST throw, never return "allow".
-    // Failing open here would mean an unreachable endpoint silently disables
-    // screening — the agent would look healthy while running unguarded.
-    [Theory]
+                [Theory]
     [MemberData(nameof(CriticalDependencyExceptions))]
     public async Task ShouldThrowCriticalDependencyExceptionOnScreenIfCriticalErrorOccursAndLogItAsync(
         Exception criticalDependencyException)

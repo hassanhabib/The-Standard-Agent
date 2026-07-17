@@ -48,9 +48,7 @@ public partial class ExternalToolServiceTests
                 expectedExternalToolValidationException))),
                     Times.Once);
 
-        // Validation before the dependency call — nothing crosses the boundary on a
-        // request we already know is malformed.
-        this.mcpBrokerMock.Verify(broker =>
+                        this.mcpBrokerMock.Verify(broker =>
             broker.CallAsync(It.IsAny<string>(), It.IsAny<string>()),
                 Times.Never);
 

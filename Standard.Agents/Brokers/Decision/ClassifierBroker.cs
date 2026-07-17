@@ -9,10 +9,6 @@ using RESTFulSense.Clients;
 
 namespace Standard.Agents.Brokers.Decision;
 
-// The Gate's substrate. Its own broker, its own configuration — so a deployment
-// that needs a guardian distinct from the Brain (invariant 7.6) points this at a
-// different model without touching anything else. SPEC.md 9 allows the substrate
-// to collapse onto one endpoint; the contracts stay separate either way.
 public sealed class ClassifierBroker : IClassifierBroker
 {
     private const string ChatCompletionsRelativeUrl = "chat/completions";
@@ -70,9 +66,7 @@ public sealed class ClassifierBroker : IClassifierBroker
                 ChatCompletionsRelativeUrl,
                 chatCompletionRequest);
 
-        // Returned verbatim. Reading the label is GateService's job — deciding what
-        // "refuse" means is a business decision and does not belong in a broker.
-        return chatCompletionResponse.Choices[0].Message.Content;
+                        return chatCompletionResponse.Choices[0].Message.Content;
     }
 
     private async ValueTask<TResult> PostAsync<TContent, TResult>(

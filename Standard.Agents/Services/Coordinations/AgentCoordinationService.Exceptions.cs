@@ -13,11 +13,7 @@ public partial class AgentCoordinationService
 {
     private delegate ValueTask<string> ReturningStringFunction();
 
-    // The last tier. Per the decision on #34, this is where a failed turn surfaces:
-    // nothing sets AgentStatus.Failed, so an unrecoverable failure arrives here as a
-    // categorical exception and leaves as AgentCoordinationServiceException — the
-    // caller's single, typed contract for "the agent could not answer".
-    private async ValueTask<string> TryCatch(ReturningStringFunction returningStringFunction)
+                    private async ValueTask<string> TryCatch(ReturningStringFunction returningStringFunction)
     {
         try
         {

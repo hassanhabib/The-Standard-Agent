@@ -41,9 +41,7 @@ public partial class ExternalToolServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-    // Same rule as InternalToolService: a tool that RETURNS an error string is a
-    // result, not a failure. It becomes an observation and the loop carries on.
-    [Fact]
+            [Fact]
     public async Task ShouldReturnToolOutputOnCallEvenIfToolReportsAnErrorAsync()
     {
         // given

@@ -100,14 +100,7 @@ public partial class JudgeServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-    // ⭐ An OUTGOING validation — the only one in the codebase. The Standard:
-    // "Validate outgoing data when the current routine uses it." 0.0..1.0 is
-    // normative in SPEC.md 4.1, and the broker cannot enforce it (no flow control).
-    //
-    // This is not pedantry. ThinkAsync gates on `score < 0.3` (#33). A verifier
-    // returning 87 — a model answering out of 100 instead of 0..1 — would sail past
-    // that gate and every draft would pass review forever, silently.
-    [Theory]
+                                [Theory]
     [InlineData(-0.1)]
     [InlineData(1.1)]
     [InlineData(87)]
