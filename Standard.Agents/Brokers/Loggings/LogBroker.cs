@@ -16,4 +16,7 @@ public sealed class LogBroker : ILogBroker
 
     public async ValueTask ResetAsync() =>
         await File.WriteAllTextAsync(this.logPath, string.Empty);
+
+    public async ValueTask WriteAsync(string content) =>
+        await File.AppendAllTextAsync(this.logPath, content + Environment.NewLine);
 }
