@@ -17,5 +17,5 @@ public partial class ReturnService : IReturnService
         this.loggingBroker = loggingBroker;
 
     public ValueTask<string> ReturnAsync(string payload) =>
-        throw new NotImplementedException();
+        ValueTask.FromResult(payload);
 }
