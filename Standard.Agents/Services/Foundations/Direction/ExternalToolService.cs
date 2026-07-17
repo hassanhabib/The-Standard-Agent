@@ -24,5 +24,10 @@ public partial class ExternalToolService : IExternalToolService
     }
 
     public ValueTask<string> CallAsync(string name, string input) =>
-        throw new NotImplementedException();
+    TryCatch(async () =>
+    {
+        ValidateName(name);
+
+        return await this.mcpBroker.CallAsync(name, input);
+    });
 }
