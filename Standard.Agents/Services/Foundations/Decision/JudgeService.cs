@@ -25,5 +25,14 @@ public partial class JudgeService : IJudgeService
     }
 
     public ValueTask<double> EvaluateAsync(string judgePrompt, string candidate) =>
-        throw new NotImplementedException();
+    TryCatch(async () =>
+    {
+        ValidateEvaluate(judgePrompt, candidate);
+
+        double score = await this.verifierBroker.VerifyAsync(judgePrompt, candidate);
+
+        ValidateScore(score);
+
+        return score;
+    });
 }
