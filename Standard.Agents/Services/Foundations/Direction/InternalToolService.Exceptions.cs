@@ -11,7 +11,10 @@ namespace Standard.Agents.Services.Foundations.Direction;
 public partial class InternalToolService
 {
     private delegate ValueTask<bool> ReturningBooleanFunction();
+    private delegate ValueTask<string> ReturningStringFunction();
 
+    // HandlesAsync only reads the registry, so it has no dependency category —
+    // a lookup either answers or the service itself is broken.
     private async ValueTask<bool> TryCatch(ReturningBooleanFunction returningBooleanFunction)
     {
         try
@@ -33,6 +36,39 @@ public partial class InternalToolService
         }
     }
 
+    // RunAsync executes someone else's code, so it does have a dependency category.
+    private async ValueTask<string> TryCatch(ReturningStringFunction returningStringFunction)
+    {
+        try
+        {
+            return await returningStringFunction();
+        }
+        catch (InvalidInternalToolException invalidInternalToolException)
+        {
+            throw await CreateAndLogValidationExceptionAsync(invalidInternalToolException);
+        }
+        catch (KeyNotFoundException keyNotFoundException)
+        {
+            var failedInternalToolDependencyException =
+                new FailedInternalToolDependencyException(
+                    message: "Failed internal tool dependency error occurred, contact support.",
+                    innerException: keyNotFoundException);
+
+            throw await CreateAndLogDependencyExceptionAsync(
+                failedInternalToolDependencyException);
+        }
+        catch (Exception exception)
+        {
+            var failedInternalToolDependencyException =
+                new FailedInternalToolDependencyException(
+                    message: "Failed internal tool dependency error occurred, contact support.",
+                    innerException: exception);
+
+            throw await CreateAndLogDependencyExceptionAsync(
+                failedInternalToolDependencyException);
+        }
+    }
+
     private async ValueTask<InternalToolValidationException> CreateAndLogValidationExceptionAsync(
         Xeption exception)
     {
@@ -44,6 +80,19 @@ public partial class InternalToolService
         await this.loggingBroker.LogErrorAsync(internalToolValidationException);
 
         return internalToolValidationException;
+    }
+
+    private async ValueTask<InternalToolDependencyException> CreateAndLogDependencyExceptionAsync(
+        Xeption exception)
+    {
+        var internalToolDependencyException =
+            new InternalToolDependencyException(
+                message: "Internal tool dependency error occurred, contact support.",
+                innerException: exception);
+
+        await this.loggingBroker.LogErrorAsync(internalToolDependencyException);
+
+        return internalToolDependencyException;
     }
 
     private async ValueTask<InternalToolServiceException> CreateAndLogServiceExceptionAsync(
