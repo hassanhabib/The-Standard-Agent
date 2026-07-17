@@ -206,4 +206,95 @@ public class StandardAgentTests
         // then
         actualException.Message.Should().Contain("gate");
     }
+
+    // ⭐ A Core-profile agent must compose. SPEC.md 8.1 lists Core's Direction as
+    // InternalToolService + ToolBroker and ReturnService — no External at all.
+    //
+    // Nothing here calls UseMcp, and that is the point: every other test in this file
+    // does, which is exactly why they all missed #81. Compose() built new McpBroker("")
+    // and new Uri("") threw before the loop ever started.
+    [Fact]
+    public async Task ShouldComposeCoreProfileAgentOnProcessPromptWithoutMcpConfiguredAsync()
+    {
+        // given
+        var skillBroker = new Mock<ISkillBroker>();
+        skillBroker.Setup(b => b.SelectSkillsAsync()).ReturnsAsync("skills");
+
+        var generatorBroker = new Mock<IGeneratorBroker>();
+        generatorBroker.Setup(b => b.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync("FINAL: composed");
+
+        var gate = new Mock<IClassifierBroker>();
+        gate.Setup(b => b.ClassifyAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync("allow");
+
+        var judge = new Mock<IVerifierBroker>();
+        judge.Setup(b => b.VerifyAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(1.0);
+
+        var memory = new Mock<IMemoryBroker>();
+        memory.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
+
+        // No UseMcp, no Mcp(...).
+        var agent = new StandardAgent()
+            .UseSkills(skillBroker.Object)
+            .UseGenerator(generatorBroker.Object)
+            .UseGate(gate.Object)
+            .UseJudge(judge.Object)
+            .UseMemory(memory.Object)
+            .UseKnowledge(new Mock<IKnowledgeBroker>().Object)
+            .UseLog(new Mock<ILogBroker>().Object);
+
+        // when
+        string actualResult = await agent.ProcessPromptAsync("prompt");
+
+        // then
+        actualResult.Should().Be("composed");
+    }
+
+    // ...and an unknown tool on that agent must still RECOVER, not die. Vector 05's
+    // contract has to hold for a real Core agent, not only inside the harness.
+    [Fact]
+    public async Task ShouldRecoverFromUnknownToolWithoutMcpConfiguredAsync()
+    {
+        // given — the Brain calls a tool that does not exist, then answers
+        var replies = new Queue<string>(
+        [
+            "ACTION: weather: today",
+            "FINAL: could not get weather"
+        ]);
+
+        var skillBroker = new Mock<ISkillBroker>();
+        skillBroker.Setup(b => b.SelectSkillsAsync()).ReturnsAsync("skills");
+
+        var generatorBroker = new Mock<IGeneratorBroker>();
+        generatorBroker.Setup(b => b.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(() => replies.Dequeue());
+
+        var gate = new Mock<IClassifierBroker>();
+        gate.Setup(b => b.ClassifyAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync("allow");
+
+        var judge = new Mock<IVerifierBroker>();
+        judge.Setup(b => b.VerifyAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(1.0);
+
+        var memory = new Mock<IMemoryBroker>();
+        memory.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
+
+        var agent = new StandardAgent()
+            .UseSkills(skillBroker.Object)
+            .UseGenerator(generatorBroker.Object)
+            .UseGate(gate.Object)
+            .UseJudge(judge.Object)
+            .UseMemory(memory.Object)
+            .UseKnowledge(new Mock<IKnowledgeBroker>().Object)
+            .UseLog(new Mock<ILogBroker>().Object);
+
+        // when
+        string actualResult = await agent.ProcessPromptAsync("weather today?");
+
+        // then
+        actualResult.Should().Be("could not get weather");
+    }
 }

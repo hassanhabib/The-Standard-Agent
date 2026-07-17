@@ -214,9 +214,14 @@ public sealed partial class StandardAgent : IAgent
 
         IToolBroker toolBroker = new ToolBroker(this.tools);
 
+        // No endpoint configured means a Core-profile agent, which SPEC.md 8.1 says
+        // has no External. It still needs something on the far side of Act's unknown-
+        // tool route, so it gets a broker that says so honestly (#81).
         IMcpBroker mcp =
-            this.mcpBroker ?? new McpBroker(
-                this.mcpEndpointUrl, this.mcpRelativeUrl, this.mcpTimeoutSeconds);
+            this.mcpBroker ?? (string.IsNullOrWhiteSpace(this.mcpEndpointUrl)
+                ? new NotConfiguredMcpBroker()
+                : new McpBroker(
+                    this.mcpEndpointUrl, this.mcpRelativeUrl, this.mcpTimeoutSeconds));
 
         ILogBroker log = this.logBroker ?? new LogBroker(this.logPath);
 
