@@ -24,6 +24,6 @@ public partial class GateService : IGateService
         this.loggingBroker = loggingBroker;
     }
 
-    public ValueTask<string> ScreenAsync(string gatePrompt, string input) =>
-        throw new NotImplementedException();
+    public async ValueTask<string> ScreenAsync(string gatePrompt, string input) =>
+        await this.classifierBroker.ClassifyAsync(gatePrompt, input);
 }
