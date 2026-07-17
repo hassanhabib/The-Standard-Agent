@@ -46,7 +46,7 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
         ValidateContext(context);
 
         string verdict =
-            await this.gateService.ScreenAsync(context.SystemPrompt, context.Prompt);
+            await this.gateService.ScreenAsync(context.Prompt);
 
         if (IsRefusal(verdict))
         {
@@ -76,10 +76,8 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
             return decided;
         }
 
-        double score = 
-            await this.judgeService.EvaluateAsync(
-                judgePrompt: context.SystemPrompt,
-                candidate: decided.Payload);
+        double score =
+            await this.judgeService.EvaluateAsync(candidate: decided.Payload);
 
         if (score < MinimumAcceptableScore)
         {

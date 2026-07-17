@@ -77,12 +77,12 @@ public class AgentToolTests
         memory.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
 
         var gate = new Mock<Brokers.Classifiers.IClassifierBroker>();
-        gate.Setup(b => b.ClassifyAsync(It.IsAny<string>(), It.IsAny<string>()))
+        gate.Setup(b => b.ClassifyAsync(It.IsAny<string>()))
             .ReturnsAsync("allow");
 
         var judge = new Mock<Brokers.Verifiers.IVerifierBroker>();
-        judge.Setup(b => b.VerifyAsync(It.IsAny<string>(), It.IsAny<string>()))
-            .ReturnsAsync(1.0);
+        judge.Setup(b => b.VerifyAsync(It.IsAny<string>()))
+            .ReturnsAsync("1.0");
 
         var outerAgent = new StandardAgent()
             .UseSkills(skills.Object)

@@ -21,11 +21,11 @@ public partial class GateService : IGateService
         this.loggingBroker = loggingBroker;
     }
 
-    public ValueTask<string> ScreenAsync(string gatePrompt, string input) =>
+    public ValueTask<string> ScreenAsync(string input) =>
     TryCatch(async () =>
     {
-        ValidateScreen(gatePrompt, input);
+        ValidateScreen(input);
 
-        return await this.classifierBroker.ClassifyAsync(gatePrompt, input);
+        return await this.classifierBroker.ClassifyAsync(input);
     });
     }

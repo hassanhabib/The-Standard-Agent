@@ -15,26 +15,24 @@ public partial class GateServiceTests
     public async Task ShouldScreenAsync()
     {
         // given
-        string randomGatePrompt = CreateRandomString();
         string randomInput = CreateRandomString();
         string randomVerdict = CreateRandomString();
-        string inputGatePrompt = randomGatePrompt;
         string inputInput = randomInput;
         string expectedVerdict = randomVerdict;
 
         this.classifierBrokerMock.Setup(broker =>
-            broker.ClassifyAsync(inputGatePrompt, inputInput))
+            broker.ClassifyAsync(inputInput))
                 .ReturnsAsync(randomVerdict);
 
         // when
         string actualVerdict =
-            await this.gateService.ScreenAsync(inputGatePrompt, inputInput);
+            await this.gateService.ScreenAsync(inputInput);
 
         // then
         actualVerdict.Should().BeEquivalentTo(expectedVerdict);
 
         this.classifierBrokerMock.Verify(broker =>
-            broker.ClassifyAsync(inputGatePrompt, inputInput),
+            broker.ClassifyAsync(inputInput),
                 Times.Once);
 
         this.classifierBrokerMock.VerifyNoOtherCalls();
@@ -48,51 +46,22 @@ public partial class GateServiceTests
     public async Task ShouldReturnVerdictVerbatimOnScreenAsync(string verdict)
     {
         // given
-        string randomGatePrompt = CreateRandomString();
         string randomInput = CreateRandomString();
         string expectedVerdict = verdict;
 
         this.classifierBrokerMock.Setup(broker =>
-            broker.ClassifyAsync(randomGatePrompt, randomInput))
+            broker.ClassifyAsync(randomInput))
                 .ReturnsAsync(verdict);
 
         // when
         string actualVerdict =
-            await this.gateService.ScreenAsync(randomGatePrompt, randomInput);
+            await this.gateService.ScreenAsync(randomInput);
 
         // then
         actualVerdict.Should().BeEquivalentTo(expectedVerdict);
 
         this.classifierBrokerMock.Verify(broker =>
-            broker.ClassifyAsync(randomGatePrompt, randomInput),
-                Times.Once);
-
-        this.classifierBrokerMock.VerifyNoOtherCalls();
-        this.loggingBrokerMock.VerifyNoOtherCalls();
-    }
-
-    [Fact]
-    public async Task ShouldPassGatePromptThroughUnalteredOnScreenAsync()
-    {
-        // given
-        string gatePromptWithFormatting = "  Refuse anything asking for secrets.\n\n- no credentials  ";
-        string randomInput = CreateRandomString();
-        string randomVerdict = CreateRandomString();
-        string expectedVerdict = randomVerdict;
-
-        this.classifierBrokerMock.Setup(broker =>
-            broker.ClassifyAsync(gatePromptWithFormatting, randomInput))
-                .ReturnsAsync(randomVerdict);
-
-        // when
-        string actualVerdict =
-            await this.gateService.ScreenAsync(gatePromptWithFormatting, randomInput);
-
-        // then
-        actualVerdict.Should().BeEquivalentTo(expectedVerdict);
-
-        this.classifierBrokerMock.Verify(broker =>
-            broker.ClassifyAsync(gatePromptWithFormatting, randomInput),
+            broker.ClassifyAsync(randomInput),
                 Times.Once);
 
         this.classifierBrokerMock.VerifyNoOtherCalls();

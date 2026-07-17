@@ -9,6 +9,6 @@ namespace Standard.Agents.Conformance;
 
 public sealed class ApprovingVerifierBroker : IVerifierBroker
 {
-    public ValueTask<double> VerifyAsync(string systemPrompt, string candidate) =>
-        ValueTask.FromResult(1.0);
+    public ValueTask<string> VerifyAsync(string candidate) =>
+        ValueTask.FromResult("1.0");
     }

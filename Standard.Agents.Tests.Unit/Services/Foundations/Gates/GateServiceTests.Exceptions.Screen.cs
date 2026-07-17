@@ -33,10 +33,9 @@ public partial class GateServiceTests
     [Theory]
     [MemberData(nameof(CriticalDependencyExceptions))]
     public async Task ShouldThrowCriticalDependencyExceptionOnScreenIfCriticalErrorOccursAndLogItAsync(
-Exception criticalDependencyException)
+        Exception criticalDependencyException)
     {
         // given
-        string randomGatePrompt = CreateRandomString();
         string randomInput = CreateRandomString();
 
         var failedGateDependencyException =
@@ -50,12 +49,12 @@ Exception criticalDependencyException)
                 innerException: failedGateDependencyException);
 
         this.classifierBrokerMock.Setup(broker =>
-            broker.ClassifyAsync(randomGatePrompt, randomInput))
+            broker.ClassifyAsync(randomInput))
                 .ThrowsAsync(criticalDependencyException);
 
         // when
         ValueTask<string> screenTask =
-            this.gateService.ScreenAsync(randomGatePrompt, randomInput);
+            this.gateService.ScreenAsync(randomInput);
 
         GateDependencyException actualGateDependencyException =
             await Assert.ThrowsAsync<GateDependencyException>(
@@ -66,7 +65,7 @@ Exception criticalDependencyException)
             .BeEquivalentTo(expectedGateDependencyException);
 
         this.classifierBrokerMock.Verify(broker =>
-            broker.ClassifyAsync(randomGatePrompt, randomInput),
+            broker.ClassifyAsync(randomInput),
                 Times.Once);
 
         this.loggingBrokerMock.Verify(broker =>
@@ -84,7 +83,6 @@ Exception criticalDependencyException)
         Exception dependencyException)
     {
         // given
-        string randomGatePrompt = CreateRandomString();
         string randomInput = CreateRandomString();
 
         var failedGateDependencyException =
@@ -98,12 +96,12 @@ Exception criticalDependencyException)
                 innerException: failedGateDependencyException);
 
         this.classifierBrokerMock.Setup(broker =>
-            broker.ClassifyAsync(randomGatePrompt, randomInput))
+            broker.ClassifyAsync(randomInput))
                 .ThrowsAsync(dependencyException);
 
         // when
         ValueTask<string> screenTask =
-            this.gateService.ScreenAsync(randomGatePrompt, randomInput);
+            this.gateService.ScreenAsync(randomInput);
 
         GateDependencyException actualGateDependencyException =
             await Assert.ThrowsAsync<GateDependencyException>(
@@ -114,7 +112,7 @@ Exception criticalDependencyException)
             .BeEquivalentTo(expectedGateDependencyException);
 
         this.classifierBrokerMock.Verify(broker =>
-            broker.ClassifyAsync(randomGatePrompt, randomInput),
+            broker.ClassifyAsync(randomInput),
                 Times.Once);
 
         this.loggingBrokerMock.Verify(broker =>
@@ -130,7 +128,6 @@ Exception criticalDependencyException)
     public async Task ShouldThrowDependencyValidationExceptionOnScreenIfBadRequestErrorOccursAndLogItAsync()
     {
         // given
-        string randomGatePrompt = CreateRandomString();
         string randomInput = CreateRandomString();
         var badRequestException = new HttpResponseBadRequestException();
 
@@ -144,12 +141,12 @@ Exception criticalDependencyException)
                 innerException: invalidGateException);
 
         this.classifierBrokerMock.Setup(broker =>
-            broker.ClassifyAsync(randomGatePrompt, randomInput))
+            broker.ClassifyAsync(randomInput))
                 .ThrowsAsync(badRequestException);
 
         // when
         ValueTask<string> screenTask =
-            this.gateService.ScreenAsync(randomGatePrompt, randomInput);
+            this.gateService.ScreenAsync(randomInput);
 
         GateDependencyValidationException actualGateDependencyValidationException =
             await Assert.ThrowsAsync<GateDependencyValidationException>(
@@ -160,7 +157,7 @@ Exception criticalDependencyException)
             .BeEquivalentTo(expectedGateDependencyValidationException);
 
         this.classifierBrokerMock.Verify(broker =>
-            broker.ClassifyAsync(randomGatePrompt, randomInput),
+            broker.ClassifyAsync(randomInput),
                 Times.Once);
 
         this.loggingBrokerMock.Verify(broker =>
@@ -176,7 +173,6 @@ Exception criticalDependencyException)
     public async Task ShouldThrowServiceExceptionOnScreenIfServiceErrorOccursAndLogItAsync()
     {
         // given
-        string randomGatePrompt = CreateRandomString();
         string randomInput = CreateRandomString();
         var serviceException = new Exception();
 
@@ -191,12 +187,12 @@ Exception criticalDependencyException)
                 innerException: failedGateServiceException);
 
         this.classifierBrokerMock.Setup(broker =>
-            broker.ClassifyAsync(randomGatePrompt, randomInput))
+            broker.ClassifyAsync(randomInput))
                 .ThrowsAsync(serviceException);
 
         // when
         ValueTask<string> screenTask =
-            this.gateService.ScreenAsync(randomGatePrompt, randomInput);
+            this.gateService.ScreenAsync(randomInput);
 
         GateServiceException actualGateServiceException =
             await Assert.ThrowsAsync<GateServiceException>(
@@ -207,7 +203,7 @@ Exception criticalDependencyException)
             .BeEquivalentTo(expectedGateServiceException);
 
         this.classifierBrokerMock.Verify(broker =>
-            broker.ClassifyAsync(randomGatePrompt, randomInput),
+            broker.ClassifyAsync(randomInput),
                 Times.Once);
 
         this.loggingBrokerMock.Verify(broker =>

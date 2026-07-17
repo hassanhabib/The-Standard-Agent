@@ -51,12 +51,12 @@ public partial class DecisionOrchestrationServiceTests
 
     private void SetupGateAllows() =>
         this.gateServiceMock.Setup(service =>
-    service.ScreenAsync(It.IsAny<string>(), It.IsAny<string>()))
+    service.ScreenAsync(It.IsAny<string>()))
         .ReturnsAsync("allow");
 
     private void SetupJudgeApproves() =>
         this.judgeServiceMock.Setup(service =>
-            service.EvaluateAsync(It.IsAny<string>(), It.IsAny<string>()))
+            service.EvaluateAsync(It.IsAny<string>()))
                 .ReturnsAsync(1.0);
 
     private static Expression<Func<Xeption, bool>> SameExceptionAs(Xeption expectedException) =>

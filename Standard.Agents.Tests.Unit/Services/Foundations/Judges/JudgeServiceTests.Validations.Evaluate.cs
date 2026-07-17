@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Globalization;
 using FluentAssertions;
 using Moq;
 using Standard.Agents.Models.Foundations.Judges.Exceptions;
@@ -16,12 +17,10 @@ public partial class JudgeServiceTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData(" ")]
-    public async Task ShouldThrowValidationExceptionOnEvaluateIfJudgePromptIsInvalidAndLogItAsync(
-        string? invalidJudgePrompt)
+    public async Task ShouldThrowValidationExceptionOnEvaluateIfCandidateIsInvalidAndLogItAsync(
+        string? invalidCandidate)
     {
         // given
-        string randomCandidate = CreateRandomString();
-
         var invalidJudgeException =
             new InvalidJudgeException(
                 message: "Invalid judge input. Please correct the error and try again.");
@@ -33,7 +32,7 @@ public partial class JudgeServiceTests
 
         // when
         ValueTask<double> evaluateTask =
-            this.judgeService.EvaluateAsync(invalidJudgePrompt!, randomCandidate);
+            this.judgeService.EvaluateAsync(invalidCandidate!);
 
         JudgeValidationException actualJudgeValidationException =
             await Assert.ThrowsAsync<JudgeValidationException>(
@@ -49,7 +48,7 @@ public partial class JudgeServiceTests
                     Times.Once);
 
         this.verifierBrokerMock.Verify(broker =>
-            broker.VerifyAsync(It.IsAny<string>(), It.IsAny<string>()),
+            broker.VerifyAsync(It.IsAny<string>()),
                 Times.Never);
 
         this.verifierBrokerMock.VerifyNoOtherCalls();
@@ -60,24 +59,31 @@ public partial class JudgeServiceTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData(" ")]
-    public async Task ShouldThrowValidationExceptionOnEvaluateIfCandidateIsInvalidAndLogItAsync(
-        string? invalidCandidate)
+    [InlineData("allow")]
+    [InlineData("ACTION: calculator: 47 * 89")]
+    [InlineData("I would rate this a 9 out of 10.")]
+    public async Task ShouldThrowValidationExceptionOnEvaluateIfScoreIsNotNumericAndLogItAsync(
+        string? nonNumericVerdict)
     {
         // given
-        string randomJudgePrompt = CreateRandomString();
+        string randomCandidate = CreateRandomString();
 
-        var invalidJudgeException =
-            new InvalidJudgeException(
-                message: "Invalid judge input. Please correct the error and try again.");
+        var invalidJudgeScoreException =
+            new InvalidJudgeScoreException(
+                message: "Invalid judge score. Score must be a number between 0.0 and 1.0.");
 
         var expectedJudgeValidationException =
             new JudgeValidationException(
                 message: "Judge validation error occurred, fix the error and try again.",
-                innerException: invalidJudgeException);
+                innerException: invalidJudgeScoreException);
+
+        this.verifierBrokerMock.Setup(broker =>
+            broker.VerifyAsync(randomCandidate))
+                .ReturnsAsync(nonNumericVerdict!);
 
         // when
         ValueTask<double> evaluateTask =
-            this.judgeService.EvaluateAsync(randomJudgePrompt, invalidCandidate!);
+            this.judgeService.EvaluateAsync(randomCandidate);
 
         JudgeValidationException actualJudgeValidationException =
             await Assert.ThrowsAsync<JudgeValidationException>(
@@ -87,14 +93,14 @@ public partial class JudgeServiceTests
         actualJudgeValidationException.Should()
             .BeEquivalentTo(expectedJudgeValidationException);
 
+        this.verifierBrokerMock.Verify(broker =>
+            broker.VerifyAsync(randomCandidate),
+                Times.Once);
+
         this.loggingBrokerMock.Verify(broker =>
             broker.LogErrorAsync(It.Is(SameExceptionAs(
                 expectedJudgeValidationException))),
                     Times.Once);
-
-        this.verifierBrokerMock.Verify(broker =>
-            broker.VerifyAsync(It.IsAny<string>(), It.IsAny<string>()),
-                Times.Never);
 
         this.verifierBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();
@@ -106,11 +112,11 @@ public partial class JudgeServiceTests
     [InlineData(87)]
     [InlineData(double.NaN)]
     public async Task ShouldThrowValidationExceptionOnEvaluateIfScoreIsOutOfRangeAndLogItAsync(
-double outOfRangeScore)
+        double outOfRangeScore)
     {
         // given
-        string randomJudgePrompt = CreateRandomString();
         string randomCandidate = CreateRandomString();
+        string verdict = outOfRangeScore.ToString(CultureInfo.InvariantCulture);
 
         var invalidJudgeScoreException =
             new InvalidJudgeScoreException(
@@ -122,12 +128,12 @@ double outOfRangeScore)
                 innerException: invalidJudgeScoreException);
 
         this.verifierBrokerMock.Setup(broker =>
-            broker.VerifyAsync(randomJudgePrompt, randomCandidate))
-                .ReturnsAsync(outOfRangeScore);
+            broker.VerifyAsync(randomCandidate))
+                .ReturnsAsync(verdict);
 
         // when
         ValueTask<double> evaluateTask =
-            this.judgeService.EvaluateAsync(randomJudgePrompt, randomCandidate);
+            this.judgeService.EvaluateAsync(randomCandidate);
 
         JudgeValidationException actualJudgeValidationException =
             await Assert.ThrowsAsync<JudgeValidationException>(
@@ -138,7 +144,7 @@ double outOfRangeScore)
             .BeEquivalentTo(expectedJudgeValidationException);
 
         this.verifierBrokerMock.Verify(broker =>
-            broker.VerifyAsync(randomJudgePrompt, randomCandidate),
+            broker.VerifyAsync(randomCandidate),
                 Times.Once);
 
         this.loggingBrokerMock.Verify(broker =>

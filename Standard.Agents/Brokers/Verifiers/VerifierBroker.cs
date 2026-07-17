@@ -3,7 +3,6 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
-using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using RESTFulSense.Clients;
@@ -26,6 +25,7 @@ public sealed class VerifierBroker : IVerifierBroker
     private readonly string model;
     private readonly double temperature;
     private readonly int maxTokens;
+    private readonly string systemPrompt;
 
     public VerifierBroker(
         string apiUrl,
@@ -33,7 +33,8 @@ public sealed class VerifierBroker : IVerifierBroker
         string model,
         double temperature,
         int maxTokens,
-        int timeoutSeconds)
+        int timeoutSeconds,
+        string systemPrompt)
     {
         var httpClient = new HttpClient
         {
@@ -48,15 +49,16 @@ public sealed class VerifierBroker : IVerifierBroker
         this.model = model;
         this.temperature = temperature;
         this.maxTokens = maxTokens;
+        this.systemPrompt = systemPrompt;
     }
 
-    public async ValueTask<double> VerifyAsync(string systemPrompt, string candidate)
+    public async ValueTask<string> VerifyAsync(string candidate)
     {
         ChatCompletionRequest chatCompletionRequest = new(
             Model: this.model,
             Messages:
             [
-                new ChatMessage(Role: "system", Content: systemPrompt),
+                new ChatMessage(Role: "system", Content: this.systemPrompt),
                 new ChatMessage(Role: "user", Content: candidate)
             ],
             Stream: false,
@@ -68,14 +70,8 @@ public sealed class VerifierBroker : IVerifierBroker
                 ChatCompletionsRelativeUrl,
                 chatCompletionRequest);
 
-        return ToScore(chatCompletionResponse.Choices[0].Message.Content);
+        return chatCompletionResponse.Choices[0].Message.Content;
     }
-
-    private static double ToScore(string content) =>
-double.Parse(
-content.Trim(),
-NumberStyles.Float,
-CultureInfo.InvariantCulture);
 
     private async ValueTask<TResult> PostAsync<TContent, TResult>(
         string relativeUrl,
