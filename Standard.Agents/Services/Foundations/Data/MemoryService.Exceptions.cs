@@ -94,7 +94,7 @@ public partial class MemoryService
     }
 
     private async ValueTask<MemoryValidationException> CreateAndLogValidationExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var memoryValidationException =
             new MemoryValidationException(
@@ -143,7 +143,7 @@ public partial class MemoryService
     }
 
     private async ValueTask<MemoryServiceException> CreateAndLogServiceExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var memoryServiceException =
             new MemoryServiceException(

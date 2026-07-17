@@ -17,7 +17,7 @@ public partial class ReturnServiceTests
     [InlineData("")]
     [InlineData(" ")]
     public async Task ShouldThrowValidationExceptionOnReturnIfPayloadIsInvalidAndLogItAsync(
-        string invalidPayload)
+        string? invalidPayload)
     {
         // given
         var invalidReturnException =
@@ -31,7 +31,7 @@ public partial class ReturnServiceTests
 
         // when
         ValueTask<string> returnTask =
-            this.returnService.ReturnAsync(invalidPayload);
+            this.returnService.ReturnAsync(invalidPayload!);
 
         ReturnValidationException actualReturnValidationException =
             await Assert.ThrowsAsync<ReturnValidationException>(

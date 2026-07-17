@@ -9,7 +9,7 @@ namespace Standard.Agents.Models.Orchestrations.Agents.Exceptions;
 
 public class AgentOrchestrationValidationException : Xeption
 {
-    public AgentOrchestrationValidationException(string message, Xeption innerException)
+    public AgentOrchestrationValidationException(string message, Xeption? innerException)
         : base(message, innerException)
     { }
 }

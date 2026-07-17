@@ -36,7 +36,7 @@ public partial class ReturnService
     }
 
     private async ValueTask<ReturnValidationException> CreateAndLogValidationExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var returnValidationException =
             new ReturnValidationException(
@@ -49,7 +49,7 @@ public partial class ReturnService
     }
 
     private async ValueTask<ReturnServiceException> CreateAndLogServiceExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var returnServiceException =
             new ReturnServiceException(

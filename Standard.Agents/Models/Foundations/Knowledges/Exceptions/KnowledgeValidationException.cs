@@ -9,7 +9,7 @@ namespace Standard.Agents.Models.Foundations.Knowledges.Exceptions;
 
 public class KnowledgeValidationException : Xeption
 {
-    public KnowledgeValidationException(string message, Xeption innerException)
+    public KnowledgeValidationException(string message, Xeption? innerException)
         : base(message, innerException)
     { }
 }

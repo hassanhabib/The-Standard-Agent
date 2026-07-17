@@ -83,7 +83,7 @@ public partial class GateService
     }
 
     private async ValueTask<GateValidationException> CreateAndLogValidationExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var gateValidationException =
             new GateValidationException(
@@ -96,7 +96,7 @@ public partial class GateService
     }
 
     private async ValueTask<GateDependencyValidationException> CreateAndLogDependencyValidationExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var gateDependencyValidationException =
             new GateDependencyValidationException(
@@ -145,7 +145,7 @@ public partial class GateService
     }
 
     private async ValueTask<GateServiceException> CreateAndLogServiceExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var gateServiceException =
             new GateServiceException(

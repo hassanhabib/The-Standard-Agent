@@ -20,7 +20,7 @@ public partial class KnowledgeServiceTests
     [InlineData("")]
     [InlineData(" ")]
     public async Task ShouldThrowValidationExceptionOnRetrieveKnowledgeIfQueryIsInvalidAndLogItAsync(
-        string invalidQuery)
+        string? invalidQuery)
     {
         // given
         var invalidKnowledgeException =
@@ -34,7 +34,7 @@ public partial class KnowledgeServiceTests
 
         // when
         ValueTask<IReadOnlyList<string>> retrieveTask =
-            this.knowledgeService.RetrieveKnowledgeAsync(invalidQuery);
+            this.knowledgeService.RetrieveKnowledgeAsync(invalidQuery!);
 
         KnowledgeValidationException actualKnowledgeValidationException =
             await Assert.ThrowsAsync<KnowledgeValidationException>(

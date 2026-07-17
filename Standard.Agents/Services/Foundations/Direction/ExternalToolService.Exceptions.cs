@@ -82,7 +82,7 @@ public partial class ExternalToolService
     }
 
     private async ValueTask<ExternalToolValidationException> CreateAndLogValidationExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var externalToolValidationException =
             new ExternalToolValidationException(
@@ -95,7 +95,7 @@ public partial class ExternalToolService
     }
 
     private async ValueTask<ExternalToolDependencyValidationException> CreateAndLogDependencyValidationExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var externalToolDependencyValidationException =
             new ExternalToolDependencyValidationException(
@@ -144,7 +144,7 @@ public partial class ExternalToolService
     }
 
     private async ValueTask<ExternalToolServiceException> CreateAndLogServiceExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var externalToolServiceException =
             new ExternalToolServiceException(

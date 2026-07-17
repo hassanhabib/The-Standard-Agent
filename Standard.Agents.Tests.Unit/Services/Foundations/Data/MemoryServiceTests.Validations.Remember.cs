@@ -19,7 +19,7 @@ public partial class MemoryServiceTests
     [InlineData("")]
     [InlineData(" ")]
     public async Task ShouldThrowValidationExceptionOnRememberIfMemoryIsInvalidAndLogItAsync(
-        string invalidMemory)
+        string? invalidMemory)
     {
         // given
         var invalidMemoryException =
@@ -33,7 +33,7 @@ public partial class MemoryServiceTests
 
         // when
         ValueTask rememberTask =
-            this.memoryService.RememberAsync(invalidMemory);
+            this.memoryService.RememberAsync(invalidMemory!);
 
         MemoryValidationException actualMemoryValidationException =
             await Assert.ThrowsAsync<MemoryValidationException>(

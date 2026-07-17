@@ -17,7 +17,7 @@ public partial class JudgeServiceTests
     [InlineData("")]
     [InlineData(" ")]
     public async Task ShouldThrowValidationExceptionOnEvaluateIfJudgePromptIsInvalidAndLogItAsync(
-        string invalidJudgePrompt)
+        string? invalidJudgePrompt)
     {
         // given
         string randomCandidate = CreateRandomString();
@@ -33,7 +33,7 @@ public partial class JudgeServiceTests
 
         // when
         ValueTask<double> evaluateTask =
-            this.judgeService.EvaluateAsync(invalidJudgePrompt, randomCandidate);
+            this.judgeService.EvaluateAsync(invalidJudgePrompt!, randomCandidate);
 
         JudgeValidationException actualJudgeValidationException =
             await Assert.ThrowsAsync<JudgeValidationException>(
@@ -61,7 +61,7 @@ public partial class JudgeServiceTests
     [InlineData("")]
     [InlineData(" ")]
     public async Task ShouldThrowValidationExceptionOnEvaluateIfCandidateIsInvalidAndLogItAsync(
-        string invalidCandidate)
+        string? invalidCandidate)
     {
         // given
         string randomJudgePrompt = CreateRandomString();
@@ -77,7 +77,7 @@ public partial class JudgeServiceTests
 
         // when
         ValueTask<double> evaluateTask =
-            this.judgeService.EvaluateAsync(randomJudgePrompt, invalidCandidate);
+            this.judgeService.EvaluateAsync(randomJudgePrompt, invalidCandidate!);
 
         JudgeValidationException actualJudgeValidationException =
             await Assert.ThrowsAsync<JudgeValidationException>(

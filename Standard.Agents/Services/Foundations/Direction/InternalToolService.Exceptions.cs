@@ -70,7 +70,7 @@ public partial class InternalToolService
     }
 
     private async ValueTask<InternalToolValidationException> CreateAndLogValidationExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var internalToolValidationException =
             new InternalToolValidationException(
@@ -83,7 +83,7 @@ public partial class InternalToolService
     }
 
     private async ValueTask<InternalToolDependencyException> CreateAndLogDependencyExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var internalToolDependencyException =
             new InternalToolDependencyException(
@@ -96,7 +96,7 @@ public partial class InternalToolService
     }
 
     private async ValueTask<InternalToolServiceException> CreateAndLogServiceExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var internalToolServiceException =
             new InternalToolServiceException(

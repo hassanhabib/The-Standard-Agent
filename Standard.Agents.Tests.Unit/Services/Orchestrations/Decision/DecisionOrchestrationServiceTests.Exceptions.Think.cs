@@ -18,7 +18,7 @@ public partial class DecisionOrchestrationServiceTests
     public async Task ShouldThrowValidationExceptionOnThinkIfContextIsNullAndLogItAsync()
     {
         // given
-        AgentContext nullContext = null;
+        AgentContext? nullContext = null;
 
         var nullAgentContextException =
             new NullAgentContextException(
@@ -31,7 +31,7 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         ValueTask<AgentContext> thinkTask =
-            this.decisionOrchestrationService.ThinkAsync(nullContext);
+            this.decisionOrchestrationService.ThinkAsync(nullContext!);
 
         AgentOrchestrationValidationException actualException =
             await Assert.ThrowsAsync<AgentOrchestrationValidationException>(

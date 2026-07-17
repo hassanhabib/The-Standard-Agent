@@ -9,7 +9,7 @@ namespace Standard.Agents.Models.Foundations.Skills.Exceptions;
 
 public class SkillDependencyException : Xeption
 {
-    public SkillDependencyException(string message, Xeption innerException)
+    public SkillDependencyException(string message, Xeption? innerException)
         : base(message, innerException)
     { }
 }

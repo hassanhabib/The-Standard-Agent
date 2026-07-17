@@ -20,7 +20,7 @@ public partial class GateServiceTests
     [InlineData("")]
     [InlineData(" ")]
     public async Task ShouldThrowValidationExceptionOnScreenIfGatePromptIsInvalidAndLogItAsync(
-        string invalidGatePrompt)
+        string? invalidGatePrompt)
     {
         // given
         string randomInput = CreateRandomString();
@@ -36,7 +36,7 @@ public partial class GateServiceTests
 
         // when
         ValueTask<string> screenTask =
-            this.gateService.ScreenAsync(invalidGatePrompt, randomInput);
+            this.gateService.ScreenAsync(invalidGatePrompt!, randomInput);
 
         GateValidationException actualGateValidationException =
             await Assert.ThrowsAsync<GateValidationException>(
@@ -64,7 +64,7 @@ public partial class GateServiceTests
     [InlineData("")]
     [InlineData(" ")]
     public async Task ShouldThrowValidationExceptionOnScreenIfInputIsInvalidAndLogItAsync(
-        string invalidInput)
+        string? invalidInput)
     {
         // given
         string randomGatePrompt = CreateRandomString();
@@ -80,7 +80,7 @@ public partial class GateServiceTests
 
         // when
         ValueTask<string> screenTask =
-            this.gateService.ScreenAsync(randomGatePrompt, invalidInput);
+            this.gateService.ScreenAsync(randomGatePrompt, invalidInput!);
 
         GateValidationException actualGateValidationException =
             await Assert.ThrowsAsync<GateValidationException>(

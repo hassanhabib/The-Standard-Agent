@@ -17,7 +17,7 @@ public partial class InternalToolServiceTests
     [InlineData("")]
     [InlineData(" ")]
     public async Task ShouldThrowValidationExceptionOnHandlesIfNameIsInvalidAndLogItAsync(
-        string invalidName)
+        string? invalidName)
     {
         // given
         var invalidInternalToolException =
@@ -31,7 +31,7 @@ public partial class InternalToolServiceTests
 
         // when
         ValueTask<bool> handlesTask =
-            this.internalToolService.HandlesAsync(invalidName);
+            this.internalToolService.HandlesAsync(invalidName!);
 
         InternalToolValidationException actualInternalToolValidationException =
             await Assert.ThrowsAsync<InternalToolValidationException>(

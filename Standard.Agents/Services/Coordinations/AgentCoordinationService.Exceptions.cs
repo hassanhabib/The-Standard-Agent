@@ -60,7 +60,7 @@ public partial class AgentCoordinationService
     }
 
     private async ValueTask<AgentCoordinationValidationException> CreateAndLogValidationExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var agentCoordinationValidationException =
             new AgentCoordinationValidationException(
@@ -73,7 +73,7 @@ public partial class AgentCoordinationService
     }
 
     private async ValueTask<AgentCoordinationDependencyValidationException> CreateAndLogDependencyValidationExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var agentCoordinationDependencyValidationException =
             new AgentCoordinationDependencyValidationException(
@@ -86,7 +86,7 @@ public partial class AgentCoordinationService
     }
 
     private async ValueTask<AgentCoordinationDependencyException> CreateAndLogDependencyExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var agentCoordinationDependencyException =
             new AgentCoordinationDependencyException(
@@ -99,7 +99,7 @@ public partial class AgentCoordinationService
     }
 
     private async ValueTask<AgentCoordinationServiceException> CreateAndLogServiceExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var agentCoordinationServiceException =
             new AgentCoordinationServiceException(

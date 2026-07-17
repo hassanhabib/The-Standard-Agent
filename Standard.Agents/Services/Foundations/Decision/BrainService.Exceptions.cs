@@ -80,7 +80,7 @@ public partial class BrainService
     }
 
     private async ValueTask<BrainValidationException> CreateAndLogValidationExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var brainValidationException =
             new BrainValidationException(
@@ -93,7 +93,7 @@ public partial class BrainService
     }
 
     private async ValueTask<BrainDependencyValidationException> CreateAndLogDependencyValidationExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var brainDependencyValidationException =
             new BrainDependencyValidationException(
@@ -142,7 +142,7 @@ public partial class BrainService
     }
 
     private async ValueTask<BrainServiceException> CreateAndLogServiceExceptionAsync(
-        Xeption exception)
+        Xeption? exception)
     {
         var brainServiceException =
             new BrainServiceException(

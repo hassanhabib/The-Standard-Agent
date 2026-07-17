@@ -9,7 +9,7 @@ namespace Standard.Agents.Models.Foundations.Gates.Exceptions;
 
 public class GateServiceException : Xeption
 {
-    public GateServiceException(string message, Xeption innerException)
+    public GateServiceException(string message, Xeption? innerException)
         : base(message, innerException)
     { }
 }

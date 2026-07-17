@@ -9,7 +9,7 @@ namespace Standard.Agents.Models.Foundations.InternalTools.Exceptions;
 
 public class InternalToolValidationException : Xeption
 {
-    public InternalToolValidationException(string message, Xeption innerException)
+    public InternalToolValidationException(string message, Xeption? innerException)
         : base(message, innerException)
     { }
 }

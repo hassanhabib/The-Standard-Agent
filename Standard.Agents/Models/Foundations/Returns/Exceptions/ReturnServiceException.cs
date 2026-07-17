@@ -9,7 +9,7 @@ namespace Standard.Agents.Models.Foundations.Returns.Exceptions;
 
 public class ReturnServiceException : Xeption
 {
-    public ReturnServiceException(string message, Xeption innerException)
+    public ReturnServiceException(string message, Xeption? innerException)
         : base(message, innerException)
     { }
 }
