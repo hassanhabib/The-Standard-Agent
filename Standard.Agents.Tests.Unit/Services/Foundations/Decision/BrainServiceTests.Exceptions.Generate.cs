@@ -69,6 +69,10 @@ public partial class BrainServiceTests
         actualBrainDependencyException.Should()
             .BeEquivalentTo(expectedBrainDependencyException);
 
+        this.generatorBrokerMock.Verify(broker =>
+            broker.GenerateAsync(randomSystemPrompt, randomUserPrompt),
+                Times.Once);
+
         this.loggingBrokerMock.Verify(broker =>
             broker.LogCriticalAsync(It.Is(SameExceptionAs(
                 expectedBrainDependencyException))),
@@ -112,6 +116,10 @@ public partial class BrainServiceTests
         // then
         actualBrainDependencyException.Should()
             .BeEquivalentTo(expectedBrainDependencyException);
+
+        this.generatorBrokerMock.Verify(broker =>
+            broker.GenerateAsync(randomSystemPrompt, randomUserPrompt),
+                Times.Once);
 
         this.loggingBrokerMock.Verify(broker =>
             broker.LogErrorAsync(It.Is(SameExceptionAs(
@@ -157,6 +165,10 @@ public partial class BrainServiceTests
         actualBrainDependencyValidationException.Should()
             .BeEquivalentTo(expectedBrainDependencyValidationException);
 
+        this.generatorBrokerMock.Verify(broker =>
+            broker.GenerateAsync(randomSystemPrompt, randomUserPrompt),
+                Times.Once);
+
         this.loggingBrokerMock.Verify(broker =>
             broker.LogErrorAsync(It.Is(SameExceptionAs(
                 expectedBrainDependencyValidationException))),
@@ -199,6 +211,10 @@ public partial class BrainServiceTests
         // then
         actualBrainServiceException.Should()
             .BeEquivalentTo(expectedBrainServiceException);
+
+        this.generatorBrokerMock.Verify(broker =>
+            broker.GenerateAsync(randomSystemPrompt, randomUserPrompt),
+                Times.Once);
 
         this.loggingBrokerMock.Verify(broker =>
             broker.LogErrorAsync(It.Is(SameExceptionAs(
