@@ -2,7 +2,7 @@
 
 <img src="https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-icon.png" alt="The Standard for Agents" width="180" />
 
-# The Standard for Agents
+# The Standard AI Agent Framework
 
 **`Agent = Orchestration(Data, Decision, Direction)`**
 
