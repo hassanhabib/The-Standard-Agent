@@ -21,9 +21,15 @@ public partial class MemoryService : IMemoryService
         this.loggingBroker = loggingBroker;
     }
 
-    public async ValueTask<IReadOnlyList<string>> RecallMemoriesAsync() =>
-        await this.memoryBroker.SelectMemoriesAsync();
+    public ValueTask<IReadOnlyList<string>> RecallMemoriesAsync() =>
+    TryCatch(async () =>
+        await this.memoryBroker.SelectMemoriesAsync());
 
-    public async ValueTask RememberAsync(string memory) =>
+    public ValueTask RememberAsync(string memory) =>
+    TryCatch(async () =>
+    {
+        ValidateMemory(memory);
+
         await this.memoryBroker.InsertMemoryAsync(memory);
+    });
 }
