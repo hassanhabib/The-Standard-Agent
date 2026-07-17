@@ -28,4 +28,7 @@ public partial class InternalToolService : IInternalToolService
 
         return await this.toolBroker.HasAsync(name);
     });
+
+    public ValueTask<string> RunAsync(string name, string input) =>
+        throw new NotImplementedException();
 }

@@ -8,4 +8,6 @@ namespace Standard.Agents.Services.Foundations.Direction;
 public interface IInternalToolService
 {
     ValueTask<bool> HandlesAsync(string name);
+
+    ValueTask<string> RunAsync(string name, string input);
 }
