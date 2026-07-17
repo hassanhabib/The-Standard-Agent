@@ -61,4 +61,38 @@ public partial class DecisionOrchestrationServiceTests
 
     private static Expression<Func<Xeption, bool>> SameExceptionAs(Xeption expectedException) =>
         actualException => actualException.SameExceptionAs(expectedException);
+
+    // Exceptions from any of Decision's three foundations, unified into one
+    // orchestration category.
+    public static TheoryData<Xeption> DependencyValidationExceptions() =>
+        new()
+        {
+            new Models.Foundations.Gates.Exceptions.GateValidationException(
+                "gate validation", new Xeption("inner")),
+
+            new Models.Foundations.Brains.Exceptions.BrainValidationException(
+                "brain validation", new Xeption("inner")),
+
+            new Models.Foundations.Judges.Exceptions.JudgeValidationException(
+                "judge validation", new Xeption("inner")),
+
+            new Models.Foundations.Brains.Exceptions.BrainDependencyValidationException(
+                "brain dependency validation", new Xeption("inner"))
+        };
+
+    public static TheoryData<Xeption> DependencyExceptions() =>
+        new()
+        {
+            new Models.Foundations.Gates.Exceptions.GateDependencyException(
+                "gate dependency", new Xeption("inner")),
+
+            new Models.Foundations.Gates.Exceptions.GateServiceException(
+                "gate service", new Xeption("inner")),
+
+            new Models.Foundations.Brains.Exceptions.BrainDependencyException(
+                "brain dependency", new Xeption("inner")),
+
+            new Models.Foundations.Judges.Exceptions.JudgeDependencyException(
+                "judge dependency", new Xeption("inner"))
+        };
 }
