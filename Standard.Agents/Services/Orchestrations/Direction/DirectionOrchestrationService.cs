@@ -67,8 +67,14 @@ public partial class DirectionOrchestrationService : IDirectionOrchestrationServ
         // SPEC.md 4.3: a non-terminal result MUST be appended to observations and its
         // status MUST be Working. Named, because a bare "2" tells the Brain nothing
         // about which question it answers once several tools are in flight.
+        //
+        // Result is written here too, not only on terminal turns. SPEC.md 3 says
+        // "result: written by Act" with no qualifier, and vector 06 depends on it: a
+        // capped loop never reaches a terminal turn, and SPEC.md 5 still returns
+        // context.result. Result holds the most recent thing Direction produced.
         return context with
         {
+            Result = output,
             Observations = [.. context.Observations, $"{context.DirectionType}: {output}"],
             Status = AgentStatus.Working
         };
