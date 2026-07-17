@@ -21,6 +21,6 @@ public partial class SkillService : ISkillService
         this.loggingBroker = loggingBroker;
     }
 
-    public ValueTask<string> RetrieveSkillsAsync() =>
-        throw new NotImplementedException();
+    public async ValueTask<string> RetrieveSkillsAsync() =>
+        await this.skillBroker.SelectSkillsAsync();
 }
