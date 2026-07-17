@@ -68,4 +68,4 @@ public partial class ExternalToolServiceTests
         this.mcpBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
-}
+    }

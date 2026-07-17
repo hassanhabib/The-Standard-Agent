@@ -32,4 +32,4 @@ public partial class JudgeService : IJudgeService
 
         return score;
     });
-}
+    }

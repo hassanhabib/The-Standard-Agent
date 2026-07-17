@@ -30,7 +30,7 @@ public sealed class ScriptedGeneratorBroker : IGeneratorBroker
 
         return ValueTask.FromResult(reply);
     }
-}
+    }
 
 public sealed class StubTool : ITool
 {
@@ -46,13 +46,13 @@ public sealed class StubTool : ITool
 
     public ValueTask<string> ExecuteAsync(string input) =>
         ValueTask.FromResult(this.output);
-}
+    }
 
 public sealed class StubSkillBroker : ISkillBroker
 {
     public ValueTask<string> SelectSkillsAsync() =>
         ValueTask.FromResult("You are a test agent.");
-}
+    }
 
 public sealed class StubMemoryBroker : IMemoryBroker
 {
@@ -61,31 +61,31 @@ public sealed class StubMemoryBroker : IMemoryBroker
 
     public ValueTask InsertMemoryAsync(string memory) =>
         ValueTask.CompletedTask;
-}
+    }
 
 public sealed class StubKnowledgeBroker : IKnowledgeBroker
 {
     public ValueTask<IReadOnlyList<string>> SelectKnowledgeAsync(string query) =>
         ValueTask.FromResult<IReadOnlyList<string>>([]);
-}
+    }
 
 public sealed class AllowingClassifierBroker : IClassifierBroker
 {
     public ValueTask<string> ClassifyAsync(string systemPrompt, string input) =>
         ValueTask.FromResult("allow");
-}
+    }
 
 public sealed class ApprovingVerifierBroker : IVerifierBroker
 {
     public ValueTask<double> VerifyAsync(string systemPrompt, string candidate) =>
         ValueTask.FromResult(1.0);
-}
+    }
 
 public sealed class NotConfiguredMcpBroker : IMcpBroker
 {
     public ValueTask<string> CallAsync(string name, string input) =>
         ValueTask.FromResult($"[external '{name}' not configured]");
-}
+    }
 
 public sealed class NullLogBroker : ILogBroker
 {
@@ -96,7 +96,7 @@ public sealed class NullLogBroker : ILogBroker
 
     public ValueTask WriteAsync(string content) =>
         ValueTask.CompletedTask;
-}
+    }
 
 public sealed record Vector(
     string Name,

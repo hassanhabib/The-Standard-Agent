@@ -98,4 +98,4 @@ public partial class GateServiceTests
         this.classifierBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
-}
+    }

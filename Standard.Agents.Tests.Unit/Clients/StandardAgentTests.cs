@@ -64,7 +64,7 @@ public class StandardAgentTests
         StandardAgent agent = CreateFullyStubbedAgent("FINAL: 42");
 
         // when
-        string actualResult = await agent.ProcessPromptAsync("what is the answer?");
+        string actualResult = await agent.ProcessPromptAsync(prompt: "what is the answer?");
 
         // then
         actualResult.Should().Be("42");
@@ -78,12 +78,12 @@ public class StandardAgentTests
 
         // when
         StandardAgent chained = agent
-            .Skills("Skills")
-            .Brain("https://x/", "key", "model")
-            .Memory("memory.txt")
-            .Knowledge("Knowledge")
-            .Mcp("https://mcp/")
-            .LogTo("log.txt");
+            .Skills(path: "Skills")
+            .Brain(apiUrl: "https://x/", apiKey: "key", model: "model")
+            .Memory(path: "memory.txt")
+            .Knowledge(path: "Knowledge")
+            .Mcp(endpointUrl: "https://mcp/")
+            .LogTo(path: "log.txt");
 
         // then
         chained.Should().BeSameAs(agent);
@@ -95,7 +95,7 @@ public class StandardAgentTests
         // given
         StandardAgent agent = CreateFullyStubbedAgent("FINAL: first");
 
-        string firstResult = await agent.ProcessPromptAsync("prompt");
+        string firstResult = await agent.ProcessPromptAsync(prompt: "prompt");
 
         var newGenerator = new Mock<IGeneratorBroker>();
         newGenerator.Setup(b => b.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
@@ -103,7 +103,7 @@ public class StandardAgentTests
 
         // when
         agent.UseGenerator(newGenerator.Object);
-        string secondResult = await agent.ProcessPromptAsync("prompt");
+        string secondResult = await agent.ProcessPromptAsync(prompt: "prompt");
 
         // then
         firstResult.Should().Be("first");
@@ -117,7 +117,7 @@ public class StandardAgentTests
         var agent = new StandardAgent();
 
         // when
-        ValueTask<string> processTask = agent.ProcessPromptAsync("prompt");
+        ValueTask<string> processTask = agent.ProcessPromptAsync(prompt: "prompt");
 
         InvalidAgentCompositionException actualException =
             await Assert.ThrowsAsync<InvalidAgentCompositionException>(
@@ -163,7 +163,7 @@ public class StandardAgentTests
     .UseLog(logBroker.Object);
 
         // when
-        string actualResult = await agent.ProcessPromptAsync("prompt");
+        string actualResult = await agent.ProcessPromptAsync(prompt: "prompt");
 
         // then
         actualResult.Should().Be("ok");
@@ -179,7 +179,7 @@ public class StandardAgentTests
             .UseGenerator(generatorBroker.Object);
 
         // when
-        ValueTask<string> processTask = agent.ProcessPromptAsync("prompt");
+        ValueTask<string> processTask = agent.ProcessPromptAsync(prompt: "prompt");
 
         InvalidAgentCompositionException actualException =
             await Assert.ThrowsAsync<InvalidAgentCompositionException>(
@@ -221,7 +221,7 @@ public class StandardAgentTests
     .UseLog(new Mock<ILogBroker>().Object);
 
         // when
-        string actualResult = await agent.ProcessPromptAsync("prompt");
+        string actualResult = await agent.ProcessPromptAsync(prompt: "prompt");
 
         // then
         actualResult.Should().Be("composed");
@@ -265,9 +265,9 @@ public class StandardAgentTests
             .UseLog(new Mock<ILogBroker>().Object);
 
         // when
-        string actualResult = await agent.ProcessPromptAsync("weather today?");
+        string actualResult = await agent.ProcessPromptAsync(prompt: "weather today?");
 
         // then
         actualResult.Should().Be("could not get weather");
     }
-}
+    }

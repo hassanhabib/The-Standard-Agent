@@ -159,4 +159,4 @@ public partial class KnowledgeServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-}
+    }

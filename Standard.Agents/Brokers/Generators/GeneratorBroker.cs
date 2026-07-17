@@ -41,7 +41,7 @@ public sealed class GeneratorBroker : IGeneratorBroker
         };
 
         httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", apiKey);
+            new AuthenticationHeaderValue(scheme: "Bearer", parameter: apiKey);
 
         this.apiClient = new RESTFulApiFactoryClient(httpClient);
         this.model = model;
@@ -55,8 +55,8 @@ public sealed class GeneratorBroker : IGeneratorBroker
             Model: this.model,
             Messages:
             [
-                new ChatMessage("system", systemPrompt),
-                new ChatMessage("user", userPrompt)
+                new ChatMessage(Role: "system", Content: systemPrompt),
+                new ChatMessage(Role: "user", Content: userPrompt)
             ],
             Stream: false,
             Temperature: this.temperature,
@@ -98,4 +98,4 @@ public sealed class GeneratorBroker : IGeneratorBroker
 
     private sealed record ChatChoice(
         ChatMessage Message);
-}
+    }

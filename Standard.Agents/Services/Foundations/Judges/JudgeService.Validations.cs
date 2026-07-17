@@ -31,4 +31,4 @@ public partial class JudgeService
                 message: "Invalid judge score. Score must be between 0.0 and 1.0.");
         }
     }
-}
+        }

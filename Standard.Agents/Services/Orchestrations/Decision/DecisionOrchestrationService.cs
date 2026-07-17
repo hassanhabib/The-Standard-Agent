@@ -157,4 +157,4 @@ verdict.TrimStart().StartsWith(RefuseVerdict, StringComparison.OrdinalIgnoreCase
             RawReply = reply
         };
     }
-}
+        }

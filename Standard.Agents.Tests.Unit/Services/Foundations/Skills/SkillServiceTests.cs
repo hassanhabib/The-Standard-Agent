@@ -34,4 +34,4 @@ public partial class SkillServiceTests
 
     private static Expression<Func<Xeption, bool>> SameExceptionAs(Xeption expectedException) =>
         actualException => actualException.SameExceptionAs(expectedException);
-}
+    }

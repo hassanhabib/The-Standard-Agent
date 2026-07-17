@@ -53,7 +53,7 @@ foreach (string vectorFile in
         Console.WriteLine($"        expected: {Show(expectation)}");
         Console.WriteLine($"        actual:   {Show(actualResult)}");
     }
-}
+    }
 
 Console.WriteLine();
 Console.WriteLine($"{passed} passed, {failed} failed");
@@ -63,7 +63,7 @@ return failed == 0 ? 0 : 1;
 async Task<string> RunVectorAsync(Vector vector)
 {
     IEnumerable<ITool> tools =
-        (vector.Tools ?? []).Select(pair => (ITool)new StubTool(pair.Key, pair.Value));
+        (vector.Tools ?? []).Select(pair => (ITool)new StubTool(name: pair.Key, output: pair.Value));
 
     IAgent agent = new StandardAgent()
         .UseSkills(new StubSkillBroker())
@@ -77,7 +77,7 @@ async Task<string> RunVectorAsync(Vector vector)
         .Tools(tools);
 
     return await agent.ProcessPromptAsync(vector.Prompt);
-}
+    }
 
 static string Show(string value) =>
     value.Replace("\n", "\\n").Replace("\r", "\\r");
@@ -96,4 +96,4 @@ static string FindRepositoryRoot()
         ?? throw new DirectoryNotFoundException(
             "Could not find the repository root — no 'conformance' directory found "
                 + "walking up from the executable.");
-}
+    }

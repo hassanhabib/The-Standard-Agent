@@ -252,4 +252,4 @@ public sealed partial class StandardAgent : IAgent
         double Temperature,
         int MaxTokens,
         int TimeoutSeconds);
-}
+    }

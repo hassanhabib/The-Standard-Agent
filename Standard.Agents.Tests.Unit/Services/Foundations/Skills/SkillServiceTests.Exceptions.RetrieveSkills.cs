@@ -154,4 +154,4 @@ public partial class SkillServiceTests
         this.skillBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
-}
+    }

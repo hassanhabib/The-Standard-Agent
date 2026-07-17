@@ -99,4 +99,4 @@ string? invalidGatePrompt)
         this.classifierBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
-}
+    }

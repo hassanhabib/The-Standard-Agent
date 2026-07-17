@@ -218,4 +218,4 @@ Exception criticalDependencyException)
         this.mcpBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
-}
+    }

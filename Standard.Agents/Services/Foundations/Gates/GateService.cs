@@ -28,4 +28,4 @@ public partial class GateService : IGateService
 
         return await this.classifierBroker.ClassifyAsync(gatePrompt, input);
     });
-}
+    }

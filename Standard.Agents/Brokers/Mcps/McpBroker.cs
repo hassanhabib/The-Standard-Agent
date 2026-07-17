@@ -110,4 +110,4 @@ public sealed class McpBroker : IMcpBroker
     private sealed record JsonRpcError(
         int Code,
         string Message);
-}
+        }

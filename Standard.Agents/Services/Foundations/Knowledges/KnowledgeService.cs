@@ -28,4 +28,4 @@ public partial class KnowledgeService : IKnowledgeService
 
         return await this.knowledgeBroker.SelectKnowledgeAsync(query);
     });
-}
+    }

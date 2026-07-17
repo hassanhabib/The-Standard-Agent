@@ -30,4 +30,4 @@ WholeNumberRegex().Replace(expression, "${0}.0");
 
     [GeneratedRegex(@"(?<![\d.])\d+(?![\d.])")]
     private static partial Regex WholeNumberRegex();
-}
+        }

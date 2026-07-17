@@ -66,4 +66,4 @@ public partial class AgentCoordinationService : IAgentCoordinationService
         await this.logBroker.WriteAsync(
             $"turn {turn} | intent: {context.Intent} | direction: {context.DirectionType} " +
             $"| status: {context.Status}");
-}
+            }

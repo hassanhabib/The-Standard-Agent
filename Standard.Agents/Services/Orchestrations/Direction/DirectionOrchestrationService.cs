@@ -71,4 +71,4 @@ public partial class DirectionOrchestrationService : IDirectionOrchestrationServ
         directionType.Equals(RefuseDirection, StringComparison.OrdinalIgnoreCase)
             ? AgentStatus.Refused
             : AgentStatus.Responded;
-}
+        }

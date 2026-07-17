@@ -152,4 +152,4 @@ public partial class GateService
 
         return gateServiceException;
     }
-}
+    }

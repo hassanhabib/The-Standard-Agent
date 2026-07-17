@@ -187,4 +187,4 @@ public partial class DecisionOrchestrationServiceTests
                 It.Is<string>(userMessage => userMessage.Contains(observation))),
                     Times.Once);
     }
-}
+        }

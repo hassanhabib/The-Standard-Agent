@@ -86,4 +86,4 @@ string? emptySystemPrompt)
         this.generatorBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
-}
+    }

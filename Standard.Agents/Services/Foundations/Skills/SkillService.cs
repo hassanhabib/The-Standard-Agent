@@ -24,4 +24,4 @@ public partial class SkillService : ISkillService
     public ValueTask<string> RetrieveSkillsAsync() =>
     TryCatch(async () =>
         await this.skillBroker.SelectSkillsAsync());
-}
+    }
