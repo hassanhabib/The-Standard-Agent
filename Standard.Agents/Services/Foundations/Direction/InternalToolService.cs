@@ -21,6 +21,11 @@ public partial class InternalToolService : IInternalToolService
         this.loggingBroker = loggingBroker;
     }
 
-    public async ValueTask<bool> HandlesAsync(string name) =>
-        await this.toolBroker.HasAsync(name);
+    public ValueTask<bool> HandlesAsync(string name) =>
+    TryCatch(async () =>
+    {
+        ValidateName(name);
+
+        return await this.toolBroker.HasAsync(name);
+    });
 }
