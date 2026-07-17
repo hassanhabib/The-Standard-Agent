@@ -64,4 +64,95 @@ public partial class SkillServiceTests
         this.skillBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
+
+    [Fact]
+    public async Task ShouldThrowDependencyExceptionOnRetrieveSkillsIfIOErrorOccursAndLogItAsync()
+    {
+        // given
+        var ioException = new IOException();
+
+        var failedSkillDependencyException =
+            new FailedSkillDependencyException(
+                message: "Failed skill dependency error occurred, contact support.",
+                innerException: ioException);
+
+        var expectedSkillDependencyException =
+            new SkillDependencyException(
+                message: "Skill dependency error occurred, contact support.",
+                innerException: failedSkillDependencyException);
+
+        this.skillBrokerMock.Setup(broker =>
+            broker.SelectSkillsAsync())
+                .ThrowsAsync(ioException);
+
+        // when
+        ValueTask<string> retrieveSkillsTask =
+            this.skillService.RetrieveSkillsAsync();
+
+        SkillDependencyException actualSkillDependencyException =
+            await Assert.ThrowsAsync<SkillDependencyException>(
+                retrieveSkillsTask.AsTask);
+
+        // then
+        actualSkillDependencyException.Should()
+            .BeEquivalentTo(expectedSkillDependencyException);
+
+        this.skillBrokerMock.Verify(broker =>
+            broker.SelectSkillsAsync(),
+                Times.Once);
+
+        // Error, not Critical — a transient IO failure may well succeed on retry.
+        this.loggingBrokerMock.Verify(broker =>
+            broker.LogErrorAsync(It.Is(SameExceptionAs(
+                expectedSkillDependencyException))),
+                    Times.Once);
+
+        this.skillBrokerMock.VerifyNoOtherCalls();
+        this.loggingBrokerMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task ShouldThrowServiceExceptionOnRetrieveSkillsIfServiceErrorOccursAndLogItAsync()
+    {
+        // given
+        var serviceException = new Exception();
+
+        var failedSkillServiceException =
+            new FailedSkillServiceException(
+                message: "Failed skill service error occurred, contact support.",
+                innerException: serviceException);
+
+        var expectedSkillServiceException =
+            new SkillServiceException(
+                message: "Skill service error occurred, contact support.",
+                innerException: failedSkillServiceException);
+
+        this.skillBrokerMock.Setup(broker =>
+            broker.SelectSkillsAsync())
+                .ThrowsAsync(serviceException);
+
+        // when
+        ValueTask<string> retrieveSkillsTask =
+            this.skillService.RetrieveSkillsAsync();
+
+        SkillServiceException actualSkillServiceException =
+            await Assert.ThrowsAsync<SkillServiceException>(
+                retrieveSkillsTask.AsTask);
+
+        // then
+        actualSkillServiceException.Should()
+            .BeEquivalentTo(expectedSkillServiceException);
+
+        this.skillBrokerMock.Verify(broker =>
+            broker.SelectSkillsAsync(),
+                Times.Once);
+
+        this.loggingBrokerMock.Verify(broker =>
+            broker.LogErrorAsync(It.Is(SameExceptionAs(
+                expectedSkillServiceException))),
+                    Times.Once);
+
+        this.skillBrokerMock.VerifyNoOtherCalls();
+        this.loggingBrokerMock.VerifyNoOtherCalls();
+    }
 }
