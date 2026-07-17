@@ -18,12 +18,34 @@ public partial class SkillService
         {
             return await returningStringFunction();
         }
+        // FileNotFound and DirectoryNotFound both derive from IOException, so they
+        // must be caught above any IOException block or it would swallow them.
         catch (FileNotFoundException fileNotFoundException)
         {
             var failedSkillDependencyException =
                 new FailedSkillDependencyException(
                     message: "Failed skill dependency error occurred, contact support.",
                     innerException: fileNotFoundException);
+
+            throw await CreateAndLogCriticalDependencyExceptionAsync(
+                failedSkillDependencyException);
+        }
+        catch (DirectoryNotFoundException directoryNotFoundException)
+        {
+            var failedSkillDependencyException =
+                new FailedSkillDependencyException(
+                    message: "Failed skill dependency error occurred, contact support.",
+                    innerException: directoryNotFoundException);
+
+            throw await CreateAndLogCriticalDependencyExceptionAsync(
+                failedSkillDependencyException);
+        }
+        catch (UnauthorizedAccessException unauthorizedAccessException)
+        {
+            var failedSkillDependencyException =
+                new FailedSkillDependencyException(
+                    message: "Failed skill dependency error occurred, contact support.",
+                    innerException: unauthorizedAccessException);
 
             throw await CreateAndLogCriticalDependencyExceptionAsync(
                 failedSkillDependencyException);
