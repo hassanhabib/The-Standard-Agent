@@ -47,7 +47,7 @@ public partial class DecisionOrchestrationServiceTests
                     Times.Once);
 
         this.gateServiceMock.Verify(service =>
-            service.ScreenAsync(It.IsAny<string>(), It.IsAny<string>()),
+            service.ScreenAsync(It.IsAny<string>()),
                 Times.Never);
 
         this.gateServiceMock.VerifyNoOtherCalls();
@@ -70,7 +70,7 @@ Xeption foundationException)
                 innerException: foundationException.InnerException as Xeption);
 
         this.gateServiceMock.Setup(service =>
-            service.ScreenAsync(It.IsAny<string>(), It.IsAny<string>()))
+            service.ScreenAsync(It.IsAny<string>()))
                 .ThrowsAsync(foundationException);
 
         // when
@@ -105,7 +105,7 @@ Xeption foundationException)
                 innerException: foundationException.InnerException as Xeption);
 
         this.gateServiceMock.Setup(service =>
-            service.ScreenAsync(It.IsAny<string>(), It.IsAny<string>()))
+            service.ScreenAsync(It.IsAny<string>()))
                 .ThrowsAsync(foundationException);
 
         // when
@@ -144,7 +144,7 @@ Xeption foundationException)
                 innerException: failedAgentOrchestrationServiceException);
 
         this.gateServiceMock.Setup(service =>
-            service.ScreenAsync(It.IsAny<string>(), It.IsAny<string>()))
+            service.ScreenAsync(It.IsAny<string>()))
                 .ThrowsAsync(serviceException);
 
         // when

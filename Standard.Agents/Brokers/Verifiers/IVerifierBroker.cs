@@ -7,5 +7,5 @@ namespace Standard.Agents.Brokers.Verifiers;
 
 public interface IVerifierBroker
 {
-    ValueTask<double> VerifyAsync(string systemPrompt, string candidate);
+    ValueTask<string> VerifyAsync(string candidate);
 }

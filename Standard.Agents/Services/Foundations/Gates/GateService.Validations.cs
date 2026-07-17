@@ -9,9 +9,9 @@ namespace Standard.Agents.Services.Foundations.Gates;
 
 public partial class GateService
 {
-    private static void ValidateScreen(string gatePrompt, string input)
+    private static void ValidateScreen(string input)
     {
-        if (string.IsNullOrWhiteSpace(gatePrompt) || string.IsNullOrWhiteSpace(input))
+        if (string.IsNullOrWhiteSpace(input))
         {
             throw new InvalidGateException(
                 message: "Invalid gate input. Please correct the error and try again.");

@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Globalization;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -18,51 +19,52 @@ public partial class JudgeServiceTests
     public async Task ShouldEvaluateAsync(double score)
     {
         // given
-        string randomJudgePrompt = CreateRandomString();
         string randomCandidate = CreateRandomString();
+        string verdict = score.ToString(CultureInfo.InvariantCulture);
         double expectedScore = score;
 
         this.verifierBrokerMock.Setup(broker =>
-            broker.VerifyAsync(randomJudgePrompt, randomCandidate))
-                .ReturnsAsync(score);
+            broker.VerifyAsync(randomCandidate))
+                .ReturnsAsync(verdict);
 
         // when
         double actualScore =
-            await this.judgeService.EvaluateAsync(randomJudgePrompt, randomCandidate);
+            await this.judgeService.EvaluateAsync(randomCandidate);
 
         // then
         actualScore.Should().Be(expectedScore);
 
         this.verifierBrokerMock.Verify(broker =>
-            broker.VerifyAsync(randomJudgePrompt, randomCandidate),
+            broker.VerifyAsync(randomCandidate),
                 Times.Once);
 
         this.verifierBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-    [Fact]
-    public async Task ShouldPassJudgePromptThroughUnalteredOnEvaluateAsync()
+    [Theory]
+    [InlineData(" 0.75 ", 0.75)]
+    [InlineData("0.5\n", 0.5)]
+    public async Task ShouldParseSurroundingWhitespaceOnEvaluateAsync(
+        string verdict,
+        double expectedScore)
     {
         // given
-        string judgePromptWithFormatting = "  Score 0..1 for groundedness.\n\n- cite sources  ";
         string randomCandidate = CreateRandomString();
-        double expectedScore = 0.75;
 
         this.verifierBrokerMock.Setup(broker =>
-            broker.VerifyAsync(judgePromptWithFormatting, randomCandidate))
-                .ReturnsAsync(expectedScore);
+            broker.VerifyAsync(randomCandidate))
+                .ReturnsAsync(verdict);
 
         // when
-        double actualScore = await this.judgeService.EvaluateAsync(
-            judgePromptWithFormatting,
-            randomCandidate);
+        double actualScore =
+            await this.judgeService.EvaluateAsync(randomCandidate);
 
         // then
         actualScore.Should().Be(expectedScore);
 
         this.verifierBrokerMock.Verify(broker =>
-            broker.VerifyAsync(judgePromptWithFormatting, randomCandidate),
+            broker.VerifyAsync(randomCandidate),
                 Times.Once);
 
         this.verifierBrokerMock.VerifyNoOtherCalls();

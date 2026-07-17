@@ -25,6 +25,7 @@ public sealed class ClassifierBroker : IClassifierBroker
     private readonly string model;
     private readonly double temperature;
     private readonly int maxTokens;
+    private readonly string systemPrompt;
 
     public ClassifierBroker(
         string apiUrl,
@@ -32,7 +33,8 @@ public sealed class ClassifierBroker : IClassifierBroker
         string model,
         double temperature,
         int maxTokens,
-        int timeoutSeconds)
+        int timeoutSeconds,
+        string systemPrompt)
     {
         var httpClient = new HttpClient
         {
@@ -47,15 +49,16 @@ public sealed class ClassifierBroker : IClassifierBroker
         this.model = model;
         this.temperature = temperature;
         this.maxTokens = maxTokens;
+        this.systemPrompt = systemPrompt;
     }
 
-    public async ValueTask<string> ClassifyAsync(string systemPrompt, string input)
+    public async ValueTask<string> ClassifyAsync(string input)
     {
         ChatCompletionRequest chatCompletionRequest = new(
             Model: this.model,
             Messages:
             [
-                new ChatMessage(Role: "system", Content: systemPrompt),
+                new ChatMessage(Role: "system", Content: this.systemPrompt),
                 new ChatMessage(Role: "user", Content: input)
             ],
             Stream: false,

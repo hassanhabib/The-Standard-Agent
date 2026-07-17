@@ -15,6 +15,7 @@ using Standard.Agents.Brokers.Skills;
 using Standard.Agents.Brokers.Tools;
 using Standard.Agents.Brokers.Verifiers;
 using Standard.Agents.Models.Clients.Agents;
+using Standard.Agents.Prompts;
 using Standard.Agents.Services.Coordinations;
 using Standard.Agents.Services.Foundations.Brains;
 using Standard.Agents.Services.Foundations.ExternalTools;
@@ -80,8 +81,9 @@ public sealed partial class StandardAgent : IAgent
     // the Gate falls back to the Brain's endpoint — SPEC.md 9 permits collapsing the
     // three Decision brokers onto one endpoint, and Theory Ch.5 calls it "three
     // interfaces, collapsible substrate: at small scale one model wears all three
-    // hats". For anything safety-critical, set this — invariant 7.6 says the guardian
-    // must not be the brain.
+    // hats". Even collapsed, the Gate is never the Brain: it runs its own screening
+    // rubric (Data, not the agent's system prompt), honouring invariant 6. For a truly
+    // independent guardian, point this at a different model.
     public StandardAgent Gate(
         string apiUrl,
         string apiKey,
@@ -205,12 +207,14 @@ public sealed partial class StandardAgent : IAgent
         IClassifierBroker classifier =
             this.classifierBroker ?? new ClassifierBroker(
                 gate!.ApiUrl, gate.ApiKey, gate.Model,
-                gate.Temperature, gate.MaxTokens, gate.TimeoutSeconds);
+                gate.Temperature, gate.MaxTokens, gate.TimeoutSeconds,
+                GuardianPrompts.Gate);
 
         IVerifierBroker verifier =
             this.verifierBroker ?? new VerifierBroker(
                 judge!.ApiUrl, judge.ApiKey, judge.Model,
-                judge.Temperature, judge.MaxTokens, judge.TimeoutSeconds);
+                judge.Temperature, judge.MaxTokens, judge.TimeoutSeconds,
+                GuardianPrompts.Judge);
 
         IToolBroker toolBroker = new ToolBroker(this.tools);
 

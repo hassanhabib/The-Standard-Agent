@@ -21,12 +21,14 @@ public partial class JudgeService : IJudgeService
         this.loggingBroker = loggingBroker;
     }
 
-    public ValueTask<double> EvaluateAsync(string judgePrompt, string candidate) =>
+    public ValueTask<double> EvaluateAsync(string candidate) =>
     TryCatch(async () =>
     {
-        ValidateEvaluate(judgePrompt, candidate);
+        ValidateEvaluate(candidate);
 
-        double score = await this.verifierBroker.VerifyAsync(judgePrompt, candidate);
+        string verdict = await this.verifierBroker.VerifyAsync(candidate);
+
+        double score = ParseScore(verdict);
 
         ValidateScore(score);
 

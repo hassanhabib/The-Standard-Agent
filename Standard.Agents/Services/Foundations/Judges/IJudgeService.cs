@@ -7,5 +7,5 @@ namespace Standard.Agents.Services.Foundations.Judges;
 
 public interface IJudgeService
 {
-    ValueTask<double> EvaluateAsync(string judgePrompt, string candidate);
+    ValueTask<double> EvaluateAsync(string candidate);
 }

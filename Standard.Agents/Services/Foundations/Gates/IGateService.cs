@@ -7,5 +7,5 @@ namespace Standard.Agents.Services.Foundations.Gates;
 
 public interface IGateService
 {
-    ValueTask<string> ScreenAsync(string gatePrompt, string input);
+    ValueTask<string> ScreenAsync(string input);
 }
