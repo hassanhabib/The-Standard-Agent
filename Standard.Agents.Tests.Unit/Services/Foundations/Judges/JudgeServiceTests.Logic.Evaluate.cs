@@ -11,7 +11,7 @@ namespace Standard.Agents.Tests.Unit.Services.Foundations.Judges;
 
 public partial class JudgeServiceTests
 {
-        [Theory]
+    [Theory]
     [InlineData(0.0)]
     [InlineData(0.3)]
     [InlineData(1.0)]
@@ -41,7 +41,7 @@ public partial class JudgeServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-            [Fact]
+    [Fact]
     public async Task ShouldPassJudgePromptThroughUnalteredOnEvaluateAsync()
     {
         // given

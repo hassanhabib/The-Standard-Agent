@@ -46,14 +46,14 @@ public partial class AgentCoordinationServiceTests
             broker.LogErrorAsync(It.Is(SameExceptionAs(expectedException))),
                 Times.Once);
 
-                        this.logBrokerMock.VerifyNoOtherCalls();
+        this.logBrokerMock.VerifyNoOtherCalls();
         this.dataOrchestrationServiceMock.VerifyNoOtherCalls();
     }
 
-                [Theory]
+    [Theory]
     [MemberData(nameof(DependencyExceptions))]
     public async Task ShouldThrowDependencyExceptionOnProcessPromptIfDependencyErrorOccursAndLogItAsync(
-        Xeption orchestrationException)
+Xeption orchestrationException)
     {
         // given
         string randomPrompt = CreateRandomString();

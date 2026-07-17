@@ -20,7 +20,7 @@ public sealed class KnowledgeBroker : IKnowledgeBroker
         this.searchPattern = searchPattern;
         this.maxResults = maxResults;
 
-                                Directory.CreateDirectory(this.knowledgePath);
+        Directory.CreateDirectory(this.knowledgePath);
     }
 
     public async ValueTask<IReadOnlyList<string>> SelectKnowledgeAsync(string query)
@@ -38,7 +38,7 @@ public sealed class KnowledgeBroker : IKnowledgeBroker
         {
             string document = await File.ReadAllTextAsync(documentPath);
 
-                                                if (document.Contains(query, StringComparison.OrdinalIgnoreCase))
+            if (document.Contains(query, StringComparison.OrdinalIgnoreCase))
             {
                 matches.Add(document);
             }

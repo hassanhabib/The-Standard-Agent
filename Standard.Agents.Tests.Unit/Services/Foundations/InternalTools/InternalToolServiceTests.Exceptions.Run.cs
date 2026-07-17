@@ -12,7 +12,7 @@ namespace Standard.Agents.Tests.Unit.Services.Foundations.InternalTools;
 
 public partial class InternalToolServiceTests
 {
-                [Fact]
+    [Fact]
     public async Task ShouldThrowDependencyExceptionOnRunIfToolErrorOccursAndLogItAsync()
     {
         // given
@@ -61,7 +61,7 @@ public partial class InternalToolServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-                    [Fact]
+    [Fact]
     public async Task ShouldThrowDependencyExceptionOnRunIfToolIsNotFoundAndLogItAsync()
     {
         // given

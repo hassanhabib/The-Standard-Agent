@@ -14,7 +14,7 @@ namespace Standard.Agents.Services.Coordinations;
 
 public partial class AgentCoordinationService : IAgentCoordinationService
 {
-                        private const int MaxTurns = 7;
+    private const int MaxTurns = 7;
 
     private readonly IDataOrchestrationService dataOrchestrationService;
     private readonly IDecisionOrchestrationService decisionOrchestrationService;
@@ -43,7 +43,7 @@ public partial class AgentCoordinationService : IAgentCoordinationService
 
         await this.logBroker.ResetAsync();
 
-                                AgentContext context = new() { Prompt = prompt };
+        AgentContext context = new() { Prompt = prompt };
 
         for (int turn = 1; turn <= MaxTurns; turn++)
         {
@@ -53,7 +53,7 @@ public partial class AgentCoordinationService : IAgentCoordinationService
 
             await LogTurnAsync(turn, context);
 
-                                                if (context.Status != AgentStatus.Working)
+            if (context.Status != AgentStatus.Working)
             {
                 break;
             }

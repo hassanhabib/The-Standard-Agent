@@ -41,7 +41,7 @@ public partial class BrainServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-                [Fact]
+    [Fact]
     public async Task ShouldPassPromptsThroughUnalteredOnGenerateAsync()
     {
         // given

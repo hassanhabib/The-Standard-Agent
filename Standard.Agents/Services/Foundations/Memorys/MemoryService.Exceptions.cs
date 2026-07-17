@@ -36,7 +36,7 @@ public partial class MemoryService
         {
             throw await CreateAndLogCriticalDependencyExceptionAsync(unauthorizedAccessException);
         }
-                        catch (IOException ioException)
+        catch (IOException ioException)
         {
             throw await CreateAndLogDependencyExceptionAsync(ioException);
         }
@@ -51,7 +51,7 @@ public partial class MemoryService
         }
     }
 
-                private async ValueTask TryCatch(ReturningNothingFunction returningNothingFunction)
+    private async ValueTask TryCatch(ReturningNothingFunction returningNothingFunction)
     {
         try
         {

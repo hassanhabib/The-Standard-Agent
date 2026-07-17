@@ -30,10 +30,10 @@ public partial class GateServiceTests
             new HttpResponseServiceUnavailableException()
         };
 
-                [Theory]
+    [Theory]
     [MemberData(nameof(CriticalDependencyExceptions))]
     public async Task ShouldThrowCriticalDependencyExceptionOnScreenIfCriticalErrorOccursAndLogItAsync(
-        Exception criticalDependencyException)
+Exception criticalDependencyException)
     {
         // given
         string randomGatePrompt = CreateRandomString();

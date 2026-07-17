@@ -29,11 +29,11 @@ public partial class InternalToolService : IInternalToolService
         return await this.toolBroker.HasAsync(name);
     });
 
-                public ValueTask<string> RunAsync(string name, string input) =>
-    TryCatch(async () =>
-    {
-        ValidateName(name);
+    public ValueTask<string> RunAsync(string name, string input) =>
+TryCatch(async () =>
+{
+    ValidateName(name);
 
-        return await this.toolBroker.RunAsync(name, input);
-    });
+    return await this.toolBroker.RunAsync(name, input);
+});
 }

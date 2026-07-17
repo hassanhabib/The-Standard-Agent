@@ -5,7 +5,6 @@
 
 using FluentAssertions;
 using Moq;
-using Standard.Agents.Brokers.Logs;
 using Standard.Agents.Tools;
 using Tynamix.ObjectFiller;
 using Xunit;
@@ -41,14 +40,14 @@ public class AgentToolTests
         actualOutput.Should().Be(expectedOutput);
         agentTool.Name.Should().Be(randomName);
 
-                nestedAgentMock.Verify(agent =>
-            agent.ProcessPromptAsync(randomInput),
-                Times.Once);
+        nestedAgentMock.Verify(agent =>
+    agent.ProcessPromptAsync(randomInput),
+        Times.Once);
 
         nestedAgentMock.VerifyNoOtherCalls();
     }
 
-                [Fact]
+    [Fact]
     public async Task ShouldNestAgentInsideAgentAsync()
     {
         // given — the inner agent answers anything with a fixed finding
@@ -60,7 +59,7 @@ public class AgentToolTests
 
         var researcher = new AgentTool("researcher", innerAgent.Object);
 
-                var outerBrain = new Mock<Brokers.Generators.IGeneratorBroker>();
+        var outerBrain = new Mock<Brokers.Generators.IGeneratorBroker>();
         var replies = new Queue<string>(
         [
             "ACTION: researcher: capital of France",
@@ -102,12 +101,12 @@ public class AgentToolTests
         // then
         actualResult.Should().Be("Paris");
 
-                innerAgent.Verify(agent =>
-            agent.ProcessPromptAsync("capital of France"),
-                Times.Once);
+        innerAgent.Verify(agent =>
+    agent.ProcessPromptAsync("capital of France"),
+        Times.Once);
     }
 
-                [Fact]
+    [Fact]
     public async Task ShouldPropagateOnExecuteIfNestedAgentThrowsAsync()
     {
         // given

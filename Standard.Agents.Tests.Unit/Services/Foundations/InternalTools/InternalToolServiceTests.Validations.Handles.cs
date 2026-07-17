@@ -46,9 +46,9 @@ public partial class InternalToolServiceTests
                 expectedInternalToolValidationException))),
                     Times.Once);
 
-                this.toolBrokerMock.Verify(broker =>
-            broker.HasAsync(It.IsAny<string>()),
-                Times.Never);
+        this.toolBrokerMock.Verify(broker =>
+    broker.HasAsync(It.IsAny<string>()),
+        Times.Never);
 
         this.toolBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();

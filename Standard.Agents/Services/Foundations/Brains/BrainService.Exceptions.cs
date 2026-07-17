@@ -25,9 +25,9 @@ public partial class BrainService
         }
         catch (HttpResponseBadRequestException httpResponseBadRequestException)
         {
-                        var invalidBrainException =
-                new InvalidBrainException(
-                    message: "Invalid brain request. Please correct the error and try again.");
+            var invalidBrainException =
+    new InvalidBrainException(
+        message: "Invalid brain request. Please correct the error and try again.");
 
             invalidBrainException.AddData(httpResponseBadRequestException.Data);
 

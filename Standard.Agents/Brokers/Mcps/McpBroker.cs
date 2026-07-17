@@ -63,7 +63,7 @@ public sealed class McpBroker : IMcpBroker
         return ToText(jsonRpcResponse);
     }
 
-                        private static string ToText(JsonRpcResponse jsonRpcResponse)
+    private static string ToText(JsonRpcResponse jsonRpcResponse)
     {
         if (jsonRpcResponse.Error is not null)
         {

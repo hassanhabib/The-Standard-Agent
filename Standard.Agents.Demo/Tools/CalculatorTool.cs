@@ -21,12 +21,12 @@ public sealed partial class CalculatorTool : ITool
         }
         catch (Exception exception)
         {
-                                                            return ValueTask.FromResult($"error: {exception.Message}");
+            return ValueTask.FromResult($"error: {exception.Message}");
         }
     }
 
-                private static string PromoteNumbers(string expression) =>
-        WholeNumberRegex().Replace(expression, "${0}.0");
+    private static string PromoteNumbers(string expression) =>
+WholeNumberRegex().Replace(expression, "${0}.0");
 
     [GeneratedRegex(@"(?<![\d.])\d+(?![\d.])")]
     private static partial Regex WholeNumberRegex();

@@ -8,21 +8,19 @@ using Moq;
 using Standard.Agents.Brokers.Classifiers;
 using Standard.Agents.Brokers.Generators;
 using Standard.Agents.Brokers.Knowledges;
-using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Brokers.Logs;
 using Standard.Agents.Brokers.Mcps;
 using Standard.Agents.Brokers.Memorys;
 using Standard.Agents.Brokers.Skills;
 using Standard.Agents.Brokers.Verifiers;
 using Standard.Agents.Models.Clients.Agents.Exceptions;
-using Standard.Agents;
 using Xunit;
 
 namespace Standard.Agents.Tests.Unit.Clients;
 
 public class StandardAgentTests
 {
-                private static StandardAgent CreateFullyStubbedAgent(string brainReply)
+    private static StandardAgent CreateFullyStubbedAgent(string brainReply)
     {
         var skillBroker = new Mock<ISkillBroker>();
         skillBroker.Setup(b => b.SelectSkillsAsync()).ReturnsAsync("you are an agent");
@@ -72,7 +70,7 @@ public class StandardAgentTests
         actualResult.Should().Be("42");
     }
 
-            [Fact]
+    [Fact]
     public void ShouldReturnSameInstanceOnEachBuilderMethod()
     {
         // given
@@ -91,7 +89,7 @@ public class StandardAgentTests
         chained.Should().BeSameAs(agent);
     }
 
-                [Fact]
+    [Fact]
     public async Task ShouldRecomposeAfterConfigurationChangesAsync()
     {
         // given
@@ -112,7 +110,7 @@ public class StandardAgentTests
         secondResult.Should().Be("second");
     }
 
-                [Fact]
+    [Fact]
     public async Task ShouldThrowCompositionExceptionOnProcessPromptIfBrainIsNotConfiguredAsync()
     {
         // given
@@ -129,7 +127,7 @@ public class StandardAgentTests
         actualException.Message.Should().Contain("no brain");
     }
 
-                            [Fact]
+    [Fact]
     public async Task ShouldComposeOnProcessPromptIfGeneratorIsSwappedWithoutBrainSettingsAsync()
     {
         // given
@@ -154,15 +152,15 @@ public class StandardAgentTests
         var knowledgeBroker = new Mock<IKnowledgeBroker>();
         var logBroker = new Mock<ILogBroker>();
 
-                var agent = new StandardAgent()
-            .UseSkills(skillBroker.Object)
-            .UseGenerator(generatorBroker.Object)
-            .UseGate(classifierBroker.Object)
-            .UseJudge(verifierBroker.Object)
-            .UseMemory(memoryBroker.Object)
-            .UseKnowledge(knowledgeBroker.Object)
-            .UseMcp(new Mock<IMcpBroker>().Object)
-            .UseLog(logBroker.Object);
+        var agent = new StandardAgent()
+    .UseSkills(skillBroker.Object)
+    .UseGenerator(generatorBroker.Object)
+    .UseGate(classifierBroker.Object)
+    .UseJudge(verifierBroker.Object)
+    .UseMemory(memoryBroker.Object)
+    .UseKnowledge(knowledgeBroker.Object)
+    .UseMcp(new Mock<IMcpBroker>().Object)
+    .UseLog(logBroker.Object);
 
         // when
         string actualResult = await agent.ProcessPromptAsync("prompt");
@@ -171,7 +169,7 @@ public class StandardAgentTests
         actualResult.Should().Be("ok");
     }
 
-                [Fact]
+    [Fact]
     public async Task ShouldThrowCompositionExceptionOnProcessPromptIfGateHasNoSettingsAsync()
     {
         // given
@@ -191,7 +189,7 @@ public class StandardAgentTests
         actualException.Message.Should().Contain("gate");
     }
 
-                            [Fact]
+    [Fact]
     public async Task ShouldComposeCoreProfileAgentOnProcessPromptWithoutMcpConfiguredAsync()
     {
         // given
@@ -213,14 +211,14 @@ public class StandardAgentTests
         var memory = new Mock<IMemoryBroker>();
         memory.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
 
-                var agent = new StandardAgent()
-            .UseSkills(skillBroker.Object)
-            .UseGenerator(generatorBroker.Object)
-            .UseGate(gate.Object)
-            .UseJudge(judge.Object)
-            .UseMemory(memory.Object)
-            .UseKnowledge(new Mock<IKnowledgeBroker>().Object)
-            .UseLog(new Mock<ILogBroker>().Object);
+        var agent = new StandardAgent()
+    .UseSkills(skillBroker.Object)
+    .UseGenerator(generatorBroker.Object)
+    .UseGate(gate.Object)
+    .UseJudge(judge.Object)
+    .UseMemory(memory.Object)
+    .UseKnowledge(new Mock<IKnowledgeBroker>().Object)
+    .UseLog(new Mock<ILogBroker>().Object);
 
         // when
         string actualResult = await agent.ProcessPromptAsync("prompt");
@@ -229,7 +227,7 @@ public class StandardAgentTests
         actualResult.Should().Be("composed");
     }
 
-            [Fact]
+    [Fact]
     public async Task ShouldRecoverFromUnknownToolWithoutMcpConfiguredAsync()
     {
         // given — the Brain calls a tool that does not exist, then answers

@@ -9,7 +9,7 @@ namespace Standard.Agents.Services.Foundations.Brains;
 
 public partial class BrainService
 {
-            private static void ValidateUserPrompt(string userPrompt)
+    private static void ValidateUserPrompt(string userPrompt)
     {
         if (string.IsNullOrWhiteSpace(userPrompt))
         {

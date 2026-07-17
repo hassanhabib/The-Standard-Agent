@@ -56,10 +56,10 @@ public partial class DecisionOrchestrationServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-                [Theory]
+    [Theory]
     [MemberData(nameof(DependencyValidationExceptions))]
     public async Task ShouldThrowDependencyValidationExceptionOnThinkIfDependencyValidationErrorOccursAndLogItAsync(
-        Xeption foundationException)
+Xeption foundationException)
     {
         // given
         AgentContext inputContext = CreateRandomAgentContext();

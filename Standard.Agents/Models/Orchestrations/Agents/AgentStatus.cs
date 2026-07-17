@@ -7,7 +7,7 @@ namespace Standard.Agents.Models.Orchestrations.Agents;
 
 public enum AgentStatus
 {
-        Working = 0,
+    Working = 0,
     Responded = 1,
     AwaitingInput = 2,
     Refused = 3,

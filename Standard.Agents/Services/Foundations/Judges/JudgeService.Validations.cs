@@ -21,7 +21,7 @@ public partial class JudgeService
         }
     }
 
-                                private static void ValidateScore(double score)
+    private static void ValidateScore(double score)
     {
         bool isWithinRange = score >= MinimumScore && score <= MaximumScore;
 

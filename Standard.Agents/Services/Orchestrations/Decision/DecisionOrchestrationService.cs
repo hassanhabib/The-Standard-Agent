@@ -3,12 +3,12 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Text;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Services.Foundations.Brains;
 using Standard.Agents.Services.Foundations.Gates;
 using Standard.Agents.Services.Foundations.Judges;
-using System.Text;
 
 namespace Standard.Agents.Services.Orchestrations.Decision;
 
@@ -21,7 +21,7 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
     private const string ReturnResponseDirection = "ReturnResponse";
     private const string RespondIntent = "Respond";
 
-        private const double MinimumAcceptableScore = 0.3;
+    private const double MinimumAcceptableScore = 0.3;
 
     private readonly IGateService gateService;
     private readonly IBrainService brainService;
@@ -45,7 +45,7 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
     {
         ValidateContext(context);
 
-                        string verdict =
+        string verdict =
             await this.gateService.ScreenAsync(context.SystemPrompt, context.Prompt);
 
         if (IsRefusal(verdict))
@@ -59,10 +59,10 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
             };
         }
 
-                string reply =
+        string reply =
             (await this.brainService.GenerateAsync(
-                context.SystemPrompt,
-                BuildUserMessage(context))).Trim();
+                systemPrompt: context.SystemPrompt,
+                userPrompt: BuildUserMessage(context))).Trim();
 
         AgentContext decided = Interpret(context, reply);
 
@@ -73,21 +73,24 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
 
         if (isFinalAnswer is false)
         {
-                        return decided;
+            return decided;
         }
 
-                        double score =
-            await this.judgeService.EvaluateAsync(context.SystemPrompt, decided.Payload);
+        double score = 
+            await this.judgeService.EvaluateAsync(
+                judgePrompt: context.SystemPrompt,
+                candidate: decided.Payload);
 
         if (score < MinimumAcceptableScore)
         {
-                                                return context with
+            return context with
             {
                 Observations =
                 [
                     .. context.Observations,
                     $"A previous draft was rejected on review: {decided.Payload}"
                 ],
+
                 Status = AgentStatus.Working
             };
         }
@@ -95,10 +98,10 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
         return decided;
     });
 
-                private static bool IsRefusal(string verdict) =>
-        verdict.TrimStart().StartsWith(RefuseVerdict, StringComparison.OrdinalIgnoreCase);
+    private static bool IsRefusal(string verdict) =>
+verdict.TrimStart().StartsWith(RefuseVerdict, StringComparison.OrdinalIgnoreCase);
 
-            private static string BuildUserMessage(AgentContext context)
+    private static string BuildUserMessage(AgentContext context)
     {
         StringBuilder userMessage = new();
 
@@ -119,16 +122,16 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
 
     private static AgentContext Interpret(AgentContext context, string reply)
     {
-                        string firstLine = reply.Split('\n')[0].Trim();
+        string firstLine = reply.Split('\n')[0].Trim();
 
         bool modelChoseToAct =
             firstLine.StartsWith(ActionPrefix, StringComparison.OrdinalIgnoreCase);
 
         if (modelChoseToAct)
         {
-                                    string[] toolCall =
+            string[] toolCall =
                 firstLine[ActionPrefix.Length..]
-                    .Split(':', 2, StringSplitOptions.TrimEntries);
+                .Split(':', 2, StringSplitOptions.TrimEntries);
 
             string toolName = toolCall[0];
             string toolInput = toolCall.Length > 1 ? toolCall[1] : string.Empty;
@@ -142,7 +145,7 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
             };
         }
 
-                                        string answer = reply.StartsWith(FinalPrefix, StringComparison.OrdinalIgnoreCase)
+        string answer = reply.StartsWith(FinalPrefix, StringComparison.OrdinalIgnoreCase)
             ? reply[FinalPrefix.Length..].Trim()
             : reply;
 

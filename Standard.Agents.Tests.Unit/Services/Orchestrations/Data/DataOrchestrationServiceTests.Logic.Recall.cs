@@ -12,7 +12,7 @@ namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Data;
 
 public partial class DataOrchestrationServiceTests
 {
-        [Fact]
+    [Fact]
     public async Task ShouldSetSystemPromptFromSkillServiceOnRecallAsync()
     {
         // given
@@ -40,7 +40,7 @@ public partial class DataOrchestrationServiceTests
                 Times.Once);
     }
 
-            [Fact]
+    [Fact]
     public async Task ShouldNotMutateInputContextOnRecallAsync()
     {
         // given
@@ -67,7 +67,7 @@ public partial class DataOrchestrationServiceTests
         actualContext.Prompt.Should().BeEquivalentTo(originalPrompt);
     }
 
-            [Fact]
+    [Fact]
     public async Task ShouldSeedObservationsFromMemoriesOnRecallAsync()
     {
         // given
@@ -95,7 +95,7 @@ public partial class DataOrchestrationServiceTests
                 Times.Once);
     }
 
-                    [Fact]
+    [Fact]
     public async Task ShouldPreserveExistingObservationsOnRecallAsync()
     {
         // given

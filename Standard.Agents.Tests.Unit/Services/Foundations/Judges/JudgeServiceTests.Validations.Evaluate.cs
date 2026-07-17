@@ -100,13 +100,13 @@ public partial class JudgeServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-                                [Theory]
+    [Theory]
     [InlineData(-0.1)]
     [InlineData(1.1)]
     [InlineData(87)]
     [InlineData(double.NaN)]
     public async Task ShouldThrowValidationExceptionOnEvaluateIfScoreIsOutOfRangeAndLogItAsync(
-        double outOfRangeScore)
+double outOfRangeScore)
     {
         // given
         string randomJudgePrompt = CreateRandomString();

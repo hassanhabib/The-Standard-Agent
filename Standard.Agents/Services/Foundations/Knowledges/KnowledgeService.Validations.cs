@@ -9,7 +9,7 @@ namespace Standard.Agents.Services.Foundations.Knowledges;
 
 public partial class KnowledgeService
 {
-                private static void ValidateQuery(string query)
+    private static void ValidateQuery(string query)
     {
         if (string.IsNullOrWhiteSpace(query))
         {

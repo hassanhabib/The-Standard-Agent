@@ -13,14 +13,14 @@ public sealed class MemoryBroker : IMemoryBroker
     {
         this.memoryPath = Path.GetFullPath(memoryPath);
 
-                                        EnsureStoreExists(this.memoryPath);
+        EnsureStoreExists(this.memoryPath);
     }
 
     public async ValueTask<IReadOnlyList<string>> SelectMemoriesAsync() =>
         await File.ReadAllLinesAsync(this.memoryPath);
 
-                public async ValueTask InsertMemoryAsync(string memory) =>
-        await File.AppendAllLinesAsync(this.memoryPath, [memory]);
+    public async ValueTask InsertMemoryAsync(string memory) =>
+await File.AppendAllLinesAsync(this.memoryPath, [memory]);
 
     private static void EnsureStoreExists(string memoryPath)
     {
@@ -28,6 +28,6 @@ public sealed class MemoryBroker : IMemoryBroker
 
         Directory.CreateDirectory(directoryPath);
 
-                                File.AppendAllText(memoryPath, string.Empty);
+        File.AppendAllText(memoryPath, string.Empty);
     }
 }

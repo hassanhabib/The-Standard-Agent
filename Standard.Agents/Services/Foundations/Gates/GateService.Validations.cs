@@ -9,7 +9,7 @@ namespace Standard.Agents.Services.Foundations.Gates;
 
 public partial class GateService
 {
-                private static void ValidateScreen(string gatePrompt, string input)
+    private static void ValidateScreen(string gatePrompt, string input)
     {
         if (string.IsNullOrWhiteSpace(gatePrompt) || string.IsNullOrWhiteSpace(input))
         {

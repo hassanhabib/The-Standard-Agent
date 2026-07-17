@@ -9,7 +9,7 @@ namespace Standard.Agents.Services.Foundations.Memorys;
 
 public partial class MemoryService
 {
-            private static void ValidateMemory(string memory)
+    private static void ValidateMemory(string memory)
     {
         if (string.IsNullOrWhiteSpace(memory))
         {

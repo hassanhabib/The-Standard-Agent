@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Linq.Expressions;
 using Moq;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models.Orchestrations.Agents;
@@ -10,7 +11,6 @@ using Standard.Agents.Services.Foundations.ExternalTools;
 using Standard.Agents.Services.Foundations.InternalTools;
 using Standard.Agents.Services.Foundations.Returns;
 using Standard.Agents.Services.Orchestrations.Direction;
-using System.Linq.Expressions;
 using Tynamix.ObjectFiller;
 using Xeptions;
 using Xunit;

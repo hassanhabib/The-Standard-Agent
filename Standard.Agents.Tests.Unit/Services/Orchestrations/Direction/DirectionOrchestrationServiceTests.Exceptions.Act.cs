@@ -56,10 +56,10 @@ public partial class DirectionOrchestrationServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-                [Theory]
+    [Theory]
     [MemberData(nameof(DependencyValidationExceptions))]
     public async Task ShouldThrowDependencyValidationExceptionOnActIfDependencyValidationErrorOccursAndLogItAsync(
-        Xeption foundationException)
+Xeption foundationException)
     {
         // given
         AgentContext inputContext = CreateContextWithDirection("calculator", "1+1");

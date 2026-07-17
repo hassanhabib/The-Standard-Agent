@@ -31,7 +31,7 @@ public partial class DecisionOrchestrationServiceTests
         actualContext.Intent.Should().Be("Refuse");
     }
 
-                            [Theory]
+    [Theory]
     [InlineData("refuse")]
     [InlineData("REFUSE")]
     [InlineData("refuse: asks for credentials")]
@@ -54,7 +54,7 @@ public partial class DecisionOrchestrationServiceTests
         actualContext.RawReply.Should().Be(verdict);
     }
 
-            [Fact]
+    [Fact]
     public async Task ShouldNotCallBrainOnThinkIfGateRefusesAsync()
     {
         // given
@@ -80,7 +80,7 @@ public partial class DecisionOrchestrationServiceTests
         this.judgeServiceMock.VerifyNoOtherCalls();
     }
 
-            [Fact]
+    [Fact]
     public async Task ShouldLoopOnThinkIfJudgeScoresBelowThresholdAsync()
     {
         // given
@@ -104,7 +104,7 @@ public partial class DecisionOrchestrationServiceTests
         actualContext.DirectionType.Should().NotBe("ReturnResponse");
     }
 
-                    [Fact]
+    [Fact]
     public async Task ShouldFeedRejectedDraftBackAsObservationOnThinkAsync()
     {
         // given
@@ -128,7 +128,7 @@ public partial class DecisionOrchestrationServiceTests
             .ContainSingle(observation => observation.Contains("a poor answer"));
     }
 
-                [Fact]
+    [Fact]
     public async Task ShouldNotJudgeOnThinkIfDirectionIsToolAsync()
     {
         // given
@@ -150,7 +150,7 @@ public partial class DecisionOrchestrationServiceTests
         this.judgeServiceMock.VerifyNoOtherCalls();
     }
 
-                [Fact]
+    [Fact]
     public async Task ShouldScreenPromptAndJudgeDraftOnThinkAsync()
     {
         // given

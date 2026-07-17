@@ -18,7 +18,7 @@ public partial class SkillService
         {
             return await returningStringFunction();
         }
-                        catch (FileNotFoundException fileNotFoundException)
+        catch (FileNotFoundException fileNotFoundException)
         {
             var failedSkillDependencyException =
                 new FailedSkillDependencyException(

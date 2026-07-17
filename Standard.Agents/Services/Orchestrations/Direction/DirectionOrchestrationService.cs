@@ -40,7 +40,7 @@ public partial class DirectionOrchestrationService : IDirectionOrchestrationServ
 
         if (IsTerminal(context.DirectionType))
         {
-                                    string result = await this.returnService.ReturnAsync(context.Payload);
+            string result = await this.returnService.ReturnAsync(context.Payload);
 
             return context with
             {
@@ -51,11 +51,11 @@ public partial class DirectionOrchestrationService : IDirectionOrchestrationServ
 
         bool isLocalTool = await this.internalToolService.HandlesAsync(context.DirectionType);
 
-                        string output = isLocalTool
-            ? await this.internalToolService.RunAsync(context.DirectionType, context.Payload)
-            : await this.externalToolService.CallAsync(context.DirectionType, context.Payload);
+        string output = isLocalTool
+? await this.internalToolService.RunAsync(context.DirectionType, context.Payload)
+: await this.externalToolService.CallAsync(context.DirectionType, context.Payload);
 
-                                                                        return context with
+        return context with
         {
             Result = output,
             Observations = [.. context.Observations, $"{context.DirectionType}: {output}"],

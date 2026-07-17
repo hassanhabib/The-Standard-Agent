@@ -101,10 +101,10 @@ public partial class SkillServiceTests
             broker.SelectSkillsAsync(),
                 Times.Once);
 
-                this.loggingBrokerMock.Verify(broker =>
-            broker.LogErrorAsync(It.Is(SameExceptionAs(
-                expectedSkillDependencyException))),
-                    Times.Once);
+        this.loggingBrokerMock.Verify(broker =>
+    broker.LogErrorAsync(It.Is(SameExceptionAs(
+        expectedSkillDependencyException))),
+            Times.Once);
 
         this.skillBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();

@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Linq.Expressions;
 using Moq;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models.Orchestrations.Agents;
@@ -10,7 +11,6 @@ using Standard.Agents.Services.Foundations.Knowledges;
 using Standard.Agents.Services.Foundations.Memorys;
 using Standard.Agents.Services.Foundations.Skills;
 using Standard.Agents.Services.Orchestrations.Data;
-using System.Linq.Expressions;
 using Tynamix.ObjectFiller;
 using Xeptions;
 using Xunit;
@@ -48,15 +48,15 @@ public partial class DataOrchestrationServiceTests
     private static Expression<Func<Xeption, bool>> SameExceptionAs(Xeption expectedException) =>
         actualException => actualException.SameExceptionAs(expectedException);
 
-                                public static TheoryData<Xeption> DependencyValidationExceptions() =>
-        new()
-        {
+    public static TheoryData<Xeption> DependencyValidationExceptions() =>
+new()
+{
             new Models.Foundations.Memorys.Exceptions.MemoryValidationException(
                 "memory validation", new Xeption("inner")),
 
             new Models.Foundations.Knowledges.Exceptions.KnowledgeValidationException(
                 "knowledge validation", new Xeption("inner"))
-        };
+};
 
     public static TheoryData<Xeption> DependencyExceptions() =>
         new()

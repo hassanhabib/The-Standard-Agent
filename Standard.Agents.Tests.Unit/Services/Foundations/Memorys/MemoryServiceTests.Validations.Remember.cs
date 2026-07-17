@@ -12,12 +12,12 @@ namespace Standard.Agents.Tests.Unit.Services.Foundations.Memorys;
 
 public partial class MemoryServiceTests
 {
-            [Theory]
+    [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData(" ")]
     public async Task ShouldThrowValidationExceptionOnRememberIfMemoryIsInvalidAndLogItAsync(
-        string? invalidMemory)
+string? invalidMemory)
     {
         // given
         var invalidMemoryException =

@@ -66,7 +66,7 @@ public sealed class ClassifierBroker : IClassifierBroker
                 ChatCompletionsRelativeUrl,
                 chatCompletionRequest);
 
-                        return chatCompletionResponse.Choices[0].Message.Content;
+        return chatCompletionResponse.Choices[0].Message.Content;
     }
 
     private async ValueTask<TResult> PostAsync<TContent, TResult>(

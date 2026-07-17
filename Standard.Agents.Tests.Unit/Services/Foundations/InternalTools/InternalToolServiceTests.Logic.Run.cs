@@ -41,7 +41,7 @@ public partial class InternalToolServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-                [Fact]
+    [Fact]
     public async Task ShouldReturnToolOutputOnRunEvenIfToolReportsAnErrorAsync()
     {
         // given

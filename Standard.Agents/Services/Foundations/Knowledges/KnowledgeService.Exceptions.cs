@@ -11,7 +11,7 @@ namespace Standard.Agents.Services.Foundations.Knowledges;
 public partial class KnowledgeService
 {
     private delegate ValueTask<IReadOnlyList<string>> ReturningDocumentsFunction();
-    
+
     private async ValueTask<IReadOnlyList<string>> TryCatch(
         ReturningDocumentsFunction returningDocumentsFunction)
     {
@@ -35,7 +35,7 @@ public partial class KnowledgeService
         {
             throw await CreateAndLogCriticalDependencyExceptionAsync(unauthorizedAccessException);
         }
-                        catch (IOException ioException)
+        catch (IOException ioException)
         {
             throw await CreateAndLogDependencyExceptionAsync(ioException);
         }

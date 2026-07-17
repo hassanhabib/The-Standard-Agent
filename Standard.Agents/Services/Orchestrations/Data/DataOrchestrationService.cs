@@ -38,7 +38,7 @@ public partial class DataOrchestrationService : IDataOrchestrationService
         string systemPrompt = await this.skillService.RetrieveSkillsAsync();
         IReadOnlyList<string> memories = await this.memoryService.RecallMemoriesAsync();
 
-                                return context with
+        return context with
         {
             SystemPrompt = systemPrompt,
             Observations = [.. context.Observations, .. memories]

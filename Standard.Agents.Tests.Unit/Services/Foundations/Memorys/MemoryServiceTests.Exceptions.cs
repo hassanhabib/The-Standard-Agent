@@ -12,13 +12,13 @@ namespace Standard.Agents.Tests.Unit.Services.Foundations.Memorys;
 
 public partial class MemoryServiceTests
 {
-        public static TheoryData<Exception> CriticalDependencyExceptions() =>
-        new()
-        {
+    public static TheoryData<Exception> CriticalDependencyExceptions() =>
+    new()
+    {
             new FileNotFoundException(),
             new DirectoryNotFoundException(),
             new UnauthorizedAccessException()
-        };
+    };
 
     [Theory]
     [MemberData(nameof(CriticalDependencyExceptions))]
@@ -155,7 +155,7 @@ public partial class MemoryServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
-                [Fact]
+    [Fact]
     public async Task ShouldThrowDependencyExceptionOnRememberIfDependencyErrorOccursAndLogItAsync()
     {
         // given

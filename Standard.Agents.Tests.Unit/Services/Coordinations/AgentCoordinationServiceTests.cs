@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Linq.Expressions;
 using Moq;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Brokers.Logs;
@@ -11,7 +12,6 @@ using Standard.Agents.Services.Coordinations;
 using Standard.Agents.Services.Orchestrations.Data;
 using Standard.Agents.Services.Orchestrations.Decision;
 using Standard.Agents.Services.Orchestrations.Direction;
-using System.Linq.Expressions;
 using Tynamix.ObjectFiller;
 using Xeptions;
 using Xunit;
@@ -46,7 +46,7 @@ public partial class AgentCoordinationServiceTests
     private static string CreateRandomString() =>
         new MnemonicString().GetValue();
 
-        private void SetupOrchestrationsPassThrough()
+    private void SetupOrchestrationsPassThrough()
     {
         this.dataOrchestrationServiceMock.Setup(service =>
             service.RecallAsync(It.IsAny<AgentContext>()))
@@ -63,11 +63,11 @@ public partial class AgentCoordinationServiceTests
                 .ReturnsAsync((AgentContext context) =>
                     context with { Result = result, Status = AgentStatus.Responded });
 
-        private void SetupDirectionNeverTerminates(string result) =>
-        this.directionOrchestrationServiceMock.Setup(service =>
-            service.ActAsync(It.IsAny<AgentContext>()))
-                .ReturnsAsync((AgentContext context) =>
-                    context with { Result = result, Status = AgentStatus.Working });
+    private void SetupDirectionNeverTerminates(string result) =>
+    this.directionOrchestrationServiceMock.Setup(service =>
+        service.ActAsync(It.IsAny<AgentContext>()))
+            .ReturnsAsync((AgentContext context) =>
+                context with { Result = result, Status = AgentStatus.Working });
 
     private static Expression<Func<Xeption, bool>> SameExceptionAs(Xeption expectedException) =>
         actualException => actualException.SameExceptionAs(expectedException);

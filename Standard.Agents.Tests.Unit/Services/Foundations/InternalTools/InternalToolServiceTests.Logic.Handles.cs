@@ -11,7 +11,7 @@ namespace Standard.Agents.Tests.Unit.Services.Foundations.InternalTools;
 
 public partial class InternalToolServiceTests
 {
-            [Theory]
+    [Theory]
     [InlineData(true)]
     [InlineData(false)]
     public async Task ShouldHandlesAsync(bool brokerHasTool)
