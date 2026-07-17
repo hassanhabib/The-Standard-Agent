@@ -34,7 +34,7 @@ dotnet add package Standard.Agents
 ```csharp
 var agent = new StandardAgent()
     .Skills("Skills")
-    .Brain(apiUrl: "https://api.openai.com/v1/", apiKey: key, model: "gpt-4o-mini")
+    .Brain(apiUrl: "https://api.peerllm.com/v1/", apiKey: key, model: "LLooMA2.0")
     .Tool(new CalculatorTool())
     .LogTo("log.txt");
 
