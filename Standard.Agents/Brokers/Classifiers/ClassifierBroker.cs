@@ -6,6 +6,7 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 using RESTFulSense.Clients;
+using Standard.Agents.Models.Brokers.Classifiers;
 
 namespace Standard.Agents.Brokers.Classifiers;
 
@@ -80,21 +81,4 @@ public sealed class ClassifierBroker : IClassifierBroker
                 ValueTask.FromResult(JsonSerializer.Serialize(value, jsonOptions)),
             deserializationFunction: json =>
                 ValueTask.FromResult(JsonSerializer.Deserialize<TResult>(json, jsonOptions)!));
-
-    private sealed record ChatCompletionRequest(
-        string Model,
-        IReadOnlyList<ChatMessage> Messages,
-        bool Stream,
-        double Temperature,
-        int MaxTokens);
-
-    private sealed record ChatMessage(
-        string Role,
-        string Content);
-
-    private sealed record ChatCompletionResponse(
-        IReadOnlyList<ChatChoice> Choices);
-
-    private sealed record ChatChoice(
-        ChatMessage Message);
     }

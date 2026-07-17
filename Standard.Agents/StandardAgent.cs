@@ -14,6 +14,7 @@ using Standard.Agents.Brokers.Memorys;
 using Standard.Agents.Brokers.Skills;
 using Standard.Agents.Brokers.Tools;
 using Standard.Agents.Brokers.Verifiers;
+using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Services.Coordinations;
 using Standard.Agents.Services.Foundations.Brains;
 using Standard.Agents.Services.Foundations.ExternalTools;
@@ -245,11 +246,4 @@ public sealed partial class StandardAgent : IAgent
         return new AgentCoordinationService(data, decision, direction, log, logging);
     }
 
-    private sealed record InferenceSettings(
-        string ApiUrl,
-        string ApiKey,
-        string Model,
-        double Temperature,
-        int MaxTokens,
-        int TimeoutSeconds);
     }
