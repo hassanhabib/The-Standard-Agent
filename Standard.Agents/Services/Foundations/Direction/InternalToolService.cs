@@ -21,6 +21,6 @@ public partial class InternalToolService : IInternalToolService
         this.loggingBroker = loggingBroker;
     }
 
-    public ValueTask<bool> HandlesAsync(string name) =>
-        throw new NotImplementedException();
+    public async ValueTask<bool> HandlesAsync(string name) =>
+        await this.toolBroker.HasAsync(name);
 }
