@@ -8,8 +8,12 @@
 
 The C# reference implementation of **[The Standard for Agents](https://github.com/hassanhabib/The-Standard-Agent-Specs)**.
 
-[![Build](https://github.com/hassanhabib/The-Standard-Agent/actions/workflows/dotnet.yml/badge.svg)](https://github.com/hassanhabib/The-Standard-Agent/actions/workflows/dotnet.yml)
-[![NuGet](https://img.shields.io/nuget/v/Standard.Agents.svg)](https://www.nuget.org/packages/Standard.Agents)
+[![.NET](https://github.com/hassanhabib/The-Standard-Agent/actions/workflows/dotnet.yml/badge.svg)](https://github.com/hassanhabib/The-Standard-Agent/actions/workflows/dotnet.yml)
+[![Nuget](https://img.shields.io/nuget/v/Standard.Agents?logo=nuget&style=default&color=blue)](https://www.nuget.org/packages/Standard.Agents)
+![Nuget](https://img.shields.io/nuget/dt/Standard.Agents?color=blue&label=Downloads)
+[![The Standard - COMPLIANT](https://img.shields.io/badge/The_Standard-COMPLIANT-2ea44f?style=default)](https://github.com/hassanhabib/The-Standard)
+[![The Standard](https://img.shields.io/github/v/release/hassanhabib/The-Standard?filter=v2.50.0&style=default&label=Standard%20Version&color=2ea44f)](https://github.com/hassanhabib/The-Standard)
+[![The Standard Community](https://img.shields.io/discord/934130100008538142?style=default&color=%237289da&label=The%20Standard%20Community&logo=Discord)](https://discord.gg/vdPZ7hS52X)
 [![License: TSSL](https://img.shields.io/badge/license-TSSL%20v1.1-blue.svg)](https://github.com/hassanhabib/The-Standard-Agent/blob/main/LICENSE.txt)
 
 </div>
