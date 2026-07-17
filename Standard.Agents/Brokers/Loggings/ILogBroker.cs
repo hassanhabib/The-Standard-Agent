@@ -10,4 +10,6 @@ public interface ILogBroker
     string LogPath { get; }
 
     ValueTask ResetAsync();
+
+    ValueTask WriteAsync(string content);
 }
