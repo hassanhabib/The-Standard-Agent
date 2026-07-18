@@ -1,6 +1,4 @@
-<div align="center">
-
-<img src="https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-icon.png" alt="The Standard for Agents" width="180" />
+![The Standard for Agents](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-icon-readme.png)
 
 # The Standard AI Agent Framework
 
@@ -15,8 +13,6 @@ The C# reference implementation of **[The Standard for Agents](https://github.co
 [![The Standard](https://img.shields.io/github/v/release/hassanhabib/The-Standard?filter=v2.50.0&style=default&label=Standard%20Version&color=2ea44f)](https://github.com/hassanhabib/The-Standard)
 [![The Standard Community](https://img.shields.io/discord/934130100008538142?style=default&color=%237289da&label=The%20Standard%20Community&logo=Discord)](https://discord.gg/vdPZ7hS52X)
 [![License: TSSL](https://img.shields.io/badge/license-TSSL%20v1.1-blue.svg)](https://github.com/hassanhabib/The-Standard-Agent/blob/main/LICENSE.txt)
-
-</div>
 
 ---
 
