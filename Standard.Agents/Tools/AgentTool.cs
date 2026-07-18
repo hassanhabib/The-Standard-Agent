@@ -29,5 +29,5 @@ public sealed class AgentTool : ITool
     // turn cap, its own guardians. The outer agent sees one tool call and a string
     // back, and cannot tell whether a function or a mind answered it.
     public async ValueTask<string> ExecuteAsync(string input) =>
-        await this.agent.ProcessPromptAsync(input);
+        await this.agent.ProcessPromptAsync(this.handoff.Replace(InputPlaceholder, input));
 }
