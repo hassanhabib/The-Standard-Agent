@@ -65,6 +65,27 @@ public sealed partial class StandardAgent : IAgent
 
     private IAgentCoordinationService? agent;
 
+    /// <summary>
+    /// Creates an agent with nothing configured yet — set it up with the builder methods
+    /// (<see cref="Brain"/>, <see cref="LocalBrain"/>, <see cref="Skills"/>, and the rest)
+    /// before processing a prompt.
+    /// </summary>
+    public StandardAgent()
+    {
+    }
+
+    /// <summary>
+    /// Creates a ready-to-run agent against an OpenAI-compatible endpoint — the simplest start,
+    /// the same as <c>new StandardAgent().Brain(apiUrl, apiKey, model)</c>. Chain further builder
+    /// methods afterward to add skills, tools, guardians, memory or knowledge.
+    /// </summary>
+    /// <param name="apiUrl">Base URL of the OpenAI-compatible endpoint.</param>
+    /// <param name="apiKey">API key for the endpoint (empty string if none is needed).</param>
+    /// <param name="model">Model name to request from the endpoint.</param>
+    public StandardAgent(string apiUrl, string apiKey, string model)
+    {
+    }
+
     public StandardAgent Skills(string path) =>
         Set(() => this.skillsPath = path);
 

@@ -72,6 +72,30 @@ public class StandardAgentTests
     }
 
     [Fact]
+    public async Task ShouldConfigureBrainFromConstructorArgumentsAsync()
+    {
+        // given
+        var skillBroker = new Mock<ISkillBroker>();
+        skillBroker.Setup(b => b.SelectSkillsAsync()).ReturnsAsync(string.Empty);
+
+        var memory = new Mock<IMemoryBroker>();
+        memory.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
+
+        var agent = new StandardAgent(apiUrl: "invalid-url", apiKey: "key", model: "model")
+            .UseSkills(skillBroker.Object)
+            .UseMemory(memory.Object)
+            .UseKnowledge(EmptyKnowledgeBroker())
+            .UseLog(new Mock<ILogBroker>().Object);
+
+        // when
+        Exception actualException = await Record.ExceptionAsync(() =>
+            agent.ProcessPromptAsync(prompt: "what is the answer?").AsTask());
+
+        // then
+        actualException.Should().NotBeOfType<InvalidAgentCompositionException>();
+    }
+
+    [Fact]
     public void ShouldReturnSameInstanceOnEachBuilderMethod()
     {
         // given
