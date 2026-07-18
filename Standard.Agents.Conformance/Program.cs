@@ -29,14 +29,19 @@ foreach (string vectorFile in
     Vector vector =
         JsonSerializer.Deserialize<Vector>(await File.ReadAllTextAsync(vectorFile), jsonOptions)!;
 
-    string actualResult = await RunVectorAsync(vector);
+    (string actualResult, Dictionary<string, StubTool> stubTools) = await RunVectorAsync(vector);
 
-    bool isConformant = vector.Expect.Result is not null
+    bool resultConformant = vector.Expect.Result is not null
         ? actualResult == vector.Expect.Result
         : vector.Expect.ResultContains is not null
             && actualResult.Contains(vector.Expect.ResultContains, StringComparison.Ordinal);
 
-    if (isConformant)
+    bool toolInputConformant = vector.Expect.ToolInput is null
+        || vector.Expect.ToolInput.All(expected =>
+            stubTools.TryGetValue(expected.Key, out StubTool? tool)
+                && tool.ReceivedInputs.Contains(expected.Value));
+
+    if (resultConformant && toolInputConformant)
     {
         passed++;
         Console.WriteLine($"PASS  {vector.Name}");
@@ -44,14 +49,30 @@ foreach (string vectorFile in
     else
     {
         failed++;
-
-        string expectation = vector.Expect.Result is not null
-            ? vector.Expect.Result
-            : $"contains: {vector.Expect.ResultContains}";
-
         Console.WriteLine($"FAIL  {vector.Name}");
-        Console.WriteLine($"        expected: {Show(expectation)}");
-        Console.WriteLine($"        actual:   {Show(actualResult)}");
+
+        if (resultConformant is false)
+        {
+            string expectation = vector.Expect.Result is not null
+                ? vector.Expect.Result
+                : $"contains: {vector.Expect.ResultContains}";
+
+            Console.WriteLine($"        expected result: {Show(expectation)}");
+            Console.WriteLine($"        actual result:   {Show(actualResult)}");
+        }
+
+        if (toolInputConformant is false)
+        {
+            foreach (KeyValuePair<string, string> expected in vector.Expect.ToolInput!)
+            {
+                string actualInputs = stubTools.TryGetValue(expected.Key, out StubTool? tool)
+                    ? string.Join(" | ", tool.ReceivedInputs.Select(Show))
+                    : "(tool never called)";
+
+                Console.WriteLine($"        tool '{expected.Key}' expected input: {Show(expected.Value)}");
+                Console.WriteLine($"        tool '{expected.Key}' actual inputs:  {actualInputs}");
+            }
+        }
     }
 }
 
@@ -60,10 +81,12 @@ Console.WriteLine($"{passed} passed, {failed} failed");
 
 return failed == 0 ? 0 : 1;
 
-async Task<string> RunVectorAsync(Vector vector)
+async Task<(string Result, Dictionary<string, StubTool> Tools)> RunVectorAsync(Vector vector)
 {
-    IEnumerable<ITool> tools =
-        (vector.Tools ?? []).Select(pair => (ITool)new StubTool(name: pair.Key, output: pair.Value));
+    Dictionary<string, StubTool> stubTools =
+        (vector.Tools ?? []).ToDictionary(
+            pair => pair.Key,
+            pair => new StubTool(name: pair.Key, output: pair.Value));
 
     IAgent agent = new StandardAgent()
         .UseSkills(new StubSkillBroker())
@@ -74,9 +97,11 @@ async Task<string> RunVectorAsync(Vector vector)
         .UseJudge(new ApprovingVerifierBroker())
         .UseMcp(new NotConfiguredMcpBroker())
         .UseLog(new NullLogBroker())
-        .Tools(tools);
+        .Tools(stubTools.Values);
 
-    return await agent.ProcessPromptAsync(vector.Prompt);
+    string result = await agent.ProcessPromptAsync(vector.Prompt);
+
+    return (result, stubTools);
 }
 
 static string Show(string value) =>
