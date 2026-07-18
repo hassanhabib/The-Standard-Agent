@@ -31,14 +31,42 @@ Orchestration is not a fourth nature. It is the composition operator — the loo
 dotnet add package Standard.Agents
 ```
 
+The bare minimum is a brain — nothing else required:
+
 ```csharp
 var agent = new StandardAgent()
-    .Skills("Skills")
-    .Brain(apiUrl: "https://api.peerllm.com/v1/", apiKey: key, model: "LLooMA2.0")
-    .Tool(new CalculatorTool())
-    .LogTo("log.txt");
+    .Brain(apiUrl: "https://api.peerllm.com/v1/", apiKey: key, model: "LLooMA2.0");
 
 string answer = await agent.ProcessPromptAsync("What is 47 * 89?");
+```
+
+Add skills, tools, and guardians as you grow. Skills and tools are picked up when
+present; the Gate and Judge are **opt-in** (SPEC.md §8.1 — the Core profile may leave
+them pass-through):
+
+```csharp
+var agent = new StandardAgent()
+    .Brain(apiUrl: "https://api.peerllm.com/v1/", apiKey: key, model: "LLooMA2.0")
+    .Skills("Skills")
+    .Tool(new CalculatorTool())
+    .Gate(apiUrl: "https://api.peerllm.com/v1/", apiKey: key, model: "LLooMA2.0")
+    .LogTo("log.txt");
+```
+
+Stream the agent thinking and answering — each event is tagged, and the answer
+arrives live:
+
+```csharp
+await foreach (AgentStreamEvent streamEvent in agent.StreamPromptAsync("What is 47 * 89?"))
+{
+    switch (streamEvent.Type)
+    {
+        case AgentStreamEventType.Thinking: /* the model deliberating / tool reasoning */ break;
+        case AgentStreamEventType.Response: /* the answer, token by token */              break;
+        case AgentStreamEventType.Tool:     /* a tool ran, and its result */              break;
+        case AgentStreamEventType.Status:   /* lifecycle: turns, gate, judge */           break;
+    }
+}
 ```
 
 No DI container. `Compose()` hand-wires the whole graph — SPEC.md §9: *"DI is OPTIONAL. A
