@@ -316,6 +316,31 @@ public class StandardAgentTests
         streamedResponse.Should().Be("Hi there.");
     }
 
+    [Fact]
+    public async Task ShouldUseLocalBrainOnProcessPromptAsync()
+    {
+        // given
+        string expectedAnswer = "answer from the local model";
+
+        var skillBroker = new Mock<ISkillBroker>();
+        skillBroker.Setup(b => b.SelectSkillsAsync()).ReturnsAsync(string.Empty);
+
+        var memory = new Mock<IMemoryBroker>();
+        memory.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
+
+        var agent = new StandardAgent()
+            .UseSkills(skillBroker.Object)
+            .UseMemory(memory.Object)
+            .LocalBrain((systemPrompt, userPrompt) => ValueTask.FromResult(expectedAnswer))
+            .UseLog(new Mock<ILogBroker>().Object);
+
+        // when
+        string actualResult = await agent.ProcessPromptAsync(prompt: "compute something");
+
+        // then
+        actualResult.Should().Be(expectedAnswer);
+    }
+
     private static async IAsyncEnumerable<string> ToAsyncStream(params string[] tokens)
     {
         foreach (string token in tokens)
