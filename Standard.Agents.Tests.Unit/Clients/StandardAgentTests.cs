@@ -24,24 +24,24 @@ public class StandardAgentTests
     private static StandardAgent CreateFullyStubbedAgent(string brainReply)
     {
         var skillBroker = new Mock<ISkillBroker>();
-        skillBroker.Setup(b => b.SelectSkillsAsync()).ReturnsAsync("you are an agent");
+        skillBroker.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync("you are an agent");
 
         var generatorBroker = new Mock<IGeneratorBroker>();
-        generatorBroker.Setup(b => b.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
+        generatorBroker.Setup(broker => broker.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(brainReply);
 
         var memoryBroker = new Mock<IMemoryBroker>();
-        memoryBroker.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
+        memoryBroker.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
 
         var knowledgeBroker = new Mock<IKnowledgeBroker>();
-        knowledgeBroker.Setup(b => b.SelectKnowledgeAsync(It.IsAny<string>())).ReturnsAsync([]);
+        knowledgeBroker.Setup(broker => broker.SelectKnowledgeAsync(It.IsAny<string>())).ReturnsAsync([]);
 
         var classifierBroker = new Mock<IClassifierBroker>();
-        classifierBroker.Setup(b => b.ClassifyAsync(It.IsAny<string>()))
+        classifierBroker.Setup(broker => broker.ClassifyAsync(It.IsAny<string>()))
             .ReturnsAsync("allow");
 
         var verifierBroker = new Mock<IVerifierBroker>();
-        verifierBroker.Setup(b => b.VerifyAsync(It.IsAny<string>()))
+        verifierBroker.Setup(broker => broker.VerifyAsync(It.IsAny<string>()))
             .ReturnsAsync("1.0");
 
         var mcpBroker = new Mock<IMcpBroker>();
@@ -123,7 +123,7 @@ public class StandardAgentTests
         string firstResult = await agent.ProcessPromptAsync(prompt: "prompt");
 
         var newGenerator = new Mock<IGeneratorBroker>();
-        newGenerator.Setup(b => b.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
+        newGenerator.Setup(broker => broker.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync("FINAL: second");
 
         // when
@@ -157,25 +157,25 @@ public class StandardAgentTests
     {
         // given
         var generatorBroker = new Mock<IGeneratorBroker>();
-        generatorBroker.Setup(b => b.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
+        generatorBroker.Setup(broker => broker.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync("FINAL: ok");
 
         var classifierBroker = new Mock<IClassifierBroker>();
-        classifierBroker.Setup(b => b.ClassifyAsync(It.IsAny<string>()))
+        classifierBroker.Setup(broker => broker.ClassifyAsync(It.IsAny<string>()))
             .ReturnsAsync("allow");
 
         var verifierBroker = new Mock<IVerifierBroker>();
-        verifierBroker.Setup(b => b.VerifyAsync(It.IsAny<string>()))
+        verifierBroker.Setup(broker => broker.VerifyAsync(It.IsAny<string>()))
             .ReturnsAsync("1.0");
 
         var skillBroker = new Mock<ISkillBroker>();
-        skillBroker.Setup(b => b.SelectSkillsAsync()).ReturnsAsync("skills");
+        skillBroker.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync("skills");
 
         var memoryBroker = new Mock<IMemoryBroker>();
-        memoryBroker.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
+        memoryBroker.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
 
         var knowledgeBroker = new Mock<IKnowledgeBroker>();
-        knowledgeBroker.Setup(b => b.SelectKnowledgeAsync(It.IsAny<string>())).ReturnsAsync([]);
+        knowledgeBroker.Setup(broker => broker.SelectKnowledgeAsync(It.IsAny<string>())).ReturnsAsync([]);
 
         var logBroker = new Mock<ILogBroker>();
 
@@ -201,13 +201,13 @@ public class StandardAgentTests
     {
         // given
         var skillBroker = new Mock<ISkillBroker>();
-        skillBroker.Setup(b => b.SelectSkillsAsync()).ReturnsAsync(string.Empty);
+        skillBroker.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(string.Empty);
 
         var memory = new Mock<IMemoryBroker>();
-        memory.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
+        memory.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
 
         var generatorBroker = new Mock<IGeneratorBroker>();
-        generatorBroker.Setup(b => b.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
+        generatorBroker.Setup(broker => broker.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync("Hello there!");
 
         var agent = new StandardAgent()
@@ -228,22 +228,22 @@ public class StandardAgentTests
     {
         // given
         var skillBroker = new Mock<ISkillBroker>();
-        skillBroker.Setup(b => b.SelectSkillsAsync()).ReturnsAsync("skills");
+        skillBroker.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync("skills");
 
         var generatorBroker = new Mock<IGeneratorBroker>();
-        generatorBroker.Setup(b => b.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
+        generatorBroker.Setup(broker => broker.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync("FINAL: composed");
 
         var gate = new Mock<IClassifierBroker>();
-        gate.Setup(b => b.ClassifyAsync(It.IsAny<string>()))
+        gate.Setup(broker => broker.ClassifyAsync(It.IsAny<string>()))
             .ReturnsAsync("allow");
 
         var judge = new Mock<IVerifierBroker>();
-        judge.Setup(b => b.VerifyAsync(It.IsAny<string>()))
+        judge.Setup(broker => broker.VerifyAsync(It.IsAny<string>()))
             .ReturnsAsync("1.0");
 
         var memory = new Mock<IMemoryBroker>();
-        memory.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
+        memory.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
 
         var agent = new StandardAgent()
     .UseSkills(skillBroker.Object)
@@ -272,22 +272,22 @@ public class StandardAgentTests
         ]);
 
         var skillBroker = new Mock<ISkillBroker>();
-        skillBroker.Setup(b => b.SelectSkillsAsync()).ReturnsAsync("skills");
+        skillBroker.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync("skills");
 
         var generatorBroker = new Mock<IGeneratorBroker>();
-        generatorBroker.Setup(b => b.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
+        generatorBroker.Setup(broker => broker.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(() => replies.Dequeue());
 
         var gate = new Mock<IClassifierBroker>();
-        gate.Setup(b => b.ClassifyAsync(It.IsAny<string>()))
+        gate.Setup(broker => broker.ClassifyAsync(It.IsAny<string>()))
             .ReturnsAsync("allow");
 
         var judge = new Mock<IVerifierBroker>();
-        judge.Setup(b => b.VerifyAsync(It.IsAny<string>()))
+        judge.Setup(broker => broker.VerifyAsync(It.IsAny<string>()))
             .ReturnsAsync("1.0");
 
         var memory = new Mock<IMemoryBroker>();
-        memory.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
+        memory.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
 
         var agent = new StandardAgent()
             .UseSkills(skillBroker.Object)
@@ -310,13 +310,13 @@ public class StandardAgentTests
     {
         // given
         var skillBroker = new Mock<ISkillBroker>();
-        skillBroker.Setup(b => b.SelectSkillsAsync()).ReturnsAsync(string.Empty);
+        skillBroker.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(string.Empty);
 
         var memory = new Mock<IMemoryBroker>();
-        memory.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
+        memory.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
 
         var generatorBroker = new Mock<IGeneratorBroker>();
-        generatorBroker.Setup(b => b.GenerateStreamAsync(
+        generatorBroker.Setup(broker => broker.GenerateStreamAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(ToAsyncStream("Hi ", "there."));
 
@@ -349,10 +349,10 @@ public class StandardAgentTests
         string expectedAnswer = "answer from the local model";
 
         var skillBroker = new Mock<ISkillBroker>();
-        skillBroker.Setup(b => b.SelectSkillsAsync()).ReturnsAsync(string.Empty);
+        skillBroker.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(string.Empty);
 
         var memory = new Mock<IMemoryBroker>();
-        memory.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
+        memory.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
 
         var agent = new StandardAgent()
             .UseSkills(skillBroker.Object)
@@ -374,13 +374,13 @@ public class StandardAgentTests
         string capturedSystemPrompt = string.Empty;
 
         var skillBroker = new Mock<ISkillBroker>();
-        skillBroker.Setup(b => b.SelectSkillsAsync()).ReturnsAsync("Tools:\n{{tools}}");
+        skillBroker.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync("Tools:\n{{tools}}");
 
         var memory = new Mock<IMemoryBroker>();
-        memory.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
+        memory.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
 
         var generatorBroker = new Mock<IGeneratorBroker>();
-        generatorBroker.Setup(b => b.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
+        generatorBroker.Setup(broker => broker.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
             .Callback<string, string>((systemPrompt, userPrompt) => capturedSystemPrompt = systemPrompt)
             .ReturnsAsync("FINAL: done");
 
@@ -413,7 +413,7 @@ public class StandardAgentTests
     private static IKnowledgeBroker EmptyKnowledgeBroker()
     {
         var knowledgeBroker = new Mock<IKnowledgeBroker>();
-        knowledgeBroker.Setup(b => b.SelectKnowledgeAsync(It.IsAny<string>())).ReturnsAsync([]);
+        knowledgeBroker.Setup(broker => broker.SelectKnowledgeAsync(It.IsAny<string>())).ReturnsAsync([]);
 
         return knowledgeBroker.Object;
     }

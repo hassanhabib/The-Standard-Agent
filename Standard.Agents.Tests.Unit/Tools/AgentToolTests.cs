@@ -19,7 +19,7 @@ public class AgentToolTests
     private static Brokers.Knowledges.IKnowledgeBroker EmptyKnowledgeBroker()
     {
         var knowledgeBroker = new Mock<Brokers.Knowledges.IKnowledgeBroker>();
-        knowledgeBroker.Setup(b => b.SelectKnowledgeAsync(It.IsAny<string>())).ReturnsAsync([]);
+        knowledgeBroker.Setup(broker => broker.SelectKnowledgeAsync(It.IsAny<string>())).ReturnsAsync([]);
 
         return knowledgeBroker.Object;
     }
@@ -79,17 +79,17 @@ public class AgentToolTests
                 .ReturnsAsync(() => replies.Dequeue());
 
         var skills = new Mock<Brokers.Skills.ISkillBroker>();
-        skills.Setup(b => b.SelectSkillsAsync()).ReturnsAsync("you are an agent");
+        skills.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync("you are an agent");
 
         var memory = new Mock<Brokers.Memorys.IMemoryBroker>();
-        memory.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
+        memory.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
 
         var gate = new Mock<Brokers.Classifiers.IClassifierBroker>();
-        gate.Setup(b => b.ClassifyAsync(It.IsAny<string>()))
+        gate.Setup(broker => broker.ClassifyAsync(It.IsAny<string>()))
             .ReturnsAsync("allow");
 
         var judge = new Mock<Brokers.Verifiers.IVerifierBroker>();
-        judge.Setup(b => b.VerifyAsync(It.IsAny<string>()))
+        judge.Setup(broker => broker.VerifyAsync(It.IsAny<string>()))
             .ReturnsAsync("1.0");
 
         var outerAgent = new StandardAgent()

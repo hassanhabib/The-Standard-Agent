@@ -85,9 +85,28 @@ public sealed partial class StandardAgent : IAgent
     public StandardAgent(string apiUrl, string apiKey, string model) =>
         Brain(apiUrl, apiKey, model);
 
+    /// <summary>
+    /// Points the agent at a folder of <c>.md</c> skill files — the prompts-as-Data that
+    /// shape how it thinks (SPEC.md §7.2). The files must be copied to the build output.
+    /// A skill containing the <c>{{tools}}</c> marker is where advertised tools are listed.
+    /// </summary>
+    /// <param name="path">Folder holding the <c>.md</c> skill files.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent Skills(string path) =>
         Set(() => this.skillsPath = path);
 
+    /// <summary>
+    /// Sets the brain: an external, OpenAI-compatible chat-completions endpoint that does the
+    /// agent's reasoning. Required unless you supply an in-process brain via
+    /// <see cref="LocalBrain"/> or <see cref="UseGenerator"/>.
+    /// </summary>
+    /// <param name="apiUrl">Base URL of the OpenAI-compatible endpoint.</param>
+    /// <param name="apiKey">API key for the endpoint (empty string if none is needed).</param>
+    /// <param name="model">Model name to request from the endpoint.</param>
+    /// <param name="temperature">Sampling temperature; higher is more varied. Defaults to 0.7.</param>
+    /// <param name="maxTokens">Maximum tokens to generate per turn. Defaults to 1024.</param>
+    /// <param name="timeoutSeconds">Per-request timeout in seconds. Defaults to 120.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent Brain(
         string apiUrl,
         string apiKey,
@@ -98,19 +117,33 @@ public sealed partial class StandardAgent : IAgent
         Set(() => this.brainSettings =
             new InferenceSettings(apiUrl, apiKey, model, temperature, maxTokens, timeoutSeconds));
 
-    // The local, in-process counterpart to Brain(apiUrl, ...): plug your own inference
-    // with a delegate and the agent makes no API calls. Pick one — a local brain or an
-    // external one. For a runtime that streams natively, implement IGeneratorBroker and
-    // pass it to UseGenerator instead.
+    /// <summary>
+    /// Supplies an in-process brain as a delegate, so the agent makes no API calls — the
+    /// local counterpart to <see cref="Brain"/>. Pick one, a local brain or an external one.
+    /// For a runtime that streams natively, implement <c>IGeneratorBroker</c> and pass it to
+    /// <see cref="UseGenerator"/> instead.
+    /// </summary>
+    /// <param name="generate">
+    /// A <c>(systemPrompt, userPrompt) =&gt; answer</c> delegate that produces one reply.
+    /// </param>
+    /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent LocalBrain(Func<string, string, ValueTask<string>> generate) =>
         Set(() => this.generatorBroker = new FunctionGeneratorBroker(generate));
 
-    // Guardians are opt-in. A bare agent (brain only) runs no gate — SPEC.md 8.1 says
-    // the Core profile MAY leave Gate and Judge as pass-through. Calling this turns the
-    // Gate on; it may share the Brain's endpoint (SPEC.md 9's collapsible substrate) or
-    // point at a different model. Even collapsed onto one endpoint the Gate is never the
-    // Brain: it runs its own screening rubric (Data, not the agent's system prompt),
-    // honouring invariant 6.
+    /// <summary>
+    /// Turns on the Gate: an opt-in guardian that screens each prompt before the brain sees
+    /// it and can refuse. A bare agent runs no gate (SPEC.md §8.1 leaves it pass-through in the
+    /// Core profile). It may reuse the brain's endpoint or point at a different model; either
+    /// way the Gate is never the brain — it runs its own screening rubric (Data), honouring
+    /// SPEC.md invariant 6.
+    /// </summary>
+    /// <param name="apiUrl">Base URL of the OpenAI-compatible endpoint for the Gate.</param>
+    /// <param name="apiKey">API key for the endpoint (empty string if none is needed).</param>
+    /// <param name="model">Model name to request for screening.</param>
+    /// <param name="temperature">Sampling temperature; kept at 0.0 for a deterministic verdict.</param>
+    /// <param name="maxTokens">Maximum tokens for the verdict. Defaults to 16.</param>
+    /// <param name="timeoutSeconds">Per-request timeout in seconds. Defaults to 30.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent Gate(
         string apiUrl,
         string apiKey,
@@ -121,6 +154,19 @@ public sealed partial class StandardAgent : IAgent
         Set(() => this.gateSettings =
             new InferenceSettings(apiUrl, apiKey, model, temperature, maxTokens, timeoutSeconds));
 
+    /// <summary>
+    /// Turns on the Judge: an opt-in guardian that scores the brain's draft answer and sends it
+    /// back for revision when the score is too low. Like the Gate it is off by default, may reuse
+    /// the brain's endpoint or a different model, and never acts as the brain — it applies its own
+    /// evaluation rubric (Data), honouring SPEC.md invariant 6.
+    /// </summary>
+    /// <param name="apiUrl">Base URL of the OpenAI-compatible endpoint for the Judge.</param>
+    /// <param name="apiKey">API key for the endpoint (empty string if none is needed).</param>
+    /// <param name="model">Model name to request for evaluation.</param>
+    /// <param name="temperature">Sampling temperature; kept at 0.0 for a deterministic score.</param>
+    /// <param name="maxTokens">Maximum tokens for the score. Defaults to 16.</param>
+    /// <param name="timeoutSeconds">Per-request timeout in seconds. Defaults to 30.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent Judge(
         string apiUrl,
         string apiKey,
@@ -131,61 +177,160 @@ public sealed partial class StandardAgent : IAgent
         Set(() => this.judgeSettings =
             new InferenceSettings(apiUrl, apiKey, model, temperature, maxTokens, timeoutSeconds));
 
+    /// <summary>
+    /// Gives the agent a memory file it reads on recall and writes to through the built-in
+    /// <c>remember</c> tool, so facts survive across turns and runs.
+    /// </summary>
+    /// <param name="path">Path to the memory file (created if it does not exist).</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent Memory(string path) =>
         Set(() => this.memoryPath = path);
 
+    /// <summary>
+    /// Gives the agent a knowledge base — a folder of reference files searched each turn, with the
+    /// most relevant matches seeded into the turn's observations for the brain to draw on.
+    /// </summary>
+    /// <param name="path">Folder holding the knowledge files.</param>
+    /// <param name="pattern">Glob for which files to search. Defaults to <c>*.md</c>.</param>
+    /// <param name="maxResults">Maximum matches fed in per turn. Defaults to 3.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent Knowledge(string path, string pattern = "*.md", int maxResults = 3) =>
-        Set(() =>
-        {
-            this.knowledgePath = path;
-            this.knowledgePattern = pattern;
-            this.knowledgeMaxResults = maxResults;
-        });
+    Set(() =>
+    {
+        this.knowledgePath = path;
+        this.knowledgePattern = pattern;
+        this.knowledgeMaxResults = maxResults;
+    });
 
+    /// <summary>
+    /// Connects an external Model Context Protocol (MCP) server, exposing its tools to the agent
+    /// alongside any local <see cref="Tool(ITool)"/> registrations.
+    /// </summary>
+    /// <param name="endpointUrl">Base URL of the MCP server.</param>
+    /// <param name="relativeUrl">Relative path appended to the base URL. Defaults to empty.</param>
+    /// <param name="timeoutSeconds">Per-call timeout in seconds. Defaults to 30.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent Mcp(string endpointUrl, string relativeUrl = "", int timeoutSeconds = 30) =>
-        Set(() =>
-        {
-            this.mcpEndpointUrl = endpointUrl;
-            this.mcpRelativeUrl = relativeUrl;
-            this.mcpTimeoutSeconds = timeoutSeconds;
-        });
+    Set(() =>
+    {
+        this.mcpEndpointUrl = endpointUrl;
+        this.mcpRelativeUrl = relativeUrl;
+        this.mcpTimeoutSeconds = timeoutSeconds;
+    });
 
+    /// <summary>
+    /// Registers one tool the agent may call. It is only advertised to the brain when it carries a
+    /// description and a skill contains the <c>{{tools}}</c> marker (SPEC.md §6.1); otherwise it
+    /// stays available but unlisted.
+    /// </summary>
+    /// <param name="tool">The tool to register.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent Tool(ITool tool) =>
         Set(() => this.tools.Add(tool));
 
+    /// <summary>
+    /// Registers several tools at once — the batch equivalent of calling <see cref="Tool(ITool)"/>
+    /// for each.
+    /// </summary>
+    /// <param name="tools">The tools to register.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent Tools(IEnumerable<ITool> tools) =>
         Set(() => this.tools.AddRange(tools));
 
+    /// <summary>
+    /// Writes a turn-by-turn trace of the agent's run to a log file — useful for seeing which tools
+    /// were called and what the brain decided.
+    /// </summary>
+    /// <param name="path">Path to the log file (created if it does not exist).</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent LogTo(string path) =>
         Set(() => this.logPath = path);
 
+    /// <summary>
+    /// Swaps in a custom skill broker, replacing the default file-backed one. For advanced hosts
+    /// that source skills from somewhere other than a folder.
+    /// </summary>
+    /// <param name="broker">The skill broker to use.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent UseSkills(ISkillBroker broker) =>
         Set(() => this.skillBroker = broker);
 
+    /// <summary>
+    /// Swaps in a custom generator (brain) broker — the extension point for a runtime that streams
+    /// natively, an alternative to <see cref="Brain"/> or <see cref="LocalBrain"/>.
+    /// </summary>
+    /// <param name="broker">The generator broker to use.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent UseGenerator(IGeneratorBroker broker) =>
         Set(() => this.generatorBroker = broker);
 
+    /// <summary>
+    /// Swaps in a custom memory broker, replacing the default file-backed one set up by
+    /// <see cref="Memory"/>.
+    /// </summary>
+    /// <param name="broker">The memory broker to use.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent UseMemory(IMemoryBroker broker) =>
         Set(() => this.memoryBroker = broker);
 
+    /// <summary>
+    /// Swaps in a custom knowledge broker, replacing the default file-backed one set up by
+    /// <see cref="Knowledge"/>.
+    /// </summary>
+    /// <param name="broker">The knowledge broker to use.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent UseKnowledge(IKnowledgeBroker broker) =>
         Set(() => this.knowledgeBroker = broker);
 
+    /// <summary>
+    /// Swaps in a custom classifier broker to back the Gate, replacing the endpoint-backed one set
+    /// up by <see cref="Gate"/>.
+    /// </summary>
+    /// <param name="broker">The classifier broker to use.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent UseGate(IClassifierBroker broker) =>
         Set(() => this.classifierBroker = broker);
 
+    /// <summary>
+    /// Swaps in a custom verifier broker to back the Judge, replacing the endpoint-backed one set
+    /// up by <see cref="Judge"/>.
+    /// </summary>
+    /// <param name="broker">The verifier broker to use.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent UseJudge(IVerifierBroker broker) =>
         Set(() => this.verifierBroker = broker);
 
+    /// <summary>
+    /// Swaps in a custom MCP broker, replacing the HTTP-backed one set up by <see cref="Mcp"/>.
+    /// </summary>
+    /// <param name="broker">The MCP broker to use.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent UseMcp(IMcpBroker broker) =>
         Set(() => this.mcpBroker = broker);
 
+    /// <summary>
+    /// Swaps in a custom log broker, replacing the file-backed one set up by <see cref="LogTo"/>.
+    /// </summary>
+    /// <param name="broker">The log broker to use.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent UseLog(ILogBroker broker) =>
         Set(() => this.logBroker = broker);
 
+    /// <summary>
+    /// Swaps in a custom logging broker for the agent's internal diagnostic logging.
+    /// </summary>
+    /// <param name="broker">The logging broker to use.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent UseLogging(ILoggingBroker broker) =>
         Set(() => this.loggingBroker = broker);
 
+    /// <summary>
+    /// Runs the agent on a prompt to completion and returns the final answer. The first call
+    /// composes the configured pieces (brain, skills, tools, guardians, memory, knowledge); later
+    /// calls reuse that composition unless a builder method changed the configuration.
+    /// </summary>
+    /// <param name="prompt">The user's prompt.</param>
+    /// <returns>The agent's final answer.</returns>
     // async, so a composition failure surfaces on await rather than being thrown
     // synchronously out of a method whose signature promises a ValueTask. A caller
     // doing `var task = agent.ProcessPromptAsync(p); ... await task;` would otherwise
@@ -197,6 +342,14 @@ public sealed partial class StandardAgent : IAgent
         return await this.agent.ProcessPromptAsync(prompt);
     }
 
+    /// <summary>
+    /// Runs the agent on a prompt and streams its progress as it happens — status updates, the
+    /// brain's thinking, and response text arrive as <see cref="AgentStreamEvent"/> values rather
+    /// than waiting for the final answer. Use this to surface a live view of the agent's work.
+    /// </summary>
+    /// <param name="prompt">The user's prompt.</param>
+    /// <param name="cancellationToken">Token to stop streaming early.</param>
+    /// <returns>An async stream of events describing the agent's run.</returns>
     // async iterator, so a composition failure surfaces when the caller starts
     // enumerating rather than at the call site — mirroring ProcessPromptAsync.
     public async IAsyncEnumerable<AgentStreamEvent> StreamPromptAsync(

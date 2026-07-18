@@ -4,6 +4,14 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+
+    <!-- Ship the XML doc file so the StandardAgent builder methods surface as IntelliSense
+         tooltips for package consumers. CS1591 is suppressed on purpose: only the client /
+         exposure layer carries doc comments (The Standard uses comments to say what the code
+         can't), so the undocumented brokers and services below must not break the zero-warning
+         bar. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>
