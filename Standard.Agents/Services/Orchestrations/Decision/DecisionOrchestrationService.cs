@@ -5,6 +5,7 @@
 
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Json;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Orchestrations.Agents;
@@ -17,6 +18,7 @@ namespace Standard.Agents.Services.Orchestrations.Decision;
 public partial class DecisionOrchestrationService : IDecisionOrchestrationService
 {
     private const string ActionPrefix = "ACTION:";
+    private const string ToolPrefix = "TOOL:";
     private const string FinalPrefix = "FINAL:";
     private const string RefuseVerdict = "refuse";
     private const string RefuseDirection = "Refuse";
@@ -219,6 +221,18 @@ verdict.TrimStart().StartsWith(RefuseVerdict, StringComparison.OrdinalIgnoreCase
     {
         string firstLine = reply.Split('\n')[0].Trim();
 
+        if (firstLine.StartsWith(ToolPrefix, StringComparison.OrdinalIgnoreCase)
+            && TryParseToolCall(firstLine[ToolPrefix.Length..], out string calledTool, out string arguments))
+        {
+            return context with
+            {
+                Intent = calledTool,
+                DirectionType = calledTool,
+                Payload = arguments,
+                RawReply = reply
+            };
+        }
+
         bool modelChoseToAct =
             firstLine.StartsWith(ActionPrefix, StringComparison.OrdinalIgnoreCase);
 
@@ -258,5 +272,47 @@ verdict.TrimStart().StartsWith(RefuseVerdict, StringComparison.OrdinalIgnoreCase
             Payload = answer,
             RawReply = reply
         };
+    }
+
+    private static bool TryParseToolCall(string json, out string toolName, out string arguments)
+    {
+        toolName = string.Empty;
+        arguments = string.Empty;
+
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(json);
+            JsonElement root = document.RootElement;
+
+            if (root.ValueKind is not JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            if (root.TryGetProperty("tool", out JsonElement toolElement) is false
+                || toolElement.ValueKind is not JsonValueKind.String)
+            {
+                return false;
+            }
+
+            string parsedTool = toolElement.GetString() ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(parsedTool))
+            {
+                return false;
+            }
+
+            toolName = parsedTool;
+
+            arguments = root.TryGetProperty("arguments", out JsonElement argumentsElement)
+                ? argumentsElement.GetRawText()
+                : "{}";
+
+            return true;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
     }
 }
