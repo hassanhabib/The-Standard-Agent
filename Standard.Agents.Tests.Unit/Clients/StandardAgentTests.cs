@@ -76,10 +76,10 @@ public class StandardAgentTests
     {
         // given
         var skillBroker = new Mock<ISkillBroker>();
-        skillBroker.Setup(b => b.SelectSkillsAsync()).ReturnsAsync(string.Empty);
+        skillBroker.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(string.Empty);
 
         var memory = new Mock<IMemoryBroker>();
-        memory.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
+        memory.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
 
         var agent = new StandardAgent(apiUrl: "invalid-url", apiKey: "key", model: "model")
             .UseSkills(skillBroker.Object)
