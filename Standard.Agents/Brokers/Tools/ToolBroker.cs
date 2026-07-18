@@ -16,8 +16,8 @@ public sealed class ToolBroker : IToolBroker
         tool => tool.Name,
         StringComparer.OrdinalIgnoreCase);
 
-    public ValueTask<bool> HasAsync(string name) =>
-        ValueTask.FromResult(this.tools.ContainsKey(name));
+    public async ValueTask<bool> HasAsync(string name) =>
+        this.tools.ContainsKey(name);
 
     public async ValueTask<string> RunAsync(string name, string input) =>
         await this.tools[name].ExecuteAsync(input);

@@ -16,12 +16,12 @@ public sealed class ScriptedGeneratorBroker : IGeneratorBroker
     public ScriptedGeneratorBroker(IReadOnlyList<string> replies) =>
         this.replies = replies;
 
-    public ValueTask<string> GenerateAsync(string systemPrompt, string userPrompt)
+    public async ValueTask<string> GenerateAsync(string systemPrompt, string userPrompt)
     {
         string reply = this.replies[Math.Min(this.index, this.replies.Count - 1)];
         this.index++;
 
-        return ValueTask.FromResult(reply);
+        return reply;
     }
 
     public async IAsyncEnumerable<string> GenerateStreamAsync(

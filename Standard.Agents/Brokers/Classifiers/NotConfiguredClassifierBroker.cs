@@ -9,6 +9,6 @@ public sealed class NotConfiguredClassifierBroker : IClassifierBroker
 {
     private const string Allow = "allow";
 
-    public ValueTask<string> ClassifyAsync(string input) =>
-        ValueTask.FromResult(Allow);
+    public async ValueTask<string> ClassifyAsync(string input) =>
+        Allow;
 }

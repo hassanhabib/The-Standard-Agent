@@ -9,6 +9,6 @@ namespace Standard.Agents.Conformance;
 
 public sealed class StubSkillBroker : ISkillBroker
 {
-    public ValueTask<string> SelectSkillsAsync() =>
-        ValueTask.FromResult("You are a test agent.");
+    public async ValueTask<string> SelectSkillsAsync() =>
+        "You are a test agent.";
 }
