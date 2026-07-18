@@ -34,4 +34,38 @@ public partial class BrainServiceTests
 
     private static Expression<Func<Xeption, bool>> SameExceptionAs(Xeption expectedException) =>
         actualException => actualException.SameExceptionAs(expectedException);
+
+    private static async IAsyncEnumerable<string> ToAsyncStream(params string[] tokens)
+    {
+        foreach (string token in tokens)
+        {
+            await Task.Yield();
+
+            yield return token;
+        }
+    }
+
+    private static async IAsyncEnumerable<string> ThrowingStream(Exception exception)
+    {
+        await Task.CompletedTask;
+
+        if (exception is not null)
+        {
+            throw exception;
+        }
+
+        yield break;
+    }
+
+    private static async Task<List<string>> DrainAsync(IAsyncEnumerable<string> stream)
+    {
+        List<string> tokens = [];
+
+        await foreach (string token in stream)
+        {
+            tokens.Add(token);
+        }
+
+        return tokens;
+    }
     }

@@ -78,6 +78,21 @@ public partial class BrainService
         }
     }
 
+    private async ValueTask<Exception> MapStreamExceptionAsync(Exception exception) =>
+        exception switch
+        {
+            InvalidBrainException invalidBrainException =>
+                await CreateAndLogValidationExceptionAsync(invalidBrainException),
+
+            HttpRequestException httpRequestException =>
+                await CreateAndLogCriticalDependencyExceptionAsync(httpRequestException),
+
+            _ => await CreateAndLogServiceExceptionAsync(
+                new FailedBrainServiceException(
+                    message: "Failed brain service error occurred, contact support.",
+                    innerException: exception))
+        };
+
     private async ValueTask<BrainValidationException> CreateAndLogValidationExceptionAsync(
         Xeption? exception)
     {

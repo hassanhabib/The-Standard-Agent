@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging.Abstractions;
 using Standard.Agents.Brokers.Classifiers;
 using Standard.Agents.Brokers.Generators;
@@ -167,6 +168,23 @@ public sealed partial class StandardAgent : IAgent
         this.agent ??= Compose();
 
         return await this.agent.ProcessPromptAsync(prompt);
+    }
+
+    // async iterator, so a composition failure surfaces when the caller starts
+    // enumerating rather than at the call site — mirroring ProcessPromptAsync.
+    public async IAsyncEnumerable<AgentStreamEvent> StreamPromptAsync(
+        string prompt,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        this.agent ??= Compose();
+
+        IAsyncEnumerable<AgentStreamEvent> events =
+            this.agent.ProcessPromptStreamAsync(prompt, cancellationToken);
+
+        await foreach (AgentStreamEvent streamEvent in events.WithCancellation(cancellationToken))
+        {
+            yield return streamEvent;
+        }
     }
 
     // Every builder method drops the cached composition, so configuration set after a
