@@ -72,6 +72,10 @@ await foreach (AgentStreamEvent streamEvent in agent.StreamPromptAsync("What is 
 No DI container. `Compose()` hand-wires the whole graph — SPEC.md §9: *"DI is OPTIONAL. A
 hand-wired composition root is fully conformant."*
 
+**New here?** [**docs/how-to.md**](https://github.com/hassanhabib/The-Standard-Agent/blob/main/docs/how-to.md)
+walks from a one-line talking agent to skills, tools, guardians, memory, and knowledge — one
+capability at a time, every snippet runnable.
+
 ## The 1·3·9
 
 | Tier | Count | Members |
