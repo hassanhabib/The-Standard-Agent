@@ -110,7 +110,7 @@ Pick each nature's home independently; the code above doesn't change when you do
 
 ## The 1·3·9
 
-![The Standard for Agents — architecture: Agent Builder → Coordination → the three Orchestrations (Data, Decision, Direction) → nine Foundation services → their Brokers](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/architecture.png)
+![The Standard for Agents — architecture: Agent Builder → Coordination → the three Orchestrations (Data, Decision, Direction) → nine Foundation services → their Brokers](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-architecture.png)
 
 | Tier | Count | Members |
 |---|---|---|
