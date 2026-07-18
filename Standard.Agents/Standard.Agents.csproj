@@ -12,11 +12,12 @@
     <!-- The Standard's release format is v1.2.3.4 — model . service/routine . fix/config
          . automated build. Deliberately NOT semver; the segments say what KIND of change
          happened, so a model change can never hide in the service segment.
-         0.2.1.0: a packaging fix — the README logo now renders on NuGet (markdown
-         image instead of raw HTML, which NuGet escapes). No service or model change,
-         so only segment 3 advances. Still tracks SPEC.md v0.1 (draft): segment 1 goes
-         to 1 when the spec settles. -->
-    <Version>0.2.1.0</Version>
+         0.2.2.0: a packaging fix — the README logo is now a wide, centered cover
+         image (NuGet escapes the HTML that would otherwise center it, so a full-width
+         canvas is the only way to appear centered on both NuGet and GitHub). No service
+         or model change, so only segment 3 advances. Still tracks SPEC.md v0.1 (draft):
+         segment 1 goes to 1 when the spec settles. -->
+    <Version>0.2.2.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>
