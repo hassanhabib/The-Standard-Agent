@@ -75,8 +75,9 @@ public sealed class VerifierBroker : IVerifierBroker
 
     private async ValueTask<TResult> PostAsync<TContent, TResult>(
         string relativeUrl,
-        TContent content) =>
-        await this.apiClient.PostContentAsync<TContent, TResult>(
+        TContent content)
+    {
+        return await this.apiClient.PostContentAsync<TContent, TResult>(
             relativeUrl,
             content,
             mediaType: JsonMediaType,
@@ -84,4 +85,5 @@ public sealed class VerifierBroker : IVerifierBroker
                 JsonSerializer.Serialize(value, jsonOptions),
             deserializationFunction: async json =>
                 JsonSerializer.Deserialize<TResult>(json, jsonOptions)!);
+    }
 }
