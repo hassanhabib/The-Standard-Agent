@@ -253,4 +253,28 @@ public partial class DecisionOrchestrationServiceTests
         // then
         actualContext.DirectionType.Should().Be("ReturnResponse");
     }
+
+    [Fact]
+    public async Task ShouldReturnEmptyAnswerWithoutJudgingOnThinkAsync()
+    {
+        // given
+        AgentContext inputContext = CreateRandomAgentContext();
+        SetupGateAllows();
+
+        this.brainServiceMock.Setup(service =>
+            service.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync("FINAL:");
+
+        // when
+        AgentContext actualContext =
+            await this.decisionOrchestrationService.ThinkAsync(inputContext);
+
+        // then
+        actualContext.DirectionType.Should().Be("ReturnResponse");
+        actualContext.Payload.Should().BeEmpty();
+
+        this.judgeServiceMock.Verify(service =>
+            service.EvaluateAsync(It.IsAny<string>()),
+                Times.Never);
+    }
 }

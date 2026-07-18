@@ -81,6 +81,13 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
             return decided;
         }
 
+        // An empty answer is nothing to judge — a judge would (rightly) reject blank input,
+        // which would crash the turn. Return it as-is; the brain simply had nothing to say.
+        if (string.IsNullOrWhiteSpace(decided.Payload))
+        {
+            return decided;
+        }
+
         double score =
             await this.judgeService.EvaluateAsync(candidate: decided.Payload);
 
@@ -167,6 +174,13 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
 
             yield return new AgentStreamEvent(
                 AgentStreamEventType.Status, $"using tool: {decided.DirectionType}");
+
+            yield break;
+        }
+
+        if (string.IsNullOrWhiteSpace(decided.Payload))
+        {
+            setResult(decided);
 
             yield break;
         }
