@@ -14,17 +14,22 @@ namespace Standard.Agents.LlamaSharp;
 
 public sealed class LlamaSharpGeneratorBroker : IGeneratorBroker, IDisposable
 {
-    private const string AntiPrompt = "User:";
-
     private readonly LLamaWeights weights;
     private readonly StatelessExecutor executor;
     private readonly int maxTokens;
+    private readonly Func<string, string, string> formatPrompt;
 
+    // The prompt template is the thing to get right per model: an instruct model only
+    // generates when its own chat format is used. Defaults to ChatML (the most common
+    // modern format); pass PromptTemplates.Plain, or your own (system, user) => prompt,
+    // to match a different model. There is no hard-coded anti-prompt — generation stops
+    // at the model's own end-of-turn / EOS token.
     public LlamaSharpGeneratorBroker(
         string modelPath,
         int contextSize = 4096,
         int gpuLayerCount = 0,
-        int maxTokens = 1024)
+        int maxTokens = 1024,
+        Func<string, string, string>? promptTemplate = null)
     {
         var parameters = new ModelParams(modelPath)
         {
@@ -35,6 +40,7 @@ public sealed class LlamaSharpGeneratorBroker : IGeneratorBroker, IDisposable
         this.weights = LLamaWeights.LoadFromFile(parameters);
         this.executor = new StatelessExecutor(this.weights, parameters);
         this.maxTokens = maxTokens;
+        this.formatPrompt = promptTemplate ?? PromptTemplates.ChatML;
     }
 
     public async ValueTask<string> GenerateAsync(string systemPrompt, string userPrompt)
@@ -57,12 +63,11 @@ public sealed class LlamaSharpGeneratorBroker : IGeneratorBroker, IDisposable
         var inferenceParams = new InferenceParams
         {
             MaxTokens = this.maxTokens,
-            AntiPrompts = [AntiPrompt],
             SamplingPipeline = new DefaultSamplingPipeline()
         };
 
         IAsyncEnumerable<string> tokens = this.executor.InferAsync(
-            BuildPrompt(systemPrompt, userPrompt),
+            this.formatPrompt(systemPrompt, userPrompt),
             inferenceParams,
             cancellationToken);
 
@@ -70,20 +75,6 @@ public sealed class LlamaSharpGeneratorBroker : IGeneratorBroker, IDisposable
         {
             yield return token;
         }
-    }
-
-    private static string BuildPrompt(string systemPrompt, string userPrompt)
-    {
-        var prompt = new StringBuilder();
-
-        if (string.IsNullOrWhiteSpace(systemPrompt) is false)
-        {
-            prompt.AppendLine(systemPrompt).AppendLine();
-        }
-
-        prompt.Append("User: ").AppendLine(userPrompt).Append("Assistant: ");
-
-        return prompt.ToString();
     }
 
     public void Dispose() =>
