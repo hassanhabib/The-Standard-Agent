@@ -410,6 +410,31 @@ public class StandardAgentTests
         capturedSystemPrompt.Should().NotContain("{{tools}}");
     }
 
+    [Fact]
+    public async Task ShouldUseLocalGateToRefuseOnProcessPromptAsync()
+    {
+        // given
+        var skillBroker = new Mock<ISkillBroker>();
+        skillBroker.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(string.Empty);
+
+        var memory = new Mock<IMemoryBroker>();
+        memory.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
+
+        var agent = new StandardAgent()
+            .UseSkills(skillBroker.Object)
+            .UseMemory(memory.Object)
+            .UseKnowledge(EmptyKnowledgeBroker())
+            .LocalBrain((systemPrompt, userPrompt) => ValueTask.FromResult("FINAL: hello"))
+            .LocalGate((gateRubric, prompt) => ValueTask.FromResult("refuse: not allowed"))
+            .UseLog(new Mock<ILogBroker>().Object);
+
+        // when
+        string actualResult = await agent.ProcessPromptAsync(prompt: "do something bad");
+
+        // then
+        actualResult.Should().Be("I'm not able to help with that.");
+    }
+
     private static IKnowledgeBroker EmptyKnowledgeBroker()
     {
         var knowledgeBroker = new Mock<IKnowledgeBroker>();
