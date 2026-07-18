@@ -34,6 +34,10 @@ public partial class DataOrchestrationServiceTests
         this.knowledgeServiceMock = new Mock<IKnowledgeService>();
         this.loggingBrokerMock = new Mock<ILoggingBroker>();
 
+        this.knowledgeServiceMock.Setup(service =>
+            service.RetrieveKnowledgeAsync(It.IsAny<string>()))
+                .ReturnsAsync([]);
+
         this.dataOrchestrationService = new DataOrchestrationService(
             skillService: this.skillServiceMock.Object,
             memoryService: this.memoryServiceMock.Object,

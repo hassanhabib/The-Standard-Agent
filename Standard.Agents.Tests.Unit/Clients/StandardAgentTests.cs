@@ -151,6 +151,8 @@ public class StandardAgentTests
         memoryBroker.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
 
         var knowledgeBroker = new Mock<IKnowledgeBroker>();
+        knowledgeBroker.Setup(b => b.SelectKnowledgeAsync(It.IsAny<string>())).ReturnsAsync([]);
+
         var logBroker = new Mock<ILogBroker>();
 
         var agent = new StandardAgent()
@@ -225,7 +227,7 @@ public class StandardAgentTests
     .UseGate(gate.Object)
     .UseJudge(judge.Object)
     .UseMemory(memory.Object)
-    .UseKnowledge(new Mock<IKnowledgeBroker>().Object)
+    .UseKnowledge(EmptyKnowledgeBroker())
     .UseLog(new Mock<ILogBroker>().Object);
 
         // when
@@ -269,7 +271,7 @@ public class StandardAgentTests
             .UseGate(gate.Object)
             .UseJudge(judge.Object)
             .UseMemory(memory.Object)
-            .UseKnowledge(new Mock<IKnowledgeBroker>().Object)
+            .UseKnowledge(EmptyKnowledgeBroker())
             .UseLog(new Mock<ILogBroker>().Object);
 
         // when
@@ -382,6 +384,14 @@ public class StandardAgentTests
         capturedSystemPrompt.Should().Contain("calculator");
         capturedSystemPrompt.Should().NotContain("secret");
         capturedSystemPrompt.Should().NotContain("{{tools}}");
+    }
+
+    private static IKnowledgeBroker EmptyKnowledgeBroker()
+    {
+        var knowledgeBroker = new Mock<IKnowledgeBroker>();
+        knowledgeBroker.Setup(b => b.SelectKnowledgeAsync(It.IsAny<string>())).ReturnsAsync([]);
+
+        return knowledgeBroker.Object;
     }
 
     private static async IAsyncEnumerable<string> ToAsyncStream(params string[] tokens)

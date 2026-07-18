@@ -16,6 +16,14 @@ public class AgentToolTests
     private static string CreateRandomString() =>
         new MnemonicString().GetValue();
 
+    private static Brokers.Knowledges.IKnowledgeBroker EmptyKnowledgeBroker()
+    {
+        var knowledgeBroker = new Mock<Brokers.Knowledges.IKnowledgeBroker>();
+        knowledgeBroker.Setup(b => b.SelectKnowledgeAsync(It.IsAny<string>())).ReturnsAsync([]);
+
+        return knowledgeBroker.Object;
+    }
+
     [Fact]
     public async Task ShouldRunNestedAgentAsToolAsync()
     {
@@ -88,7 +96,7 @@ public class AgentToolTests
             .UseSkills(skills.Object)
             .UseGenerator(outerBrain.Object)
             .UseMemory(memory.Object)
-            .UseKnowledge(new Mock<Brokers.Knowledges.IKnowledgeBroker>().Object)
+            .UseKnowledge(EmptyKnowledgeBroker())
             .UseGate(gate.Object)
             .UseJudge(judge.Object)
             .UseMcp(new Mock<Brokers.Mcps.IMcpBroker>().Object)
