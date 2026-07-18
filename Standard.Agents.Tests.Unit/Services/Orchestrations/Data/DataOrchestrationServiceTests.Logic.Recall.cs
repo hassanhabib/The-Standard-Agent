@@ -146,4 +146,35 @@ public partial class DataOrchestrationServiceTests
         actualContext.SystemPrompt.Should().Contain(ToolCatalog);
         actualContext.SystemPrompt.Should().NotContain("{{tools}}");
     }
+
+    [Fact]
+    public async Task ShouldSeedKnowledgeIntoObservationsOnRecallAsync()
+    {
+        // given
+        AgentContext inputContext = CreateRandomAgentContext();
+        List<string> randomKnowledge = [CreateRandomString(), CreateRandomString()];
+
+        this.skillServiceMock.Setup(service =>
+            service.RetrieveSkillsAsync())
+                .ReturnsAsync(CreateRandomString());
+
+        this.memoryServiceMock.Setup(service =>
+            service.RecallMemoriesAsync())
+                .ReturnsAsync([]);
+
+        this.knowledgeServiceMock.Setup(service =>
+            service.RetrieveKnowledgeAsync(It.IsAny<string>()))
+                .ReturnsAsync(randomKnowledge);
+
+        // when
+        AgentContext actualContext =
+            await this.dataOrchestrationService.RecallAsync(inputContext);
+
+        // then
+        actualContext.Observations.Should().Contain(randomKnowledge);
+
+        this.knowledgeServiceMock.Verify(service =>
+            service.RetrieveKnowledgeAsync(inputContext.Prompt),
+                Times.Once);
+    }
 }
