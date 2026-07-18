@@ -12,9 +12,11 @@
     <!-- The Standard's release format is v1.2.3.4 — model . service/routine . fix/config
          . automated build. Deliberately NOT semver; the segments say what KIND of change
          happened, so a model change can never hide in the service segment.
-         0.1.0.0 tracks SPEC.md v0.1 (draft): the spec is not settled, so neither is the
-         model. Segment 1 goes to 1 when the spec does. -->
-    <Version>0.1.0.0</Version>
+         0.2.0.0: the guardian fix changed service/broker routines (ScreenAsync,
+         EvaluateAsync, ClassifyAsync, VerifyAsync) but no model, so segment 2 advances
+         and 3/4 reset. Still tracks SPEC.md v0.1 (draft): segment 1 goes to 1 when the
+         spec settles. -->
+    <Version>0.2.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>
