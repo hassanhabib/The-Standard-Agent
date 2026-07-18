@@ -211,4 +211,46 @@ public partial class DecisionOrchestrationServiceTests
                 It.Is<string>(userMessage => userMessage.Contains(observation))),
                     Times.Once);
     }
+
+    [Fact]
+    public async Task ShouldRouteStructuredToolCallOnThinkAsync()
+    {
+        // given
+        AgentContext inputContext = CreateRandomAgentContext();
+        SetupGateAllows();
+
+        this.brainServiceMock.Setup(service =>
+            service.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(
+                    "TOOL: {\"tool\":\"calculator\",\"arguments\":{\"expression\":\"47*89\"}}");
+
+        // when
+        AgentContext actualContext =
+            await this.decisionOrchestrationService.ThinkAsync(inputContext);
+
+        // then
+        actualContext.DirectionType.Should().Be("calculator");
+        actualContext.Intent.Should().Be("calculator");
+        actualContext.Payload.Should().Contain("47*89");
+    }
+
+    [Fact]
+    public async Task ShouldTreatMalformedToolCallAsAnswerOnThinkAsync()
+    {
+        // given
+        AgentContext inputContext = CreateRandomAgentContext();
+        SetupGateAllows();
+        SetupJudgeApproves();
+
+        this.brainServiceMock.Setup(service =>
+            service.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync("TOOL: this is not valid json");
+
+        // when
+        AgentContext actualContext =
+            await this.decisionOrchestrationService.ThinkAsync(inputContext);
+
+        // then
+        actualContext.DirectionType.Should().Be("ReturnResponse");
+    }
 }
