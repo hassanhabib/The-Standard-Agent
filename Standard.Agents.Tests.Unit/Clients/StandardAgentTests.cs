@@ -341,6 +341,49 @@ public class StandardAgentTests
         actualResult.Should().Be(expectedAnswer);
     }
 
+    [Fact]
+    public async Task ShouldAdvertiseOnlyDescribedToolsAtToolsMarkerOnProcessPromptAsync()
+    {
+        // given
+        string capturedSystemPrompt = string.Empty;
+
+        var skillBroker = new Mock<ISkillBroker>();
+        skillBroker.Setup(b => b.SelectSkillsAsync()).ReturnsAsync("Tools:\n{{tools}}");
+
+        var memory = new Mock<IMemoryBroker>();
+        memory.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
+
+        var generatorBroker = new Mock<IGeneratorBroker>();
+        generatorBroker.Setup(b => b.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .Callback<string, string>((systemPrompt, userPrompt) => capturedSystemPrompt = systemPrompt)
+            .ReturnsAsync("FINAL: done");
+
+        var describedTool = new Mock<Standard.Agents.Tools.ITool>();
+        describedTool.SetupGet(tool => tool.Name).Returns("calculator");
+        describedTool.SetupGet(tool => tool.Description).Returns("Evaluate arithmetic.");
+        describedTool.SetupGet(tool => tool.Parameters).Returns("{}");
+
+        var hiddenTool = new Mock<Standard.Agents.Tools.ITool>();
+        hiddenTool.SetupGet(tool => tool.Name).Returns("secret");
+        hiddenTool.SetupGet(tool => tool.Description).Returns(string.Empty);
+
+        var agent = new StandardAgent()
+            .UseSkills(skillBroker.Object)
+            .UseMemory(memory.Object)
+            .UseGenerator(generatorBroker.Object)
+            .UseLog(new Mock<ILogBroker>().Object)
+            .Tool(describedTool.Object)
+            .Tool(hiddenTool.Object);
+
+        // when
+        await agent.ProcessPromptAsync(prompt: "compute something");
+
+        // then
+        capturedSystemPrompt.Should().Contain("calculator");
+        capturedSystemPrompt.Should().NotContain("secret");
+        capturedSystemPrompt.Should().NotContain("{{tools}}");
+    }
+
     private static async IAsyncEnumerable<string> ToAsyncStream(params string[] tokens)
     {
         foreach (string token in tokens)
