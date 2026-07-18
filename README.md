@@ -1,5 +1,7 @@
 ![The Standard for Agents](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-cover.png)
 
+<div align="center">
+
 # The Standard AI Agent Framework
 
 **`Agent = Orchestration(Data, Decision, Direction)`**
@@ -13,6 +15,8 @@ The C# reference implementation of **[The Standard for Agents](https://github.co
 [![The Standard](https://img.shields.io/github/v/release/hassanhabib/The-Standard?filter=v2.50.0&style=default&label=Standard%20Version&color=2ea44f)](https://github.com/hassanhabib/The-Standard)
 [![The Standard Community](https://img.shields.io/discord/934130100008538142?style=default&color=%237289da&label=The%20Standard%20Community&logo=Discord)](https://discord.gg/vdPZ7hS52X)
 [![License: TSSL](https://img.shields.io/badge/license-TSSL%20v1.1-blue.svg)](https://github.com/hassanhabib/The-Standard-Agent/blob/main/LICENSE.txt)
+
+</div>
 
 ---
 
@@ -34,8 +38,7 @@ dotnet add package Standard.Agents
 The bare minimum is a brain — nothing else required:
 
 ```csharp
-var agent = new StandardAgent()
-    .Brain(apiUrl: "https://api.peerllm.com/v1/", apiKey: key, model: "LLooMA2.0");
+var agent = new StandardAgent(apiUrl: "https://api.peerllm.com/v1/", apiKey: key, model: "LLooMA2.0");
 
 string answer = await agent.ProcessPromptAsync("What is 47 * 89?");
 ```
@@ -73,8 +76,37 @@ No DI container. `Compose()` hand-wires the whole graph — SPEC.md §9: *"DI is
 hand-wired composition root is fully conformant."*
 
 **New here?** [**docs/how-to.md**](https://github.com/hassanhabib/The-Standard-Agent/blob/main/docs/how-to.md)
-walks from a one-line talking agent to skills, tools, guardians, memory, and knowledge — one
-capability at a time, every snippet runnable.
+walks from a one-line talking agent to skills, tools, guardians, memory, knowledge, and every
+backend below — one capability at a time, every snippet runnable.
+
+## Backends — every nature is swappable
+
+The core ships dependency-free defaults: a hosted brain, file memory, file knowledge. Swap any
+nature for a real backend with one line — same seam, the dependency living in an opt-in package.
+
+| Nature | Default (in core) | Swap to | Package |
+|---|---|---|---|
+| Brain · *Decision* | hosted `.Brain(url,…)` | local GGUF (llama.cpp) | [`…Decision.Brains.LlamaSharp`](https://www.nuget.org/packages/Standard.Agents.Decision.Brains.LlamaSharp) |
+| Gate / Judge · *Decision* | hosted `.Gate` / `.Judge` | in-process | *core — `.LocalGate` / `.LocalJudge`* |
+| Memory · *Data* | file | Redis | [`…Data.Memory.Redis`](https://www.nuget.org/packages/Standard.Agents.Data.Memory.Redis) |
+| Knowledge · *Data* | folder | PostgreSQL full-text | [`…Data.Knowledge.Postgres`](https://www.nuget.org/packages/Standard.Agents.Data.Knowledge.Postgres) |
+| Knowledge · *Data* | folder | SQL Server full-text | [`…Data.Knowledge.MsSql`](https://www.nuget.org/packages/Standard.Agents.Data.Knowledge.MsSql) |
+
+```csharp
+// fully local — one GGUF drives brain, gate and judge, no network anywhere
+var llama = new LlamaSharpGeneratorBroker("model.gguf");
+var agent = new StandardAgent()
+    .UseGenerator(llama)
+    .LocalGate(llama.GenerateAsync)
+    .LocalJudge(llama.GenerateAsync);
+
+// production data — full-text knowledge in Postgres, shared memory in Redis
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .UseKnowledgePostgres(pgConnectionString)
+    .UseMemoryRedis("localhost:6379", key: $"agent:{userId}");
+```
+
+Pick each nature's home independently; the code above doesn't change when you do.
 
 ## The 1·3·9
 
