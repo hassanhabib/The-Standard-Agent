@@ -129,4 +129,37 @@ public class AgentToolTests
         // then
         actualException.Message.Should().Be("inner agent failed");
     }
+
+    [Fact]
+    public async Task ShouldApplyHandoffTemplateOnExecuteAsync()
+    {
+        // given
+        string randomInput = CreateRandomString();
+        string randomAnswer = CreateRandomString();
+        string handoff = "You are a researcher. Research this and report: {input}";
+        string expectedHandoffPrompt = $"You are a researcher. Research this and report: {randomInput}";
+
+        var nestedAgentMock = new Mock<IAgent>();
+
+        nestedAgentMock.Setup(agent =>
+            agent.ProcessPromptAsync(expectedHandoffPrompt))
+                .ReturnsAsync(randomAnswer);
+
+        var agentTool = new AgentTool(
+            name: "researcher",
+            agent: nestedAgentMock.Object,
+            handoff: handoff);
+
+        // when
+        string actualOutput = await agentTool.ExecuteAsync(randomInput);
+
+        // then
+        actualOutput.Should().Be(randomAnswer);
+
+        nestedAgentMock.Verify(agent =>
+            agent.ProcessPromptAsync(expectedHandoffPrompt),
+                Times.Once);
+
+        nestedAgentMock.VerifyNoOtherCalls();
+    }
 }
