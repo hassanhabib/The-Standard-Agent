@@ -81,14 +81,21 @@ Named for the tri-nature: these are the **Data** nature's stores.
 | `Standard.Agents.Data.Memory.Redis` | `IMemoryBroker` | StackExchange.Redis | ⚠️ local or remote |
 | `Standard.Agents.Data.Memory.Postgres` | `IMemoryBroker` | Npgsql | ⚠️ local or remote |
 | `Standard.Agents.Data.Memory.MsSql` | `IMemoryBroker` | Microsoft.Data.SqlClient | ⚠️ local or remote |
+| `Standard.Agents.Data.Memory.Oracle` | `IMemoryBroker` | Oracle.ManagedDataAccess.Core | ⚠️ local or remote |
 | `Standard.Agents.Data.Knowledge.Sqlite` | `IKnowledgeBroker` | Microsoft.Data.Sqlite (FTS5) | ✅ local db |
 | `Standard.Agents.Data.Knowledge.Redis` | `IKnowledgeBroker` | StackExchange.Redis | ⚠️ local or remote |
 | `Standard.Agents.Data.Knowledge.Postgres` | `IKnowledgeBroker` | Npgsql | ⚠️ local or remote |
 | `Standard.Agents.Data.Knowledge.MsSql` | `IKnowledgeBroker` | Microsoft.Data.SqlClient | ⚠️ local or remote |
+| `Standard.Agents.Data.Knowledge.Oracle` | `IKnowledgeBroker` | Oracle.ManagedDataAccess.Core | ⚠️ local or remote |
 
 "⚠️ local or remote" = the engine can run on the same machine (offline) or across the network
-(online). Redis, Postgres and SQL Server all have local modes, so **offline is never lost** — it's a
-deployment choice, not a code one.
+(online). Redis, Postgres, SQL Server and Oracle all have local modes, so **offline is never lost**
+— it's a deployment choice, not a code one.
+
+**The list is open-ended.** Nothing about the core knows or cares which stores exist — each is just
+another broker with a client library. Oracle, MySQL, MongoDB, a blob/S3 store, or raw key-value —
+if it can hold a list of strings (memory) or answer a text query (knowledge), it can be a package.
+The core only ever ships the **file** default; it never takes a database dependency.
 
 ## Retrieval per backend — the interface hides it, each backend does its best
 
