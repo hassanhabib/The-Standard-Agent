@@ -277,27 +277,59 @@ Shut the process down, start it again, and the second agent knows you — becaus
 depends on the brain following the skill; small models need the forceful phrasing above, and a
 capable model does it readily.
 
+**How it's stored.** Memory is a single plain-text file — one path, not a folder — and each
+remembered fact is **appended as its own line**. There is no query step: on recall *every* line is
+loaded into the turn's observations, so keep memory to durable facts, not a running transcript (it
+grows, and all of it rides along each turn). Want it somewhere other than a flat file — a database,
+a per-user store? Implement `IMemoryBroker` and pass it to `.UseMemory(...)`. Calling `.Memory(path)`
+a second time **replaces** the path rather than adding a second one.
+
 ---
 
 ## 7 · Knowledge — grounding on your data
 
-Knowledge is a folder of documents the agent searches on each turn, seeding relevant passages into
-its context — so answers are grounded in your data, not just the model's training.
+Knowledge is a **folder of read-only documents** the agent searches on each turn, seeding matching
+documents into its context — so answers are grounded in your data, not just the model's training.
+Unlike memory, the agent never writes here; you populate it.
 
 ```csharp
 var agent = new StandardAgent()
     .Brain(apiUrl: url, apiKey: key, model: "LLooMA2.0")
-    .Knowledge("Knowledge");   // a folder of .md documents
+    .Knowledge("Knowledge");   // folder of .md docs, top 3 matches per turn
+    // full form: .Knowledge(path: "Knowledge", pattern: "*.md", maxResults: 3)
 ```
 
-On every prompt, the agent queries the knowledge store with the prompt and feeds the matches in as
-observations, alongside anything it remembers. Drop your product docs, FAQs, or notes in the folder
-(copied to output — see the top) and the agent answers from them.
+**Setup.** `.Knowledge(path, pattern, maxResults)` points at a folder, searched **recursively** —
+subfolders count, so one root can hold many files. `pattern` (default `*.md`) picks which files;
+`maxResults` (default 3) caps how many documents are injected per turn. Copy the folder to output
+(see the top), or the agent has nothing to read.
+
+**Retrieval.** On each prompt the agent scans the files in path order and includes a document when
+its text **contains your prompt**, matched as a **case-insensitive substring** — then stops at
+`maxResults` whole documents and adds them to the turn's observations, alongside anything it
+remembers.
+
+That matcher is deliberately simple: literal containment of the *entire* prompt, not keyword or
+semantic search. It fires when the prompt is a short phrase that appears verbatim in a document, and
+misses on long conversational prompts. So keep knowledge files focused and keyed on the phrases
+users actually type — or swap in real retrieval (embeddings, BM25, a vector DB) by implementing
+`IKnowledgeBroker` and passing it to `.UseKnowledge(...)`.
 
 ```
-Knowledge/pricing.md → "The Pro plan is $29/month, billed annually."
-Prompt: "how much is Pro?" → grounded answer citing the $29/month figure
+Knowledge/pricing.md → "Pro plan pricing: $29/month, billed annually."
+Prompt: "Pro plan pricing"                        → substring match → grounded answer ($29/month)
+Prompt: "so how much does the pro tier cost me?"  → no literal overlap → no match
 ```
+
+### Multiple knowledge or memory sources
+
+`.Knowledge(...)` and `.Memory(...)` each hold **one** location — calling either again replaces the
+previous path, it doesn't add a second. For knowledge that's rarely a limit: the folder is searched
+recursively, so many files and subfolders under one root already behave as many documents. For a
+genuinely separate source — a second root, a database, an API — implement `IKnowledgeBroker` (or
+`IMemoryBroker`) as a composite that fans out across them and pass it to `.UseKnowledge(...)` /
+`.UseMemory(...)`. Nesting one agent inside another as a tool is the other route: it gives the
+sub-task its own private knowledge and memory.
 
 ---
 
