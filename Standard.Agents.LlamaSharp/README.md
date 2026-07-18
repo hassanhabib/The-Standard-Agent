@@ -43,6 +43,9 @@ new LlamaSharpGeneratorBroker("model.gguf");
 // Llama 3 instruct
 new LlamaSharpGeneratorBroker("model.gguf", promptTemplate: PromptTemplates.Llama3);
 
+// NVIDIA Nemotron
+new LlamaSharpGeneratorBroker("model.gguf", promptTemplate: PromptTemplates.Nemotron);
+
 // Base / completion model
 new LlamaSharpGeneratorBroker("model.gguf", promptTemplate: PromptTemplates.Plain);
 

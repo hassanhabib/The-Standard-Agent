@@ -29,6 +29,11 @@ public static class PromptTemplates
             + "<|start_header_id|>assistant<|end_header_id|>\n\n";
     }
 
+    // NVIDIA Nemotron — the <extra_id_0>/<extra_id_1> sentinel format.
+    public static string Nemotron(string systemPrompt, string userPrompt) =>
+        $"<extra_id_0>System\n{systemPrompt}\n"
+            + $"<extra_id_1>User\n{userPrompt}\n<extra_id_1>Assistant\n";
+
     // Plain — base / completion models with no chat format.
     public static string Plain(string systemPrompt, string userPrompt)
     {
