@@ -155,8 +155,8 @@ public sealed class GeneratorBroker : IGeneratorBroker
             relativeUrl,
             content,
             mediaType: JsonMediaType,
-            serializationFunction: value =>
-                ValueTask.FromResult(JsonSerializer.Serialize(value, jsonOptions)),
-            deserializationFunction: json =>
-                ValueTask.FromResult(JsonSerializer.Deserialize<TResult>(json, jsonOptions)!));
+            serializationFunction: async value =>
+                JsonSerializer.Serialize(value, jsonOptions),
+            deserializationFunction: async json =>
+                JsonSerializer.Deserialize<TResult>(json, jsonOptions)!);
 }

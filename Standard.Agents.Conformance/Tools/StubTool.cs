@@ -26,10 +26,10 @@ public sealed class StubTool : ITool
         this.output = output;
     }
 
-    public ValueTask<string> ExecuteAsync(string input)
+    public async ValueTask<string> ExecuteAsync(string input)
     {
         this.receivedInputs.Add(input);
 
-        return ValueTask.FromResult(this.output);
+        return this.output;
     }
 }

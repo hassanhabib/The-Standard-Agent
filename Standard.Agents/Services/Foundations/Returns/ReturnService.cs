@@ -15,10 +15,10 @@ public partial class ReturnService : IReturnService
         this.loggingBroker = loggingBroker;
 
     public ValueTask<string> ReturnAsync(string payload) =>
-    TryCatch(() =>
+    TryCatch(async () =>
     {
         ValidatePayload(payload);
 
-        return ValueTask.FromResult(payload);
+        return payload;
     });
 }

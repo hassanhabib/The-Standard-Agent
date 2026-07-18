@@ -12,16 +12,15 @@ public sealed partial class CalculatorTool : ITool
 {
     public string Name => "calculator";
 
-    public ValueTask<string> ExecuteAsync(string input)
+    public async ValueTask<string> ExecuteAsync(string input)
     {
         try
         {
-            return ValueTask.FromResult(
-                new NCalc.Expression(PromoteNumbers(input)).Evaluate()!.ToString()!);
+            return new NCalc.Expression(PromoteNumbers(input)).Evaluate()!.ToString()!;
         }
         catch (Exception exception)
         {
-            return ValueTask.FromResult($"error: {exception.Message}");
+            return $"error: {exception.Message}";
         }
     }
 

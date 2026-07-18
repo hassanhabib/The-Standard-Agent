@@ -9,8 +9,8 @@ namespace Standard.Agents.Conformance;
 
 public sealed class StubMemoryBroker : IMemoryBroker
 {
-    public ValueTask<IReadOnlyList<string>> SelectMemoriesAsync() =>
-        ValueTask.FromResult<IReadOnlyList<string>>([]);
+    public async ValueTask<IReadOnlyList<string>> SelectMemoriesAsync() =>
+        [];
 
     public ValueTask InsertMemoryAsync(string memory) =>
         ValueTask.CompletedTask;

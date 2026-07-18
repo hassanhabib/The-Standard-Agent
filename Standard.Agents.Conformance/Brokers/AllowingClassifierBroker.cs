@@ -9,6 +9,6 @@ namespace Standard.Agents.Conformance;
 
 public sealed class AllowingClassifierBroker : IClassifierBroker
 {
-    public ValueTask<string> ClassifyAsync(string input) =>
-        ValueTask.FromResult("allow");
+    public async ValueTask<string> ClassifyAsync(string input) =>
+        "allow";
 }

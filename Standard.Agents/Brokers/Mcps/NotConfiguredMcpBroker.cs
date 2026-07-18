@@ -7,6 +7,6 @@ namespace Standard.Agents.Brokers.Mcps;
 
 public sealed class NotConfiguredMcpBroker : IMcpBroker
 {
-    public ValueTask<string> CallAsync(string name, string input) =>
-        ValueTask.FromResult($"[external '{name}' not configured]");
+    public async ValueTask<string> CallAsync(string name, string input) =>
+        $"[external '{name}' not configured]";
 }

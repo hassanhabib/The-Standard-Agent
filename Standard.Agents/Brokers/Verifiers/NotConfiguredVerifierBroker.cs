@@ -12,6 +12,6 @@ public sealed class NotConfiguredVerifierBroker : IVerifierBroker
     private static readonly string PassingScore =
         (1.0).ToString(CultureInfo.InvariantCulture);
 
-    public ValueTask<string> VerifyAsync(string candidate) =>
-        ValueTask.FromResult(PassingScore);
+    public async ValueTask<string> VerifyAsync(string candidate) =>
+        PassingScore;
 }

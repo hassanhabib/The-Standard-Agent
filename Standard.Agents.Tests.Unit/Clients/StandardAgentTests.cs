@@ -357,7 +357,7 @@ public class StandardAgentTests
         var agent = new StandardAgent()
             .UseSkills(skillBroker.Object)
             .UseMemory(memory.Object)
-            .LocalBrain((systemPrompt, userPrompt) => ValueTask.FromResult(expectedAnswer))
+            .LocalBrain(async (systemPrompt, userPrompt) => expectedAnswer)
             .UseLog(new Mock<ILogBroker>().Object);
 
         // when
@@ -424,8 +424,8 @@ public class StandardAgentTests
             .UseSkills(skillBroker.Object)
             .UseMemory(memory.Object)
             .UseKnowledge(EmptyKnowledgeBroker())
-            .LocalBrain((systemPrompt, userPrompt) => ValueTask.FromResult("FINAL: hello"))
-            .LocalGate((gateRubric, prompt) => ValueTask.FromResult("refuse: not allowed"))
+            .LocalBrain(async (systemPrompt, userPrompt) => "FINAL: hello")
+            .LocalGate(async (gateRubric, prompt) => "refuse: not allowed")
             .UseLog(new Mock<ILogBroker>().Object);
 
         // when
@@ -451,12 +451,12 @@ public class StandardAgentTests
             .UseSkills(skillBroker.Object)
             .UseMemory(memory.Object)
             .UseKnowledge(EmptyKnowledgeBroker())
-            .LocalBrain((systemPrompt, userPrompt) => ValueTask.FromResult("FINAL: 42"))
-            .LocalJudge((judgeRubric, draftAnswer) =>
+            .LocalBrain(async (systemPrompt, userPrompt) => "FINAL: 42")
+            .LocalJudge(async (judgeRubric, draftAnswer) =>
             {
                 judgeInvoked = true;
 
-                return ValueTask.FromResult("1.0");
+                return "1.0";
             })
             .UseLog(new Mock<ILogBroker>().Object);
 
