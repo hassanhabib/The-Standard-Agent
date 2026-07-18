@@ -6,7 +6,6 @@
 using System.Text.Json;
 using Standard.Agents;
 using Standard.Agents.Conformance;
-using Standard.Agents.Tools;
 
 string vectorsPath = args.Length > 0
     ? args[0]
