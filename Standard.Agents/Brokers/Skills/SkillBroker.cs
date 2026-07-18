@@ -17,6 +17,11 @@ public sealed class SkillBroker : ISkillBroker
 
     public async ValueTask<string> SelectSkillsAsync()
     {
+        if (Directory.Exists(this.skillsPath) is false)
+        {
+            return string.Empty;
+        }
+
         List<string> skills = [];
 
         IOrderedEnumerable<string> skillFilePaths =

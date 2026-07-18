@@ -134,13 +134,20 @@ verdict.TrimStart().StartsWith(RefuseVerdict, StringComparison.OrdinalIgnoreCase
             string toolName = toolCall[0];
             string toolInput = toolCall.Length > 1 ? toolCall[1] : string.Empty;
 
-            return context with
+            // A model can emit the "ACTION:" prefix with no tool name behind it (small
+            // models parrot the protocol template). That is not a tool call — fall
+            // through and treat the reply as the answer rather than routing an empty
+            // tool name into Direction, where it would fault.
+            if (string.IsNullOrWhiteSpace(toolName) is false)
             {
-                Intent = toolName,
-                DirectionType = toolName,
-                Payload = toolInput,
-                RawReply = reply
-            };
+                return context with
+                {
+                    Intent = toolName,
+                    DirectionType = toolName,
+                    Payload = toolInput,
+                    RawReply = reply
+                };
+            }
         }
 
         string answer = reply.StartsWith(FinalPrefix, StringComparison.OrdinalIgnoreCase)

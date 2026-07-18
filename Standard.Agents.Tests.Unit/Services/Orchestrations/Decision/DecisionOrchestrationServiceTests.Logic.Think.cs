@@ -157,6 +157,30 @@ public partial class DecisionOrchestrationServiceTests
         actualContext.Payload.Should().Be("just an answer, no prefix");
     }
 
+    [Theory]
+    [InlineData("ACTION:")]
+    [InlineData("ACTION: ")]
+    [InlineData("ACTION: : missing tool name")]
+    public async Task ShouldTreatEmptyActionAsAnswerOnThinkAsync(string reply)
+    {
+        // given
+        AgentContext inputContext = CreateRandomAgentContext();
+        SetupGateAllows();
+        SetupJudgeApproves();
+
+        this.brainServiceMock.Setup(service =>
+            service.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(reply);
+
+        // when
+        AgentContext actualContext =
+            await this.decisionOrchestrationService.ThinkAsync(inputContext);
+
+        // then
+        actualContext.DirectionType.Should().Be("ReturnResponse");
+        actualContext.Intent.Should().Be("Respond");
+    }
+
     [Fact]
     public async Task ShouldPassObservationsToBrainOnThinkAsync()
     {

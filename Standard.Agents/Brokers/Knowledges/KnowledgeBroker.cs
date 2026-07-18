@@ -19,12 +19,15 @@ public sealed class KnowledgeBroker : IKnowledgeBroker
         this.knowledgePath = Path.GetFullPath(knowledgePath);
         this.searchPattern = searchPattern;
         this.maxResults = maxResults;
-
-        Directory.CreateDirectory(this.knowledgePath);
     }
 
     public async ValueTask<IReadOnlyList<string>> SelectKnowledgeAsync(string query)
     {
+        if (Directory.Exists(this.knowledgePath) is false)
+        {
+            return [];
+        }
+
         List<string> matches = [];
 
         IOrderedEnumerable<string> documentPaths =

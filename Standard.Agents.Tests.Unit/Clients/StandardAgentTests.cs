@@ -170,23 +170,30 @@ public class StandardAgentTests
     }
 
     [Fact]
-    public async Task ShouldThrowCompositionExceptionOnProcessPromptIfGateHasNoSettingsAsync()
+    public async Task ShouldComposeBareBrainOnProcessPromptWithoutGuardiansAsync()
     {
         // given
+        var skillBroker = new Mock<ISkillBroker>();
+        skillBroker.Setup(b => b.SelectSkillsAsync()).ReturnsAsync(string.Empty);
+
+        var memory = new Mock<IMemoryBroker>();
+        memory.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
+
         var generatorBroker = new Mock<IGeneratorBroker>();
+        generatorBroker.Setup(b => b.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync("Hello there!");
 
         var agent = new StandardAgent()
-            .UseGenerator(generatorBroker.Object);
+            .UseSkills(skillBroker.Object)
+            .UseMemory(memory.Object)
+            .UseGenerator(generatorBroker.Object)
+            .UseLog(new Mock<ILogBroker>().Object);
 
         // when
-        ValueTask<string> processTask = agent.ProcessPromptAsync(prompt: "prompt");
-
-        InvalidAgentCompositionException actualException =
-            await Assert.ThrowsAsync<InvalidAgentCompositionException>(
-                processTask.AsTask);
+        string actualResult = await agent.ProcessPromptAsync(prompt: "Hi there!");
 
         // then
-        actualException.Message.Should().Contain("gate");
+        actualResult.Should().Be("Hello there!");
     }
 
     [Fact]
