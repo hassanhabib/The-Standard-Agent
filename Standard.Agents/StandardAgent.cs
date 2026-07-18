@@ -77,13 +77,12 @@ public sealed partial class StandardAgent : IAgent
         Set(() => this.brainSettings =
             new InferenceSettings(apiUrl, apiKey, model, temperature, maxTokens, timeoutSeconds));
 
-    // Optional, and pointing it at a different model is the whole point. Left unset,
-    // the Gate falls back to the Brain's endpoint — SPEC.md 9 permits collapsing the
-    // three Decision brokers onto one endpoint, and Theory Ch.5 calls it "three
-    // interfaces, collapsible substrate: at small scale one model wears all three
-    // hats". Even collapsed, the Gate is never the Brain: it runs its own screening
-    // rubric (Data, not the agent's system prompt), honouring invariant 6. For a truly
-    // independent guardian, point this at a different model.
+    // Guardians are opt-in. A bare agent (brain only) runs no gate — SPEC.md 8.1 says
+    // the Core profile MAY leave Gate and Judge as pass-through. Calling this turns the
+    // Gate on; it may share the Brain's endpoint (SPEC.md 9's collapsible substrate) or
+    // point at a different model. Even collapsed onto one endpoint the Gate is never the
+    // Brain: it runs its own screening rubric (Data, not the agent's system prompt),
+    // honouring invariant 6.
     public StandardAgent Gate(
         string apiUrl,
         string apiKey,
@@ -186,8 +185,6 @@ public sealed partial class StandardAgent : IAgent
         ValidateComposition();
 
         InferenceSettings? brain = this.brainSettings;
-        InferenceSettings? gate = this.gateSettings ?? brain;
-        InferenceSettings? judge = this.judgeSettings ?? brain;
 
         ISkillBroker skill =
             this.skillBroker ?? new SkillBroker(this.skillsPath);
@@ -205,16 +202,20 @@ public sealed partial class StandardAgent : IAgent
                 this.knowledgePath, this.knowledgePattern, this.knowledgeMaxResults);
 
         IClassifierBroker classifier =
-            this.classifierBroker ?? new ClassifierBroker(
-                gate!.ApiUrl, gate.ApiKey, gate.Model,
-                gate.Temperature, gate.MaxTokens, gate.TimeoutSeconds,
-                GuardianPrompts.Gate);
+            this.classifierBroker ?? (this.gateSettings is null
+                ? new NotConfiguredClassifierBroker()
+                : new ClassifierBroker(
+                    this.gateSettings.ApiUrl, this.gateSettings.ApiKey, this.gateSettings.Model,
+                    this.gateSettings.Temperature, this.gateSettings.MaxTokens,
+                    this.gateSettings.TimeoutSeconds, GuardianPrompts.Gate));
 
         IVerifierBroker verifier =
-            this.verifierBroker ?? new VerifierBroker(
-                judge!.ApiUrl, judge.ApiKey, judge.Model,
-                judge.Temperature, judge.MaxTokens, judge.TimeoutSeconds,
-                GuardianPrompts.Judge);
+            this.verifierBroker ?? (this.judgeSettings is null
+                ? new NotConfiguredVerifierBroker()
+                : new VerifierBroker(
+                    this.judgeSettings.ApiUrl, this.judgeSettings.ApiKey, this.judgeSettings.Model,
+                    this.judgeSettings.Temperature, this.judgeSettings.MaxTokens,
+                    this.judgeSettings.TimeoutSeconds, GuardianPrompts.Judge));
 
         IToolBroker toolBroker = new ToolBroker(this.tools);
 
