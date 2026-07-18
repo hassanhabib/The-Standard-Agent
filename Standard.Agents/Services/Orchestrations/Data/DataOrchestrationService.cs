@@ -40,8 +40,10 @@ public partial class DataOrchestrationService : IDataOrchestrationService
     {
         ValidateContext(context);
 
-        string systemPrompt = await this.skillService.RetrieveSkillsAsync();
+        string skills = await this.skillService.RetrieveSkillsAsync();
         IReadOnlyList<string> memories = await this.memoryService.RecallMemoriesAsync();
+
+        string systemPrompt = skills.Replace(ToolsMarker, this.toolCatalog);
 
         return context with
         {
