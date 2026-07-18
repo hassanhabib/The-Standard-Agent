@@ -222,6 +222,8 @@ public sealed partial class StandardAgent : IAgent
         IMemoryBroker memory =
             this.memoryBroker ?? new MemoryBroker(this.memoryPath);
 
+        List<ITool> allTools = [.. this.tools, new RememberTool(memory)];
+
         IKnowledgeBroker knowledge =
             this.knowledgeBroker ?? new KnowledgeBroker(
                 this.knowledgePath, this.knowledgePattern, this.knowledgeMaxResults);
@@ -242,7 +244,7 @@ public sealed partial class StandardAgent : IAgent
                     this.judgeSettings.Temperature, this.judgeSettings.MaxTokens,
                     this.judgeSettings.TimeoutSeconds, GuardianPrompts.Judge));
 
-        IToolBroker toolBroker = new ToolBroker(this.tools);
+        IToolBroker toolBroker = new ToolBroker(allTools);
 
         IMcpBroker mcp =
             this.mcpBroker ?? (string.IsNullOrWhiteSpace(this.mcpEndpointUrl)
@@ -259,7 +261,7 @@ public sealed partial class StandardAgent : IAgent
             new SkillService(skill, logging),
             new MemoryService(memory, logging),
             new KnowledgeService(knowledge, logging),
-            RenderToolCatalog(),
+            RenderToolCatalog(allTools),
             logging);
 
         DecisionOrchestrationService decision = new(
@@ -281,9 +283,9 @@ public sealed partial class StandardAgent : IAgent
     // carry a description are listed — a description is the opt-in (SPEC 6.1); a tool with
     // none is callable but not advertised. Derived from the registered tools, so it never
     // drifts from what is actually there.
-    private string RenderToolCatalog()
+    private static string RenderToolCatalog(IEnumerable<ITool> tools)
     {
-        IEnumerable<string> describedTools = this.tools
+        IEnumerable<string> describedTools = tools
             .Where(tool => string.IsNullOrWhiteSpace(tool.Description) is false)
             .Select(tool => $"- {tool.Name} — {tool.Description} parameters: {tool.Parameters}");
 

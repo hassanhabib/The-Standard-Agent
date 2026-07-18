@@ -27,7 +27,7 @@ public sealed class RememberTool : ITool
     {
         string fact = ExtractFact(input);
 
-        await Task.CompletedTask;
+        await this.memoryBroker.InsertMemoryAsync(fact);
 
         return $"Remembered: {fact}";
     }
