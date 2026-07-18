@@ -83,7 +83,7 @@ public sealed partial class StandardAgent : IAgent
     // external one. For a runtime that streams natively, implement IGeneratorBroker and
     // pass it to UseGenerator instead.
     public StandardAgent LocalBrain(Func<string, string, ValueTask<string>> generate) =>
-        this;
+        Set(() => this.generatorBroker = new FunctionGeneratorBroker(generate));
 
     // Guardians are opt-in. A bare agent (brain only) runs no gate — SPEC.md 8.1 says
     // the Core profile MAY leave Gate and Judge as pass-through. Calling this turns the
