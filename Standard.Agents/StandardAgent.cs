@@ -82,9 +82,8 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="apiUrl">Base URL of the OpenAI-compatible endpoint.</param>
     /// <param name="apiKey">API key for the endpoint (empty string if none is needed).</param>
     /// <param name="model">Model name to request from the endpoint.</param>
-    public StandardAgent(string apiUrl, string apiKey, string model)
-    {
-    }
+    public StandardAgent(string apiUrl, string apiKey, string model) =>
+        Brain(apiUrl, apiKey, model);
 
     public StandardAgent Skills(string path) =>
         Set(() => this.skillsPath = path);
