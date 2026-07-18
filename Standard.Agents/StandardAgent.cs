@@ -139,7 +139,8 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="screen">A <c>(gateRubric, prompt) =&gt; verdict</c> delegate.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent LocalGate(Func<string, string, ValueTask<string>> screen) =>
-        this;
+        Set(() => this.classifierBroker =
+            new FunctionClassifierBroker(screen, GuardianPrompts.Gate));
 
     /// <summary>
     /// Turns on the Gate: an opt-in guardian that screens each prompt before the brain sees
