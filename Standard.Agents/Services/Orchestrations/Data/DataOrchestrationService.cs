@@ -42,13 +42,14 @@ public partial class DataOrchestrationService : IDataOrchestrationService
 
         string skills = await this.skillService.RetrieveSkillsAsync();
         IReadOnlyList<string> memories = await this.memoryService.RecallMemoriesAsync();
+        IReadOnlyList<string> knowledge = await this.knowledgeService.RetrieveKnowledgeAsync(context.Prompt);
 
         string systemPrompt = skills.Replace(ToolsMarker, this.toolCatalog);
 
         return context with
         {
             SystemPrompt = systemPrompt,
-            Observations = [.. context.Observations, .. memories]
+            Observations = [.. context.Observations, .. memories, .. knowledge]
         };
     });
 }
