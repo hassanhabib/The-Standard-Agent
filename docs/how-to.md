@@ -1,9 +1,10 @@
 # How to build an agent, step by step
 
-This guide starts with the smallest possible agent and adds one capability at a time. Every
-snippet is real and runs against `Standard.Agents` (0.9.0+). Copy a section, run it, then move
-to the next. Later sections swap the simple file/HTTP defaults for real backends — a local GGUF
-model, Redis, PostgreSQL, SQL Server — one line at a time.
+This guide starts with the smallest possible agent and adds one capability at a time — each section
+**building on the agent from the one before**, so the `// ← new this section` line is exactly what
+that step adds. Every snippet is real and runs against `Standard.Agents` (0.9.0+). Copy a section,
+run it, then move to the next. Later sections swap the simple file/HTTP defaults for real backends —
+a local GGUF model, Redis, PostgreSQL, SQL Server — one line at a time.
 
 ```bash
 dotnet add package Standard.Agents
@@ -107,8 +108,7 @@ files in a folder and point the agent at it.
 **Before a skill** — the brain answers however the base model feels:
 
 ```csharp
-var agent = new StandardAgent()
-    .Brain(apiUrl: url, apiKey: key, model: "LLooMA2.0");
+var agent = new StandardAgent(url, key, "LLooMA2.0");
 
 await agent.ProcessPromptAsync("Explain recursion.");
 // → a generic, paragraph-long explanation
@@ -121,9 +121,8 @@ You are a terse senior engineer. Answer in at most two sentences, no fluff, one 
 ```
 
 ```csharp
-var agent = new StandardAgent()
-    .Brain(apiUrl: url, apiKey: key, model: "LLooMA2.0")
-    .Skills("Skills");
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .Skills("Skills");                 // ← new this section
 
 await agent.ProcessPromptAsync("Explain recursion.");
 // → two tight sentences with an example
@@ -163,10 +162,9 @@ public sealed class CalculatorTool : ITool
 ```
 
 ```csharp
-var agent = new StandardAgent()
-    .Brain(apiUrl: url, apiKey: key, model: "LLooMA2.0")
+var agent = new StandardAgent(url, key, "LLooMA2.0")
     .Skills("Skills")
-    .Tool(new CalculatorTool());
+    .Tool(new CalculatorTool());       // ← new this section
 ```
 
 ### Telling the brain what it has — `{{tools}}`
@@ -199,8 +197,7 @@ your decision.
 For tools that live in another process or service, point the agent at an MCP endpoint:
 
 ```csharp
-var agent = new StandardAgent()
-    .Brain(apiUrl: url, apiKey: key, model: "LLooMA2.0")
+var agent = new StandardAgent(url, key, "LLooMA2.0")
     .Mcp(endpointUrl: "https://my-mcp-server/");
 ```
 
@@ -216,9 +213,10 @@ A **Gate** screens the request *before* the brain runs, and can refuse it. It's 
 agent has none. Turn it on with `.Gate(...)`:
 
 ```csharp
-var agent = new StandardAgent()
-    .Brain(apiUrl: url, apiKey: key, model: "LLooMA2.0")
-    .Gate(apiUrl: url, apiKey: key, model: "LLooMA2.0");
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .Skills("Skills")
+    .Tool(new CalculatorTool())
+    .Gate(apiUrl: url, apiKey: key, model: "LLooMA2.0");   // ← new this section
 ```
 
 The Gate runs its **own** screening rubric (not the agent's prompt) and replies `allow` or
@@ -250,9 +248,11 @@ var agent = new StandardAgent()
 A **Judge** reviews the brain's *answer* before it's returned, scoring it. Also opt-in:
 
 ```csharp
-var agent = new StandardAgent()
-    .Brain(apiUrl: url, apiKey: key, model: "LLooMA2.0")
-    .Judge(apiUrl: url, apiKey: key, model: "LLooMA2.0");
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .Skills("Skills")
+    .Tool(new CalculatorTool())
+    .Gate(apiUrl: url, apiKey: key, model: "LLooMA2.0")
+    .Judge(apiUrl: url, apiKey: key, model: "LLooMA2.0"); // ← new this section
 ```
 
 **Why it's useful.** Without a judge, the first draft is the final answer — including a confident,
@@ -301,10 +301,9 @@ When finished, reply: FINAL: <answer>
 ```
 
 ```csharp
-static StandardAgent NewAgent() => new StandardAgent()
-    .Brain(apiUrl: url, apiKey: key, model: "LLooMA2.0")
+static StandardAgent NewAgent() => new StandardAgent(url, key, "LLooMA2.0")
     .Skills("Skills")
-    .Memory("agent-memory.txt");
+    .Memory("agent-memory.txt");       // ← new this section
 
 // Session 1
 await NewAgent().ProcessPromptAsync("Hi! My name is Hassan and I work on PeerLLM.");
@@ -360,9 +359,8 @@ documents into its context — so answers are grounded in your data, not just th
 Unlike memory, the agent never writes here; you populate it.
 
 ```csharp
-var agent = new StandardAgent()
-    .Brain(apiUrl: url, apiKey: key, model: "LLooMA2.0")
-    .Knowledge("Knowledge");   // folder of .md docs, top 3 matches per turn
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .Knowledge("Knowledge");   // ← new this section — folder of .md docs, top 3 per turn
     // full form: .Knowledge(path: "Knowledge", pattern: "*.md", maxResults: 3)
 ```
 
@@ -474,8 +472,7 @@ stable seam.
 The builder composes cleanly — take only what you need:
 
 ```csharp
-var agent = new StandardAgent()
-    .Brain(apiUrl: url, apiKey: key, model: "LLooMA2.0")  // 0 · talking
+var agent = new StandardAgent(url, key, "LLooMA2.0")      // 0 · talking
     .Skills("Skills")                                     // 2 · persona + {{tools}}
     .Tool(new CalculatorTool())                           // 3 · internal tool
     .Mcp("https://my-mcp-server/")                        // 3 · external tools
