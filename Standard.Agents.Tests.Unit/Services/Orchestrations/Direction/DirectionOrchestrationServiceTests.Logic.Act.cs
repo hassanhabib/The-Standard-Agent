@@ -87,7 +87,7 @@ public partial class DirectionOrchestrationServiceTests
 
         // then
         actualContext.Status.Should().Be(AgentStatus.Working);
-        actualContext.Observations.Should().ContainSingle(o => o.Contains("2"));
+        actualContext.Observations.Should().ContainSingle(observation => observation.Contains("2"));
 
         this.externalToolServiceMock.Verify(service =>
             service.CallAsync(It.IsAny<string>(), It.IsAny<string>()),
@@ -115,7 +115,7 @@ public partial class DirectionOrchestrationServiceTests
 
         // then
         actualContext.Status.Should().Be(AgentStatus.Working);
-        actualContext.Observations.Should().ContainSingle(o => o.Contains("weather"));
+        actualContext.Observations.Should().ContainSingle(observation => observation.Contains("weather"));
 
         this.externalToolServiceMock.Verify(service =>
             service.CallAsync("weather", "today"),
@@ -179,7 +179,7 @@ public partial class DirectionOrchestrationServiceTests
         // then
         actualContext.Status.Should().Be(AgentStatus.Working);
         actualContext.Observations.Should()
-            .ContainSingle(o => o.Contains("could not parse expression"));
+            .ContainSingle(observation => observation.Contains("could not parse expression"));
     }
 
     [Fact]
@@ -227,6 +227,6 @@ public partial class DirectionOrchestrationServiceTests
 
         // then
         actualContext.Observations.Should()
-            .ContainSingle(o => o.Contains("calculator") && o.Contains("2"));
+            .ContainSingle(observation => observation.Contains("calculator") && observation.Contains("2"));
     }
 }
