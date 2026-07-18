@@ -143,6 +143,17 @@ public sealed partial class StandardAgent : IAgent
             new FunctionClassifierBroker(screen, GuardianPrompts.Gate));
 
     /// <summary>
+    /// Turns on the Judge using an in-process model — the local counterpart to <see cref="Judge"/>,
+    /// with no API calls. The delegate receives the built-in judge rubric as the system prompt and
+    /// the draft answer as the user prompt, and returns the score. Pass a local brain's GenerateAsync
+    /// to let one local model serve as both brain and judge.
+    /// </summary>
+    /// <param name="evaluate">A <c>(judgeRubric, draftAnswer) =&gt; score</c> delegate.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent LocalJudge(Func<string, string, ValueTask<string>> evaluate) =>
+        this;
+
+    /// <summary>
     /// Turns on the Gate: an opt-in guardian that screens each prompt before the brain sees
     /// it and can refuse. A bare agent runs no gate (SPEC.md §8.1 leaves it pass-through in the
     /// Core profile). It may reuse the brain's endpoint or point at a different model; either

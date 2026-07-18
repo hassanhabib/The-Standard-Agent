@@ -435,6 +435,39 @@ public class StandardAgentTests
         actualResult.Should().Be("I'm not able to help with that.");
     }
 
+    [Fact]
+    public async Task ShouldUseLocalJudgeToScoreOnProcessPromptAsync()
+    {
+        // given
+        bool judgeInvoked = false;
+
+        var skillBroker = new Mock<ISkillBroker>();
+        skillBroker.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(string.Empty);
+
+        var memory = new Mock<IMemoryBroker>();
+        memory.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
+
+        var agent = new StandardAgent()
+            .UseSkills(skillBroker.Object)
+            .UseMemory(memory.Object)
+            .UseKnowledge(EmptyKnowledgeBroker())
+            .LocalBrain((systemPrompt, userPrompt) => ValueTask.FromResult("FINAL: 42"))
+            .LocalJudge((judgeRubric, draftAnswer) =>
+            {
+                judgeInvoked = true;
+
+                return ValueTask.FromResult("1.0");
+            })
+            .UseLog(new Mock<ILogBroker>().Object);
+
+        // when
+        string actualResult = await agent.ProcessPromptAsync(prompt: "what is the answer?");
+
+        // then
+        actualResult.Should().Be("42");
+        judgeInvoked.Should().BeTrue();
+    }
+
     private static IKnowledgeBroker EmptyKnowledgeBroker()
     {
         var knowledgeBroker = new Mock<IKnowledgeBroker>();
