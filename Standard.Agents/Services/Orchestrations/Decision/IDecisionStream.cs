@@ -4,14 +4,11 @@
 // ---------------------------------------------------------------
 
 using Standard.Agents.Models.Clients.Agents;
+using Standard.Agents.Models.Orchestrations.Agents;
 
-namespace Standard.Agents.Services.Coordinations;
+namespace Standard.Agents.Services.Orchestrations.Decision;
 
-public interface IAgentCoordinationService
+public interface IDecisionStream : IAsyncEnumerable<AgentStreamEvent>
 {
-    ValueTask<string> ProcessPromptAsync(string prompt);
-
-    IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
-        string prompt,
-        CancellationToken cancellationToken = default);
+    AgentContext Result { get; }
 }

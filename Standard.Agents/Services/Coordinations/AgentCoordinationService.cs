@@ -3,8 +3,10 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Runtime.CompilerServices;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Brokers.Logs;
+using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Services.Orchestrations.Data;
 using Standard.Agents.Services.Orchestrations.Decision;
@@ -61,6 +63,50 @@ public partial class AgentCoordinationService : IAgentCoordinationService
 
         return context.Result;
     });
+
+    public async IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
+        string prompt,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        ValidatePrompt(prompt);
+
+        await this.logBroker.ResetAsync();
+
+        AgentContext context = new() { Prompt = prompt };
+
+        for (int turn = 1; turn <= MaxTurns; turn++)
+        {
+            context = await this.dataOrchestrationService.RecallAsync(context);
+
+            IDecisionStream decisionStream =
+                this.decisionOrchestrationService.ThinkStreamAsync(context, cancellationToken);
+
+            await foreach (AgentStreamEvent decisionEvent in
+                decisionStream.WithCancellation(cancellationToken))
+            {
+                yield return decisionEvent;
+            }
+
+            context = decisionStream.Result;
+
+            context = await this.directionOrchestrationService.ActAsync(context);
+
+            if (context.Status is AgentStatus.Working
+                && string.IsNullOrEmpty(context.Result) is false)
+            {
+                yield return new AgentStreamEvent(
+                    AgentStreamEventType.Tool,
+                    $"{context.DirectionType}: {context.Result}");
+            }
+
+            await LogTurnAsync(turn, context);
+
+            if (context.Status is not AgentStatus.Working)
+            {
+                break;
+            }
+        }
+    }
 
     private async ValueTask LogTurnAsync(int turn, AgentContext context) =>
         await this.logBroker.WriteAsync(

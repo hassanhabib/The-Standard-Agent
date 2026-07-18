@@ -8,4 +8,9 @@ namespace Standard.Agents.Brokers.Generators;
 public interface IGeneratorBroker
 {
     ValueTask<string> GenerateAsync(string systemPrompt, string userPrompt);
+
+    IAsyncEnumerable<string> GenerateStreamAsync(
+        string systemPrompt,
+        string userPrompt,
+        CancellationToken cancellationToken = default);
 }

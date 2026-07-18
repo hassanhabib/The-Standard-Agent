@@ -3,8 +3,10 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Runtime.CompilerServices;
 using System.Text;
 using Standard.Agents.Brokers.Loggings;
+using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Services.Foundations.Brains;
 using Standard.Agents.Services.Foundations.Gates;
@@ -20,6 +22,7 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
     private const string RefuseDirection = "Refuse";
     private const string ReturnResponseDirection = "ReturnResponse";
     private const string RespondIntent = "Respond";
+    private const string RefusalMessage = "I'm not able to help with that.";
 
     private const double MinimumAcceptableScore = 0.3;
 
@@ -54,7 +57,7 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
             {
                 Intent = RefuseDirection,
                 DirectionType = RefuseDirection,
-                Payload = "I'm not able to help with that.",
+                Payload = RefusalMessage,
                 RawReply = verdict
             };
         }
@@ -95,6 +98,100 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
 
         return decided;
     });
+
+    public IDecisionStream ThinkStreamAsync(
+        AgentContext context,
+        CancellationToken cancellationToken = default) =>
+        new DecisionStream(setResult =>
+            StreamThinkAsync(context, setResult, cancellationToken));
+
+    private async IAsyncEnumerable<AgentStreamEvent> StreamThinkAsync(
+        AgentContext context,
+        Action<AgentContext> setResult,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        string verdict = await this.gateService.ScreenAsync(context.Prompt);
+
+        if (IsRefusal(verdict))
+        {
+            setResult(context with
+            {
+                Intent = RefuseDirection,
+                DirectionType = RefuseDirection,
+                Payload = RefusalMessage,
+                RawReply = verdict
+            });
+
+            yield return new AgentStreamEvent(
+                AgentStreamEventType.Status, "gate refused the request");
+
+            yield return new AgentStreamEvent(
+                AgentStreamEventType.Response, RefusalMessage);
+
+            yield break;
+        }
+
+        var classifier = new ReplyStreamClassifier();
+        var reply = new StringBuilder();
+
+        IAsyncEnumerable<string> tokens = this.brainService.GenerateStreamAsync(
+            systemPrompt: context.SystemPrompt,
+            userPrompt: BuildUserMessage(context),
+            cancellationToken: cancellationToken);
+
+        await foreach (string delta in tokens.WithCancellation(cancellationToken))
+        {
+            reply.Append(delta);
+
+            foreach (AgentStreamEvent segment in classifier.Classify(delta))
+            {
+                yield return segment;
+            }
+        }
+
+        foreach (AgentStreamEvent segment in classifier.Flush())
+        {
+            yield return segment;
+        }
+
+        AgentContext decided = Interpret(context, reply.ToString().Trim());
+
+        bool isFinalAnswer = decided.DirectionType.Equals(
+            ReturnResponseDirection, StringComparison.OrdinalIgnoreCase);
+
+        if (isFinalAnswer is false)
+        {
+            setResult(decided);
+
+            yield return new AgentStreamEvent(
+                AgentStreamEventType.Status, $"using tool: {decided.DirectionType}");
+
+            yield break;
+        }
+
+        double score = await this.judgeService.EvaluateAsync(candidate: decided.Payload);
+
+        if (score < MinimumAcceptableScore)
+        {
+            setResult(context with
+            {
+                Observations =
+                [
+                    .. context.Observations,
+                    $"A previous draft was rejected on review: {decided.Payload}"
+                ],
+
+                Status = AgentStatus.Working
+            });
+
+            yield return new AgentStreamEvent(
+                AgentStreamEventType.Status, "judge rejected the draft; revising");
+
+            yield break;
+        }
+
+        setResult(decided);
+    }
 
     private static bool IsRefusal(string verdict) =>
 verdict.TrimStart().StartsWith(RefuseVerdict, StringComparison.OrdinalIgnoreCase);

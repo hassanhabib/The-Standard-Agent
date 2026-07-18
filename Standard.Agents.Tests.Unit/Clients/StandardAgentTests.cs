@@ -3,6 +3,8 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Linq;
+using System.Threading;
 using FluentAssertions;
 using Moq;
 using Standard.Agents.Brokers.Classifiers;
@@ -13,6 +15,7 @@ using Standard.Agents.Brokers.Mcps;
 using Standard.Agents.Brokers.Memorys;
 using Standard.Agents.Brokers.Skills;
 using Standard.Agents.Brokers.Verifiers;
+using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Clients.Agents.Exceptions;
 using Xunit;
 
@@ -276,5 +279,52 @@ public class StandardAgentTests
 
         // then
         actualResult.Should().Be("could not get weather");
+    }
+
+    [Fact]
+    public async Task ShouldStreamResponseOnStreamPromptAsync()
+    {
+        // given
+        var skillBroker = new Mock<ISkillBroker>();
+        skillBroker.Setup(b => b.SelectSkillsAsync()).ReturnsAsync(string.Empty);
+
+        var memory = new Mock<IMemoryBroker>();
+        memory.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
+
+        var generatorBroker = new Mock<IGeneratorBroker>();
+        generatorBroker.Setup(b => b.GenerateStreamAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(ToAsyncStream("Hi ", "there."));
+
+        var agent = new StandardAgent()
+            .UseSkills(skillBroker.Object)
+            .UseMemory(memory.Object)
+            .UseGenerator(generatorBroker.Object)
+            .UseLog(new Mock<ILogBroker>().Object);
+
+        // when
+        List<AgentStreamEvent> actualEvents = [];
+
+        await foreach (AgentStreamEvent streamEvent in agent.StreamPromptAsync(prompt: "Hi there!"))
+        {
+            actualEvents.Add(streamEvent);
+        }
+
+        // then
+        string streamedResponse = string.Concat(actualEvents
+            .Where(streamEvent => streamEvent.Type == AgentStreamEventType.Response)
+            .Select(streamEvent => streamEvent.Content));
+
+        streamedResponse.Should().Be("Hi there.");
+    }
+
+    private static async IAsyncEnumerable<string> ToAsyncStream(params string[] tokens)
+    {
+        foreach (string token in tokens)
+        {
+            await Task.Yield();
+
+            yield return token;
+        }
     }
     }
