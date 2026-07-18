@@ -71,3 +71,4 @@ the deterministic core of the Standard.
 | `multiline-final` | A `FINAL` answer may span multiple lines |
 | `unknown-tool-recovers` | An unknown tool routes to External and the agent recovers |
 | `max-turns-cap` | A never-terminating Brain is capped by the loop |
+| `structured-tool-call` | A structured `TOOL:` call (§6.1) routes to the tool with its arguments |

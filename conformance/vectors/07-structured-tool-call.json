@@ -1,0 +1,8 @@
+{
+  "name": "structured-tool-call",
+  "description": "A structured TOOL: call (SPEC 6.1) routes to the tool with its arguments; the result answers.",
+  "generatorReplies": ["TOOL: {\"tool\":\"calculator\",\"arguments\":{\"expression\":\"47*89\"}}", "FINAL: 4183"],
+  "tools": { "calculator": "4183" },
+  "prompt": "what is 47*89",
+  "expect": { "result": "4183" }
+}
