@@ -12,12 +12,12 @@
     <!-- The Standard's release format is v1.2.3.4 — model . service/routine . fix/config
          . automated build. Deliberately NOT semver; the segments say what KIND of change
          happened, so a model change can never hide in the service segment.
-         0.3.0.0: a bare brain is now a valid agent — guardians are opt-in, the data
-         brokers are lazy, and a malformed tool directive no longer faults. That is a
-         change in service/routine behaviour with no model change, so segment 2 advances
-         and 3/4 reset. Still tracks SPEC.md v0.1 (draft): segment 1 goes to 1 when the
-         spec settles. -->
-    <Version>0.3.0.0</Version>
+         0.4.0.0: streaming — StreamPromptAsync yields typed AgentStreamEvents (thinking
+         and responses) live over SSE. New service routines and supporting wire/client
+         models, but the spec's core AgentContext model is unchanged, so this is a
+         service/routine change: segment 2 advances, 3/4 reset. Still tracks SPEC.md v0.1
+         (draft): segment 1 goes to 1 when the spec settles. -->
+    <Version>0.4.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>
