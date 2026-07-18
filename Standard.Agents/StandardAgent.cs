@@ -78,6 +78,13 @@ public sealed partial class StandardAgent : IAgent
         Set(() => this.brainSettings =
             new InferenceSettings(apiUrl, apiKey, model, temperature, maxTokens, timeoutSeconds));
 
+    // The local, in-process counterpart to Brain(apiUrl, ...): plug your own inference
+    // with a delegate and the agent makes no API calls. Pick one — a local brain or an
+    // external one. For a runtime that streams natively, implement IGeneratorBroker and
+    // pass it to UseGenerator instead.
+    public StandardAgent LocalBrain(Func<string, string, ValueTask<string>> generate) =>
+        Set(() => this.generatorBroker = new FunctionGeneratorBroker(generate));
+
     // Guardians are opt-in. A bare agent (brain only) runs no gate — SPEC.md 8.1 says
     // the Core profile MAY leave Gate and Judge as pass-through. Calling this turns the
     // Gate on; it may share the Brain's endpoint (SPEC.md 9's collapsible substrate) or
