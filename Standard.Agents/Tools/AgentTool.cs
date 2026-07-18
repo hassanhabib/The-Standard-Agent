@@ -14,15 +14,27 @@ public sealed class AgentTool : ITool
 
     public string Name { get; }
 
-    // The handoff is what the outer agent tells this sub-agent to do: a template whose
-    // "{input}" is replaced with the string the outer agent placed after its ACTION.
-    // Left at its default it is exactly "{input}", so the raw input passes through
-    // unchanged and the sub-agent behaves as before.
-    public AgentTool(string name, IAgent agent, string handoff = InputPlaceholder)
+    public string Description { get; }
+
+    public string Parameters { get; }
+
+    // The three things that define the sub-agent as a tool (SPEC §6.1): the handoff (what
+    // the outer agent tells it to do — a template whose "{input}" is replaced with the
+    // string the outer agent supplied), a description (what it does / when to use it), and
+    // parameters (a schema of its inputs). Handoff left at its default is exactly "{input}",
+    // so the raw input passes through unchanged and the sub-agent behaves as before.
+    public AgentTool(
+        string name,
+        IAgent agent,
+        string handoff = InputPlaceholder,
+        string description = "",
+        string parameters = "{}")
     {
         this.Name = name;
         this.agent = agent;
         this.handoff = handoff;
+        this.Description = description;
+        this.Parameters = parameters;
     }
 
     // The nested agent runs its own full loop — its own Recall, Think, Act, its own

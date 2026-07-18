@@ -162,4 +162,22 @@ public class AgentToolTests
 
         nestedAgentMock.VerifyNoOtherCalls();
     }
+
+    [Fact]
+    public void ShouldExposeDescriptionAndParametersOnAgentTool()
+    {
+        // given
+        string description = "Delegates a research question to a specialist.";
+        string parameters = "{\"query\":\"string\"}";
+
+        var agentTool = new AgentTool(
+            name: "researcher",
+            agent: new Mock<IAgent>().Object,
+            description: description,
+            parameters: parameters);
+
+        // then
+        agentTool.Description.Should().Be(description);
+        agentTool.Parameters.Should().Be(parameters);
+    }
 }

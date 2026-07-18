@@ -9,5 +9,9 @@ public interface ITool
 {
     string Name { get; }
 
+    string Description => string.Empty;
+
+    string Parameters => "{}";
+
     ValueTask<string> ExecuteAsync(string input);
 }
