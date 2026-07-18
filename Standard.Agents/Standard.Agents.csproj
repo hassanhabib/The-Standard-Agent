@@ -12,14 +12,13 @@
     <!-- The Standard's release format is v1.2.3.4 — model . service/routine . fix/config
          . automated build. Deliberately NOT semver; the segments say what KIND of change
          happened, so a model change can never hide in the service segment.
-         0.6.0.0: structured tool-calls (SPEC 6.1) — the Brain may emit a JSON
-         'TOOL: { tool, arguments }' call, parsed alongside the text ACTION:/FINAL:
-         protocol (Core, unchanged); tools carry description + parameters via default
-         interface members. New interpret routine + tool contract, the spec's core
-         AgentContext model unchanged, so this is a service/routine change: segment 2
-         advances, 3/4 reset. Still tracks SPEC.md v0.1 (draft): segment 1 goes to 1
-         when the spec settles. -->
-    <Version>0.6.0.0</Version>
+         0.7.0.0: developer-controlled tool advertisement (SPEC 6.1) — Recall expands a
+         '{{tools}}' marker in Data into the catalog of described tools; a description is
+         the opt-in, a description-less tool stays callable but hidden. New Recall routine
+         behaviour, the spec's core AgentContext model unchanged, so this is a
+         service/routine change: segment 2 advances, 3/4 reset. Still tracks SPEC.md v0.1
+         (draft): segment 1 goes to 1 when the spec settles. -->
+    <Version>0.7.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>
