@@ -1,4 +1,4 @@
-![The Standard for Agents](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-icon-readme.png)
+![The Standard for Agents](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-cover.png)
 
 # The Standard AI Agent Framework
 
