@@ -7,4 +7,5 @@ namespace Standard.Agents.Conformance;
 
 public sealed record Expectation(
     string? Result,
-    string? ResultContains);
+    string? ResultContains,
+    Dictionary<string, string>? ToolInput);
