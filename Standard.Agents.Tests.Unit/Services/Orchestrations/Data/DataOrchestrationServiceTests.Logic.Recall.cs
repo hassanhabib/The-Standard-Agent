@@ -122,4 +122,28 @@ public partial class DataOrchestrationServiceTests
         // then
         actualContext.Observations.Should().Contain(priorObservation);
     }
+
+    [Fact]
+    public async Task ShouldExpandToolsMarkerInSystemPromptOnRecallAsync()
+    {
+        // given
+        AgentContext inputContext = CreateRandomAgentContext();
+        string skillsWithMarker = "You may use these tools:\n{{tools}}\nChoose one.";
+
+        this.skillServiceMock.Setup(service =>
+            service.RetrieveSkillsAsync())
+                .ReturnsAsync(skillsWithMarker);
+
+        this.memoryServiceMock.Setup(service =>
+            service.RecallMemoriesAsync())
+                .ReturnsAsync([]);
+
+        // when
+        AgentContext actualContext =
+            await this.dataOrchestrationService.RecallAsync(inputContext);
+
+        // then
+        actualContext.SystemPrompt.Should().Contain(ToolCatalog);
+        actualContext.SystemPrompt.Should().NotContain("{{tools}}");
+    }
 }

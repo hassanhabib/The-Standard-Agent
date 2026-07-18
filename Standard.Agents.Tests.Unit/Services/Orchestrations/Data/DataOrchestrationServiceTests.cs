@@ -19,6 +19,8 @@ namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Data;
 
 public partial class DataOrchestrationServiceTests
 {
+    private const string ToolCatalog = "- calculator — Evaluate arithmetic. parameters: {}";
+
     private readonly Mock<ISkillService> skillServiceMock;
     private readonly Mock<IMemoryService> memoryServiceMock;
     private readonly Mock<IKnowledgeService> knowledgeServiceMock;
@@ -36,6 +38,7 @@ public partial class DataOrchestrationServiceTests
             skillService: this.skillServiceMock.Object,
             memoryService: this.memoryServiceMock.Object,
             knowledgeService: this.knowledgeServiceMock.Object,
+            toolCatalog: ToolCatalog,
             loggingBroker: this.loggingBrokerMock.Object);
     }
 

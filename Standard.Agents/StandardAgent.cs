@@ -259,6 +259,7 @@ public sealed partial class StandardAgent : IAgent
             new SkillService(skill, logging),
             new MemoryService(memory, logging),
             new KnowledgeService(knowledge, logging),
+            RenderToolCatalog(),
             logging);
 
         DecisionOrchestrationService decision = new(
@@ -274,6 +275,19 @@ public sealed partial class StandardAgent : IAgent
             logging);
 
         return new AgentCoordinationService(data, decision, direction, log, logging);
+    }
+
+    // The catalog a "{{tools}}" marker in the agent's Data expands into. Only tools that
+    // carry a description are listed — a description is the opt-in (SPEC 6.1); a tool with
+    // none is callable but not advertised. Derived from the registered tools, so it never
+    // drifts from what is actually there.
+    private string RenderToolCatalog()
+    {
+        IEnumerable<string> describedTools = this.tools
+            .Where(tool => string.IsNullOrWhiteSpace(tool.Description) is false)
+            .Select(tool => $"- {tool.Name} — {tool.Description} parameters: {tool.Parameters}");
+
+        return string.Join("\n", describedTools);
     }
 
 }

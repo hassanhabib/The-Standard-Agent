@@ -13,20 +13,25 @@ namespace Standard.Agents.Services.Orchestrations.Data;
 
 public partial class DataOrchestrationService : IDataOrchestrationService
 {
+    private const string ToolsMarker = "{{tools}}";
+
     private readonly ISkillService skillService;
     private readonly IMemoryService memoryService;
     private readonly IKnowledgeService knowledgeService;
+    private readonly string toolCatalog;
     private readonly ILoggingBroker loggingBroker;
 
     public DataOrchestrationService(
         ISkillService skillService,
         IMemoryService memoryService,
         IKnowledgeService knowledgeService,
+        string toolCatalog,
         ILoggingBroker loggingBroker)
     {
         this.skillService = skillService;
         this.memoryService = memoryService;
         this.knowledgeService = knowledgeService;
+        this.toolCatalog = toolCatalog;
         this.loggingBroker = loggingBroker;
     }
 
