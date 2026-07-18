@@ -11,4 +11,4 @@ public sealed class ApprovingVerifierBroker : IVerifierBroker
 {
     public ValueTask<string> VerifyAsync(string candidate) =>
         ValueTask.FromResult("1.0");
-    }
+}

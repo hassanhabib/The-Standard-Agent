@@ -17,4 +17,4 @@ public partial class AgentCoordinationService
                 message: "Invalid prompt. Please correct the error and try again.");
         }
     }
-        }
+}

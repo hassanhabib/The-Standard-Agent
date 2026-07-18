@@ -54,4 +54,4 @@ public sealed class KnowledgeBroker : IKnowledgeBroker
 
         return matches;
     }
-            }
+}

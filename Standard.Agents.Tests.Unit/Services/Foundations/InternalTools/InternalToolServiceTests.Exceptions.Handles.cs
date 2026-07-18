@@ -58,4 +58,4 @@ public partial class InternalToolServiceTests
         this.toolBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
-    }
+}

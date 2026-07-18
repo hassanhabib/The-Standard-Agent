@@ -53,7 +53,7 @@ foreach (string vectorFile in
         Console.WriteLine($"        expected: {Show(expectation)}");
         Console.WriteLine($"        actual:   {Show(actualResult)}");
     }
-    }
+}
 
 Console.WriteLine();
 Console.WriteLine($"{passed} passed, {failed} failed");
@@ -77,7 +77,7 @@ async Task<string> RunVectorAsync(Vector vector)
         .Tools(tools);
 
     return await agent.ProcessPromptAsync(vector.Prompt);
-    }
+}
 
 static string Show(string value) =>
     value.Replace("\n", "\\n").Replace("\r", "\\r");
@@ -96,4 +96,4 @@ static string FindRepositoryRoot()
         ?? throw new DirectoryNotFoundException(
             "Could not find the repository root — no 'conformance' directory found "
                 + "walking up from the executable.");
-    }
+}

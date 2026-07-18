@@ -44,4 +44,4 @@ public partial class DataOrchestrationService : IDataOrchestrationService
             Observations = [.. context.Observations, .. memories]
         };
     });
-        }
+}

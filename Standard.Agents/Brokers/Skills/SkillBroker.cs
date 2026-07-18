@@ -35,4 +35,4 @@ public sealed class SkillBroker : ISkillBroker
 
         return string.Join(SkillSeparator, skills);
     }
-        }
+}

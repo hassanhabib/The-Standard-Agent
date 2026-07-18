@@ -64,4 +64,4 @@ public partial class MemoryServiceTests
         this.memoryBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
-    }
+}

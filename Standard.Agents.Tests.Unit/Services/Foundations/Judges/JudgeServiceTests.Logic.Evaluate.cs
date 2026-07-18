@@ -70,4 +70,4 @@ public partial class JudgeServiceTests
         this.verifierBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
-    }
+}

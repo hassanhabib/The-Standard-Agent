@@ -36,4 +36,4 @@ public sealed class ScriptedGeneratorBroker : IGeneratorBroker
 
         yield return reply;
     }
-    }
+}

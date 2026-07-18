@@ -240,4 +240,4 @@ Times.Exactly(7));
 
         recalledContexts[1].Observations.Should().BeEmpty();
     }
-                    }
+}

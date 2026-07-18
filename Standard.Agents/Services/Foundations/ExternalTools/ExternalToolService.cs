@@ -28,4 +28,4 @@ public partial class ExternalToolService : IExternalToolService
 
         return await this.mcpBroker.CallAsync(name, input);
     });
-    }
+}

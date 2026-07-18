@@ -26,4 +26,4 @@ public partial class ReturnServiceTests
 
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
-    }
+}

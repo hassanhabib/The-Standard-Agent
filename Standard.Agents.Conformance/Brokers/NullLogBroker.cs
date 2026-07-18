@@ -16,4 +16,4 @@ public sealed class NullLogBroker : ILogBroker
 
     public ValueTask WriteAsync(string content) =>
         ValueTask.CompletedTask;
-    }
+}

@@ -34,4 +34,4 @@ public partial class JudgeServiceTests
 
     private static Expression<Func<Xeption, bool>> SameExceptionAs(Xeption expectedException) =>
         actualException => actualException.SameExceptionAs(expectedException);
-    }
+}

@@ -129,4 +129,4 @@ public class AgentToolTests
         // then
         actualException.Message.Should().Be("inner agent failed");
     }
-    }
+}

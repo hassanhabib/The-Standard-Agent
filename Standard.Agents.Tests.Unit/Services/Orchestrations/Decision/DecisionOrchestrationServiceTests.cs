@@ -101,4 +101,4 @@ public partial class DecisionOrchestrationServiceTests
                 message: "judge dependency",
                 innerException: new Xeption(message: "inner"))
         };
-        }
+}

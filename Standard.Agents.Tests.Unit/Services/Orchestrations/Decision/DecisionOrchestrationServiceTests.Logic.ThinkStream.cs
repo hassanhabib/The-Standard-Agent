@@ -3,8 +3,6 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
-using System.Linq;
-using System.Threading;
 using FluentAssertions;
 using Moq;
 using Standard.Agents.Models.Clients.Agents;
@@ -161,4 +159,4 @@ public partial class DecisionOrchestrationServiceTests
 
         return events;
     }
-    }
+}

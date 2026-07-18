@@ -11,4 +11,4 @@ public sealed class StubKnowledgeBroker : IKnowledgeBroker
 {
     public ValueTask<IReadOnlyList<string>> SelectKnowledgeAsync(string query) =>
         ValueTask.FromResult<IReadOnlyList<string>>([]);
-    }
+}

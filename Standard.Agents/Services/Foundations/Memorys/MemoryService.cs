@@ -32,4 +32,4 @@ public partial class MemoryService : IMemoryService
 
         await this.memoryBroker.InsertMemoryAsync(memory);
     });
-    }
+}

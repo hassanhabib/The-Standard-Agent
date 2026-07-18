@@ -119,4 +119,4 @@ Xeption orchestrationException)
             broker.LogErrorAsync(It.Is(SameExceptionAs(expectedException))),
                 Times.Once);
     }
-    }
+}

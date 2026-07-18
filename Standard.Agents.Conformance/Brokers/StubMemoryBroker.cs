@@ -14,4 +14,4 @@ public sealed class StubMemoryBroker : IMemoryBroker
 
     public ValueTask InsertMemoryAsync(string memory) =>
         ValueTask.CompletedTask;
-    }
+}

@@ -23,4 +23,4 @@ public sealed class MemoryBroker : IMemoryBroker
 
         await File.AppendAllLinesAsync(this.memoryPath, [memory]);
     }
-    }
+}

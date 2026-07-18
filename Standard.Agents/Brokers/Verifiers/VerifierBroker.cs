@@ -84,4 +84,4 @@ public sealed class VerifierBroker : IVerifierBroker
                 ValueTask.FromResult(JsonSerializer.Serialize(value, jsonOptions)),
             deserializationFunction: json =>
                 ValueTask.FromResult(JsonSerializer.Deserialize<TResult>(json, jsonOptions)!));
-    }
+}

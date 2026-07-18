@@ -111,4 +111,4 @@ public partial class KnowledgeService
 
         return knowledgeServiceException;
     }
-    }
+}

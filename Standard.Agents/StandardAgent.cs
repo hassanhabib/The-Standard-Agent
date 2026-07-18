@@ -269,4 +269,4 @@ public sealed partial class StandardAgent : IAgent
         return new AgentCoordinationService(data, decision, direction, log, logging);
     }
 
-    }
+}

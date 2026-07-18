@@ -3,8 +3,6 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
-using System.Linq;
-using System.Threading;
 using FluentAssertions;
 using Moq;
 using Standard.Agents.Brokers.Classifiers;
@@ -327,4 +325,4 @@ public class StandardAgentTests
             yield return token;
         }
     }
-    }
+}

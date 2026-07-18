@@ -53,4 +53,4 @@ string? invalidQuery)
         this.knowledgeBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
-    }
+}

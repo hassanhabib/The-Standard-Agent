@@ -3,7 +3,6 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
-using System.Threading;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -46,4 +45,4 @@ public partial class BrainServiceTests
         this.generatorBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
-    }
+}

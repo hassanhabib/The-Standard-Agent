@@ -218,4 +218,4 @@ public partial class BrainServiceTests
         this.generatorBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
-    }
+}

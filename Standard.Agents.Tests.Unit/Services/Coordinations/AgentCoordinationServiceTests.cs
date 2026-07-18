@@ -83,4 +83,4 @@ public partial class AgentCoordinationServiceTests
                 message: "orchestration service",
                 innerException: new Xeption(message: "inner"))
         };
-        }
+}

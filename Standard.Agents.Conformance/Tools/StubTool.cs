@@ -21,4 +21,4 @@ public sealed class StubTool : ITool
 
     public ValueTask<string> ExecuteAsync(string input) =>
         ValueTask.FromResult(this.output);
-    }
+}

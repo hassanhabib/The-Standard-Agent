@@ -164,4 +164,4 @@ Xeption foundationException)
 
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
-    }
+}

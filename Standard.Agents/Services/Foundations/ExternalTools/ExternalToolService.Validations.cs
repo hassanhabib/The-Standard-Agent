@@ -17,4 +17,4 @@ public partial class ExternalToolService
                 message: "Invalid external tool. Please correct the error and try again.");
         }
     }
-        }
+}

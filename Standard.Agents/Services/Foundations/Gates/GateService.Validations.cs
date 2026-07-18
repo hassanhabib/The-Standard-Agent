@@ -17,4 +17,4 @@ public partial class GateService
                 message: "Invalid gate input. Please correct the error and try again.");
         }
     }
-        }
+}

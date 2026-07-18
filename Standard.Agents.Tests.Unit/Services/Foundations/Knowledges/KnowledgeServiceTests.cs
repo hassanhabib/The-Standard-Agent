@@ -37,4 +37,4 @@ public partial class KnowledgeServiceTests
 
     private static Expression<Func<Xeption, bool>> SameExceptionAs(Xeption expectedException) =>
         actualException => actualException.SameExceptionAs(expectedException);
-    }
+}

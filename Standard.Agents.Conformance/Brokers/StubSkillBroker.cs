@@ -11,4 +11,4 @@ public sealed class StubSkillBroker : ISkillBroker
 {
     public ValueTask<string> SelectSkillsAsync() =>
         ValueTask.FromResult("You are a test agent.");
-    }
+}

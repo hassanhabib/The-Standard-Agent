@@ -22,4 +22,4 @@ public sealed class AgentTool : ITool
     // back, and cannot tell whether a function or a mind answered it.
     public async ValueTask<string> ExecuteAsync(string input) =>
         await this.agent.ProcessPromptAsync(input);
-    }
+}

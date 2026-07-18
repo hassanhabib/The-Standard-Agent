@@ -19,4 +19,4 @@ public sealed partial class StandardAgent
                         + "or UseGenerator(broker) before processing a prompt.");
         }
     }
-        }
+}

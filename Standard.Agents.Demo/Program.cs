@@ -58,4 +58,4 @@ catch (Exception exception)
     }
 
     return 1;
-    }
+}

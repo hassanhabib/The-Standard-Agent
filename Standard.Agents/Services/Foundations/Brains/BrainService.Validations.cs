@@ -17,4 +17,4 @@ public partial class BrainService
                 message: "Invalid brain input. Please correct the error and try again.");
         }
     }
-        }
+}

@@ -79,4 +79,4 @@ public partial class DataOrchestrationServiceTests
                 message: "knowledge dependency",
                 innerException: new Xeption(message: "inner"))
         };
-        }
+}

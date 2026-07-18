@@ -122,4 +122,4 @@ public partial class DataOrchestrationServiceTests
         // then
         actualContext.Observations.Should().Contain(priorObservation);
     }
-        }
+}

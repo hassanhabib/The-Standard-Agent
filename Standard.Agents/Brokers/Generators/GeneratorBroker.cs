@@ -159,4 +159,4 @@ public sealed class GeneratorBroker : IGeneratorBroker
                 ValueTask.FromResult(JsonSerializer.Serialize(value, jsonOptions)),
             deserializationFunction: json =>
                 ValueTask.FromResult(JsonSerializer.Deserialize<TResult>(json, jsonOptions)!));
-    }
+}
