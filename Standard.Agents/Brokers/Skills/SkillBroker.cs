@@ -17,21 +17,12 @@ public sealed class SkillBroker : ISkillBroker
 
     public async ValueTask<string> SelectSkillsAsync()
     {
-        if (Directory.Exists(this.skillsPath) is false)
-        {
-            return string.Empty;
-        }
-
-        List<string> skills = [];
-
-        IOrderedEnumerable<string> skillFilePaths =
-    Directory.EnumerateFiles(this.skillsPath, SkillFilePattern)
-        .OrderBy(skillFilePath => skillFilePath, StringComparer.Ordinal);
-
-        foreach (string skillFilePath in skillFilePaths)
-        {
-            skills.Add(await File.ReadAllTextAsync(skillFilePath));
-        }
+        string[] skills = Directory.Exists(this.skillsPath)
+            ? await Task.WhenAll(
+                Directory.EnumerateFiles(this.skillsPath, SkillFilePattern)
+                    .OrderBy(skillFilePath => skillFilePath, StringComparer.Ordinal)
+                    .Select(path => File.ReadAllTextAsync(path)))
+            : [];
 
         return string.Join(SkillSeparator, skills);
     }

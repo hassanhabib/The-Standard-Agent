@@ -23,35 +23,17 @@ public sealed class KnowledgeBroker : IKnowledgeBroker
 
     public async ValueTask<IReadOnlyList<string>> SelectKnowledgeAsync(string query)
     {
-        if (Directory.Exists(this.knowledgePath) is false)
-        {
-            return [];
-        }
+        string[] documents = Directory.Exists(this.knowledgePath)
+            ? await Task.WhenAll(
+                Directory.EnumerateFiles(
+                    this.knowledgePath, this.searchPattern, SearchOption.AllDirectories)
+                        .OrderBy(documentPath => documentPath, StringComparer.Ordinal)
+                        .Select(path => File.ReadAllTextAsync(path)))
+            : [];
 
-        List<string> matches = [];
-
-        IOrderedEnumerable<string> documentPaths =
-            Directory.EnumerateFiles(
-                this.knowledgePath,
-                this.searchPattern,
-                SearchOption.AllDirectories)
-                    .OrderBy(documentPath => documentPath, StringComparer.Ordinal);
-
-        foreach (string documentPath in documentPaths)
-        {
-            string document = await File.ReadAllTextAsync(documentPath);
-
-            if (document.Contains(query, StringComparison.OrdinalIgnoreCase))
-            {
-                matches.Add(document);
-            }
-
-            if (matches.Count == this.maxResults)
-            {
-                break;
-            }
-        }
-
-        return matches;
+        return documents
+            .Where(document => document.Contains(query, StringComparison.OrdinalIgnoreCase))
+            .Take(this.maxResults)
+            .ToList();
     }
 }

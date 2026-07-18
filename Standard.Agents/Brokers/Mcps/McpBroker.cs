@@ -66,13 +66,9 @@ public sealed class McpBroker : IMcpBroker
 
     private static string ToText(JsonRpcResponse jsonRpcResponse)
     {
-        if (jsonRpcResponse.Error is not null)
-        {
-            throw new HttpRequestException(jsonRpcResponse.Error.Message);
-        }
-
-        return string.Concat(
-            jsonRpcResponse.Result!.Content.Select(content => content.Text));
+        return jsonRpcResponse.Error is not null
+            ? throw new HttpRequestException(jsonRpcResponse.Error.Message)
+            : string.Concat(jsonRpcResponse.Result!.Content.Select(content => content.Text));
     }
 
     private async ValueTask<TResult> PostAsync<TContent, TResult>(
