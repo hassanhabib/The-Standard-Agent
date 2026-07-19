@@ -52,6 +52,13 @@ public partial class KnowledgeService : IKnowledgeService
             : await this.knowledgeBroker!.SelectKnowledgeAsync(query);
     });
 
-    private ValueTask<IReadOnlyList<string>> SelectKnowledgeFromFilesAsync(IFileBroker fileBroker, string query) =>
-        throw new NotImplementedException();
+    private ValueTask<IReadOnlyList<string>> SelectKnowledgeFromFilesAsync(IFileBroker fileBroker, string query)
+    {
+        if (fileBroker.DirectoryExists(this.knowledgePath) is false)
+        {
+            return ValueTask.FromResult<IReadOnlyList<string>>([]);
+        }
+
+        return ValueTask.FromResult<IReadOnlyList<string>>([]);
+    }
 }
