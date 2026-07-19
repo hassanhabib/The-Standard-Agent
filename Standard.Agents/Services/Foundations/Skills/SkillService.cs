@@ -43,6 +43,13 @@ public partial class SkillService : ISkillService
             : await this.skillBroker!.SelectSkillsAsync();
     });
 
-    private ValueTask<string> SelectSkillsFromFilesAsync(IFileBroker fileBroker) =>
-        throw new NotImplementedException();
+    private ValueTask<string> SelectSkillsFromFilesAsync(IFileBroker fileBroker)
+    {
+        if (fileBroker.DirectoryExists(this.skillsPath) is false)
+        {
+            return ValueTask.FromResult(string.Empty);
+        }
+
+        return ValueTask.FromResult(string.Empty);
+    }
 }
