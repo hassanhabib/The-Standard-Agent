@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using Standard.Agents.Brokers.Files;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Brokers.Skills;
 
@@ -10,7 +11,9 @@ namespace Standard.Agents.Services.Foundations.Skills;
 
 public partial class SkillService : ISkillService
 {
-    private readonly ISkillBroker skillBroker;
+    private readonly ISkillBroker? skillBroker;
+    private readonly IFileBroker? fileBroker;
+    private readonly string skillsPath;
     private readonly ILoggingBroker loggingBroker;
 
     public SkillService(
@@ -18,10 +21,28 @@ public partial class SkillService : ISkillService
         ILoggingBroker loggingBroker)
     {
         this.skillBroker = skillBroker;
+        this.skillsPath = string.Empty;
+        this.loggingBroker = loggingBroker;
+    }
+
+    public SkillService(
+        IFileBroker fileBroker,
+        string skillsPath,
+        ILoggingBroker loggingBroker)
+    {
+        this.fileBroker = fileBroker;
+        this.skillsPath = skillsPath;
         this.loggingBroker = loggingBroker;
     }
 
     public ValueTask<string> RetrieveSkillsAsync() =>
     TryCatch(async () =>
-        await this.skillBroker.SelectSkillsAsync());
+    {
+        return this.fileBroker is not null
+            ? await SelectSkillsFromFilesAsync(this.fileBroker)
+            : await this.skillBroker!.SelectSkillsAsync();
+    });
+
+    private ValueTask<string> SelectSkillsFromFilesAsync(IFileBroker fileBroker) =>
+        throw new NotImplementedException();
 }
