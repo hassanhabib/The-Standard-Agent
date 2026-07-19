@@ -11,6 +11,9 @@ namespace Standard.Agents.Services.Foundations.Skills;
 
 public partial class SkillService : ISkillService
 {
+    private const string SkillFilePattern = "*.md";
+    private const string SkillSeparator = "\n\n";
+
     private readonly ISkillBroker? skillBroker;
     private readonly IFileBroker? fileBroker;
     private readonly string skillsPath;
@@ -43,13 +46,24 @@ public partial class SkillService : ISkillService
             : await this.skillBroker!.SelectSkillsAsync();
     });
 
-    private ValueTask<string> SelectSkillsFromFilesAsync(IFileBroker fileBroker)
+    private async ValueTask<string> SelectSkillsFromFilesAsync(IFileBroker fileBroker)
     {
         if (fileBroker.DirectoryExists(this.skillsPath) is false)
         {
-            return ValueTask.FromResult(string.Empty);
+            return string.Empty;
         }
 
-        return ValueTask.FromResult(string.Empty);
+        IOrderedEnumerable<string> skillFilePaths =
+            fileBroker.SelectFiles(this.skillsPath, SkillFilePattern, SearchOption.TopDirectoryOnly)
+                .OrderBy(skillFilePath => skillFilePath, StringComparer.Ordinal);
+
+        List<string> skills = [];
+
+        foreach (string skillFilePath in skillFilePaths)
+        {
+            skills.Add(await fileBroker.ReadFileAsync(skillFilePath));
+        }
+
+        return string.Join(SkillSeparator, skills);
     }
 }
