@@ -6,6 +6,7 @@
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging.Abstractions;
 using Standard.Agents.Brokers.Classifiers;
+using Standard.Agents.Brokers.Files;
 using Standard.Agents.Brokers.Generators;
 using Standard.Agents.Brokers.Knowledges;
 using Standard.Agents.Brokers.Loggings;
@@ -408,8 +409,7 @@ public sealed partial class StandardAgent : IAgent
 
         InferenceSettings? brain = this.brainSettings;
 
-        ISkillBroker skill =
-            this.skillBroker ?? new SkillBroker(this.skillsPath);
+        IFileBroker file = new FileBroker();
 
         IGeneratorBroker generator =
             this.generatorBroker ?? new GeneratorBroker(
@@ -420,10 +420,6 @@ public sealed partial class StandardAgent : IAgent
             this.memoryBroker ?? new MemoryBroker(this.memoryPath);
 
         List<ITool> allTools = [.. this.tools, new RememberTool(memory)];
-
-        IKnowledgeBroker knowledge =
-            this.knowledgeBroker ?? new KnowledgeBroker(
-                this.knowledgePath, this.knowledgePattern, this.knowledgeMaxResults);
 
         IClassifierBroker classifier =
             this.classifierBroker ?? (this.gateSettings is null
@@ -454,10 +450,23 @@ public sealed partial class StandardAgent : IAgent
         ILoggingBroker logging =
             this.loggingBroker ?? new LoggingBroker(new NullLogger<LoggingBroker>());
 
+        ISkillService skillService = this.skillBroker is null
+            ? new SkillService(file, Path.Combine(AppContext.BaseDirectory, this.skillsPath), logging)
+            : new SkillService(this.skillBroker, logging);
+
+        IKnowledgeService knowledgeService = this.knowledgeBroker is null
+            ? new KnowledgeService(
+                file,
+                Path.GetFullPath(this.knowledgePath),
+                this.knowledgePattern,
+                this.knowledgeMaxResults,
+                logging)
+            : new KnowledgeService(this.knowledgeBroker, logging);
+
         DataOrchestrationService data = new(
-            new SkillService(skill, logging),
+            skillService,
             new MemoryService(memory, logging),
-            new KnowledgeService(knowledge, logging),
+            knowledgeService,
             RenderToolCatalog(allTools),
             logging);
 
