@@ -52,13 +52,34 @@ public partial class KnowledgeService : IKnowledgeService
             : await this.knowledgeBroker!.SelectKnowledgeAsync(query);
     });
 
-    private ValueTask<IReadOnlyList<string>> SelectKnowledgeFromFilesAsync(IFileBroker fileBroker, string query)
+    private async ValueTask<IReadOnlyList<string>> SelectKnowledgeFromFilesAsync(IFileBroker fileBroker, string query)
     {
         if (fileBroker.DirectoryExists(this.knowledgePath) is false)
         {
-            return ValueTask.FromResult<IReadOnlyList<string>>([]);
+            return [];
         }
 
-        return ValueTask.FromResult<IReadOnlyList<string>>([]);
+        IOrderedEnumerable<string> documentPaths =
+            fileBroker.SelectFiles(this.knowledgePath, this.searchPattern, SearchOption.AllDirectories)
+                .OrderBy(documentPath => documentPath, StringComparer.Ordinal);
+
+        List<string> matches = [];
+
+        foreach (string documentPath in documentPaths)
+        {
+            string document = await fileBroker.ReadFileAsync(documentPath);
+
+            if (document.Contains(query, StringComparison.OrdinalIgnoreCase))
+            {
+                matches.Add(document);
+            }
+
+            if (matches.Count == this.maxResults)
+            {
+                break;
+            }
+        }
+
+        return matches;
     }
 }
