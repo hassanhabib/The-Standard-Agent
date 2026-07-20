@@ -68,6 +68,10 @@ public partial class MemoryService : IMemoryService
         return await fileBroker.ReadAllLinesAsync(this.memoryPath);
     }
 
-    private ValueTask InsertMemoryIntoFileAsync(IFileBroker fileBroker, string memory) =>
-        throw new NotImplementedException();
+    private async ValueTask InsertMemoryIntoFileAsync(IFileBroker fileBroker, string memory)
+    {
+        fileBroker.CreateDirectory(Path.GetDirectoryName(this.memoryPath)!);
+
+        await fileBroker.AppendAllLinesAsync(this.memoryPath, [memory]);
+    }
 }
