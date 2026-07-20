@@ -51,13 +51,13 @@ public partial class MemoryService : IMemoryService
         await this.memoryBroker!.InsertMemoryAsync(memory);
     });
 
-    private ValueTask<IReadOnlyList<string>> SelectMemoriesFromFileAsync(IFileBroker fileBroker)
+    private async ValueTask<IReadOnlyList<string>> SelectMemoriesFromFileAsync(IFileBroker fileBroker)
     {
         if (fileBroker.FileExists(this.memoryPath) is false)
         {
-            return ValueTask.FromResult<IReadOnlyList<string>>([]);
+            return [];
         }
 
-        return ValueTask.FromResult<IReadOnlyList<string>>([]);
+        return await fileBroker.ReadAllLinesAsync(this.memoryPath);
     }
 }
