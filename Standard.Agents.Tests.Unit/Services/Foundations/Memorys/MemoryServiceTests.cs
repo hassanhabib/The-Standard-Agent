@@ -5,6 +5,7 @@
 
 using System.Linq.Expressions;
 using Moq;
+using Standard.Agents.Brokers.Files;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Brokers.Memorys;
 using Standard.Agents.Services.Foundations.Memorys;
@@ -16,12 +17,14 @@ namespace Standard.Agents.Tests.Unit.Services.Foundations.Memorys;
 public partial class MemoryServiceTests
 {
     private readonly Mock<IMemoryBroker> memoryBrokerMock;
+    private readonly Mock<IFileBroker> fileBrokerMock;
     private readonly Mock<ILoggingBroker> loggingBrokerMock;
     private readonly IMemoryService memoryService;
 
     public MemoryServiceTests()
     {
         this.memoryBrokerMock = new Mock<IMemoryBroker>();
+        this.fileBrokerMock = new Mock<IFileBroker>();
         this.loggingBrokerMock = new Mock<ILoggingBroker>();
 
         this.memoryService = new MemoryService(

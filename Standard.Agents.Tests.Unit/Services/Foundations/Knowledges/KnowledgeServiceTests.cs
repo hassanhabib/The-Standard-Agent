@@ -5,6 +5,7 @@
 
 using System.Linq.Expressions;
 using Moq;
+using Standard.Agents.Brokers.Files;
 using Standard.Agents.Brokers.Knowledges;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Services.Foundations.Knowledges;
@@ -16,12 +17,14 @@ namespace Standard.Agents.Tests.Unit.Services.Foundations.Knowledges;
 public partial class KnowledgeServiceTests
 {
     private readonly Mock<IKnowledgeBroker> knowledgeBrokerMock;
+    private readonly Mock<IFileBroker> fileBrokerMock;
     private readonly Mock<ILoggingBroker> loggingBrokerMock;
     private readonly IKnowledgeService knowledgeService;
 
     public KnowledgeServiceTests()
     {
         this.knowledgeBrokerMock = new Mock<IKnowledgeBroker>();
+        this.fileBrokerMock = new Mock<IFileBroker>();
         this.loggingBrokerMock = new Mock<ILoggingBroker>();
 
         this.knowledgeService = new KnowledgeService(

@@ -5,7 +5,7 @@
 
 using FluentAssertions;
 using Moq;
-using Standard.Agents.Brokers.Memorys;
+using Standard.Agents.Services.Foundations.Memorys;
 using Standard.Agents.Tools;
 using Xunit;
 
@@ -18,8 +18,8 @@ public class RememberToolTests
     {
         // given
         string fact = "Hassan works on PeerLLM";
-        var memoryBroker = new Mock<IMemoryBroker>();
-        var rememberTool = new RememberTool(memoryBroker.Object);
+        var memoryService = new Mock<IMemoryService>();
+        var rememberTool = new RememberTool(memoryService.Object);
 
         // when
         string actualResult = await rememberTool.ExecuteAsync(fact);
@@ -27,8 +27,8 @@ public class RememberToolTests
         // then
         actualResult.Should().Contain(fact);
 
-        memoryBroker.Verify(broker =>
-            broker.InsertMemoryAsync(fact),
+        memoryService.Verify(service =>
+            service.RememberAsync(fact),
                 Times.Once);
     }
 
@@ -36,15 +36,15 @@ public class RememberToolTests
     public async Task ShouldExtractFactFromStructuredArgumentsOnExecuteAsync()
     {
         // given
-        var memoryBroker = new Mock<IMemoryBroker>();
-        var rememberTool = new RememberTool(memoryBroker.Object);
+        var memoryService = new Mock<IMemoryService>();
+        var rememberTool = new RememberTool(memoryService.Object);
 
         // when
         await rememberTool.ExecuteAsync("{\"fact\":\"Paris is the capital of France\"}");
 
         // then
-        memoryBroker.Verify(broker =>
-            broker.InsertMemoryAsync("Paris is the capital of France"),
+        memoryService.Verify(service =>
+            service.RememberAsync("Paris is the capital of France"),
                 Times.Once);
     }
 }
