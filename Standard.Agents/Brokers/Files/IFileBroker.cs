@@ -12,4 +12,12 @@ public interface IFileBroker
     IReadOnlyList<string> SelectFiles(string path, string searchPattern, SearchOption searchOption);
 
     ValueTask<string> ReadFileAsync(string path);
+
+    bool FileExists(string path);
+
+    ValueTask<IReadOnlyList<string>> ReadAllLinesAsync(string path);
+
+    void CreateDirectory(string path);
+
+    ValueTask AppendAllLinesAsync(string path, IEnumerable<string> lines);
 }

@@ -15,4 +15,16 @@ public sealed class FileBroker : IFileBroker
 
     public async ValueTask<string> ReadFileAsync(string path) =>
         await File.ReadAllTextAsync(path);
+
+    public bool FileExists(string path) =>
+        File.Exists(path);
+
+    public async ValueTask<IReadOnlyList<string>> ReadAllLinesAsync(string path) =>
+        await File.ReadAllLinesAsync(path);
+
+    public void CreateDirectory(string path) =>
+        Directory.CreateDirectory(path);
+
+    public async ValueTask AppendAllLinesAsync(string path, IEnumerable<string> lines) =>
+        await File.AppendAllLinesAsync(path, lines);
 }
