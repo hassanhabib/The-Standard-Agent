@@ -48,7 +48,14 @@ public partial class MemoryService : IMemoryService
     {
         ValidateMemory(memory);
 
-        await this.memoryBroker!.InsertMemoryAsync(memory);
+        if (this.fileBroker is not null)
+        {
+            await InsertMemoryIntoFileAsync(this.fileBroker, memory);
+        }
+        else
+        {
+            await this.memoryBroker!.InsertMemoryAsync(memory);
+        }
     });
 
     private async ValueTask<IReadOnlyList<string>> SelectMemoriesFromFileAsync(IFileBroker fileBroker)
@@ -60,4 +67,7 @@ public partial class MemoryService : IMemoryService
 
         return await fileBroker.ReadAllLinesAsync(this.memoryPath);
     }
+
+    private ValueTask InsertMemoryIntoFileAsync(IFileBroker fileBroker, string memory) =>
+        throw new NotImplementedException();
 }
