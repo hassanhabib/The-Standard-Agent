@@ -1,0 +1,50 @@
+name: Standard.Agents Release
+
+# Publishes the package to NuGet when a release is cut (a GitHub Release is
+# published) or triggered manually. The API key is never in the repo — it is
+# read from the NUGET_API_KEY repository secret at run time.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Pulling Code
+      uses: actions/checkout@v4
+
+    - name: Installing .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Restoring Packages
+      run: dotnet restore
+
+    - name: Building Solution
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Running Tests
+      run: dotnet test --no-build --configuration Release --verbosity normal
+
+    # Same gate the build workflow enforces — never publish a package that no
+    # longer conforms to the spec's vectors.
+    - name: Certifying Conformance
+      run: dotnet run --project Standard.Agents.Conformance --no-build --configuration Release
+
+    - name: Packing Package
+      run: >
+        dotnet pack Standard.Agents/Standard.Agents.csproj
+        --no-build
+        --configuration Release
+        --output ${{ github.workspace }}/artifacts
+
+    - name: Publishing To NuGet
+      run: >
+        dotnet nuget push "${{ github.workspace }}/artifacts/*.nupkg"
+        --source https://api.nuget.org/v3/index.json
+        --api-key ${{ secrets.NUGET_API_KEY }}
+        --skip-duplicate
