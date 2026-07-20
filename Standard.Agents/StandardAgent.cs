@@ -411,15 +411,19 @@ public sealed partial class StandardAgent : IAgent
 
         IFileBroker file = new FileBroker();
 
+        ILoggingBroker logging =
+            this.loggingBroker ?? new LoggingBroker(new NullLogger<LoggingBroker>());
+
         IGeneratorBroker generator =
             this.generatorBroker ?? new GeneratorBroker(
                 brain!.ApiUrl, brain.ApiKey, brain.Model,
                 brain.Temperature, brain.MaxTokens, brain.TimeoutSeconds);
 
-        IMemoryBroker memory =
-            this.memoryBroker ?? new MemoryBroker(this.memoryPath);
+        IMemoryService memoryService = this.memoryBroker is null
+            ? new MemoryService(file, Path.GetFullPath(this.memoryPath), logging)
+            : new MemoryService(this.memoryBroker, logging);
 
-        List<ITool> allTools = [.. this.tools, new RememberTool(memory)];
+        List<ITool> allTools = [.. this.tools, new RememberTool(memoryService)];
 
         IClassifierBroker classifier =
             this.classifierBroker ?? (this.gateSettings is null
@@ -447,9 +451,6 @@ public sealed partial class StandardAgent : IAgent
 
         ILogBroker log = this.logBroker ?? new LogBroker(this.logPath);
 
-        ILoggingBroker logging =
-            this.loggingBroker ?? new LoggingBroker(new NullLogger<LoggingBroker>());
-
         ISkillService skillService = this.skillBroker is null
             ? new SkillService(file, Path.Combine(AppContext.BaseDirectory, this.skillsPath), logging)
             : new SkillService(this.skillBroker, logging);
@@ -465,7 +466,7 @@ public sealed partial class StandardAgent : IAgent
 
         DataOrchestrationService data = new(
             skillService,
-            new MemoryService(memory, logging),
+            memoryService,
             knowledgeService,
             RenderToolCatalog(allTools),
             logging);

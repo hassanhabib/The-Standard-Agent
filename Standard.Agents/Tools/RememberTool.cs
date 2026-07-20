@@ -4,13 +4,13 @@
 // ---------------------------------------------------------------
 
 using System.Text.Json;
-using Standard.Agents.Brokers.Memorys;
+using Standard.Agents.Services.Foundations.Memorys;
 
 namespace Standard.Agents.Tools;
 
 public sealed class RememberTool : ITool
 {
-    private readonly IMemoryBroker memoryBroker;
+    private readonly IMemoryService memoryService;
 
     public string Name => "remember";
 
@@ -20,14 +20,14 @@ public sealed class RememberTool : ITool
 
     public string Parameters => "{ \"fact\": \"the fact to remember\" }";
 
-    public RememberTool(IMemoryBroker memoryBroker) =>
-        this.memoryBroker = memoryBroker;
+    public RememberTool(IMemoryService memoryService) =>
+        this.memoryService = memoryService;
 
     public async ValueTask<string> ExecuteAsync(string input)
     {
         string fact = ExtractFact(input);
 
-        await this.memoryBroker.InsertMemoryAsync(fact);
+        await this.memoryService.RememberAsync(fact);
 
         return $"Remembered: {fact}";
     }
