@@ -29,6 +29,10 @@ single core. One brain at the center, the three natures turning around it.
 
 Orchestration is not a fourth nature. It is the composition operator — the loop.
 
+## Watch
+
+[![Create Your First AI Agent from Scratch — The Standard for Agents](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-video-thumbnail.jpg)](https://www.youtube.com/watch?v=UE6QcvQsOyU)
+
 ## Install
 
 ```bash

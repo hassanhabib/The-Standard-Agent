@@ -20,6 +20,10 @@
     <!-- The Standard's release format is v1.2.3.4 — model . service/routine . fix/config
          . automated build. Deliberately NOT semver; the segments say what KIND of change
          happened, so a model change can never hide in the service segment.
+         0.10.0.0: a documentation and packaging pass — the README now carries a rendered
+         architecture diagram and a "Create Your First AI Agent from Scratch" walkthrough
+         video (both surface on the NuGet page), a cumulative how-to, and a swappable-backends
+         guide; conformance vector 03 now asserts tool input, catching first-line parsing bugs.
          0.9.0.0: a simplest-start constructor (new StandardAgent(url, key, model)) and
          in-process guardians (LocalGate / LocalJudge) — so a single local model can back the
          brain, gate and judge with no HTTP — plus XML doc comments across the builder API that
@@ -28,7 +32,7 @@
          3/4 reset. Still tracks SPEC.md v0.1 (draft): segment 1 goes to 1 when the spec settles.
          (0.8.0.0: memory and knowledge came alive — knowledge retrieval in Recall + a built-in
          'remember' tool.) -->
-    <Version>0.9.0.0</Version>
+    <Version>0.10.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>
