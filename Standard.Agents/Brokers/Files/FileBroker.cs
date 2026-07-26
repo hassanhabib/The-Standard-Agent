@@ -16,6 +16,9 @@ public sealed class FileBroker : IFileBroker
     public async ValueTask<string> ReadFileAsync(string path) =>
         await File.ReadAllTextAsync(path);
 
+    public string ReadFile(string path) =>
+        File.ReadAllText(path);
+
     public bool FileExists(string path) =>
         File.Exists(path);
 
