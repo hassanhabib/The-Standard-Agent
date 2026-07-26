@@ -63,8 +63,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Prompts\Guardians\gate.md" />
-    <EmbeddedResource Include="Prompts\Guardians\judge.md" />
+    <EmbeddedResource Include="Prompts\Guardians\gate.policy.md" />
+    <EmbeddedResource Include="Prompts\Guardians\gate.contract.md" />
+    <EmbeddedResource Include="Prompts\Guardians\judge.policy.md" />
+    <EmbeddedResource Include="Prompts\Guardians\judge.contract.md" />
   </ItemGroup>
 
   <ItemGroup>
