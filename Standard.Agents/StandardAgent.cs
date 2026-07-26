@@ -430,17 +430,17 @@ public sealed partial class StandardAgent : IAgent
         return this;
     }
 
-    // Reads the constitution file if one was configured, resolved against the build output
-    // like skills. A missing file yields no constitution rather than an error, so a stale
-    // path degrades to the built-in guardian policy instead of bricking composition.
-    private string ReadConstitution(IFileBroker file)
+    // Reads an optional prompt file (constitution, consumption) resolved against the build
+    // output like skills. A missing file yields empty rather than an error, so a stale path
+    // degrades to the built-in guardian policy instead of bricking composition.
+    private static string ReadOptionalFile(IFileBroker file, string path)
     {
-        if (string.IsNullOrWhiteSpace(this.constitutionPath))
+        if (string.IsNullOrWhiteSpace(path))
         {
             return string.Empty;
         }
 
-        string fullPath = Path.Combine(AppContext.BaseDirectory, this.constitutionPath);
+        string fullPath = Path.Combine(AppContext.BaseDirectory, path);
 
         return file.FileExists(fullPath)
             ? file.ReadFile(fullPath)
@@ -476,12 +476,22 @@ public sealed partial class StandardAgent : IAgent
 
         List<ITool> allTools = [.. this.tools, new RememberTool(memoryService)];
 
-        string constitution = ReadConstitution(file);
+        string constitution = ReadOptionalFile(file, this.constitutionPath);
+        string consumption = ReadOptionalFile(file, this.consumptionPath);
+
+        string gatePolicy = string.IsNullOrWhiteSpace(consumption)
+            ? GuardianPrompts.GatePolicy
+            : consumption;
+
+        string judgePolicy = string.IsNullOrWhiteSpace(consumption)
+            ? GuardianPrompts.JudgePolicy
+            : consumption;
+
         string gateRubric = ComposeGuardianRubric(
-            constitution, GuardianPrompts.GatePolicy, GuardianPrompts.GateContract);
+            constitution, gatePolicy, GuardianPrompts.GateContract);
 
         string judgeRubric = ComposeGuardianRubric(
-            constitution, GuardianPrompts.JudgePolicy, GuardianPrompts.JudgeContract);
+            constitution, judgePolicy, GuardianPrompts.JudgeContract);
 
         IClassifierBroker classifier =
             this.classifierBroker
