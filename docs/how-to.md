@@ -512,6 +512,8 @@ var agent = new StandardAgent(url, key, "LLooMA2.0")      // 0 · talking
     .Skills("Skills")                                     // 2 · persona + {{tools}}
     .Tool(new CalculatorTool())                           // 3 · internal tool
     .Mcp("https://my-mcp-server/")                        // 3 · external tools
+    .Constitution("Constitution/ethics.md")              // 5 · law above the guardians
+    .Consumption("Constitution/consuming-skills.md")     // 5 · replace the guardian policy
     .Gate(apiUrl: url, apiKey: key, model: "LLooMA2.0")   // 4 · screen requests
     .Judge(apiUrl: url, apiKey: key, model: "LLooMA2.0")  // 5 · review answers
     .Memory("agent-memory.txt")                           // 6 · remember across restarts
