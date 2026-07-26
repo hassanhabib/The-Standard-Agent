@@ -60,6 +60,8 @@ public sealed partial class StandardAgent : IAgent
     private IKnowledgeBroker? knowledgeBroker;
     private IClassifierBroker? classifierBroker;
     private IVerifierBroker? verifierBroker;
+    private Func<string, string, ValueTask<string>>? localGateScreen;
+    private Func<string, string, ValueTask<string>>? localJudgeEvaluate;
     private IMcpBroker? mcpBroker;
     private ILogBroker? logBroker;
     private ILoggingBroker? loggingBroker;
@@ -140,8 +142,7 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="screen">A <c>(gateRubric, prompt) =&gt; verdict</c> delegate.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent LocalGate(Func<string, string, ValueTask<string>> screen) =>
-        Set(() => this.classifierBroker =
-            new FunctionClassifierBroker(screen, GuardianPrompts.Gate));
+        Set(() => this.localGateScreen = screen);
 
     /// <summary>
     /// Turns on the Judge using an in-process model — the local counterpart to <see cref="Judge"/>,
@@ -152,8 +153,7 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="evaluate">A <c>(judgeRubric, draftAnswer) =&gt; score</c> delegate.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent LocalJudge(Func<string, string, ValueTask<string>> evaluate) =>
-        Set(() => this.verifierBroker =
-            new FunctionVerifierBroker(evaluate, GuardianPrompts.Judge));
+        Set(() => this.localJudgeEvaluate = evaluate);
 
     /// <summary>
     /// Turns on the Gate: an opt-in guardian that screens each prompt before the brain sees
@@ -426,20 +426,26 @@ public sealed partial class StandardAgent : IAgent
         List<ITool> allTools = [.. this.tools, new RememberTool(memoryService)];
 
         IClassifierBroker classifier =
-            this.classifierBroker ?? (this.gateSettings is null
-                ? new NotConfiguredClassifierBroker()
-                : new ClassifierBroker(
-                    this.gateSettings.ApiUrl, this.gateSettings.ApiKey, this.gateSettings.Model,
-                    this.gateSettings.Temperature, this.gateSettings.MaxTokens,
-                    this.gateSettings.TimeoutSeconds, GuardianPrompts.Gate));
+            this.classifierBroker
+                ?? (this.localGateScreen is not null
+                    ? new FunctionClassifierBroker(this.localGateScreen, GuardianPrompts.Gate)
+                    : this.gateSettings is null
+                        ? new NotConfiguredClassifierBroker()
+                        : new ClassifierBroker(
+                            this.gateSettings.ApiUrl, this.gateSettings.ApiKey, this.gateSettings.Model,
+                            this.gateSettings.Temperature, this.gateSettings.MaxTokens,
+                            this.gateSettings.TimeoutSeconds, GuardianPrompts.Gate));
 
         IVerifierBroker verifier =
-            this.verifierBroker ?? (this.judgeSettings is null
-                ? new NotConfiguredVerifierBroker()
-                : new VerifierBroker(
-                    this.judgeSettings.ApiUrl, this.judgeSettings.ApiKey, this.judgeSettings.Model,
-                    this.judgeSettings.Temperature, this.judgeSettings.MaxTokens,
-                    this.judgeSettings.TimeoutSeconds, GuardianPrompts.Judge));
+            this.verifierBroker
+                ?? (this.localJudgeEvaluate is not null
+                    ? new FunctionVerifierBroker(this.localJudgeEvaluate, GuardianPrompts.Judge)
+                    : this.judgeSettings is null
+                        ? new NotConfiguredVerifierBroker()
+                        : new VerifierBroker(
+                            this.judgeSettings.ApiUrl, this.judgeSettings.ApiKey, this.judgeSettings.Model,
+                            this.judgeSettings.Temperature, this.judgeSettings.MaxTokens,
+                            this.judgeSettings.TimeoutSeconds, GuardianPrompts.Judge));
 
         IToolBroker toolBroker = new ToolBroker(allTools);
 
