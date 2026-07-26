@@ -41,6 +41,7 @@ public sealed partial class StandardAgent : IAgent
 
     private string skillsPath = "Skills";
     private string constitutionPath = string.Empty;
+    private string consumptionPath = string.Empty;
     private string logPath = "log.txt";
     private string memoryPath = "memory.txt";
     private string knowledgePath = "Knowledge";
@@ -110,6 +111,19 @@ public sealed partial class StandardAgent : IAgent
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent Constitution(string path) =>
         Set(() => this.constitutionPath = path);
+
+    /// <summary>
+    /// Points the agent at the consumption skill: a markdown file whose text replaces the
+    /// built-in guardian policy (what the Gate screens for and what the Judge scores). The
+    /// built-in output contract is always kept, so a replacement policy cannot break the
+    /// guardian's wiring. It sits below the constitution and above the contract, and takes
+    /// effect only when a guardian is configured. Omit it to use the built-in policy. The
+    /// file must be copied to the build output.
+    /// </summary>
+    /// <param name="path">Path to the consumption skill <c>.md</c> file.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent Consumption(string path) =>
+        Set(() => this.consumptionPath = path);
 
     /// <summary>
     /// Sets the brain: an external, OpenAI-compatible chat-completions endpoint that does the
@@ -416,29 +430,29 @@ public sealed partial class StandardAgent : IAgent
         return this;
     }
 
-    // Reads the constitution file if one was configured, resolved against the build output
-    // like skills. A missing file yields no constitution rather than an error, so a stale
-    // path degrades to the built-in guardian policy instead of bricking composition.
-    private string ReadConstitution(IFileBroker file)
+    // Reads an optional prompt file (constitution, consumption) resolved against the build
+    // output like skills. A missing file yields empty rather than an error, so a stale path
+    // degrades to the built-in guardian policy instead of bricking composition.
+    private static string ReadOptionalFile(IFileBroker file, string path)
     {
-        if (string.IsNullOrWhiteSpace(this.constitutionPath))
+        if (string.IsNullOrWhiteSpace(path))
         {
             return string.Empty;
         }
 
-        string fullPath = Path.Combine(AppContext.BaseDirectory, this.constitutionPath);
+        string fullPath = Path.Combine(AppContext.BaseDirectory, path);
 
         return file.FileExists(fullPath)
             ? file.ReadFile(fullPath)
             : string.Empty;
     }
 
-    // Prepends the constitution above a guardian's built-in policy. The built-in policy stays
-    // last so its output contract (allow/refuse, the 0.0-1.0 score) is never displaced.
-    private static string ComposeGuardianRubric(string constitution, string policy) =>
-        string.IsNullOrWhiteSpace(constitution)
-            ? policy
-            : $"{constitution}\n\n{policy}";
+    // Assembles a guardian rubric from its parts in order, skipping any that are empty:
+    // constitution first (the law), then the policy (what to screen or score), then the
+    // contract (the output protocol the broker parses). The contract stays last so it is
+    // never displaced, whatever the policy above it.
+    private static string ComposeGuardianRubric(params string[] parts) =>
+        string.Join("\n\n", parts.Where(part => string.IsNullOrWhiteSpace(part) is false));
 
     private IAgentCoordinationService Compose()
     {
@@ -462,9 +476,22 @@ public sealed partial class StandardAgent : IAgent
 
         List<ITool> allTools = [.. this.tools, new RememberTool(memoryService)];
 
-        string constitution = ReadConstitution(file);
-        string gateRubric = ComposeGuardianRubric(constitution, GuardianPrompts.Gate);
-        string judgeRubric = ComposeGuardianRubric(constitution, GuardianPrompts.Judge);
+        string constitution = ReadOptionalFile(file, this.constitutionPath);
+        string consumption = ReadOptionalFile(file, this.consumptionPath);
+
+        string gatePolicy = string.IsNullOrWhiteSpace(consumption)
+            ? GuardianPrompts.GatePolicy
+            : consumption;
+
+        string judgePolicy = string.IsNullOrWhiteSpace(consumption)
+            ? GuardianPrompts.JudgePolicy
+            : consumption;
+
+        string gateRubric = ComposeGuardianRubric(
+            constitution, gatePolicy, GuardianPrompts.GateContract);
+
+        string judgeRubric = ComposeGuardianRubric(
+            constitution, judgePolicy, GuardianPrompts.JudgeContract);
 
         IClassifierBroker classifier =
             this.classifierBroker

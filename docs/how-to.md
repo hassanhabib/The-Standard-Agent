@@ -292,6 +292,24 @@ It is prepended, never a replacement: the built-in output contract (the gate's `
 guardian's wiring. It only takes effect when a guardian is on, and the file must be copied to the
 build output, the same as your skills.
 
+**Replacing the policy.** The Gate and Judge each ship with a built-in policy for what to screen
+and how to score. To replace that policy with your own, point the agent at a consumption skill with
+`.Consumption(...)`. Its text takes the place of the built-in policy, while the built-in output
+contract is always kept, so a replacement can never break the guardian's wiring.
+
+```csharp
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .Skills("Skills")
+    .Constitution("Constitution/ethics.md")           // the law, prepended
+    .Consumption("Constitution/consuming-skills.md")   // ← replaces the guardian policy
+    .Gate(apiUrl: url, apiKey: key, model: "LLooMA2.0")
+    .Judge(apiUrl: url, apiKey: key, model: "LLooMA2.0");
+```
+
+The assembled rubric is the constitution, then your consumption policy (or the built-in one when
+omitted), then the built-in contract, always in that order. Like the constitution, it takes effect
+only when a guardian is on, and the file must be copied to the build output.
+
 ---
 
 ## 6 · Memory — it remembers you across restarts
@@ -494,6 +512,8 @@ var agent = new StandardAgent(url, key, "LLooMA2.0")      // 0 · talking
     .Skills("Skills")                                     // 2 · persona + {{tools}}
     .Tool(new CalculatorTool())                           // 3 · internal tool
     .Mcp("https://my-mcp-server/")                        // 3 · external tools
+    .Constitution("Constitution/ethics.md")              // 5 · law above the guardians
+    .Consumption("Constitution/consuming-skills.md")     // 5 · replace the guardian policy
     .Gate(apiUrl: url, apiKey: key, model: "LLooMA2.0")   // 4 · screen requests
     .Judge(apiUrl: url, apiKey: key, model: "LLooMA2.0")  // 5 · review answers
     .Memory("agent-memory.txt")                           // 6 · remember across restarts
@@ -508,3 +528,18 @@ Every line here has a backend it can swap to without changing the rest: the brai
 (LlamaSharp), the guardians go local (`.LocalGate` / `.LocalJudge`), memory goes to Redis, knowledge
 goes to Postgres or SQL Server — each behind the same seam. The package family grows; the code you
 write here does not.
+
+## Swapping any nature's backend
+
+Every nature above has a matching `Use...` escape hatch that swaps in your own broker behind the
+same seam, so you can back any part of the agent with something the built-ins do not cover:
+
+- `UseGenerator`: a custom brain, such as a natively streaming runtime.
+- `UseSkills`: skills sourced from somewhere other than a folder.
+- `UseMemory` and `UseKnowledge`: custom memory or knowledge stores.
+- `UseGate` and `UseJudge`: custom guardian backends.
+- `UseMcp`: a custom MCP transport.
+- `UseLog` and `UseLogging`: custom trace and diagnostic logging.
+
+Register several tools at once with `Tools(...)`, the batch form of `Tool(...)`. Each swap changes
+one nature; the rest of the agent stays exactly as written.
