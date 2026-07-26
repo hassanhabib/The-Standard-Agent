@@ -40,6 +40,7 @@ public sealed partial class StandardAgent : IAgent
     private readonly List<ITool> tools = [];
 
     private string skillsPath = "Skills";
+    private string constitutionPath = string.Empty;
     private string logPath = "log.txt";
     private string memoryPath = "memory.txt";
     private string knowledgePath = "Knowledge";
@@ -97,6 +98,18 @@ public sealed partial class StandardAgent : IAgent
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent Skills(string path) =>
         Set(() => this.skillsPath = path);
+
+    /// <summary>
+    /// Points the agent at the ethical constitution: a markdown file whose text is prepended
+    /// to every guardian rubric (Gate and Judge), above the built-in policy, so the guardians
+    /// are bound by it. It takes effect only when a guardian is configured, and it never
+    /// replaces the built-in output contract. Omit it to run the built-in guardian policy
+    /// alone. The file must be copied to the build output.
+    /// </summary>
+    /// <param name="path">Path to the constitution <c>.md</c> file.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent Constitution(string path) =>
+        Set(() => this.constitutionPath = path);
 
     /// <summary>
     /// Sets the brain: an external, OpenAI-compatible chat-completions endpoint that does the
