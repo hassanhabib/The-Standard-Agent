@@ -433,12 +433,12 @@ public sealed partial class StandardAgent : IAgent
             : string.Empty;
     }
 
-    // Prepends the constitution above a guardian's built-in policy. The built-in policy stays
-    // last so its output contract (allow/refuse, the 0.0-1.0 score) is never displaced.
-    private static string ComposeGuardianRubric(string constitution, string policy) =>
-        string.IsNullOrWhiteSpace(constitution)
-            ? policy
-            : $"{constitution}\n\n{policy}";
+    // Assembles a guardian rubric from its parts in order, skipping any that are empty:
+    // constitution first (the law), then the policy (what to screen or score), then the
+    // contract (the output protocol the broker parses). The contract stays last so it is
+    // never displaced, whatever the policy above it.
+    private static string ComposeGuardianRubric(params string[] parts) =>
+        string.Join("\n\n", parts.Where(part => string.IsNullOrWhiteSpace(part) is false));
 
     private IAgentCoordinationService Compose()
     {
@@ -463,8 +463,11 @@ public sealed partial class StandardAgent : IAgent
         List<ITool> allTools = [.. this.tools, new RememberTool(memoryService)];
 
         string constitution = ReadConstitution(file);
-        string gateRubric = ComposeGuardianRubric(constitution, GuardianPrompts.Gate);
-        string judgeRubric = ComposeGuardianRubric(constitution, GuardianPrompts.Judge);
+        string gateRubric = ComposeGuardianRubric(
+            constitution, GuardianPrompts.GatePolicy, GuardianPrompts.GateContract);
+
+        string judgeRubric = ComposeGuardianRubric(
+            constitution, GuardianPrompts.JudgePolicy, GuardianPrompts.JudgeContract);
 
         IClassifierBroker classifier =
             this.classifierBroker
