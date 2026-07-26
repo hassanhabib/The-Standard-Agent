@@ -274,6 +274,24 @@ var agent = new StandardAgent()
     .LocalJudge(llama.GenerateAsync);
 ```
 
+**One law above both.** The Gate and Judge each ship with a built-in policy. To bind them to
+your own rules, point the agent at an ethical constitution with `.Constitution(...)`, a markdown
+file whose text is prepended above *both* guardian rubrics, so one law governs what is screened
+and what is scored.
+
+```csharp
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .Skills("Skills")
+    .Constitution("Constitution/ethics.md")   // ← prepended above the gate and judge policy
+    .Gate(apiUrl: url, apiKey: key, model: "LLooMA2.0")
+    .Judge(apiUrl: url, apiKey: key, model: "LLooMA2.0");
+```
+
+It is prepended, never a replacement: the built-in output contract (the gate's `allow` or
+`refuse`, the judge's score) always stays in place, so a constitution cannot accidentally break a
+guardian's wiring. It only takes effect when a guardian is on, and the file must be copied to the
+build output, the same as your skills.
+
 ---
 
 ## 6 · Memory — it remembers you across restarts
