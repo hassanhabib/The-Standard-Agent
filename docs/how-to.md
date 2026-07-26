@@ -528,3 +528,18 @@ Every line here has a backend it can swap to without changing the rest: the brai
 (LlamaSharp), the guardians go local (`.LocalGate` / `.LocalJudge`), memory goes to Redis, knowledge
 goes to Postgres or SQL Server — each behind the same seam. The package family grows; the code you
 write here does not.
+
+## Swapping any nature's backend
+
+Every nature above has a matching `Use...` escape hatch that swaps in your own broker behind the
+same seam, so you can back any part of the agent with something the built-ins do not cover:
+
+- `UseGenerator`: a custom brain, such as a natively streaming runtime.
+- `UseSkills`: skills sourced from somewhere other than a folder.
+- `UseMemory` and `UseKnowledge`: custom memory or knowledge stores.
+- `UseGate` and `UseJudge`: custom guardian backends.
+- `UseMcp`: a custom MCP transport.
+- `UseLog` and `UseLogging`: custom trace and diagnostic logging.
+
+Register several tools at once with `Tools(...)`, the batch form of `Tool(...)`. Each swap changes
+one nature; the rest of the agent stays exactly as written.
