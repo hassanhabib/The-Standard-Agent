@@ -518,6 +518,61 @@ public class StandardAgentTests
         File.Delete(constitutionPath);
     }
 
+    [Fact]
+    public async Task ShouldReplaceGuardianPolicyWithConsumptionOnProcessPromptAsync()
+    {
+        // given
+        string consumptionText = "CONSUMPTION: screen and score by these house rules only.";
+
+        string consumptionPath = Path.Combine(
+            Path.GetTempPath(), $"consumption-{Guid.NewGuid():N}.md");
+
+        await File.WriteAllTextAsync(consumptionPath, consumptionText);
+
+        string capturedGateRubric = string.Empty;
+        string capturedJudgeRubric = string.Empty;
+
+        var skillBroker = new Mock<ISkillBroker>();
+        skillBroker.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(string.Empty);
+
+        var memory = new Mock<IMemoryBroker>();
+        memory.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
+
+        var agent = new StandardAgent()
+            .UseSkills(skillBroker.Object)
+            .UseMemory(memory.Object)
+            .UseKnowledge(EmptyKnowledgeBroker())
+            .LocalBrain(async (systemPrompt, userPrompt) => "FINAL: 42")
+            .Consumption(consumptionPath)
+            .LocalGate(async (gateRubric, prompt) =>
+            {
+                capturedGateRubric = gateRubric;
+
+                return "allow";
+            })
+            .LocalJudge(async (judgeRubric, draftAnswer) =>
+            {
+                capturedJudgeRubric = judgeRubric;
+
+                return "1.0";
+            })
+            .UseLog(new Mock<ILogBroker>().Object);
+
+        // when
+        await agent.ProcessPromptAsync(prompt: "what is the answer?");
+
+        // then
+        capturedGateRubric.Should().Contain(consumptionText);
+        capturedGateRubric.Should().Contain("refuse");
+        capturedGateRubric.Should().NotContain("conscience that screens");
+
+        capturedJudgeRubric.Should().Contain(consumptionText);
+        capturedJudgeRubric.Should().Contain("decimal number");
+        capturedJudgeRubric.Should().NotContain("reviews the Brain");
+
+        File.Delete(consumptionPath);
+    }
+
     private static IKnowledgeBroker EmptyKnowledgeBroker()
     {
         var knowledgeBroker = new Mock<IKnowledgeBroker>();

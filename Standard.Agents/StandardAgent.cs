@@ -41,6 +41,7 @@ public sealed partial class StandardAgent : IAgent
 
     private string skillsPath = "Skills";
     private string constitutionPath = string.Empty;
+    private string consumptionPath = string.Empty;
     private string logPath = "log.txt";
     private string memoryPath = "memory.txt";
     private string knowledgePath = "Knowledge";
@@ -110,6 +111,19 @@ public sealed partial class StandardAgent : IAgent
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent Constitution(string path) =>
         Set(() => this.constitutionPath = path);
+
+    /// <summary>
+    /// Points the agent at the consumption skill: a markdown file whose text replaces the
+    /// built-in guardian policy (what the Gate screens for and what the Judge scores). The
+    /// built-in output contract is always kept, so a replacement policy cannot break the
+    /// guardian's wiring. It sits below the constitution and above the contract, and takes
+    /// effect only when a guardian is configured. Omit it to use the built-in policy. The
+    /// file must be copied to the build output.
+    /// </summary>
+    /// <param name="path">Path to the consumption skill <c>.md</c> file.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent Consumption(string path) =>
+        Set(() => this.consumptionPath = path);
 
     /// <summary>
     /// Sets the brain: an external, OpenAI-compatible chat-completions endpoint that does the
