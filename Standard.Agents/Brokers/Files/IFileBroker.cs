@@ -13,6 +13,8 @@ public interface IFileBroker
 
     ValueTask<string> ReadFileAsync(string path);
 
+    string ReadFile(string path);
+
     bool FileExists(string path);
 
     ValueTask<IReadOnlyList<string>> ReadAllLinesAsync(string path);

@@ -468,6 +468,56 @@ public class StandardAgentTests
         judgeInvoked.Should().BeTrue();
     }
 
+    [Fact]
+    public async Task ShouldPrependConstitutionToGuardianRubricsOnProcessPromptAsync()
+    {
+        // given
+        string constitutionText = "CONSTITUTION: you must do no harm.";
+
+        string constitutionPath = Path.Combine(
+            Path.GetTempPath(), $"constitution-{Guid.NewGuid():N}.md");
+
+        await File.WriteAllTextAsync(constitutionPath, constitutionText);
+
+        string capturedGateRubric = string.Empty;
+        string capturedJudgeRubric = string.Empty;
+
+        var skillBroker = new Mock<ISkillBroker>();
+        skillBroker.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(string.Empty);
+
+        var memory = new Mock<IMemoryBroker>();
+        memory.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
+
+        var agent = new StandardAgent()
+            .UseSkills(skillBroker.Object)
+            .UseMemory(memory.Object)
+            .UseKnowledge(EmptyKnowledgeBroker())
+            .LocalBrain(async (systemPrompt, userPrompt) => "FINAL: 42")
+            .Constitution(constitutionPath)
+            .LocalGate(async (gateRubric, prompt) =>
+            {
+                capturedGateRubric = gateRubric;
+
+                return "allow";
+            })
+            .LocalJudge(async (judgeRubric, draftAnswer) =>
+            {
+                capturedJudgeRubric = judgeRubric;
+
+                return "1.0";
+            })
+            .UseLog(new Mock<ILogBroker>().Object);
+
+        // when
+        await agent.ProcessPromptAsync(prompt: "what is the answer?");
+
+        // then
+        capturedGateRubric.Should().Contain(constitutionText);
+        capturedJudgeRubric.Should().Contain(constitutionText);
+
+        File.Delete(constitutionPath);
+    }
+
     private static IKnowledgeBroker EmptyKnowledgeBroker()
     {
         var knowledgeBroker = new Mock<IKnowledgeBroker>();
