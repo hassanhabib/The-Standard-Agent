@@ -416,6 +416,30 @@ public sealed partial class StandardAgent : IAgent
         return this;
     }
 
+    // Reads the constitution file if one was configured, resolved against the build output
+    // like skills. A missing file yields no constitution rather than an error, so a stale
+    // path degrades to the built-in guardian policy instead of bricking composition.
+    private string ReadConstitution(IFileBroker file)
+    {
+        if (string.IsNullOrWhiteSpace(this.constitutionPath))
+        {
+            return string.Empty;
+        }
+
+        string fullPath = Path.Combine(AppContext.BaseDirectory, this.constitutionPath);
+
+        return file.FileExists(fullPath)
+            ? file.ReadFile(fullPath)
+            : string.Empty;
+    }
+
+    // Prepends the constitution above a guardian's built-in policy. The built-in policy stays
+    // last so its output contract (allow/refuse, the 0.0-1.0 score) is never displaced.
+    private static string ComposeGuardianRubric(string constitution, string policy) =>
+        string.IsNullOrWhiteSpace(constitution)
+            ? policy
+            : $"{constitution}\n\n{policy}";
+
     private IAgentCoordinationService Compose()
     {
         ValidateComposition();
@@ -438,27 +462,31 @@ public sealed partial class StandardAgent : IAgent
 
         List<ITool> allTools = [.. this.tools, new RememberTool(memoryService)];
 
+        string constitution = ReadConstitution(file);
+        string gateRubric = ComposeGuardianRubric(constitution, GuardianPrompts.Gate);
+        string judgeRubric = ComposeGuardianRubric(constitution, GuardianPrompts.Judge);
+
         IClassifierBroker classifier =
             this.classifierBroker
                 ?? (this.localGateScreen is not null
-                    ? new FunctionClassifierBroker(this.localGateScreen, GuardianPrompts.Gate)
+                    ? new FunctionClassifierBroker(this.localGateScreen, gateRubric)
                     : this.gateSettings is null
                         ? new NotConfiguredClassifierBroker()
                         : new ClassifierBroker(
                             this.gateSettings.ApiUrl, this.gateSettings.ApiKey, this.gateSettings.Model,
                             this.gateSettings.Temperature, this.gateSettings.MaxTokens,
-                            this.gateSettings.TimeoutSeconds, GuardianPrompts.Gate));
+                            this.gateSettings.TimeoutSeconds, gateRubric));
 
         IVerifierBroker verifier =
             this.verifierBroker
                 ?? (this.localJudgeEvaluate is not null
-                    ? new FunctionVerifierBroker(this.localJudgeEvaluate, GuardianPrompts.Judge)
+                    ? new FunctionVerifierBroker(this.localJudgeEvaluate, judgeRubric)
                     : this.judgeSettings is null
                         ? new NotConfiguredVerifierBroker()
                         : new VerifierBroker(
                             this.judgeSettings.ApiUrl, this.judgeSettings.ApiKey, this.judgeSettings.Model,
                             this.judgeSettings.Temperature, this.judgeSettings.MaxTokens,
-                            this.judgeSettings.TimeoutSeconds, GuardianPrompts.Judge));
+                            this.judgeSettings.TimeoutSeconds, judgeRubric));
 
         IToolBroker toolBroker = new ToolBroker(allTools);
 
