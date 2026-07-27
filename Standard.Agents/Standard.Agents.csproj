@@ -20,6 +20,17 @@
     <!-- The Standard's release format is v1.2.3.4 — model . service/routine . fix/config
          . automated build. Deliberately NOT semver; the segments say what KIND of change
          happened, so a model change can never hide in the service segment.
+         0.11.0.0: configurable guardian conscience. .Constitution(path) prepends an ethical
+         charter to BOTH guardian rubrics (Gate and Judge), above the built-in policy; and
+         .Consumption(path) swaps a domain policy in for that built-in one. The framework-owned
+         output contract is always kept below either, so a replacement policy can never break the
+         guardian's wiring — the gate/judge prompts are now split into a replaceable policy and a
+         fixed contract. Both inputs are optional and degrade to the built-in policy if absent.
+         New public routines on the client (Constitution / Consumption), the spec's core
+         AgentContext model unchanged, so this is a service/routine change: segment 2 advances,
+         3/4 reset. Conformance now certifies the layering — a constitution binds both guardians,
+         a consumption skill replaces the policy in both, and a gate refusal short-circuits the
+         brain — and the package publishes to NuGet on a GitHub Release.
          0.10.0.0: a documentation and packaging pass — the README now carries a rendered
          architecture diagram and a "Create Your First AI Agent from Scratch" walkthrough
          video (both surface on the NuGet page), a cumulative how-to, and a swappable-backends
@@ -32,7 +43,7 @@
          3/4 reset. Still tracks SPEC.md v0.1 (draft): segment 1 goes to 1 when the spec settles.
          (0.8.0.0: memory and knowledge came alive — knowledge retrieval in Recall + a built-in
          'remember' tool.) -->
-    <Version>0.10.0.0</Version>
+    <Version>0.11.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>
