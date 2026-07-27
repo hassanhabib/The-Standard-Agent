@@ -1,0 +1,18 @@
+{
+  "name": "consumption-replaces-policy",
+  "description": "A configured consumption skill replaces the built-in guardian policy in BOTH guardians (the built-in 'You are not the Brain.' policy text is gone), while the framework-owned output contract is always kept.",
+  "generatorReplies": ["FINAL: Paris"],
+  "tools": {},
+  "prompt": "capital of France?",
+  "consumption": "CONSUMPTION POLICY: Only assist with geography questions.",
+  "expect": {
+    "result": "Paris",
+    "guardianRubricContains": [
+      "CONSUMPTION POLICY: Only assist with geography questions.",
+      "Reply with exactly"
+    ],
+    "guardianRubricExcludes": [
+      "You are not the Brain."
+    ]
+  }
+}

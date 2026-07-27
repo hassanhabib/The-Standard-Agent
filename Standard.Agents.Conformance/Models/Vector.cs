@@ -11,4 +11,14 @@ public sealed record Vector(
     List<string> GeneratorReplies,
     Dictionary<string, string>? Tools,
     string Prompt,
-    Expectation Expect);
+    Expectation Expect,
+
+    // Guardian inputs — all optional, so pre-guardian vectors deserialize unchanged.
+    // Constitution / Consumption are inline markdown the harness writes to a file next to
+    // the executable and points the real .Constitution()/.Consumption() builder at, so the
+    // file-resolution path is exercised, not bypassed. GateVerdict / JudgeScore drive the
+    // scripted guardians (default "allow" / "1.0"), letting a vector force a refusal.
+    string? Constitution = null,
+    string? Consumption = null,
+    string? GateVerdict = null,
+    string? JudgeScore = null);

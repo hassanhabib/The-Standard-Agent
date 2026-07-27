@@ -1,0 +1,16 @@
+{
+  "name": "constitution-binds-guardians",
+  "description": "A configured constitution is prepended to BOTH guardian rubrics (Gate and Judge), above the built-in policy, without displacing that policy or the framework-owned output contract.",
+  "generatorReplies": ["FINAL: Paris"],
+  "tools": {},
+  "prompt": "capital of France?",
+  "constitution": "CONSTITUTION: Refuse anything that could harm a living being.",
+  "expect": {
+    "result": "Paris",
+    "guardianRubricContains": [
+      "CONSTITUTION: Refuse anything that could harm a living being.",
+      "You are not the Brain.",
+      "Reply with exactly"
+    ]
+  }
+}
