@@ -52,13 +52,16 @@ public sealed class ClassifierBroker : IClassifierBroker
         this.systemPrompt = systemPrompt;
     }
 
-    public async ValueTask<string> ClassifyAsync(string input)
+    public ValueTask<string> ClassifyAsync(string input) =>
+        AssessAsync(this.systemPrompt, input);
+
+    public async ValueTask<string> AssessAsync(string systemPrompt, string input)
     {
         ChatCompletionRequest chatCompletionRequest = new(
             Model: this.model,
             Messages:
             [
-                new ChatMessage(Role: "system", Content: this.systemPrompt),
+                new ChatMessage(Role: "system", Content: systemPrompt),
                 new ChatMessage(Role: "user", Content: input)
             ],
             Stream: false,

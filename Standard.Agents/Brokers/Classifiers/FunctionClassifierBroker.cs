@@ -18,6 +18,9 @@ public sealed class FunctionClassifierBroker : IClassifierBroker
         this.systemPrompt = systemPrompt;
     }
 
-    public async ValueTask<string> ClassifyAsync(string input) =>
-        await this.screen(this.systemPrompt, input);
+    public ValueTask<string> ClassifyAsync(string input) =>
+        AssessAsync(this.systemPrompt, input);
+
+    public async ValueTask<string> AssessAsync(string systemPrompt, string input) =>
+        await this.screen(systemPrompt, input);
 }
