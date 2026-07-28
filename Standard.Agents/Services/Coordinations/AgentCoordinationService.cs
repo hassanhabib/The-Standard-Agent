@@ -126,6 +126,16 @@ public partial class AgentCoordinationService : IAgentCoordinationService
                     $"{context.DirectionType}: {context.Result}");
             }
 
+            // The settled answer — an approved response or a refusal — is the one thing that
+            // reaches the caller's Response channel, and it equals what ProcessPromptAsync returns.
+            if (context.Status is AgentStatus.Responded or AgentStatus.Refused
+                && string.IsNullOrEmpty(context.Result) is false)
+            {
+                yield return new AgentStreamEvent(
+                    AgentStreamEventType.Response,
+                    context.Result);
+            }
+
             await LogTurnAsync(turn, context);
 
             if (context.Status is not AgentStatus.Working)

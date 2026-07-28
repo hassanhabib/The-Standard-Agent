@@ -134,9 +134,6 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
             yield return new AgentStreamEvent(
                 AgentStreamEventType.Status, "gate refused the request");
 
-            yield return new AgentStreamEvent(
-                AgentStreamEventType.Response, RefusalMessage);
-
             yield break;
         }
 
@@ -154,13 +151,13 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
 
             foreach (AgentStreamEvent segment in classifier.Classify(delta))
             {
-                yield return segment;
+                yield return AsDraft(segment);
             }
         }
 
         foreach (AgentStreamEvent segment in classifier.Flush())
         {
-            yield return segment;
+            yield return AsDraft(segment);
         }
 
         AgentContext decided = Interpret(context, reply.ToString().Trim());
@@ -208,6 +205,14 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
 
         setResult(decided);
     }
+
+    // A streaming draft is not the answer until the Judge approves it. Its answer tokens
+    // stream as Thinking so a rejected draft never reaches the caller's Response channel;
+    // the coordinator emits the one Response event for the settled result.
+    private static AgentStreamEvent AsDraft(AgentStreamEvent segment) =>
+        segment.Type is AgentStreamEventType.Response
+            ? segment with { Type = AgentStreamEventType.Thinking }
+            : segment;
 
     private static bool IsRefusal(string verdict) =>
 verdict.TrimStart().StartsWith(RefuseVerdict, StringComparison.OrdinalIgnoreCase);
