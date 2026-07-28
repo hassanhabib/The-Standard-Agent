@@ -42,6 +42,35 @@ public partial class DirectionOrchestrationServiceTests
     }
 
     [Fact]
+    public async Task ShouldAwaitInputAndTerminateOnActIfDirectionTypeIsAwaitInputAsync()
+    {
+        // given
+        string question = CreateRandomString();
+
+        AgentContext inputContext =
+            CreateContextWithDirection("AwaitInput", question);
+
+        this.returnServiceMock.Setup(service =>
+            service.ReturnAsync(question))
+                .ReturnsAsync(question);
+
+        // when
+        AgentContext actualContext =
+            await this.directionOrchestrationService.ActAsync(inputContext);
+
+        // then
+        actualContext.Result.Should().Be(question);
+        actualContext.Status.Should().Be(AgentStatus.AwaitingInput);
+
+        this.returnServiceMock.Verify(service =>
+            service.ReturnAsync(question),
+                Times.Once);
+
+        this.internalToolServiceMock.VerifyNoOtherCalls();
+        this.externalToolServiceMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
     public async Task ShouldRefuseAndTerminateOnActIfDirectionTypeIsRefuseAsync()
     {
         // given

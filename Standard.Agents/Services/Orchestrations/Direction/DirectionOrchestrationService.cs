@@ -15,6 +15,7 @@ public partial class DirectionOrchestrationService : IDirectionOrchestrationServ
 {
     private const string ReturnResponseDirection = "ReturnResponse";
     private const string RefuseDirection = "Refuse";
+    private const string AwaitInputDirection = "AwaitInput";
 
     private readonly IInternalToolService internalToolService;
     private readonly IExternalToolService externalToolService;
@@ -65,10 +66,21 @@ public partial class DirectionOrchestrationService : IDirectionOrchestrationServ
 
     private static bool IsTerminal(string directionType) =>
         directionType.Equals(ReturnResponseDirection, StringComparison.OrdinalIgnoreCase)
-            || directionType.Equals(RefuseDirection, StringComparison.OrdinalIgnoreCase);
+            || directionType.Equals(RefuseDirection, StringComparison.OrdinalIgnoreCase)
+            || directionType.Equals(AwaitInputDirection, StringComparison.OrdinalIgnoreCase);
 
-    private static AgentStatus ToTerminalStatus(string directionType) =>
-        directionType.Equals(RefuseDirection, StringComparison.OrdinalIgnoreCase)
-            ? AgentStatus.Refused
-            : AgentStatus.Responded;
+    private static AgentStatus ToTerminalStatus(string directionType)
+    {
+        if (directionType.Equals(RefuseDirection, StringComparison.OrdinalIgnoreCase))
+        {
+            return AgentStatus.Refused;
+        }
+
+        if (directionType.Equals(AwaitInputDirection, StringComparison.OrdinalIgnoreCase))
+        {
+            return AgentStatus.AwaitingInput;
+        }
+
+        return AgentStatus.Responded;
+    }
 }
