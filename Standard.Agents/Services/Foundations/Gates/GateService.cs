@@ -28,4 +28,7 @@ public partial class GateService : IGateService
 
         return await this.classifierBroker.ClassifyAsync(input);
     });
+
+    public ValueTask<string> DetectConflictAsync(string instructions) =>
+        ValueTask.FromResult(string.Empty);
 }
