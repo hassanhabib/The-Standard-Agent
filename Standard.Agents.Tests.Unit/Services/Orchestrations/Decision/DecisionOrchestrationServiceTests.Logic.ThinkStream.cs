@@ -15,7 +15,7 @@ namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Decision;
 public partial class DecisionOrchestrationServiceTests
 {
     [Fact]
-    public async Task ShouldStreamAnswerAsResponseOnThinkStreamAsync()
+    public async Task ShouldStreamAnswerDraftAsThinkingOnThinkStreamAsync()
     {
         // given
         AgentContext inputContext = CreateRandomAgentContext();
@@ -34,13 +34,15 @@ public partial class DecisionOrchestrationServiceTests
         List<AgentStreamEvent> actualEvents = await DrainAsync(decisionStream);
 
         // then
-        actualEvents.Should().OnlyContain(streamEvent =>
+        actualEvents.Should().NotContain(streamEvent =>
             streamEvent.Type == AgentStreamEventType.Response);
 
-        string streamedResponse =
-            string.Concat(actualEvents.Select(streamEvent => streamEvent.Content));
+        string streamedDraft =
+            string.Concat(actualEvents
+                .Where(streamEvent => streamEvent.Type == AgentStreamEventType.Thinking)
+                .Select(streamEvent => streamEvent.Content));
 
-        streamedResponse.Should().Be("Hello there!");
+        streamedDraft.Should().Be("Hello there!");
         decisionStream.Result.DirectionType.Should().Be("ReturnResponse");
         decisionStream.Result.Payload.Should().Be("Hello there!");
     }
@@ -79,7 +81,7 @@ public partial class DecisionOrchestrationServiceTests
     }
 
     [Fact]
-    public async Task ShouldSplitFinalPrefixIntoThinkingAndResponseOnThinkStreamAsync()
+    public async Task ShouldStreamFinalDraftAsThinkingOnThinkStreamAsync()
     {
         // given
         AgentContext inputContext = CreateRandomAgentContext();
@@ -101,16 +103,14 @@ public partial class DecisionOrchestrationServiceTests
         actualEvents.Should().Contain(streamEvent =>
             streamEvent.Type == AgentStreamEventType.Thinking);
 
-        string streamedResponse = string.Concat(actualEvents
-            .Where(streamEvent => streamEvent.Type == AgentStreamEventType.Response)
-            .Select(streamEvent => streamEvent.Content));
+        actualEvents.Should().NotContain(streamEvent =>
+            streamEvent.Type == AgentStreamEventType.Response);
 
-        streamedResponse.Should().Be("The answer is 42.");
         decisionStream.Result.Payload.Should().Be("The answer is 42.");
     }
 
     [Fact]
-    public async Task ShouldStreamRefusalAsResponseOnThinkStreamIfGateRefusesAsync()
+    public async Task ShouldNotStreamResponseOnThinkStreamIfGateRefusesAsync()
     {
         // given
         AgentContext inputContext = CreateRandomAgentContext();
@@ -127,8 +127,11 @@ public partial class DecisionOrchestrationServiceTests
 
         // then
         actualEvents.Should().Contain(streamEvent =>
-            streamEvent.Type == AgentStreamEventType.Response
-                && streamEvent.Content == "I'm not able to help with that.");
+            streamEvent.Type == AgentStreamEventType.Status
+                && streamEvent.Content == "gate refused the request");
+
+        actualEvents.Should().NotContain(streamEvent =>
+            streamEvent.Type == AgentStreamEventType.Response);
 
         decisionStream.Result.DirectionType.Should().Be("Refuse");
 
