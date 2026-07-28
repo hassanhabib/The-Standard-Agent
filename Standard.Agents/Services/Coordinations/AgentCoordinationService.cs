@@ -53,7 +53,7 @@ public partial class AgentCoordinationService : IAgentCoordinationService
 
         AgentContext context = new() { Prompt = prompt };
 
-        for (int turn = 1; turn <= DefaultMaxTurns; turn++)
+        for (int turn = 1; turn <= this.maxTurns; turn++)
         {
             context = await this.dataOrchestrationService.RecallAsync(context);
             context = await this.decisionOrchestrationService.ThinkAsync(context);
@@ -97,7 +97,7 @@ public partial class AgentCoordinationService : IAgentCoordinationService
 
         AgentContext context = new() { Prompt = prompt };
 
-        for (int turn = 1; turn <= DefaultMaxTurns; turn++)
+        for (int turn = 1; turn <= this.maxTurns; turn++)
         {
             context = await this.dataOrchestrationService.RecallAsync(context);
 
