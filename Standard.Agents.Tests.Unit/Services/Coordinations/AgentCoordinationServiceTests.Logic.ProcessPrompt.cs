@@ -132,6 +132,38 @@ Times.Exactly(7));
     }
 
     [Fact]
+    public async Task ShouldRefuseGracefullyWhenReviewNeverPassesOnProcessPromptAsync()
+    {
+        // given
+        string randomPrompt = CreateRandomString();
+        string expectedResult = "I can't help with that at the moment.";
+
+        this.dataOrchestrationServiceMock.Setup(service =>
+            service.RecallAsync(It.IsAny<AgentContext>()))
+                .ReturnsAsync((AgentContext context) => context);
+
+        this.decisionOrchestrationServiceMock.Setup(service =>
+            service.ThinkAsync(It.IsAny<AgentContext>()))
+                .ReturnsAsync((AgentContext context) =>
+                    context with { Status = AgentStatus.Revising });
+
+        // when
+        string actualResult =
+            await this.agentCoordinationService.ProcessPromptAsync(randomPrompt);
+
+        // then
+        actualResult.Should().Be(expectedResult);
+
+        this.decisionOrchestrationServiceMock.Verify(service =>
+            service.ThinkAsync(It.IsAny<AgentContext>()),
+                Times.Exactly(7));
+
+        this.directionOrchestrationServiceMock.Verify(service =>
+            service.ActAsync(It.IsAny<AgentContext>()),
+                Times.Never);
+    }
+
+    [Fact]
     public async Task ShouldRecallEveryTurnOnProcessPromptAsync()
     {
         // given
