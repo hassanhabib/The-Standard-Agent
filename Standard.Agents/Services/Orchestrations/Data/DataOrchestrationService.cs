@@ -54,5 +54,5 @@ public partial class DataOrchestrationService : IDataOrchestrationService
     });
 
     public ValueTask RememberAsync(string memory) =>
-        ValueTask.CompletedTask;
+        this.memoryService.RememberAsync(memory);
 }
