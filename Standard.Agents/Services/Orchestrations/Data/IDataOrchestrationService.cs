@@ -10,4 +10,6 @@ namespace Standard.Agents.Services.Orchestrations.Data;
 public interface IDataOrchestrationService
 {
     ValueTask<AgentContext> RecallAsync(AgentContext context);
+
+    ValueTask RememberAsync(string memory);
 }

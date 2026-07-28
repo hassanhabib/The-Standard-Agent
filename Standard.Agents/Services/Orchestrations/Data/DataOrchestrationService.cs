@@ -52,4 +52,7 @@ public partial class DataOrchestrationService : IDataOrchestrationService
             Observations = [.. context.Observations, .. memories, .. knowledge]
         };
     });
+
+    public ValueTask RememberAsync(string memory) =>
+        ValueTask.CompletedTask;
 }
