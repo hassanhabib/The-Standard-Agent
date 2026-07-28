@@ -101,7 +101,7 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
                     $"A previous draft was rejected on review: {decided.Payload}"
                 ],
 
-                Status = AgentStatus.Working
+                Status = AgentStatus.Revising
             };
         }
 
@@ -197,7 +197,7 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
                     $"A previous draft was rejected on review: {decided.Payload}"
                 ],
 
-                Status = AgentStatus.Working
+                Status = AgentStatus.Revising
             });
 
             yield return new AgentStreamEvent(

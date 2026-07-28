@@ -18,6 +18,9 @@ public partial class AgentCoordinationService : IAgentCoordinationService
 {
     private const int MaxTurns = 7;
 
+    private const string RetriesExhaustedMessage =
+        "I can't help with that at the moment.";
+
     private readonly IDataOrchestrationService dataOrchestrationService;
     private readonly IDecisionOrchestrationService decisionOrchestrationService;
     private readonly IDirectionOrchestrationService directionOrchestrationService;
@@ -51,6 +54,14 @@ public partial class AgentCoordinationService : IAgentCoordinationService
         {
             context = await this.dataOrchestrationService.RecallAsync(context);
             context = await this.decisionOrchestrationService.ThinkAsync(context);
+
+            if (context.Status is AgentStatus.Revising)
+            {
+                await LogTurnAsync(turn, context);
+
+                continue;
+            }
+
             context = await this.directionOrchestrationService.ActAsync(context);
 
             await LogTurnAsync(turn, context);
@@ -59,6 +70,15 @@ public partial class AgentCoordinationService : IAgentCoordinationService
             {
                 break;
             }
+        }
+
+        if (context.Status is AgentStatus.Revising)
+        {
+            context = context with
+            {
+                Result = RetriesExhaustedMessage,
+                Status = AgentStatus.Refused
+            };
         }
 
         return context.Result;
@@ -89,6 +109,13 @@ public partial class AgentCoordinationService : IAgentCoordinationService
 
             context = decisionStream.Result;
 
+            if (context.Status is AgentStatus.Revising)
+            {
+                await LogTurnAsync(turn, context);
+
+                continue;
+            }
+
             context = await this.directionOrchestrationService.ActAsync(context);
 
             if (context.Status is AgentStatus.Working
@@ -105,6 +132,17 @@ public partial class AgentCoordinationService : IAgentCoordinationService
             {
                 break;
             }
+        }
+
+        if (context.Status is AgentStatus.Revising)
+        {
+            yield return new AgentStreamEvent(
+                AgentStreamEventType.Status,
+                "unable to satisfy review after retries; refusing");
+
+            yield return new AgentStreamEvent(
+                AgentStreamEventType.Response,
+                RetriesExhaustedMessage);
         }
     }
 
