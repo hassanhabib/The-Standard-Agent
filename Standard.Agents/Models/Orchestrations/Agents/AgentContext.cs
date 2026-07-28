@@ -18,5 +18,6 @@ public sealed record AgentContext
     public string RawReply { get; init; } = "";
 
     public string Result { get; init; } = "";
+    public string Remember { get; init; } = "";
     public AgentStatus Status { get; init; }
 }
