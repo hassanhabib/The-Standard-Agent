@@ -117,7 +117,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         .Tools(stubTools.Values)
         .LocalGate((rubric, prompt) =>
         {
-            gateRubric = rubric;
+            gateRubric ??= rubric;
 
             return new ValueTask<string>(vector.GateVerdict ?? "allow");
         })
