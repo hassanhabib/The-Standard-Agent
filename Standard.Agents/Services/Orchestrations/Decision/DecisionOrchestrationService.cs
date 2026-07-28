@@ -29,6 +29,7 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
     private const string ConflictPrefix = "CONFLICT:";
     private const string ConflictOptionSeparator = "||";
     private const string ConflictLabelSeparator = "|";
+    private const string PreferencePrefix = "SKILL_PREFERENCE::";
     private const string RefusalMessage = "I'm not able to help with that.";
 
     private const double MinimumAcceptableScore = 0.3;
@@ -69,12 +70,15 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
             };
         }
 
-        AgentContext? clarification = await DetectSkillConflictAsync(context);
+        (AgentContext resolvedContext, bool isTerminal) =
+            await ResolveSkillConflictAsync(context);
 
-        if (clarification is not null)
+        if (isTerminal)
         {
-            return clarification;
+            return resolvedContext;
         }
+
+        context = resolvedContext;
 
         string reply =
             (await this.brainService.GenerateAsync(
@@ -149,17 +153,23 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
             yield break;
         }
 
-        AgentContext? clarification = await DetectSkillConflictAsync(context);
+        (AgentContext resolvedContext, bool isTerminal) =
+            await ResolveSkillConflictAsync(context);
 
-        if (clarification is not null)
+        if (isTerminal)
         {
-            setResult(clarification);
+            setResult(resolvedContext);
 
             yield return new AgentStreamEvent(
-                AgentStreamEventType.Status, "skills conflict; asking for clarification");
+                AgentStreamEventType.Status,
+                resolvedContext.DirectionType == AwaitInputDirection
+                    ? "skills conflict; asking for clarification"
+                    : "learned your skill preference");
 
             yield break;
         }
+
+        context = resolvedContext;
 
         var classifier = new ReplyStreamClassifier();
         var reply = new StringBuilder();
@@ -235,11 +245,12 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
             ? segment with { Type = AgentStreamEventType.Thinking }
             : segment;
 
-    private async ValueTask<AgentContext?> DetectSkillConflictAsync(AgentContext context)
+    private async ValueTask<(AgentContext Context, bool IsTerminal)> ResolveSkillConflictAsync(
+        AgentContext context)
     {
         if (string.IsNullOrWhiteSpace(context.SystemPrompt))
         {
-            return null;
+            return (context, false);
         }
 
         string verdict = await this.gateService.DetectConflictAsync(context.SystemPrompt);
@@ -247,17 +258,74 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
 
         if (conflict is null)
         {
-            return null;
+            return (context, false);
         }
 
-        return context with
+        string key = ConflictKey(conflict);
+        string? preferred = FindPreference(context.Observations, key);
+
+        if (preferred is not null)
+        {
+            AgentContext resolvedContext = context with
+            {
+                Observations =
+                [
+                    .. context.Observations,
+                    $"The user resolved a skill conflict in favor of '{preferred}'; "
+                        + "follow it and ignore the conflicting instruction."
+                ]
+            };
+
+            return (resolvedContext, false);
+        }
+
+        SkillDirective? chosen = MatchChoice(context.Prompt, conflict);
+
+        if (chosen is not null)
+        {
+            AgentContext learnedContext = context with
+            {
+                Intent = RespondIntent,
+                DirectionType = ReturnResponseDirection,
+                Payload = $"Understood — I'll follow '{chosen.Skill}' for that from now on.",
+                Remember = $"{PreferencePrefix}{key}::{chosen.Skill}",
+                RawReply = verdict
+            };
+
+            return (learnedContext, true);
+        }
+
+        AgentContext questionContext = context with
         {
             Intent = AwaitInputDirection,
             DirectionType = AwaitInputDirection,
             Payload = BuildClarificationQuestion(conflict),
             RawReply = verdict
         };
+
+        return (questionContext, true);
     }
+
+    private static string ConflictKey(SkillConflict conflict) =>
+        string.Join(
+            "|",
+            conflict.Options
+                .Select(option => option.Skill.Trim().ToLowerInvariant())
+                .OrderBy(label => label));
+
+    private static string? FindPreference(IReadOnlyList<string> observations, string key)
+    {
+        string prefix = $"{PreferencePrefix}{key}::";
+
+        string? record = observations.LastOrDefault(observation =>
+            observation.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+
+        return record?[prefix.Length..];
+    }
+
+    private static SkillDirective? MatchChoice(string prompt, SkillConflict conflict) =>
+        conflict.Options.FirstOrDefault(option =>
+            prompt.Contains(option.Skill, StringComparison.OrdinalIgnoreCase));
 
     private static SkillConflict? ParseConflict(string verdict)
     {

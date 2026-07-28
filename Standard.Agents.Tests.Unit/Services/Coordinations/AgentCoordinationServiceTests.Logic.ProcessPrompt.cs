@@ -195,6 +195,35 @@ Times.Exactly(7));
     }
 
     [Fact]
+    public async Task ShouldRememberPreferenceOnProcessPromptWhenDecisionSetsRememberAsync()
+    {
+        // given
+        string randomPrompt = CreateRandomString();
+        string preference = CreateRandomString();
+
+        this.dataOrchestrationServiceMock.Setup(service =>
+            service.RecallAsync(It.IsAny<AgentContext>()))
+                .ReturnsAsync((AgentContext context) => context);
+
+        this.decisionOrchestrationServiceMock.Setup(service =>
+            service.ThinkAsync(It.IsAny<AgentContext>()))
+                .ReturnsAsync((AgentContext context) => context with { Remember = preference });
+
+        this.directionOrchestrationServiceMock.Setup(service =>
+            service.ActAsync(It.IsAny<AgentContext>()))
+                .ReturnsAsync((AgentContext context) =>
+                    context with { Result = "done", Status = AgentStatus.Responded });
+
+        // when
+        await this.agentCoordinationService.ProcessPromptAsync(randomPrompt);
+
+        // then
+        this.dataOrchestrationServiceMock.Verify(service =>
+            service.RememberAsync(preference),
+                Times.Once);
+    }
+
+    [Fact]
     public async Task ShouldRecallEveryTurnOnProcessPromptAsync()
     {
         // given

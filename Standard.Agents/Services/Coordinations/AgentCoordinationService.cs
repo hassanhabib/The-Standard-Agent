@@ -84,6 +84,11 @@ public partial class AgentCoordinationService : IAgentCoordinationService
             };
         }
 
+        if (string.IsNullOrEmpty(context.Remember) is false)
+        {
+            await this.dataOrchestrationService.RememberAsync(context.Remember);
+        }
+
         return context.Result;
     });
 
@@ -156,6 +161,11 @@ public partial class AgentCoordinationService : IAgentCoordinationService
             yield return new AgentStreamEvent(
                 AgentStreamEventType.Response,
                 RetriesExhaustedMessage);
+        }
+
+        if (string.IsNullOrEmpty(context.Remember) is false)
+        {
+            await this.dataOrchestrationService.RememberAsync(context.Remember);
         }
     }
 
