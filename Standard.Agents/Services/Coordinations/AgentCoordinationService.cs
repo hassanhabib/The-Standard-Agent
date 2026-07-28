@@ -126,6 +126,14 @@ public partial class AgentCoordinationService : IAgentCoordinationService
                     $"{context.DirectionType}: {context.Result}");
             }
 
+            if (context.Status is AgentStatus.Responded or AgentStatus.Refused
+                && string.IsNullOrEmpty(context.Result) is false)
+            {
+                yield return new AgentStreamEvent(
+                    AgentStreamEventType.Response,
+                    context.Result);
+            }
+
             await LogTurnAsync(turn, context);
 
             if (context.Status is not AgentStatus.Working)
