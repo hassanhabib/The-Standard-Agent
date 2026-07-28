@@ -20,6 +20,14 @@
     <!-- The Standard's release format is v1.2.3.4 — model . service/routine . fix/config
          . automated build. Deliberately NOT semver; the segments say what KIND of change
          happened, so a model change can never hide in the service segment.
+         0.14.0.0: skills that contradict each other no longer resolve silently. The Gate detects
+         a direct contradiction across the active skill instructions (DetectConflictAsync, model-
+         driven) and, instead of picking one, the agent asks the user which to follow
+         (AgentStatus.AwaitingInput) — then learns the answer as a durable memory preference, so
+         future identical conflicts auto-resolve without asking. The new surface is internal (a
+         Remember field on AgentContext carries the learned choice out to the coordinator, which
+         persists it through a Data RememberAsync write path); the client contract is unchanged,
+         so this is a service/routine change: segment 2 advances, 3/4 reset.
          0.13.0.0: the streaming contract now matches the batch one. A prompt's answer reaches
          the caller's Response channel only once the Judge has settled it — the brain's draft
          streams as Thinking and a rejected draft never leaks into Response — so filtering a
@@ -57,7 +65,7 @@
          3/4 reset. Still tracks SPEC.md v0.1 (draft): segment 1 goes to 1 when the spec settles.
          (0.8.0.0: memory and knowledge came alive — knowledge retrieval in Recall + a built-in
          'remember' tool.) -->
-    <Version>0.13.0.0</Version>
+    <Version>0.14.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>
