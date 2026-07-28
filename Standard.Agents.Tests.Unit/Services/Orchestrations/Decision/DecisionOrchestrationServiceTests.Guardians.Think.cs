@@ -100,7 +100,7 @@ public partial class DecisionOrchestrationServiceTests
             await this.decisionOrchestrationService.ThinkAsync(inputContext);
 
         // then
-        actualContext.Status.Should().Be(AgentStatus.Working);
+        actualContext.Status.Should().Be(AgentStatus.Revising);
         actualContext.DirectionType.Should().NotBe("ReturnResponse");
     }
 
