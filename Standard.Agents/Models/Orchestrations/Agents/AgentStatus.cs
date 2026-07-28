@@ -11,5 +11,6 @@ public enum AgentStatus
     Responded = 1,
     AwaitingInput = 2,
     Refused = 3,
-    Failed = 4
+    Failed = 4,
+    Revising = 5
 }
