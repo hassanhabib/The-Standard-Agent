@@ -44,6 +44,7 @@ public sealed partial class StandardAgent : IAgent
     private string consumptionPath = string.Empty;
     private string logPath = "log.txt";
     private string memoryPath = "memory.txt";
+    private int maxTurns = 7;
     private string knowledgePath = "Knowledge";
     private string knowledgePattern = "*.md";
     private int knowledgeMaxResults = 3;
@@ -297,6 +298,16 @@ public sealed partial class StandardAgent : IAgent
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent LogTo(string path) =>
         Set(() => this.logPath = path);
+
+    /// <summary>
+    /// Caps how many Recall→Think→Act turns a single prompt may take before the agent stops —
+    /// the shared budget across tool calls and Judge revisions. Defaults to 7. A value below 1
+    /// is treated as 1.
+    /// </summary>
+    /// <param name="turns">Maximum turns per prompt.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent MaxTurns(int turns) =>
+        Set(() => this.maxTurns = turns < 1 ? 1 : turns);
 
     /// <summary>
     /// Swaps in a custom skill broker, replacing the default file-backed one. For advanced hosts
@@ -557,7 +568,7 @@ public sealed partial class StandardAgent : IAgent
             new ReturnService(logging),
             logging);
 
-        return new AgentCoordinationService(data, decision, direction, log, logging);
+        return new AgentCoordinationService(data, decision, direction, log, logging, this.maxTurns);
     }
 
     // The catalog a "{{tools}}" marker in the agent's Data expands into. Only tools that

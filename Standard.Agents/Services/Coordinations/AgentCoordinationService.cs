@@ -16,7 +16,7 @@ namespace Standard.Agents.Services.Coordinations;
 
 public partial class AgentCoordinationService : IAgentCoordinationService
 {
-    private const int MaxTurns = 7;
+    private const int DefaultMaxTurns = 7;
 
     private const string RetriesExhaustedMessage =
         "I can't help with that at the moment.";
@@ -26,19 +26,22 @@ public partial class AgentCoordinationService : IAgentCoordinationService
     private readonly IDirectionOrchestrationService directionOrchestrationService;
     private readonly ILogBroker logBroker;
     private readonly ILoggingBroker loggingBroker;
+    private readonly int maxTurns;
 
     public AgentCoordinationService(
         IDataOrchestrationService dataOrchestrationService,
         IDecisionOrchestrationService decisionOrchestrationService,
         IDirectionOrchestrationService directionOrchestrationService,
         ILogBroker logBroker,
-        ILoggingBroker loggingBroker)
+        ILoggingBroker loggingBroker,
+        int maxTurns = DefaultMaxTurns)
     {
         this.dataOrchestrationService = dataOrchestrationService;
         this.decisionOrchestrationService = decisionOrchestrationService;
         this.directionOrchestrationService = directionOrchestrationService;
         this.logBroker = logBroker;
         this.loggingBroker = loggingBroker;
+        this.maxTurns = maxTurns;
     }
 
     public ValueTask<string> ProcessPromptAsync(string prompt) =>
@@ -50,7 +53,7 @@ public partial class AgentCoordinationService : IAgentCoordinationService
 
         AgentContext context = new() { Prompt = prompt };
 
-        for (int turn = 1; turn <= MaxTurns; turn++)
+        for (int turn = 1; turn <= this.maxTurns; turn++)
         {
             context = await this.dataOrchestrationService.RecallAsync(context);
             context = await this.decisionOrchestrationService.ThinkAsync(context);
@@ -94,7 +97,7 @@ public partial class AgentCoordinationService : IAgentCoordinationService
 
         AgentContext context = new() { Prompt = prompt };
 
-        for (int turn = 1; turn <= MaxTurns; turn++)
+        for (int turn = 1; turn <= this.maxTurns; turn++)
         {
             context = await this.dataOrchestrationService.RecallAsync(context);
 
