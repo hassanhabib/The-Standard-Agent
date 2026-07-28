@@ -6,6 +6,7 @@
 using FluentAssertions;
 using Moq;
 using Standard.Agents.Models.Orchestrations.Agents;
+using Standard.Agents.Services.Coordinations;
 using Xunit;
 
 namespace Standard.Agents.Tests.Unit.Services.Coordinations;
@@ -129,6 +130,36 @@ Times.Exactly(7));
         this.decisionOrchestrationServiceMock.Verify(service =>
             service.ThinkAsync(It.IsAny<AgentContext>()),
                 Times.Exactly(7));
+    }
+
+    [Fact]
+    public async Task ShouldCapTurnsAtConfiguredMaximumOnProcessPromptAsync()
+    {
+        // given
+        string randomPrompt = CreateRandomString();
+        int configuredMaxTurns = 3;
+
+        var boundedCoordinationService = new AgentCoordinationService(
+            dataOrchestrationService: this.dataOrchestrationServiceMock.Object,
+            decisionOrchestrationService: this.decisionOrchestrationServiceMock.Object,
+            directionOrchestrationService: this.directionOrchestrationServiceMock.Object,
+            logBroker: this.logBrokerMock.Object,
+            loggingBroker: this.loggingBrokerMock.Object,
+            maxTurns: configuredMaxTurns);
+
+        SetupOrchestrationsPassThrough();
+        SetupDirectionNeverTerminates("again");
+
+        // when
+        string actualResult =
+            await boundedCoordinationService.ProcessPromptAsync(randomPrompt);
+
+        // then
+        actualResult.Should().Be("again");
+
+        this.dataOrchestrationServiceMock.Verify(service =>
+            service.RecallAsync(It.IsAny<AgentContext>()),
+                Times.Exactly(configuredMaxTurns));
     }
 
     [Fact]
