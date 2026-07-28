@@ -20,6 +20,20 @@
     <!-- The Standard's release format is v1.2.3.4 — model . service/routine . fix/config
          . automated build. Deliberately NOT semver; the segments say what KIND of change
          happened, so a model change can never hide in the service segment.
+         0.13.0.0: the streaming contract now matches the batch one. A prompt's answer reaches
+         the caller's Response channel only once the Judge has settled it — the brain's draft
+         streams as Thinking and a rejected draft never leaks into Response — so filtering a
+         stream to Response equals what ProcessPromptAsync returns. The Recall→Think→Act turn
+         cap, previously a hardcoded 7, is now configurable through .MaxTurns(n) on the client:
+         the shared budget across tool calls and Judge revisions. A new public routine on the
+         client (MaxTurns), the spec's core AgentContext model unchanged, so this is a
+         service/routine change: segment 2 advances, 3/4 reset.
+         0.12.0.0: the guardian review loop refuses gracefully instead of faulting. A Judge
+         rejection is now a re-think signal (AgentStatus.Revising) rather than an empty direction
+         routed into Act, which used to throw; the coordinator retries within the turn budget and,
+         when the answer still cannot pass review, returns "I can't help with that at the moment."
+         A behavioral fix on the existing loop, the public contract unchanged, so this is a
+         service/routine change: segment 2 advances, 3/4 reset.
          0.11.0.0: configurable guardian conscience. .Constitution(path) prepends an ethical
          charter to BOTH guardian rubrics (Gate and Judge), above the built-in policy; and
          .Consumption(path) swaps a domain policy in for that built-in one. The framework-owned
@@ -43,7 +57,7 @@
          3/4 reset. Still tracks SPEC.md v0.1 (draft): segment 1 goes to 1 when the spec settles.
          (0.8.0.0: memory and knowledge came alive — knowledge retrieval in Recall + a built-in
          'remember' tool.) -->
-    <Version>0.12.0.0</Version>
+    <Version>0.13.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>
