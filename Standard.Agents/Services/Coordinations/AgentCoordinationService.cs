@@ -129,7 +129,9 @@ public partial class AgentCoordinationService : IAgentCoordinationService
                     $"{context.DirectionType}: {context.Result}");
             }
 
-            if (context.Status is AgentStatus.Responded or AgentStatus.Refused
+            if (context.Status is AgentStatus.Responded
+                or AgentStatus.Refused
+                or AgentStatus.AwaitingInput
                 && string.IsNullOrEmpty(context.Result) is false)
             {
                 yield return new AgentStreamEvent(

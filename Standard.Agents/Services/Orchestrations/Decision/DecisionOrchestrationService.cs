@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.Json;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models.Clients.Agents;
+using Standard.Agents.Models.Foundations.Gates;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Services.Foundations.Brains;
 using Standard.Agents.Services.Foundations.Gates;
@@ -24,6 +25,10 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
     private const string RefuseDirection = "Refuse";
     private const string ReturnResponseDirection = "ReturnResponse";
     private const string RespondIntent = "Respond";
+    private const string AwaitInputDirection = "AwaitInput";
+    private const string ConflictPrefix = "CONFLICT:";
+    private const string ConflictOptionSeparator = "||";
+    private const string ConflictLabelSeparator = "|";
     private const string RefusalMessage = "I'm not able to help with that.";
 
     private const double MinimumAcceptableScore = 0.3;
@@ -62,6 +67,13 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
                 Payload = RefusalMessage,
                 RawReply = verdict
             };
+        }
+
+        AgentContext? clarification = await DetectSkillConflictAsync(context);
+
+        if (clarification is not null)
+        {
+            return clarification;
         }
 
         string reply =
@@ -133,6 +145,18 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
 
             yield return new AgentStreamEvent(
                 AgentStreamEventType.Status, "gate refused the request");
+
+            yield break;
+        }
+
+        AgentContext? clarification = await DetectSkillConflictAsync(context);
+
+        if (clarification is not null)
+        {
+            setResult(clarification);
+
+            yield return new AgentStreamEvent(
+                AgentStreamEventType.Status, "skills conflict; asking for clarification");
 
             yield break;
         }
@@ -210,6 +234,66 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
         segment.Type is AgentStreamEventType.Response
             ? segment with { Type = AgentStreamEventType.Thinking }
             : segment;
+
+    private async ValueTask<AgentContext?> DetectSkillConflictAsync(AgentContext context)
+    {
+        if (string.IsNullOrWhiteSpace(context.SystemPrompt))
+        {
+            return null;
+        }
+
+        string verdict = await this.gateService.DetectConflictAsync(context.SystemPrompt);
+        SkillConflict? conflict = ParseConflict(verdict);
+
+        if (conflict is null)
+        {
+            return null;
+        }
+
+        return context with
+        {
+            Intent = AwaitInputDirection,
+            DirectionType = AwaitInputDirection,
+            Payload = BuildClarificationQuestion(conflict),
+            RawReply = verdict
+        };
+    }
+
+    private static SkillConflict? ParseConflict(string verdict)
+    {
+        string trimmed = (verdict ?? string.Empty).Trim();
+
+        if (trimmed.StartsWith(ConflictPrefix, StringComparison.OrdinalIgnoreCase) is false)
+        {
+            return null;
+        }
+
+        List<SkillDirective> options = trimmed[ConflictPrefix.Length..]
+            .Split(
+                ConflictOptionSeparator,
+                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(ToDirective)
+            .ToList();
+
+        return options.Count >= 2 ? new SkillConflict(options) : null;
+    }
+
+    private static SkillDirective ToDirective(string option)
+    {
+        string[] parts = option.Split(
+            ConflictLabelSeparator, count: 2, StringSplitOptions.TrimEntries);
+
+        return parts.Length == 2
+            ? new SkillDirective(parts[0], parts[1])
+            : new SkillDirective(option, option);
+    }
+
+    private static string BuildClarificationQuestion(SkillConflict conflict)
+    {
+        string choices = string.Join(" or ", conflict.Options.Select(option => option.Skill));
+
+        return $"Your skills give conflicting instructions. Should I follow: {choices}?";
+    }
 
     private static bool IsRefusal(string verdict) =>
 verdict.TrimStart().StartsWith(RefuseVerdict, StringComparison.OrdinalIgnoreCase);
