@@ -8,4 +8,6 @@ namespace Standard.Agents.Services.Foundations.Gates;
 public interface IGateService
 {
     ValueTask<string> ScreenAsync(string input);
+
+    ValueTask<string> DetectConflictAsync(string instructions);
 }

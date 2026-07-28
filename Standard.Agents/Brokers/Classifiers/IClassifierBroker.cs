@@ -8,4 +8,6 @@ namespace Standard.Agents.Brokers.Classifiers;
 public interface IClassifierBroker
 {
     ValueTask<string> ClassifyAsync(string input);
+
+    ValueTask<string> AssessAsync(string systemPrompt, string input);
 }
