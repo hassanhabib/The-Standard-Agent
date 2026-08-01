@@ -8,7 +8,6 @@ using Moq;
 using Standard.Agents.Brokers.Classifiers;
 using Standard.Agents.Brokers.Generators;
 using Standard.Agents.Brokers.Knowledges;
-using Standard.Agents.Brokers.Logs;
 using Standard.Agents.Brokers.Mcps;
 using Standard.Agents.Brokers.Memorys;
 using Standard.Agents.Brokers.Skills;
@@ -46,7 +45,6 @@ public class StandardAgentTests
             .ReturnsAsync("1.0");
 
         var mcpBroker = new Mock<IMcpBroker>();
-        var logBroker = new Mock<ILogBroker>();
 
         return new StandardAgent()
             .UseSkills(skillBroker.Object)
@@ -56,7 +54,7 @@ public class StandardAgentTests
             .UseGate(classifierBroker.Object)
             .UseJudge(verifierBroker.Object)
             .UseMcp(mcpBroker.Object)
-            .UseLog(logBroker.Object);
+            .UseLogging(new Mock<Standard.Agents.Brokers.Loggings.ILoggingBroker>().Object);
     }
 
     [Fact]
@@ -85,9 +83,7 @@ public class StandardAgentTests
         var agent = new StandardAgent(apiUrl: "invalid-url", apiKey: "key", model: "model")
             .UseSkills(skillBroker.Object)
             .UseMemory(memory.Object)
-            .UseKnowledge(EmptyKnowledgeBroker())
-            .UseLog(new Mock<ILogBroker>().Object);
-
+            .UseKnowledge(EmptyKnowledgeBroker());
         // when
         Exception actualException = await Record.ExceptionAsync(() =>
             agent.ProcessPromptAsync(prompt: "what is the answer?").AsTask());
@@ -192,7 +188,6 @@ public class StandardAgentTests
         var knowledgeBroker = new Mock<IKnowledgeBroker>();
         knowledgeBroker.Setup(broker => broker.SelectKnowledgeAsync(It.IsAny<string>())).ReturnsAsync([]);
 
-        var logBroker = new Mock<ILogBroker>();
 
         var agent = new StandardAgent()
     .UseSkills(skillBroker.Object)
@@ -202,7 +197,7 @@ public class StandardAgentTests
     .UseMemory(memoryBroker.Object)
     .UseKnowledge(knowledgeBroker.Object)
     .UseMcp(new Mock<IMcpBroker>().Object)
-    .UseLog(logBroker.Object);
+    .UseLogging(new Mock<Standard.Agents.Brokers.Loggings.ILoggingBroker>().Object);
 
         // when
         string actualResult = await agent.ProcessPromptAsync(prompt: "prompt");
@@ -228,9 +223,7 @@ public class StandardAgentTests
         var agent = new StandardAgent()
             .UseSkills(skillBroker.Object)
             .UseMemory(memory.Object)
-            .UseGenerator(generatorBroker.Object)
-            .UseLog(new Mock<ILogBroker>().Object);
-
+            .UseGenerator(generatorBroker.Object);
         // when
         string actualResult = await agent.ProcessPromptAsync(prompt: "Hi there!");
 
@@ -266,9 +259,7 @@ public class StandardAgentTests
     .UseGate(gate.Object)
     .UseJudge(judge.Object)
     .UseMemory(memory.Object)
-    .UseKnowledge(EmptyKnowledgeBroker())
-    .UseLog(new Mock<ILogBroker>().Object);
-
+    .UseKnowledge(EmptyKnowledgeBroker());
         // when
         string actualResult = await agent.ProcessPromptAsync(prompt: "prompt");
 
@@ -310,9 +301,7 @@ public class StandardAgentTests
             .UseGate(gate.Object)
             .UseJudge(judge.Object)
             .UseMemory(memory.Object)
-            .UseKnowledge(EmptyKnowledgeBroker())
-            .UseLog(new Mock<ILogBroker>().Object);
-
+            .UseKnowledge(EmptyKnowledgeBroker());
         // when
         string actualResult = await agent.ProcessPromptAsync(prompt: "weather today?");
 
@@ -338,9 +327,7 @@ public class StandardAgentTests
         var agent = new StandardAgent()
             .UseSkills(skillBroker.Object)
             .UseMemory(memory.Object)
-            .UseGenerator(generatorBroker.Object)
-            .UseLog(new Mock<ILogBroker>().Object);
-
+            .UseGenerator(generatorBroker.Object);
         // when
         List<AgentStreamEvent> actualEvents = [];
 
@@ -372,9 +359,7 @@ public class StandardAgentTests
         var agent = new StandardAgent()
             .UseSkills(skillBroker.Object)
             .UseMemory(memory.Object)
-            .LocalBrain(async (systemPrompt, userPrompt) => expectedAnswer)
-            .UseLog(new Mock<ILogBroker>().Object);
-
+            .LocalBrain(async (systemPrompt, userPrompt) => expectedAnswer);
         // when
         string actualResult = await agent.ProcessPromptAsync(prompt: "compute something");
 
@@ -412,7 +397,6 @@ public class StandardAgentTests
             .UseSkills(skillBroker.Object)
             .UseMemory(memory.Object)
             .UseGenerator(generatorBroker.Object)
-            .UseLog(new Mock<ILogBroker>().Object)
             .Tool(describedTool.Object)
             .Tool(hiddenTool.Object);
 
@@ -440,9 +424,7 @@ public class StandardAgentTests
             .UseMemory(memory.Object)
             .UseKnowledge(EmptyKnowledgeBroker())
             .LocalBrain(async (systemPrompt, userPrompt) => "FINAL: hello")
-            .LocalGate(async (gateRubric, prompt) => "refuse: not allowed")
-            .UseLog(new Mock<ILogBroker>().Object);
-
+            .LocalGate(async (gateRubric, prompt) => "refuse: not allowed");
         // when
         string actualResult = await agent.ProcessPromptAsync(prompt: "do something bad");
 
@@ -472,9 +454,7 @@ public class StandardAgentTests
                 judgeInvoked = true;
 
                 return "1.0";
-            })
-            .UseLog(new Mock<ILogBroker>().Object);
-
+            });
         // when
         string actualResult = await agent.ProcessPromptAsync(prompt: "what is the answer?");
 
@@ -520,9 +500,7 @@ public class StandardAgentTests
                 capturedJudgeRubric = judgeRubric;
 
                 return "1.0";
-            })
-            .UseLog(new Mock<ILogBroker>().Object);
-
+            });
         // when
         await agent.ProcessPromptAsync(prompt: "what is the answer?");
 
@@ -570,9 +548,7 @@ public class StandardAgentTests
                 capturedJudgeRubric = judgeRubric;
 
                 return "1.0";
-            })
-            .UseLog(new Mock<ILogBroker>().Object);
-
+            });
         // when
         await agent.ProcessPromptAsync(prompt: "what is the answer?");
 

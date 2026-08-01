@@ -113,7 +113,6 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         .UseMemory(new StubMemoryBroker())
         .UseKnowledge(new StubKnowledgeBroker())
         .UseMcp(new NotConfiguredMcpBroker())
-        .UseLog(new NullLogBroker())
         .Tools(stubTools.Values)
         .LocalGate((rubric, prompt) =>
         {

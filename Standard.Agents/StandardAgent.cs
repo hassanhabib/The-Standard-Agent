@@ -10,7 +10,6 @@ using Standard.Agents.Brokers.Files;
 using Standard.Agents.Brokers.Generators;
 using Standard.Agents.Brokers.Knowledges;
 using Standard.Agents.Brokers.Loggings;
-using Standard.Agents.Brokers.Logs;
 using Standard.Agents.Brokers.Mcps;
 using Standard.Agents.Brokers.Memorys;
 using Standard.Agents.Brokers.Skills;
@@ -43,7 +42,7 @@ public sealed partial class StandardAgent : IAgent
     private string skillsPath = "Skills";
     private string constitutionPath = string.Empty;
     private string consumptionPath = string.Empty;
-    private string logPath = "log.txt";
+    private string logPath = string.Empty;
     private TraceVerbosity traceVerbosity = TraceVerbosity.Full;
     private string memoryPath = "memory.txt";
     private int maxTurns = 7;
@@ -68,7 +67,6 @@ public sealed partial class StandardAgent : IAgent
     private Func<string, string, ValueTask<string>>? localGateScreen;
     private Func<string, string, ValueTask<string>>? localJudgeEvaluate;
     private IMcpBroker? mcpBroker;
-    private ILogBroker? logBroker;
     private ILoggingBroker? loggingBroker;
 
     private IAgentCoordinationService? agent;
@@ -383,14 +381,6 @@ public sealed partial class StandardAgent : IAgent
         Set(() => this.mcpBroker = broker);
 
     /// <summary>
-    /// Swaps in a custom log broker, replacing the file-backed one set up by <see cref="LogTo"/>.
-    /// </summary>
-    /// <param name="broker">The log broker to use.</param>
-    /// <returns>The same agent, so calls can be chained.</returns>
-    public StandardAgent UseLog(ILogBroker broker) =>
-        Set(() => this.logBroker = broker);
-
-    /// <summary>
     /// Swaps in a custom logging broker for the agent's internal diagnostic logging.
     /// </summary>
     /// <param name="broker">The logging broker to use.</param>
@@ -486,7 +476,9 @@ public sealed partial class StandardAgent : IAgent
 
         ILoggingBroker logging =
             this.loggingBroker ?? new LoggingBroker(
-                new NullLogger<LoggingBroker>(), this.traceVerbosity, this.logPath);
+                new NullLogger<LoggingBroker>(),
+                this.traceVerbosity,
+                string.IsNullOrEmpty(this.logPath) ? null : this.logPath);
 
         IGeneratorBroker generator =
             this.generatorBroker ?? new GeneratorBroker(
@@ -546,7 +538,6 @@ public sealed partial class StandardAgent : IAgent
                 : new McpBroker(
                     this.mcpEndpointUrl, this.mcpRelativeUrl, this.mcpTimeoutSeconds));
 
-        ILogBroker log = this.logBroker ?? new LogBroker(this.logPath);
 
         ISkillService skillService = this.skillBroker is null
             ? new SkillService(file, Path.Combine(AppContext.BaseDirectory, this.skillsPath), logging)
@@ -580,7 +571,7 @@ public sealed partial class StandardAgent : IAgent
             new ReturnService(logging),
             logging);
 
-        return new AgentCoordinationService(data, decision, direction, log, logging, this.maxTurns);
+        return new AgentCoordinationService(data, decision, direction, logging, this.maxTurns);
     }
 
     // The catalog a "{{tools}}" marker in the agent's Data expands into. Only tools that

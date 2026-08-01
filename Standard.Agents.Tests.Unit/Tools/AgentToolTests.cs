@@ -100,7 +100,7 @@ public class AgentToolTests
             .UseGate(gate.Object)
             .UseJudge(judge.Object)
             .UseMcp(new Mock<Brokers.Mcps.IMcpBroker>().Object)
-            .UseLog(new Mock<Brokers.Logs.ILogBroker>().Object)
+            .UseLogging(new Mock<Standard.Agents.Brokers.Loggings.ILoggingBroker>().Object)
             .Tool(researcher);
 
         // when

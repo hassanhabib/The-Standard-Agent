@@ -143,7 +143,6 @@ Times.Exactly(7));
             dataOrchestrationService: this.dataOrchestrationServiceMock.Object,
             decisionOrchestrationService: this.decisionOrchestrationServiceMock.Object,
             directionOrchestrationService: this.directionOrchestrationServiceMock.Object,
-            logBroker: this.logBrokerMock.Object,
             loggingBroker: this.loggingBrokerMock.Object,
             maxTurns: configuredMaxTurns);
 
@@ -273,8 +272,8 @@ Times.Exactly(7));
         await this.agentCoordinationService.ProcessPromptAsync(randomPrompt);
 
         // then
-        this.logBrokerMock.Verify(broker =>
-            broker.ResetAsync(),
+        this.loggingBrokerMock.Verify(broker =>
+            broker.LogResetAsync(),
                 Times.Once);
     }
 
@@ -290,8 +289,8 @@ Times.Exactly(7));
         await this.agentCoordinationService.ProcessPromptAsync(randomPrompt);
 
         // then
-        this.logBrokerMock.Verify(broker =>
-            broker.WriteAsync(It.IsAny<string>()),
+        this.loggingBrokerMock.Verify(broker =>
+            broker.LogTurnAsync(It.IsAny<int>()),
                 Times.AtLeastOnce);
     }
 

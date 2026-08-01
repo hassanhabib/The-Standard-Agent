@@ -6,7 +6,6 @@
 using System.Linq.Expressions;
 using Moq;
 using Standard.Agents.Brokers.Loggings;
-using Standard.Agents.Brokers.Logs;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Services.Coordinations;
 using Standard.Agents.Services.Orchestrations.Data;
@@ -23,7 +22,6 @@ public partial class AgentCoordinationServiceTests
     private readonly Mock<IDataOrchestrationService> dataOrchestrationServiceMock;
     private readonly Mock<IDecisionOrchestrationService> decisionOrchestrationServiceMock;
     private readonly Mock<IDirectionOrchestrationService> directionOrchestrationServiceMock;
-    private readonly Mock<ILogBroker> logBrokerMock;
     private readonly Mock<ILoggingBroker> loggingBrokerMock;
     private readonly IAgentCoordinationService agentCoordinationService;
 
@@ -32,14 +30,12 @@ public partial class AgentCoordinationServiceTests
         this.dataOrchestrationServiceMock = new Mock<IDataOrchestrationService>();
         this.decisionOrchestrationServiceMock = new Mock<IDecisionOrchestrationService>();
         this.directionOrchestrationServiceMock = new Mock<IDirectionOrchestrationService>();
-        this.logBrokerMock = new Mock<ILogBroker>();
         this.loggingBrokerMock = new Mock<ILoggingBroker>();
 
         this.agentCoordinationService = new AgentCoordinationService(
             dataOrchestrationService: this.dataOrchestrationServiceMock.Object,
             decisionOrchestrationService: this.decisionOrchestrationServiceMock.Object,
             directionOrchestrationService: this.directionOrchestrationServiceMock.Object,
-            logBroker: this.logBrokerMock.Object,
             loggingBroker: this.loggingBrokerMock.Object);
     }
 
