@@ -17,6 +17,7 @@ using Standard.Agents.Brokers.Skills;
 using Standard.Agents.Brokers.Tools;
 using Standard.Agents.Brokers.Verifiers;
 using Standard.Agents.Models.Clients.Agents;
+using Standard.Agents.Models.Loggings;
 using Standard.Agents.Prompts;
 using Standard.Agents.Services.Coordinations;
 using Standard.Agents.Services.Foundations.Brains;
@@ -43,6 +44,7 @@ public sealed partial class StandardAgent : IAgent
     private string constitutionPath = string.Empty;
     private string consumptionPath = string.Empty;
     private string logPath = "log.txt";
+    private TraceVerbosity traceVerbosity = TraceVerbosity.Full;
     private string memoryPath = "memory.txt";
     private int maxTurns = 7;
     private string knowledgePath = "Knowledge";
@@ -291,13 +293,22 @@ public sealed partial class StandardAgent : IAgent
         Set(() => this.tools.AddRange(tools));
 
     /// <summary>
-    /// Writes a turn-by-turn trace of the agent's run to a log file — useful for seeing which tools
-    /// were called and what the brain decided.
+    /// Writes a step-by-step trace of the agent's run to a log file, organised as
+    /// <c>Turn → Step → Process</c> (the Coordination → Orchestration → Foundation tiers).
     /// </summary>
     /// <param name="path">Path to the log file (created if it does not exist).</param>
+    /// <param name="verbosity">
+    /// How deep the trace goes: <see cref="TraceVerbosity.Summary"/> (Turn outcomes only),
+    /// <see cref="TraceVerbosity.Natures"/> (the three natures per Turn), or
+    /// <see cref="TraceVerbosity.Full"/> (every Process, the default).
+    /// </param>
     /// <returns>The same agent, so calls can be chained.</returns>
-    public StandardAgent LogTo(string path) =>
-        Set(() => this.logPath = path);
+    public StandardAgent LogTo(string path, TraceVerbosity verbosity = TraceVerbosity.Full) =>
+    Set(() =>
+    {
+        this.logPath = path;
+        this.traceVerbosity = verbosity;
+    });
 
     /// <summary>
     /// Caps how many Recall→Think→Act turns a single prompt may take before the agent stops —
@@ -474,7 +485,8 @@ public sealed partial class StandardAgent : IAgent
         IFileBroker file = new FileBroker();
 
         ILoggingBroker logging =
-            this.loggingBroker ?? new LoggingBroker(new NullLogger<LoggingBroker>());
+            this.loggingBroker ?? new LoggingBroker(
+                new NullLogger<LoggingBroker>(), this.traceVerbosity, this.logPath);
 
         IGeneratorBroker generator =
             this.generatorBroker ?? new GeneratorBroker(
