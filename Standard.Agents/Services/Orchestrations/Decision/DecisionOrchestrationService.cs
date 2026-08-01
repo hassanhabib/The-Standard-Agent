@@ -139,6 +139,8 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
 
         if (IsRefusal(verdict))
         {
+            await this.loggingBroker.LogProcessAsync("Decision", "Gate → REFUSE");
+
             setResult(context with
             {
                 Intent = RefuseDirection,
@@ -152,6 +154,8 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
 
             yield break;
         }
+
+        await this.loggingBroker.LogProcessAsync("Decision", "Gate → PASS");
 
         (AgentContext resolvedContext, bool isTerminal) =
             await ResolveSkillConflictAsync(context);
@@ -196,6 +200,12 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
 
         AgentContext decided = Interpret(context, reply.ToString().Trim());
 
+        await this.loggingBroker.LogProcessAsync(
+            "Decision", $"Brain → replied ({reply.Length} chars)", detail: true);
+
+        await this.loggingBroker.LogProcessAsync(
+            "Decision", $"Interpreted → {decided.DirectionType}");
+
         bool isFinalAnswer = decided.DirectionType.Equals(
             ReturnResponseDirection, StringComparison.OrdinalIgnoreCase);
 
@@ -217,6 +227,10 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
         }
 
         double score = await this.judgeService.EvaluateAsync(candidate: decided.Payload);
+
+        await this.loggingBroker.LogProcessAsync(
+            "Decision",
+            $"Judge → scored {score:F2} → {(score < MinimumAcceptableScore ? "REJECT" : "ACCEPT")}");
 
         if (score < MinimumAcceptableScore)
         {
