@@ -4,15 +4,23 @@
 // ---------------------------------------------------------------
 
 using Microsoft.Extensions.Logging;
+using Standard.Agents.Models.Loggings;
 
 namespace Standard.Agents.Brokers.Loggings;
 
 public sealed class LoggingBroker : ILoggingBroker
 {
     private readonly ILogger<LoggingBroker> logger;
+    private readonly TraceVerbosity verbosity;
+    private int processIndex;
 
-    public LoggingBroker(ILogger<LoggingBroker> logger) =>
+    public LoggingBroker(
+        ILogger<LoggingBroker> logger,
+        TraceVerbosity verbosity = TraceVerbosity.Full)
+    {
         this.logger = logger;
+        this.verbosity = verbosity;
+    }
 
     public async ValueTask LogInformationAsync(string message) =>
         this.logger.LogInformation(message);
@@ -31,4 +39,27 @@ public sealed class LoggingBroker : ILoggingBroker
 
     public async ValueTask LogCriticalAsync(Exception exception) =>
         this.logger.LogCritical(exception, exception.Message);
+
+    public async ValueTask LogTurnAsync(int turn) =>
+        this.logger.LogInformation($"{Environment.NewLine}Turn {turn}");
+
+    public async ValueTask LogStepAsync(AgentStep step)
+    {
+        this.processIndex = 0;
+
+        if (TraceVerbosity.Natures <= this.verbosity)
+        {
+            this.logger.LogInformation($"  Step {(int)step}: {step}");
+        }
+    }
+
+    public async ValueTask LogProcessAsync(string actor, string message, bool detail = false)
+    {
+        TraceVerbosity level = detail ? TraceVerbosity.Full : TraceVerbosity.Natures;
+
+        if (level <= this.verbosity)
+        {
+            this.logger.LogInformation($"    Process {this.processIndex++}: {actor}: {message}");
+        }
+    }
 }
