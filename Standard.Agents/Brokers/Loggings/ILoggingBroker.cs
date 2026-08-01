@@ -3,6 +3,8 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using Standard.Agents.Models.Loggings;
+
 namespace Standard.Agents.Brokers.Loggings;
 
 public interface ILoggingBroker
@@ -18,4 +20,10 @@ public interface ILoggingBroker
     ValueTask LogErrorAsync(Exception exception);
 
     ValueTask LogCriticalAsync(Exception exception);
+
+    ValueTask LogTurnAsync(int turn);
+
+    ValueTask LogStepAsync(AgentStep step);
+
+    ValueTask LogProcessAsync(string actor, string message, bool detail = false);
 }
