@@ -21,6 +21,8 @@ public interface ILoggingBroker
 
     ValueTask LogCriticalAsync(Exception exception);
 
+    ValueTask LogResetAsync();
+
     ValueTask LogTurnAsync(int turn);
 
     ValueTask LogStepAsync(AgentStep step);
