@@ -5,8 +5,8 @@
 
 using System.Runtime.CompilerServices;
 using Standard.Agents.Brokers.Loggings;
-using Standard.Agents.Brokers.Logs;
 using Standard.Agents.Models.Clients.Agents;
+using Standard.Agents.Models.Loggings;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Services.Orchestrations.Data;
 using Standard.Agents.Services.Orchestrations.Decision;
@@ -24,7 +24,6 @@ public partial class AgentCoordinationService : IAgentCoordinationService
     private readonly IDataOrchestrationService dataOrchestrationService;
     private readonly IDecisionOrchestrationService decisionOrchestrationService;
     private readonly IDirectionOrchestrationService directionOrchestrationService;
-    private readonly ILogBroker logBroker;
     private readonly ILoggingBroker loggingBroker;
     private readonly int maxTurns;
 
@@ -32,14 +31,12 @@ public partial class AgentCoordinationService : IAgentCoordinationService
         IDataOrchestrationService dataOrchestrationService,
         IDecisionOrchestrationService decisionOrchestrationService,
         IDirectionOrchestrationService directionOrchestrationService,
-        ILogBroker logBroker,
         ILoggingBroker loggingBroker,
         int maxTurns = DefaultMaxTurns)
     {
         this.dataOrchestrationService = dataOrchestrationService;
         this.decisionOrchestrationService = decisionOrchestrationService;
         this.directionOrchestrationService = directionOrchestrationService;
-        this.logBroker = logBroker;
         this.loggingBroker = loggingBroker;
         this.maxTurns = maxTurns;
     }
@@ -49,25 +46,27 @@ public partial class AgentCoordinationService : IAgentCoordinationService
     {
         ValidatePrompt(prompt);
 
-        await this.logBroker.ResetAsync();
+        await this.loggingBroker.LogResetAsync();
 
         AgentContext context = new() { Prompt = prompt };
 
-        for (int turn = 1; turn <= this.maxTurns; turn++)
+        for (int turn = 0; turn < this.maxTurns; turn++)
         {
+            await this.loggingBroker.LogTurnAsync(turn);
+
+            await this.loggingBroker.LogStepAsync(AgentStep.Data);
             context = await this.dataOrchestrationService.RecallAsync(context);
+
+            await this.loggingBroker.LogStepAsync(AgentStep.Decision);
             context = await this.decisionOrchestrationService.ThinkAsync(context);
 
             if (context.Status is AgentStatus.Revising)
             {
-                await LogTurnAsync(turn, context);
-
                 continue;
             }
 
+            await this.loggingBroker.LogStepAsync(AgentStep.Direction);
             context = await this.directionOrchestrationService.ActAsync(context);
-
-            await LogTurnAsync(turn, context);
 
             if (context.Status != AgentStatus.Working)
             {
@@ -98,13 +97,18 @@ public partial class AgentCoordinationService : IAgentCoordinationService
     {
         ValidatePrompt(prompt);
 
-        await this.logBroker.ResetAsync();
+        await this.loggingBroker.LogResetAsync();
 
         AgentContext context = new() { Prompt = prompt };
 
-        for (int turn = 1; turn <= this.maxTurns; turn++)
+        for (int turn = 0; turn < this.maxTurns; turn++)
         {
+            await this.loggingBroker.LogTurnAsync(turn);
+
+            await this.loggingBroker.LogStepAsync(AgentStep.Data);
             context = await this.dataOrchestrationService.RecallAsync(context);
+
+            await this.loggingBroker.LogStepAsync(AgentStep.Decision);
 
             IDecisionStream decisionStream =
                 this.decisionOrchestrationService.ThinkStreamAsync(context, cancellationToken);
@@ -119,11 +123,10 @@ public partial class AgentCoordinationService : IAgentCoordinationService
 
             if (context.Status is AgentStatus.Revising)
             {
-                await LogTurnAsync(turn, context);
-
                 continue;
             }
 
+            await this.loggingBroker.LogStepAsync(AgentStep.Direction);
             context = await this.directionOrchestrationService.ActAsync(context);
 
             if (context.Status is AgentStatus.Working
@@ -143,8 +146,6 @@ public partial class AgentCoordinationService : IAgentCoordinationService
                     AgentStreamEventType.Response,
                     context.Result);
             }
-
-            await LogTurnAsync(turn, context);
 
             if (context.Status is not AgentStatus.Working)
             {
@@ -168,9 +169,4 @@ public partial class AgentCoordinationService : IAgentCoordinationService
             await this.dataOrchestrationService.RememberAsync(context.Remember);
         }
     }
-
-    private async ValueTask LogTurnAsync(int turn, AgentContext context) =>
-        await this.logBroker.WriteAsync(
-            $"turn {turn} | intent: {context.Intent} | direction: {context.DirectionType} " +
-            $"| status: {context.Status}");
 }

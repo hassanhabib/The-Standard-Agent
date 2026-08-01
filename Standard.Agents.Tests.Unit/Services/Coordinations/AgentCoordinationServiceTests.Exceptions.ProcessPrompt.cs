@@ -46,7 +46,7 @@ public partial class AgentCoordinationServiceTests
             broker.LogErrorAsync(It.Is(SameExceptionAs(expectedException))),
                 Times.Once);
 
-        this.logBrokerMock.VerifyNoOtherCalls();
+        this.loggingBrokerMock.VerifyNoOtherCalls();
         this.dataOrchestrationServiceMock.VerifyNoOtherCalls();
     }
 
