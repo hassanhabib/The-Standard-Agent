@@ -12,14 +12,17 @@ public sealed class LoggingBroker : ILoggingBroker
 {
     private readonly ILogger<LoggingBroker> logger;
     private readonly TraceVerbosity verbosity;
+    private readonly string? logPath;
     private int processIndex;
 
     public LoggingBroker(
         ILogger<LoggingBroker> logger,
-        TraceVerbosity verbosity = TraceVerbosity.Full)
+        TraceVerbosity verbosity = TraceVerbosity.Full,
+        string? logPath = null)
     {
         this.logger = logger;
         this.verbosity = verbosity;
+        this.logPath = logPath is null ? null : Path.GetFullPath(logPath);
     }
 
     public async ValueTask LogInformationAsync(string message) =>
@@ -40,8 +43,18 @@ public sealed class LoggingBroker : ILoggingBroker
     public async ValueTask LogCriticalAsync(Exception exception) =>
         this.logger.LogCritical(exception, exception.Message);
 
+    public async ValueTask LogResetAsync()
+    {
+        this.processIndex = 0;
+
+        if (this.logPath is not null)
+        {
+            await File.WriteAllTextAsync(this.logPath, string.Empty);
+        }
+    }
+
     public async ValueTask LogTurnAsync(int turn) =>
-        this.logger.LogInformation($"{Environment.NewLine}Turn {turn}");
+        await EmitAsync($"{Environment.NewLine}Turn {turn}");
 
     public async ValueTask LogStepAsync(AgentStep step)
     {
@@ -49,7 +62,7 @@ public sealed class LoggingBroker : ILoggingBroker
 
         if (TraceVerbosity.Natures <= this.verbosity)
         {
-            this.logger.LogInformation($"  Step {(int)step}: {step}");
+            await EmitAsync($"  Step {(int)step}: {step}");
         }
     }
 
@@ -59,7 +72,19 @@ public sealed class LoggingBroker : ILoggingBroker
 
         if (level <= this.verbosity)
         {
-            this.logger.LogInformation($"    Process {this.processIndex++}: {actor}: {message}");
+            await EmitAsync($"    Process {this.processIndex++}: {actor}: {message}");
+        }
+    }
+
+    private async ValueTask EmitAsync(string line)
+    {
+        if (this.logPath is null)
+        {
+            this.logger.LogInformation(line);
+        }
+        else
+        {
+            await File.AppendAllTextAsync(this.logPath, line + Environment.NewLine);
         }
     }
 }
