@@ -46,6 +46,12 @@ public partial class DataOrchestrationService : IDataOrchestrationService
 
         string systemPrompt = skills.Replace(ToolsMarker, this.toolCatalog);
 
+        await this.loggingBroker.LogProcessAsync("Data", $"Received prompt: \"{context.Prompt}\"");
+        await this.loggingBroker.LogProcessAsync("Data", $"Retrieved skills ({skills.Length} chars)", detail: true);
+        await this.loggingBroker.LogProcessAsync("Data", $"Recalled {memories.Count} memories");
+        await this.loggingBroker.LogProcessAsync("Data", $"Retrieved {knowledge.Count} knowledge matches");
+        await this.loggingBroker.LogProcessAsync("Data", $"Assembled system prompt ({systemPrompt.Length} chars)", detail: true);
+
         return context with
         {
             SystemPrompt = systemPrompt,
