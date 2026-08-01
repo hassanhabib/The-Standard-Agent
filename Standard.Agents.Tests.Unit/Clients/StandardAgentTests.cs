@@ -15,6 +15,7 @@ using Standard.Agents.Brokers.Skills;
 using Standard.Agents.Brokers.Verifiers;
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Clients.Agents.Exceptions;
+using Standard.Agents.Models.Loggings;
 using Xunit;
 
 namespace Standard.Agents.Tests.Unit.Clients;
@@ -109,6 +110,20 @@ public class StandardAgentTests
             .Knowledge(path: "Knowledge")
             .Mcp(endpointUrl: "https://mcp/")
             .LogTo(path: "log.txt");
+
+        // then
+        chained.Should().BeSameAs(agent);
+    }
+
+    [Fact]
+    public void ShouldChainLogToWithVerbosity()
+    {
+        // given
+        var agent = new StandardAgent();
+
+        // when
+        StandardAgent chained =
+            agent.LogTo(path: "log.txt", verbosity: TraceVerbosity.Natures);
 
         // then
         chained.Should().BeSameAs(agent);
