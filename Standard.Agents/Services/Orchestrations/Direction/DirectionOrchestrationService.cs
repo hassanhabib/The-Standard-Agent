@@ -43,6 +43,9 @@ public partial class DirectionOrchestrationService : IDirectionOrchestrationServ
         {
             string result = await this.returnService.ReturnAsync(context.Payload);
 
+            await this.loggingBroker.LogProcessAsync(
+                "Direction", $"{context.DirectionType} → returned ({result.Length} chars)");
+
             return context with
             {
                 Result = result,
@@ -55,6 +58,12 @@ public partial class DirectionOrchestrationService : IDirectionOrchestrationServ
         string output = isLocalTool
 ? await this.internalToolService.RunAsync(context.DirectionType, context.Payload)
 : await this.externalToolService.CallAsync(context.DirectionType, context.Payload);
+
+        await this.loggingBroker.LogProcessAsync(
+            "Direction", $"Tool '{context.DirectionType}' ← {context.Payload}", detail: true);
+
+        await this.loggingBroker.LogProcessAsync(
+            "Direction", $"Tool '{context.DirectionType}' → {output}");
 
         return context with
         {
