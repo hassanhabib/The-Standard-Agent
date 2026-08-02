@@ -13,6 +13,7 @@ public sealed record AgentContext
     public IReadOnlyList<string> Observations { get; init; } = [];
 
     public string Intent { get; init; } = "";
+    public string Route { get; init; } = "";
     public string DirectionType { get; init; } = "";
     public string Payload { get; init; } = "";
     public string RawReply { get; init; } = "";
