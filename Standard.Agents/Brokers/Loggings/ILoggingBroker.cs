@@ -25,6 +25,8 @@ public interface ILoggingBroker
 
     ValueTask LogTurnAsync(int turn);
 
+    ValueTask LogOutcomeAsync(string message);
+
     ValueTask LogStepAsync(AgentStep step);
 
     ValueTask LogProcessAsync(string actor, string message, bool detail = false);
