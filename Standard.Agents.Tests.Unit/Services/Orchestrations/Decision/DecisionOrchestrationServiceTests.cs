@@ -6,6 +6,7 @@
 using System.Linq.Expressions;
 using Moq;
 using Standard.Agents.Brokers.Loggings;
+using Standard.Agents.Models.Foundations.Judges;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Services.Foundations.Brains;
 using Standard.Agents.Services.Foundations.Gates;
@@ -57,7 +58,7 @@ public partial class DecisionOrchestrationServiceTests
     private void SetupJudgeApproves() =>
         this.judgeServiceMock.Setup(service =>
             service.EvaluateAsync(It.IsAny<string>()))
-                .ReturnsAsync(1.0);
+                .ReturnsAsync(new Judgement { Score = 1.0 });
 
     private static Expression<Func<Xeption, bool>> SameExceptionAs(Xeption expectedException) =>
         actualException => actualException.SameExceptionAs(expectedException);

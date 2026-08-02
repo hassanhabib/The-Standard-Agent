@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------
 
 using System.Globalization;
+using Standard.Agents.Models.Foundations.Judges;
 using Standard.Agents.Models.Foundations.Judges.Exceptions;
 
 namespace Standard.Agents.Services.Foundations.Judges;
@@ -12,6 +13,8 @@ public partial class JudgeService
 {
     private const double MinimumScore = 0.0;
     private const double MaximumScore = 1.0;
+    private const string ScoreLabel = "SCORE:";
+    private const string ReasonLabel = "REASON:";
 
     private static void ValidateEvaluate(string candidate)
     {
@@ -22,10 +25,19 @@ public partial class JudgeService
         }
     }
 
-    private static double ParseScore(string verdict)
+    private static Judgement ParseJudgement(string verdict)
     {
+        string text = verdict?.Trim() ?? string.Empty;
+
+        string? labeledScore = ExtractLabeled(text, ScoreLabel);
+
+        string scoreText = labeledScore is null
+            ? text
+            : labeledScore.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .FirstOrDefault() ?? labeledScore;
+
         bool isNumeric = double.TryParse(
-            verdict?.Trim(),
+            scoreText,
             NumberStyles.Float,
             CultureInfo.InvariantCulture,
             out double score);
@@ -36,7 +48,24 @@ public partial class JudgeService
                 message: "Invalid judge score. Score must be a number between 0.0 and 1.0.");
         }
 
-        return score;
+        string reason = ExtractLabeled(text, ReasonLabel) ?? string.Empty;
+
+        return new Judgement { Score = score, Reason = reason };
+    }
+
+    private static string? ExtractLabeled(string text, string label)
+    {
+        foreach (string line in text.Split('\n'))
+        {
+            string trimmedLine = line.Trim();
+
+            if (trimmedLine.StartsWith(label, StringComparison.OrdinalIgnoreCase))
+            {
+                return trimmedLine[label.Length..].Trim();
+            }
+        }
+
+        return null;
     }
 
     private static void ValidateScore(double score)

@@ -9,6 +9,7 @@ using System.Text.Json;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Foundations.Gates;
+using Standard.Agents.Models.Foundations.Judges;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Services.Foundations.Brains;
 using Standard.Agents.Services.Foundations.Gates;
@@ -105,10 +106,10 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
             return decided;
         }
 
-        double score =
+        Judgement judgement =
             await this.judgeService.EvaluateAsync(candidate: decided.Payload);
 
-        if (score < MinimumAcceptableScore)
+        if (judgement.Score < MinimumAcceptableScore)
         {
             return context with
             {
@@ -246,13 +247,13 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
             yield break;
         }
 
-        double score = await this.judgeService.EvaluateAsync(candidate: decided.Payload);
+        Judgement judgement = await this.judgeService.EvaluateAsync(candidate: decided.Payload);
 
         await this.loggingBroker.LogProcessAsync(
             "Decision",
-            $"Judge → scored {score:F2} → {(score < MinimumAcceptableScore ? "REJECT" : "ACCEPT")}");
+            $"Judge → scored {judgement.Score:F2} → {(judgement.Score < MinimumAcceptableScore ? "REJECT" : "ACCEPT")}");
 
-        if (score < MinimumAcceptableScore)
+        if (judgement.Score < MinimumAcceptableScore)
         {
             setResult(context with
             {

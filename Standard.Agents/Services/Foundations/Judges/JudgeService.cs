@@ -5,6 +5,7 @@
 
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Brokers.Verifiers;
+using Standard.Agents.Models.Foundations.Judges;
 
 namespace Standard.Agents.Services.Foundations.Judges;
 
@@ -21,17 +22,17 @@ public partial class JudgeService : IJudgeService
         this.loggingBroker = loggingBroker;
     }
 
-    public ValueTask<double> EvaluateAsync(string candidate) =>
+    public ValueTask<Judgement> EvaluateAsync(string candidate) =>
     TryCatch(async () =>
     {
         ValidateEvaluate(candidate);
 
         string verdict = await this.verifierBroker.VerifyAsync(candidate);
 
-        double score = ParseScore(verdict);
+        Judgement judgement = ParseJudgement(verdict);
 
-        ValidateScore(score);
+        ValidateScore(judgement.Score);
 
-        return score;
+        return judgement;
     });
 }

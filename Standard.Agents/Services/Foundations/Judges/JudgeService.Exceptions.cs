@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------
 
 using RESTFulSense.Exceptions;
+using Standard.Agents.Models.Foundations.Judges;
 using Standard.Agents.Models.Foundations.Judges.Exceptions;
 using Xeptions;
 
@@ -11,13 +12,13 @@ namespace Standard.Agents.Services.Foundations.Judges;
 
 public partial class JudgeService
 {
-    private delegate ValueTask<double> ReturningScoreFunction();
+    private delegate ValueTask<Judgement> ReturningJudgementFunction();
 
-    private async ValueTask<double> TryCatch(ReturningScoreFunction returningScoreFunction)
+    private async ValueTask<Judgement> TryCatch(ReturningJudgementFunction returningJudgementFunction)
     {
         try
         {
-            return await returningScoreFunction();
+            return await returningJudgementFunction();
         }
         catch (InvalidJudgeException invalidJudgeException)
         {
