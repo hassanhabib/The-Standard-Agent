@@ -17,6 +17,7 @@ using Standard.Agents.Brokers.Times;
 using Standard.Agents.Brokers.Tools;
 using Standard.Agents.Brokers.Verifiers;
 using Standard.Agents.Models.Clients.Agents;
+using Standard.Agents.Models.Foundations.Brains;
 using Standard.Agents.Models.Loggings;
 using Standard.Agents.Prompts;
 using Standard.Agents.Services.Coordinations;
@@ -45,6 +46,7 @@ public sealed partial class StandardAgent : IAgent
     private string consumptionPath = string.Empty;
     private string logPath = string.Empty;
     private string auditPath = string.Empty;
+    private IEnumerable<RedactionRule>? redactionRules;
     private TraceVerbosity traceVerbosity = TraceVerbosity.Full;
     private string memoryPath = "memory.txt";
     private int maxTurns = 7;
@@ -346,6 +348,17 @@ public sealed partial class StandardAgent : IAgent
         Set(() => this.auditPath = path);
 
     /// <summary>
+    /// Turns on <b>PII redaction at the brain boundary</b>: before any prompt reaches the brain,
+    /// emails, SSNs, credit-card numbers and phone numbers are swapped for opaque <c>{{LABEL_N}}</c>
+    /// tokens, and the brain's reply is rehydrated so the caller gets the real values back. The brain
+    /// (and any remote host serving it) never sees the data in the clear. Off by default. The default
+    /// rule set is Data — see <see cref="RedactionRules.Default"/>.
+    /// </summary>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent Redact() =>
+        Set(() => this.redactionRules = RedactionRules.Default);
+
+    /// <summary>
     /// Caps how many Recall→Think→Act turns a single prompt may take before the agent stops —
     /// the shared budget across tool calls and Judge revisions. Defaults to 7. A value below 1
     /// is treated as 1.
@@ -600,7 +613,7 @@ public sealed partial class StandardAgent : IAgent
 
         DecisionOrchestrationService decision = new(
             new GateService(classifier, logging),
-            new BrainService(generator, logging),
+            new BrainService(generator, logging, this.redactionRules),
             new JudgeService(verifier, logging),
             logging);
 
