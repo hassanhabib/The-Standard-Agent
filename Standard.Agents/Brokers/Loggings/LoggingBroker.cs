@@ -72,7 +72,9 @@ public sealed class LoggingBroker : ILoggingBroker
 
         if (level <= this.verbosity)
         {
-            await EmitAsync($"    Process {this.processIndex++}: {actor}: {message}");
+            string indented = message.ReplaceLineEndings($"{Environment.NewLine}      ");
+
+            await EmitAsync($"    Process {this.processIndex++}: {actor}: {indented}");
         }
     }
 
