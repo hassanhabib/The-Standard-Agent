@@ -47,6 +47,7 @@ public sealed partial class StandardAgent : IAgent
     private string logPath = string.Empty;
     private string auditPath = string.Empty;
     private IEnumerable<RedactionRule>? redactionRules;
+    private IEnumerable<string>? allowedTools;
     private TraceVerbosity traceVerbosity = TraceVerbosity.Full;
     private string memoryPath = "memory.txt";
     private int maxTurns = 7;
@@ -357,6 +358,17 @@ public sealed partial class StandardAgent : IAgent
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent Redact() =>
         Set(() => this.redactionRules = RedactionRules.Default);
+
+    /// <summary>
+    /// Restricts the agent to a <b>least-privilege</b> set of tools: the brain may still propose any
+    /// tool, but only those named here are allowed to run — anything else is denied at the Direction
+    /// perimeter before it executes, fed back so the agent can choose a permitted path. Off by default
+    /// (no restriction). The allow-list is Data. Matching is case-insensitive.
+    /// </summary>
+    /// <param name="toolNames">The only tool names this agent is permitted to run.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent AllowTools(params string[] toolNames) =>
+        Set(() => this.allowedTools = toolNames);
 
     /// <summary>
     /// Caps how many Recall→Think→Act turns a single prompt may take before the agent stops —
