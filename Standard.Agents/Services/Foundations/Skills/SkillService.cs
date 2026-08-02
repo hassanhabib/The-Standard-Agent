@@ -38,22 +38,22 @@ public partial class SkillService : ISkillService
         this.loggingBroker = loggingBroker;
     }
 
-    public ValueTask<string> RetrieveSkillsAsync() =>
+    public ValueTask<string> RetrieveSkillsAsync(string route = "") =>
     TryCatch(async () =>
     {
         return this.fileBroker is not null
-            ? await SelectSkillsFromFilesAsync(this.fileBroker)
+            ? await SelectSkillsFromFilesAsync(this.fileBroker, route)
             : await this.skillBroker!.SelectSkillsAsync();
     });
 
-    private async ValueTask<string> SelectSkillsFromFilesAsync(IFileBroker fileBroker)
+    private async ValueTask<string> SelectSkillsFromFilesAsync(IFileBroker fileBroker, string route)
     {
         if (fileBroker.DirectoryExists(this.skillsPath) is false)
         {
             return string.Empty;
         }
 
-        IOrderedEnumerable<string> skillFilePaths =
+        IEnumerable<string> skillFilePaths =
             fileBroker.SelectFiles(this.skillsPath, SkillFilePattern, SearchOption.TopDirectoryOnly)
                 .OrderBy(skillFilePath => skillFilePath, StringComparer.Ordinal);
 
