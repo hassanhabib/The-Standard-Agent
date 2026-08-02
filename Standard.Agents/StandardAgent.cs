@@ -633,7 +633,8 @@ public sealed partial class StandardAgent : IAgent
             new InternalToolService(toolBroker, logging),
             new ExternalToolService(mcp, logging),
             new ReturnService(logging),
-            logging);
+            logging,
+            this.allowedTools);
 
         return new AgentCoordinationService(data, decision, direction, logging, this.maxTurns);
     }
