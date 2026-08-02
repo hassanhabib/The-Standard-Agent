@@ -37,11 +37,19 @@ public sealed class LoggingBroker : ILoggingBroker
     public async ValueTask LogWarningAsync(string message) =>
         this.logger.LogWarning(message);
 
-    public async ValueTask LogErrorAsync(Exception exception) =>
+    public async ValueTask LogErrorAsync(Exception exception)
+    {
         this.logger.LogError(exception, exception.Message);
 
-    public async ValueTask LogCriticalAsync(Exception exception) =>
+        await EmitAsync($"  → ERROR: {exception.Message.ReplaceLineEndings(" ")}");
+    }
+
+    public async ValueTask LogCriticalAsync(Exception exception)
+    {
         this.logger.LogCritical(exception, exception.Message);
+
+        await EmitAsync($"  → CRITICAL: {exception.Message.ReplaceLineEndings(" ")}");
+    }
 
     public async ValueTask LogResetAsync()
     {
