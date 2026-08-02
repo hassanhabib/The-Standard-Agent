@@ -15,6 +15,7 @@ public sealed class LoggingBroker : ILoggingBroker
     private readonly ITimeBroker timeBroker;
     private readonly TraceVerbosity verbosity;
     private readonly string? logPath;
+    private readonly string? auditPath;
     private int processIndex;
     private DateTimeOffset runStart;
 
@@ -22,12 +23,14 @@ public sealed class LoggingBroker : ILoggingBroker
         ILogger<LoggingBroker> logger,
         ITimeBroker timeBroker,
         TraceVerbosity verbosity = TraceVerbosity.Full,
-        string? logPath = null)
+        string? logPath = null,
+        string? auditPath = null)
     {
         this.logger = logger;
         this.timeBroker = timeBroker;
         this.verbosity = verbosity;
         this.logPath = logPath is null ? null : Path.GetFullPath(logPath);
+        this.auditPath = auditPath is null ? null : Path.GetFullPath(auditPath);
     }
 
     public async ValueTask LogInformationAsync(string message) =>
