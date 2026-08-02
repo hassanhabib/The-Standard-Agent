@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Standard.Agents.Brokers.Times;
 using Standard.Agents.Models.Loggings;
@@ -49,6 +50,7 @@ public sealed class LoggingBroker : ILoggingBroker
     {
         this.logger.LogError(exception, exception.Message);
 
+        await AuditAsync(new { kind = "error", message = exception.Message });
         await EmitAsync($"  → ERROR: {exception.Message.ReplaceLineEndings(" ")}");
     }
 
@@ -56,6 +58,7 @@ public sealed class LoggingBroker : ILoggingBroker
     {
         this.logger.LogCritical(exception, exception.Message);
 
+        await AuditAsync(new { kind = "critical", message = exception.Message });
         await EmitAsync($"  → CRITICAL: {exception.Message.ReplaceLineEndings(" ")}");
     }
 
@@ -68,14 +71,25 @@ public sealed class LoggingBroker : ILoggingBroker
         {
             await File.WriteAllTextAsync(this.logPath, string.Empty);
         }
+
+        if (this.auditPath is not null)
+        {
+            await File.WriteAllTextAsync(this.auditPath, string.Empty);
+        }
     }
 
-    public async ValueTask LogTurnAsync(int turn) =>
+    public async ValueTask LogTurnAsync(int turn)
+    {
+        await AuditAsync(new { kind = "turn", turn });
+
         await EmitAsync($"{Environment.NewLine}Turn {turn}");
+    }
 
     public async ValueTask LogOutcomeAsync(string message)
     {
         TimeSpan elapsed = this.timeBroker.GetCurrentDateTimeOffset() - this.runStart;
+
+        await AuditAsync(new { kind = "outcome", message, elapsedMs = elapsed.TotalMilliseconds });
 
         await EmitAsync($"  → {message} ({elapsed.TotalMilliseconds:F0}ms)");
     }
@@ -83,6 +97,8 @@ public sealed class LoggingBroker : ILoggingBroker
     public async ValueTask LogStepAsync(AgentStep step)
     {
         this.processIndex = 0;
+
+        await AuditAsync(new { kind = "step", step = step.ToString() });
 
         if (TraceVerbosity.Natures <= this.verbosity)
         {
@@ -92,6 +108,8 @@ public sealed class LoggingBroker : ILoggingBroker
 
     public async ValueTask LogProcessAsync(string actor, string message, bool detail = false)
     {
+        await AuditAsync(new { kind = "process", actor, message, detail });
+
         TraceVerbosity level = detail ? TraceVerbosity.Full : TraceVerbosity.Natures;
 
         if (level <= this.verbosity)
@@ -111,6 +129,15 @@ public sealed class LoggingBroker : ILoggingBroker
         else
         {
             await File.AppendAllTextAsync(this.logPath, line + Environment.NewLine);
+        }
+    }
+
+    private async ValueTask AuditAsync(object record)
+    {
+        if (this.auditPath is not null)
+        {
+            await File.AppendAllTextAsync(
+                this.auditPath, JsonSerializer.Serialize(record) + Environment.NewLine);
         }
     }
 }
