@@ -56,6 +56,9 @@ public sealed class LoggingBroker : ILoggingBroker
     public async ValueTask LogTurnAsync(int turn) =>
         await EmitAsync($"{Environment.NewLine}Turn {turn}");
 
+    public async ValueTask LogOutcomeAsync(string message) =>
+        await EmitAsync($"  → {message}");
+
     public async ValueTask LogStepAsync(AgentStep step)
     {
         this.processIndex = 0;
