@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------
 
 using System.Runtime.CompilerServices;
+using System.Text;
 using Standard.Agents.Brokers.Generators;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models.Foundations.Brains;
@@ -47,19 +48,25 @@ public partial class BrainService : IBrainService
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         IAsyncEnumerator<string> tokens;
+        var vault = new Dictionary<string, string>();
 
         try
         {
             ValidateUserPrompt(userPrompt);
 
+            string redactedSystemPrompt = Redact(systemPrompt, vault);
+            string redactedUserPrompt = Redact(userPrompt, vault);
+
             tokens = this.generatorBroker
-                .GenerateStreamAsync(systemPrompt, userPrompt, cancellationToken)
+                .GenerateStreamAsync(redactedSystemPrompt, redactedUserPrompt, cancellationToken)
                 .GetAsyncEnumerator(cancellationToken);
         }
         catch (Exception exception)
         {
             throw await MapStreamExceptionAsync(exception);
         }
+
+        var pending = new StringBuilder();
 
         try
         {
@@ -81,7 +88,25 @@ public partial class BrainService : IBrainService
                     throw await MapStreamExceptionAsync(exception);
                 }
 
-                yield return token;
+                if (vault.Count == 0)
+                {
+                    yield return token;
+
+                    continue;
+                }
+
+                pending.Append(token);
+                string ready = DrainReady(pending, vault);
+
+                if (ready.Length > 0)
+                {
+                    yield return ready;
+                }
+            }
+
+            if (vault.Count > 0 && pending.Length > 0)
+            {
+                yield return Rehydrate(pending.ToString(), vault);
             }
         }
         finally

@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Text;
 using System.Text.RegularExpressions;
 using Standard.Agents.Models.Foundations.Brains;
 
@@ -10,6 +11,28 @@ namespace Standard.Agents.Services.Foundations.Brains;
 
 public partial class BrainService
 {
+    private static string DrainReady(
+        StringBuilder pending,
+        IReadOnlyDictionary<string, string> vault)
+    {
+        string buffer = Rehydrate(pending.ToString(), vault);
+
+        int hold = buffer.LastIndexOf('{');
+
+        while (hold > 0 && buffer[hold - 1] == '{')
+        {
+            hold--;
+        }
+
+        string ready = hold >= 0 ? buffer[..hold] : buffer;
+        string keep = hold >= 0 ? buffer[hold..] : string.Empty;
+
+        pending.Clear();
+        pending.Append(keep);
+
+        return ready;
+    }
+
     private string Redact(string text, IDictionary<string, string> vault)
     {
         if (this.redactionRules.Count == 0 || string.IsNullOrEmpty(text))
