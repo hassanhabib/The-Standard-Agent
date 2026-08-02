@@ -116,7 +116,7 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
                 Observations =
                 [
                     .. context.Observations,
-                    $"A previous draft was rejected on review: {decided.Payload}"
+                    RevisionFeedback(judgement, decided.Payload)
                 ],
 
                 Status = AgentStatus.Revising
@@ -125,6 +125,12 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
 
         return decided;
     });
+
+    private static string RevisionFeedback(Judgement judgement, string draft) =>
+        string.IsNullOrWhiteSpace(judgement.Reason)
+            ? $"A previous draft was rejected on review: {draft}"
+            : $"A previous draft was rejected on review — {judgement.Reason}. "
+                + $"The draft was: {draft}";
 
     public IDecisionStream ThinkStreamAsync(
         AgentContext context,
@@ -249,9 +255,12 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
 
         Judgement judgement = await this.judgeService.EvaluateAsync(candidate: decided.Payload);
 
+        string judgeOutcome = judgement.Score < MinimumAcceptableScore
+            ? $"REJECT: {judgement.Reason}".TrimEnd(':', ' ')
+            : "ACCEPT";
+
         await this.loggingBroker.LogProcessAsync(
-            "Decision",
-            $"Judge → scored {judgement.Score:F2} → {(judgement.Score < MinimumAcceptableScore ? "REJECT" : "ACCEPT")}");
+            "Decision", $"Judge → scored {judgement.Score:F2} → {judgeOutcome}");
 
         if (judgement.Score < MinimumAcceptableScore)
         {
@@ -260,7 +269,7 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
                 Observations =
                 [
                     .. context.Observations,
-                    $"A previous draft was rejected on review: {decided.Payload}"
+                    RevisionFeedback(judgement, decided.Payload)
                 ],
 
                 Status = AgentStatus.Revising
