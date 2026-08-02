@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------
 
 using Microsoft.Extensions.Logging;
+using Standard.Agents.Brokers.Times;
 using Standard.Agents.Models.Loggings;
 
 namespace Standard.Agents.Brokers.Loggings;
@@ -11,16 +12,20 @@ namespace Standard.Agents.Brokers.Loggings;
 public sealed class LoggingBroker : ILoggingBroker
 {
     private readonly ILogger<LoggingBroker> logger;
+    private readonly ITimeBroker timeBroker;
     private readonly TraceVerbosity verbosity;
     private readonly string? logPath;
     private int processIndex;
+    private DateTimeOffset runStart;
 
     public LoggingBroker(
         ILogger<LoggingBroker> logger,
+        ITimeBroker timeBroker,
         TraceVerbosity verbosity = TraceVerbosity.Full,
         string? logPath = null)
     {
         this.logger = logger;
+        this.timeBroker = timeBroker;
         this.verbosity = verbosity;
         this.logPath = logPath is null ? null : Path.GetFullPath(logPath);
     }
@@ -54,6 +59,7 @@ public sealed class LoggingBroker : ILoggingBroker
     public async ValueTask LogResetAsync()
     {
         this.processIndex = 0;
+        this.runStart = this.timeBroker.GetCurrentDateTimeOffset();
 
         if (this.logPath is not null)
         {
@@ -64,8 +70,12 @@ public sealed class LoggingBroker : ILoggingBroker
     public async ValueTask LogTurnAsync(int turn) =>
         await EmitAsync($"{Environment.NewLine}Turn {turn}");
 
-    public async ValueTask LogOutcomeAsync(string message) =>
-        await EmitAsync($"  → {message}");
+    public async ValueTask LogOutcomeAsync(string message)
+    {
+        TimeSpan elapsed = this.timeBroker.GetCurrentDateTimeOffset() - this.runStart;
+
+        await EmitAsync($"  → {message} ({elapsed.TotalMilliseconds:F0}ms)");
+    }
 
     public async ValueTask LogStepAsync(AgentStep step)
     {

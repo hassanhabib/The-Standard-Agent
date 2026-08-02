@@ -13,6 +13,7 @@ using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Brokers.Mcps;
 using Standard.Agents.Brokers.Memorys;
 using Standard.Agents.Brokers.Skills;
+using Standard.Agents.Brokers.Times;
 using Standard.Agents.Brokers.Tools;
 using Standard.Agents.Brokers.Verifiers;
 using Standard.Agents.Models.Clients.Agents;
@@ -477,6 +478,7 @@ public sealed partial class StandardAgent : IAgent
         ILoggingBroker logging =
             this.loggingBroker ?? new LoggingBroker(
                 new NullLogger<LoggingBroker>(),
+                new TimeBroker(),
                 this.traceVerbosity,
                 string.IsNullOrEmpty(this.logPath) ? null : this.logPath);
 
