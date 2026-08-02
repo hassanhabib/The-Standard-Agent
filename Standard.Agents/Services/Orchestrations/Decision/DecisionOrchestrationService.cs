@@ -188,10 +188,11 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
 
         var classifier = new ReplyStreamClassifier();
         var reply = new StringBuilder();
+        string userMessage = BuildUserMessage(context);
 
         IAsyncEnumerable<string> tokens = this.brainService.GenerateStreamAsync(
             systemPrompt: context.SystemPrompt,
-            userPrompt: BuildUserMessage(context),
+            userPrompt: userMessage,
             cancellationToken: cancellationToken);
 
         await foreach (string delta in tokens.WithCancellation(cancellationToken))
@@ -213,6 +214,14 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
 
         await this.loggingBroker.LogProcessAsync(
             "Decision", $"Brain replied →{Environment.NewLine}{reply.ToString().Trim()}", detail: true);
+
+        int estimatedTokens =
+            (context.SystemPrompt.Length + userMessage.Length + reply.Length) / 4;
+
+        await this.loggingBroker.LogProcessAsync(
+            "Decision",
+            $"Brain → ~{estimatedTokens} tokens (prompt + reply, estimated)",
+            detail: true);
 
         await this.loggingBroker.LogProcessAsync(
             "Decision", $"Interpreted → {decided.DirectionType}");
