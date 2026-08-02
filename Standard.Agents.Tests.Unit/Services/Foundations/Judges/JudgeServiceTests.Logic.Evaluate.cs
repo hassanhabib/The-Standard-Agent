@@ -6,6 +6,7 @@
 using System.Globalization;
 using FluentAssertions;
 using Moq;
+using Standard.Agents.Models.Foundations.Judges;
 using Xunit;
 
 namespace Standard.Agents.Tests.Unit.Services.Foundations.Judges;
@@ -28,11 +29,11 @@ public partial class JudgeServiceTests
                 .ReturnsAsync(verdict);
 
         // when
-        double actualScore =
+        Judgement actualJudgement =
             await this.judgeService.EvaluateAsync(randomCandidate);
 
         // then
-        actualScore.Should().Be(expectedScore);
+        actualJudgement.Score.Should().Be(expectedScore);
 
         this.verifierBrokerMock.Verify(broker =>
             broker.VerifyAsync(randomCandidate),
@@ -57,11 +58,38 @@ public partial class JudgeServiceTests
                 .ReturnsAsync(verdict);
 
         // when
-        double actualScore =
+        Judgement actualJudgement =
             await this.judgeService.EvaluateAsync(randomCandidate);
 
         // then
-        actualScore.Should().Be(expectedScore);
+        actualJudgement.Score.Should().Be(expectedScore);
+
+        this.verifierBrokerMock.Verify(broker =>
+            broker.VerifyAsync(randomCandidate),
+                Times.Once);
+
+        this.verifierBrokerMock.VerifyNoOtherCalls();
+        this.loggingBrokerMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task ShouldParseScoreAndReasonOnEvaluateAsync()
+    {
+        // given
+        string randomCandidate = CreateRandomString();
+        string verdict = "SCORE: 0.4\nREASON: it never states the year";
+
+        this.verifierBrokerMock.Setup(broker =>
+            broker.VerifyAsync(randomCandidate))
+                .ReturnsAsync(verdict);
+
+        // when
+        Judgement actualJudgement =
+            await this.judgeService.EvaluateAsync(randomCandidate);
+
+        // then
+        actualJudgement.Score.Should().Be(0.4);
+        actualJudgement.Reason.Should().Be("it never states the year");
 
         this.verifierBrokerMock.Verify(broker =>
             broker.VerifyAsync(randomCandidate),

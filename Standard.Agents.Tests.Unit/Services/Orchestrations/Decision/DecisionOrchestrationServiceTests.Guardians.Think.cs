@@ -5,6 +5,7 @@
 
 using FluentAssertions;
 using Moq;
+using Standard.Agents.Models.Foundations.Judges;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Xunit;
 
@@ -93,7 +94,7 @@ public partial class DecisionOrchestrationServiceTests
 
         this.judgeServiceMock.Setup(service =>
             service.EvaluateAsync(It.IsAny<string>()))
-                .ReturnsAsync(0.1);
+                .ReturnsAsync(new Judgement { Score = 0.1 });
 
         // when
         AgentContext actualContext =
@@ -117,7 +118,7 @@ public partial class DecisionOrchestrationServiceTests
 
         this.judgeServiceMock.Setup(service =>
             service.EvaluateAsync(It.IsAny<string>()))
-                .ReturnsAsync(0.1);
+                .ReturnsAsync(new Judgement { Score = 0.1 });
 
         // when
         AgentContext actualContext =

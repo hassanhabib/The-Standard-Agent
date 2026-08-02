@@ -6,6 +6,7 @@
 using System.Globalization;
 using FluentAssertions;
 using Moq;
+using Standard.Agents.Models.Foundations.Judges;
 using Standard.Agents.Models.Foundations.Judges.Exceptions;
 using Xunit;
 
@@ -31,7 +32,7 @@ public partial class JudgeServiceTests
                 innerException: invalidJudgeException);
 
         // when
-        ValueTask<double> evaluateTask =
+        ValueTask<Judgement> evaluateTask =
             this.judgeService.EvaluateAsync(invalidCandidate!);
 
         JudgeValidationException actualJudgeValidationException =
@@ -82,7 +83,7 @@ public partial class JudgeServiceTests
                 .ReturnsAsync(nonNumericVerdict!);
 
         // when
-        ValueTask<double> evaluateTask =
+        ValueTask<Judgement> evaluateTask =
             this.judgeService.EvaluateAsync(randomCandidate);
 
         JudgeValidationException actualJudgeValidationException =
@@ -132,7 +133,7 @@ public partial class JudgeServiceTests
                 .ReturnsAsync(verdict);
 
         // when
-        ValueTask<double> evaluateTask =
+        ValueTask<Judgement> evaluateTask =
             this.judgeService.EvaluateAsync(randomCandidate);
 
         JudgeValidationException actualJudgeValidationException =

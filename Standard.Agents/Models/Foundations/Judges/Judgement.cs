@@ -3,11 +3,10 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
-using Standard.Agents.Models.Foundations.Judges;
+namespace Standard.Agents.Models.Foundations.Judges;
 
-namespace Standard.Agents.Services.Foundations.Judges;
-
-public interface IJudgeService
+public record Judgement
 {
-    ValueTask<Judgement> EvaluateAsync(string candidate);
+    public double Score { get; init; }
+    public string Reason { get; init; } = string.Empty;
 }
