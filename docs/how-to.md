@@ -2,7 +2,7 @@
 
 This guide starts with the smallest possible agent and adds one capability at a time — each section
 **building on the agent from the one before**, so the `// ← new this section` line is exactly what
-that step adds. Every snippet is real and runs against `Standard.Agents` (0.9.0+). Copy a section,
+that step adds. Every snippet is real and runs against `Standard.Agents` (0.15.0+). Copy a section,
 run it, then move to the next. Later sections swap the simple file/HTTP defaults for real backends —
 a local GGUF model, Redis, PostgreSQL, SQL Server — one line at a time.
 
@@ -45,6 +45,10 @@ That constructor is shorthand for `new StandardAgent().Brain(url, key, model)` �
 form (below) once you're chaining more. `Brain(...)` targets any OpenAI-compatible
 `POST /v1/chat/completions` endpoint. No skills, no tools, no guardians — those are all opt-in. The
 agent is already talking.
+
+`Brain(...)` also accepts optional `temperature` (default `0.7`), `maxTokens` (`1024`) and
+`timeoutSeconds` (`120`) when you need to tune sampling or limits; `Gate(...)` and `Judge(...)`
+take the same three (defaulting to `0.0` temperature and `16` tokens, since a verdict is short).
 
 Want the answer as it's generated? Stream it:
 
@@ -241,6 +245,22 @@ var agent = new StandardAgent()
     .LocalGate(llama.GenerateAsync);   // one local model, now also the gate
 ```
 
+### Deterministic, no model, no call
+
+A model-backed gate is only as steady as the model behind it: it can be talked around, and it costs
+a call. When the refusal rule is something you can state outright, make the gate deterministic with
+`.RuleGate(...)`. It refuses any prompt containing one of the given substrings (case-insensitive)
+and allows everything else, so compliance is never a coin-flip.
+
+```csharp
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .RuleGate("password", "ssn", "wire transfer");   // ← refuse on any of these
+```
+
+It rides the same `IClassifierBroker` seam as the model-backed `.Gate(...)`, so the loop and the
+Tri-Nature are identical and only the substrate changes. Start deterministic and graduate to a
+model later without touching the rest. The patterns are Data.
+
 ---
 
 ## 5 · Judging — a conscience after the brain
@@ -273,6 +293,21 @@ var agent = new StandardAgent()
     .UseGenerator(llama)
     .LocalJudge(llama.GenerateAsync);
 ```
+
+### Deterministic, no model, no call
+
+The mirror of `.RuleGate(...)` on the way out. `.RuleJudge(...)` passes a draft only when it
+contains every required substring (case-insensitive), and otherwise rejects it, naming the first
+missing one as the reason to revise. The agent then tries again until the answer carries what you
+require.
+
+```csharp
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .RuleJudge("Sources:", "Confidence:");   // ← the answer must cite sources and state confidence
+```
+
+No model, no call, and a verdict you can predict. It uses the same `IVerifierBroker` seam as the
+model-backed `.Judge(...)`.
 
 **One law above both.** The Gate and Judge each ship with a built-in policy. To bind them to
 your own rules, point the agent at an ethical constitution with `.Constitution(...)`, a markdown
@@ -312,7 +347,85 @@ only when a guardian is on, and the file must be copied to the build output.
 
 ---
 
-## 6 · Memory — it remembers you across restarts
+## 6 · Guarding the perimeter — least privilege, redaction, limits
+
+Three opt-in controls harden the agent without any model call. Each is Data, and each is off by
+default.
+
+**Least privilege, with `.AllowTools(...)`.** The brain may still *propose* any tool, but only the
+names you list are allowed to run. Anything else is denied at the Direction perimeter before it
+executes, then fed back so the agent can pick a permitted path.
+
+```csharp
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .Tool(new CalculatorTool())
+    .Tool(new ShellTool())
+    .AllowTools("calculator");         // ← the brain may name shell; only calculator will run
+```
+
+Matching is case-insensitive. Omit it and every registered tool is runnable, which is the default.
+
+**Redaction, with `.Redact()`.** Turns on PII redaction at the brain boundary. Before a prompt
+reaches the brain, emails, SSNs, credit-card numbers and phone numbers are swapped for opaque
+`{{LABEL_N}}` tokens, and the brain's reply is rehydrated so the caller gets the real values back.
+The brain, and any remote host serving it, never sees the data in the clear.
+
+```csharp
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .Redact();                         // ← new this section
+
+await agent.ProcessPromptAsync("please email jane@acme.com the report");
+// the brain sees "... email {{EMAIL_0}} the report"
+// the answer you get back reads "... emailed jane@acme.com the report"
+```
+
+The built-in rule set (`RedactionRules.Default`) covers `EMAIL`, `SSN`, `CREDIT_CARD` and `PHONE`,
+each a `RedactionRule { Label, Pattern }`, so the rules themselves are Data.
+
+**Turn limit, with `.MaxTurns(...)`.** Caps how many Recall, Think, Act turns a single prompt may
+take before the agent stops. It is the shared budget across tool calls and Judge revisions. The
+default is 7, and a value below 1 is treated as 1.
+
+```csharp
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .MaxTurns(3);                      // ← new this section
+```
+
+---
+
+## 7 · Observability — trace and audit
+
+You have seen `.LogTo("log.txt")` in the examples above. Here is what it writes, and the
+machine-readable companion that rides alongside it.
+
+**Human-readable trace, with `.LogTo(path, verbosity)`.** Writes a step-by-step transcript
+organised as `Turn → Step → Process`, mirroring the Coordination, Orchestration and Foundation
+tiers. The optional `verbosity` picks the depth:
+
+```csharp
+using Standard.Agents.Models.Loggings;
+
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .LogTo("log.txt", TraceVerbosity.Full);   // Full is the default if you omit it
+```
+
+- `TraceVerbosity.Summary`: Turn outcomes only.
+- `TraceVerbosity.Natures`: the three natures per Turn (`Step 1: Decision`, with Gate and Judge), without per-Process detail.
+- `TraceVerbosity.Full`: every Process (`Process 0: Data: Received prompt`, and so on). This is the default.
+
+**Machine-readable audit, with `.Audit(path)`.** Writes one JSON object per trace event (turn,
+step, process, outcome, error) as JSON lines, always at full detail, for ingestion into a SIEM or
+telemetry pipeline. It runs alongside `.LogTo(...)`, not instead of it.
+
+```csharp
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .LogTo("log.txt")        // human-readable transcript
+    .Audit("audit.jsonl");   // {"kind":"turn",...} {"kind":"process",...} {"kind":"outcome",...}
+```
+
+---
+
+## 8 · Memory — it remembers you across restarts
 
 Give the agent a memory file and it can carry facts from one run to the next. Two halves:
 
@@ -388,7 +501,7 @@ how the agent uses it.
 
 ---
 
-## 7 · Knowledge — grounding on your data
+## 9 · Knowledge — grounding on your data
 
 Knowledge is a **folder of read-only documents** the agent searches on each turn, seeding matching
 documents into its context — so answers are grounded in your data, not just the model's training.
@@ -473,7 +586,7 @@ sub-task its own private knowledge and memory.
 
 ---
 
-## 8 · A fully local, fully offline agent
+## 10 · A fully local, fully offline agent
 
 Because the brain, gate, and judge are all just model calls, a single local GGUF can drive all three
 — no network anywhere. One model instance, three rubrics (SPEC.md §9's collapsible substrate):
@@ -497,7 +610,7 @@ string answer = await agent.ProcessPromptAsync("What is 47 * 89?");
 ```
 
 Nothing here touches a server. Outgrow files? Swap memory or knowledge for Redis / Postgres / SQL
-Server (sections 6–7) — the moment you do, you're online for *that piece only*, and the rest stays
+Server (sections 8–9) — the moment you do, you're online for *that piece only*, and the rest stays
 local. That is the shape of the whole framework: pick each nature's backend independently, behind a
 stable seam.
 
@@ -516,9 +629,13 @@ var agent = new StandardAgent(url, key, "LLooMA2.0")      // 0 · talking
     .Consumption("Constitution/consuming-skills.md")     // 5 · replace the guardian policy
     .Gate(apiUrl: url, apiKey: key, model: "LLooMA2.0")   // 4 · screen requests
     .Judge(apiUrl: url, apiKey: key, model: "LLooMA2.0")  // 5 · review answers
-    .Memory("agent-memory.txt")                           // 6 · remember across restarts
-    .Knowledge("Knowledge")                               // 7 · ground on your data
-    .LogTo("log.txt");                                    // turn-by-turn trace
+    .AllowTools("calculator")                             // 6 · least privilege
+    .Redact()                                             // 6 · hide PII from the brain
+    .MaxTurns(5)                                          // 6 · cap the turn budget
+    .Memory("agent-memory.txt")                           // 8 · remember across restarts
+    .Knowledge("Knowledge")                               // 9 · ground on your data
+    .LogTo("log.txt")                                     // 7 · human-readable trace
+    .Audit("audit.jsonl");                                // 7 · machine-readable audit
 ```
 
 No DI container, no config framework — `Compose()` hand-wires the whole graph when you call
@@ -539,7 +656,7 @@ same seam, so you can back any part of the agent with something the built-ins do
 - `UseMemory` and `UseKnowledge`: custom memory or knowledge stores.
 - `UseGate` and `UseJudge`: custom guardian backends.
 - `UseMcp`: a custom MCP transport.
-- `UseLog` and `UseLogging`: custom trace and diagnostic logging.
+- `UseLogging`: a custom logging broker, where the trace and audit are written.
 
 Register several tools at once with `Tools(...)`, the batch form of `Tool(...)`. Each swap changes
 one nature; the rest of the agent stays exactly as written.
