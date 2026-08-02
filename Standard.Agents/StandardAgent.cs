@@ -613,7 +613,7 @@ public sealed partial class StandardAgent : IAgent
 
         DecisionOrchestrationService decision = new(
             new GateService(classifier, logging),
-            new BrainService(generator, logging),
+            new BrainService(generator, logging, this.redactionRules),
             new JudgeService(verifier, logging),
             logging);
 
