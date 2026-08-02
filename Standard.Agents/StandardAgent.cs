@@ -44,6 +44,7 @@ public sealed partial class StandardAgent : IAgent
     private string constitutionPath = string.Empty;
     private string consumptionPath = string.Empty;
     private string logPath = string.Empty;
+    private string auditPath = string.Empty;
     private TraceVerbosity traceVerbosity = TraceVerbosity.Full;
     private string memoryPath = "memory.txt";
     private int maxTurns = 7;
@@ -310,6 +311,17 @@ public sealed partial class StandardAgent : IAgent
     });
 
     /// <summary>
+    /// Writes a structured, machine-readable audit log — one JSON object per trace event
+    /// (turn, step, process, outcome, error) — to <paramref name="path"/>, alongside any
+    /// human-readable <see cref="LogTo"/> trace. Always full detail, for ingestion into a SIEM
+    /// or telemetry pipeline.
+    /// </summary>
+    /// <param name="path">Path to the JSON-lines audit file (created if it does not exist).</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent Audit(string path) =>
+        Set(() => this.auditPath = path);
+
+    /// <summary>
     /// Caps how many Recall→Think→Act turns a single prompt may take before the agent stops —
     /// the shared budget across tool calls and Judge revisions. Defaults to 7. A value below 1
     /// is treated as 1.
@@ -480,7 +492,8 @@ public sealed partial class StandardAgent : IAgent
                 new NullLogger<LoggingBroker>(),
                 new TimeBroker(),
                 this.traceVerbosity,
-                string.IsNullOrEmpty(this.logPath) ? null : this.logPath);
+                string.IsNullOrEmpty(this.logPath) ? null : this.logPath,
+                string.IsNullOrEmpty(this.auditPath) ? null : this.auditPath);
 
         IGeneratorBroker generator =
             this.generatorBroker ?? new GeneratorBroker(
