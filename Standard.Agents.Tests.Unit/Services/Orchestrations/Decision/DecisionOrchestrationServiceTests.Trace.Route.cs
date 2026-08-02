@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using FluentAssertions;
 using Moq;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Services.Orchestrations.Decision;
@@ -13,7 +14,7 @@ namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Decision;
 public partial class DecisionOrchestrationServiceTests
 {
     [Fact]
-    public async Task ShouldNarrateGateAcceptVerdictOnThinkStreamAsync()
+    public async Task ShouldNarrateGateRouteAndProceedOnThinkStreamAsync()
     {
         // given
         AgentContext inputContext = CreateRandomAgentContext();
@@ -21,7 +22,7 @@ public partial class DecisionOrchestrationServiceTests
 
         this.gateServiceMock.Setup(service =>
             service.ScreenAsync(It.IsAny<string>()))
-                .ReturnsAsync("allow because the request is safe");
+                .ReturnsAsync("route: arithmetic");
 
         this.brainServiceMock.Setup(service =>
             service.GenerateStreamAsync(
@@ -34,12 +35,14 @@ public partial class DecisionOrchestrationServiceTests
 
         await DrainAsync(decisionStream);
 
-        // then
+        // then a route proceeds to the Brain (not refused) and is narrated as ROUTE
+        decisionStream.Result.DirectionType.Should().Be("ReturnResponse");
+
         this.loggingBrokerMock.Verify(broker =>
             broker.LogProcessAsync(
                 "Decision",
                 It.Is<string>(message =>
-                    message.Contains("ACCEPT") && message.Contains("safe")),
+                    message.Contains("ROUTE") && message.Contains("arithmetic")),
                 It.IsAny<bool>()),
                     Times.Once);
     }
