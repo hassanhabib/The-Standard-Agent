@@ -233,6 +233,30 @@ public sealed partial class StandardAgent : IAgent
             new InferenceSettings(apiUrl, apiKey, model, temperature, maxTokens, timeoutSeconds));
 
     /// <summary>
+    /// Turns on a <b>deterministic</b> Gate: a guardian backed by a rule, not a model. It refuses
+    /// any prompt containing one of <paramref name="refusePatterns"/> (case-insensitive) and accepts
+    /// everything else — compliance that cannot be a coin-flip. Rides the same
+    /// <see cref="IClassifierBroker"/> seam as the model-backed <see cref="Gate"/>, so the loop and
+    /// the Tri-Nature are unchanged; only the substrate is swapped. The patterns are Data.
+    /// </summary>
+    /// <param name="refusePatterns">Substrings that, if present in a prompt, cause a refusal.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent RuleGate(params string[] refusePatterns) =>
+        Set(() => this.classifierBroker = new RuleClassifierBroker(refusePatterns));
+
+    /// <summary>
+    /// Turns on a <b>deterministic</b> Judge: a guardian backed by a rule, not a model. It passes a
+    /// draft answer only when the answer contains every one of <paramref name="requiredPatterns"/>
+    /// (case-insensitive), and otherwise rejects it — naming the first missing item as the revise-out
+    /// reason. Rides the same <see cref="IVerifierBroker"/> seam as the model-backed <see cref="Judge"/>.
+    /// The patterns are Data.
+    /// </summary>
+    /// <param name="requiredPatterns">Substrings the answer must contain to pass review.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent RuleJudge(params string[] requiredPatterns) =>
+        Set(() => this.verifierBroker = new RuleVerifierBroker(requiredPatterns));
+
+    /// <summary>
     /// Gives the agent a memory file it reads on recall and writes to through the built-in
     /// <c>remember</c> tool, so facts survive across turns and runs.
     /// </summary>
