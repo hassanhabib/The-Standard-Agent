@@ -40,7 +40,7 @@ public partial class DataOrchestrationService : IDataOrchestrationService
     {
         ValidateContext(context);
 
-        string skills = await this.skillService.RetrieveSkillsAsync();
+        string skills = await this.skillService.RetrieveSkillsAsync(context.Route);
         IReadOnlyList<string> memories = await this.memoryService.RecallMemoriesAsync();
         IReadOnlyList<string> knowledge = await this.knowledgeService.RetrieveKnowledgeAsync(context.Prompt);
 
