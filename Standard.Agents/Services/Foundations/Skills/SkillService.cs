@@ -57,6 +57,19 @@ public partial class SkillService : ISkillService
             fileBroker.SelectFiles(this.skillsPath, SkillFilePattern, SearchOption.TopDirectoryOnly)
                 .OrderBy(skillFilePath => skillFilePath, StringComparer.Ordinal);
 
+        if (string.IsNullOrWhiteSpace(route) is false)
+        {
+            List<string> routedFilePaths = skillFilePaths
+                .Where(skillFilePath => Path.GetFileNameWithoutExtension(skillFilePath)
+                    .Contains(route, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+
+            if (routedFilePaths.Count > 0)
+            {
+                skillFilePaths = routedFilePaths;
+            }
+        }
+
         List<string> skills = [];
 
         foreach (string skillFilePath in skillFilePaths)
