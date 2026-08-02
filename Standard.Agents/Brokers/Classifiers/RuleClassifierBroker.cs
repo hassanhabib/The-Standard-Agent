@@ -19,7 +19,12 @@ public sealed class RuleClassifierBroker : IClassifierBroker
     {
         await Task.CompletedTask;
 
-        return Accept;
+        string? matchedRule = this.refusePatterns.FirstOrDefault(pattern =>
+            input.Contains(pattern, StringComparison.OrdinalIgnoreCase));
+
+        return matchedRule is null
+            ? Accept
+            : $"refuse: blocked by rule '{matchedRule}'";
     }
 
     public async ValueTask<string> AssessAsync(string systemPrompt, string input)
