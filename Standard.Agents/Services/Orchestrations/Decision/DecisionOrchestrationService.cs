@@ -203,7 +203,7 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
         AgentContext decided = Interpret(context, reply.ToString().Trim());
 
         await this.loggingBroker.LogProcessAsync(
-            "Decision", $"Brain → replied ({reply.Length} chars)", detail: true);
+            "Decision", $"Brain replied →{Environment.NewLine}{reply.ToString().Trim()}", detail: true);
 
         await this.loggingBroker.LogProcessAsync(
             "Decision", $"Interpreted → {decided.DirectionType}");
