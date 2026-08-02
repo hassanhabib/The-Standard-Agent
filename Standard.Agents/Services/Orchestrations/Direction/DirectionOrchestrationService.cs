@@ -21,18 +21,27 @@ public partial class DirectionOrchestrationService : IDirectionOrchestrationServ
     private readonly IExternalToolService externalToolService;
     private readonly IReturnService returnService;
     private readonly ILoggingBroker loggingBroker;
+    private readonly HashSet<string> allowedToolNames;
 
     public DirectionOrchestrationService(
         IInternalToolService internalToolService,
         IExternalToolService externalToolService,
         IReturnService returnService,
-        ILoggingBroker loggingBroker)
+        ILoggingBroker loggingBroker,
+        IEnumerable<string>? allowedTools = null)
     {
         this.internalToolService = internalToolService;
         this.externalToolService = externalToolService;
         this.returnService = returnService;
         this.loggingBroker = loggingBroker;
+
+        this.allowedToolNames =
+            new HashSet<string>(allowedTools ?? [], StringComparer.OrdinalIgnoreCase);
     }
+
+    private bool IsToolForbidden(string toolName) =>
+        this.allowedToolNames.Count > 0
+            && this.allowedToolNames.Contains(toolName) is false;
 
     public ValueTask<AgentContext> ActAsync(AgentContext context) =>
     TryCatch(async () =>
