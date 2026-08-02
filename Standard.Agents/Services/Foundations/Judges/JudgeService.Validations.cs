@@ -48,7 +48,9 @@ public partial class JudgeService
                 message: "Invalid judge score. Score must be a number between 0.0 and 1.0.");
         }
 
-        return new Judgement { Score = score };
+        string reason = ExtractLabeled(text, ReasonLabel) ?? string.Empty;
+
+        return new Judgement { Score = score, Reason = reason };
     }
 
     private static string? ExtractLabeled(string text, string label)
