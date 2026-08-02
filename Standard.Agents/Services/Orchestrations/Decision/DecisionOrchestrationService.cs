@@ -139,7 +139,8 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
 
         if (IsRefusal(verdict))
         {
-            await this.loggingBroker.LogProcessAsync("Decision", "Gate → REFUSE");
+            await this.loggingBroker.LogProcessAsync(
+                "Decision", $"Gate → REFUSE: {verdict.ReplaceLineEndings(" ").Trim()}");
 
             setResult(context with
             {
