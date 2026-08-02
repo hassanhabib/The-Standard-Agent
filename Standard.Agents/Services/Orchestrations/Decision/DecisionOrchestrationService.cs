@@ -22,6 +22,7 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
     private const string ToolPrefix = "TOOL:";
     private const string FinalPrefix = "FINAL:";
     private const string RefuseVerdict = "refuse";
+    private const string RouteVerdict = "route";
     private const string RefuseDirection = "Refuse";
     private const string ReturnResponseDirection = "ReturnResponse";
     private const string RespondIntent = "Respond";
@@ -157,7 +158,10 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
         }
 
         await this.loggingBroker.LogProcessAsync(
-            "Decision", $"Gate → PASS: {verdict.ReplaceLineEndings(" ").Trim()}");
+            "Decision",
+            IsRoute(verdict)
+                ? $"Gate → ROUTE: {verdict.ReplaceLineEndings(" ").Trim()}"
+                : $"Gate → ACCEPT: {verdict.ReplaceLineEndings(" ").Trim()}");
 
         (AgentContext resolvedContext, bool isTerminal) =
             await ResolveSkillConflictAsync(context);
@@ -381,6 +385,9 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
 
     private static bool IsRefusal(string verdict) =>
 verdict.TrimStart().StartsWith(RefuseVerdict, StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsRoute(string verdict) =>
+        verdict.TrimStart().StartsWith(RouteVerdict, StringComparison.OrdinalIgnoreCase);
 
     private static string BuildUserMessage(AgentContext context)
     {
