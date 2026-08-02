@@ -7,5 +7,5 @@ namespace Standard.Agents.Services.Foundations.Skills;
 
 public interface ISkillService
 {
-    ValueTask<string> RetrieveSkillsAsync();
+    ValueTask<string> RetrieveSkillsAsync(string route = "");
 }
