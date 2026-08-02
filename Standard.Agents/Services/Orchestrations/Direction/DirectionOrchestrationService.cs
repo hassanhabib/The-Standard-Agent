@@ -44,7 +44,7 @@ public partial class DirectionOrchestrationService : IDirectionOrchestrationServ
             string result = await this.returnService.ReturnAsync(context.Payload);
 
             await this.loggingBroker.LogProcessAsync(
-                "Direction", $"{context.DirectionType} → returned ({result.Length} chars)");
+                "Direction", $"{context.DirectionType} → returned: {result}");
 
             return context with
             {
