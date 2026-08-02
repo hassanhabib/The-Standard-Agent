@@ -156,7 +156,8 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
             yield break;
         }
 
-        await this.loggingBroker.LogProcessAsync("Decision", "Gate → PASS");
+        await this.loggingBroker.LogProcessAsync(
+            "Decision", $"Gate → PASS: {verdict.ReplaceLineEndings(" ").Trim()}");
 
         (AgentContext resolvedContext, bool isTerminal) =
             await ResolveSkillConflictAsync(context);
