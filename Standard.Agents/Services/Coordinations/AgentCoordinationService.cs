@@ -62,11 +62,15 @@ public partial class AgentCoordinationService : IAgentCoordinationService
 
             if (context.Status is AgentStatus.Revising)
             {
+                await this.loggingBroker.LogOutcomeAsync($"turn {turn}: revising");
+
                 continue;
             }
 
             await this.loggingBroker.LogStepAsync(AgentStep.Direction);
             context = await this.directionOrchestrationService.ActAsync(context);
+
+            await this.loggingBroker.LogOutcomeAsync($"turn {turn}: {context.Status}");
 
             if (context.Status != AgentStatus.Working)
             {
@@ -82,6 +86,8 @@ public partial class AgentCoordinationService : IAgentCoordinationService
                 Status = AgentStatus.Refused
             };
         }
+
+        await this.loggingBroker.LogOutcomeAsync($"done: {context.Status}");
 
         if (string.IsNullOrEmpty(context.Remember) is false)
         {
@@ -123,11 +129,15 @@ public partial class AgentCoordinationService : IAgentCoordinationService
 
             if (context.Status is AgentStatus.Revising)
             {
+                await this.loggingBroker.LogOutcomeAsync($"turn {turn}: revising");
+
                 continue;
             }
 
             await this.loggingBroker.LogStepAsync(AgentStep.Direction);
             context = await this.directionOrchestrationService.ActAsync(context);
+
+            await this.loggingBroker.LogOutcomeAsync($"turn {turn}: {context.Status}");
 
             if (context.Status is AgentStatus.Working
                 && string.IsNullOrEmpty(context.Result) is false)
@@ -163,6 +173,8 @@ public partial class AgentCoordinationService : IAgentCoordinationService
                 AgentStreamEventType.Response,
                 RetriesExhaustedMessage);
         }
+
+        await this.loggingBroker.LogOutcomeAsync($"done: {context.Status}");
 
         if (string.IsNullOrEmpty(context.Remember) is false)
         {
