@@ -164,6 +164,15 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
             yield break;
         }
 
+        if (IsGuardianOverreach(verdict))
+        {
+            await this.loggingBroker.LogProcessAsync(
+                "Decision",
+                "Gate overreach — a guardian tried to answer or act instead of classifying; "
+                    + "neutralized and passed to the Brain "
+                    + "(Invariant 6: a guardian is never the Brain)");
+        }
+
         await this.loggingBroker.LogProcessAsync(
             "Decision",
             IsRoute(verdict)
@@ -412,6 +421,11 @@ verdict.TrimStart().StartsWith(RefuseVerdict, StringComparison.OrdinalIgnoreCase
 
     private static bool IsRoute(string verdict) =>
         verdict.TrimStart().StartsWith(RouteVerdict, StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsGuardianOverreach(string verdict) =>
+        verdict.Contains(FinalPrefix, StringComparison.OrdinalIgnoreCase)
+            || verdict.Contains(ActionPrefix, StringComparison.OrdinalIgnoreCase)
+            || verdict.Contains(ToolPrefix, StringComparison.OrdinalIgnoreCase);
 
     private static string ExtractRouteLabel(string verdict)
     {
