@@ -62,6 +62,22 @@ public partial class DirectionOrchestrationService : IDirectionOrchestrationServ
             };
         }
 
+        if (IsToolForbidden(context.DirectionType))
+        {
+            string denial = $"tool '{context.DirectionType}' is not permitted";
+
+            await this.loggingBroker.LogProcessAsync(
+                "Direction",
+                $"RBAC → DENIED '{context.DirectionType}' (not in the allow-list)");
+
+            return context with
+            {
+                Result = denial,
+                Observations = [.. context.Observations, $"{context.DirectionType}: {denial}"],
+                Status = AgentStatus.Working
+            };
+        }
+
         bool isLocalTool = await this.internalToolService.HandlesAsync(context.DirectionType);
 
         string output = isLocalTool
