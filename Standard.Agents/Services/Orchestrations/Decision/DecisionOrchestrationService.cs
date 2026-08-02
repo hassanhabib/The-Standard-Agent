@@ -163,6 +163,11 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
                 ? $"Gate → ROUTE: {verdict.ReplaceLineEndings(" ").Trim()}"
                 : $"Gate → ACCEPT: {verdict.ReplaceLineEndings(" ").Trim()}");
 
+        if (IsRoute(verdict))
+        {
+            context = context with { Route = ExtractRouteLabel(verdict) };
+        }
+
         (AgentContext resolvedContext, bool isTerminal) =
             await ResolveSkillConflictAsync(context);
 
@@ -388,6 +393,13 @@ verdict.TrimStart().StartsWith(RefuseVerdict, StringComparison.OrdinalIgnoreCase
 
     private static bool IsRoute(string verdict) =>
         verdict.TrimStart().StartsWith(RouteVerdict, StringComparison.OrdinalIgnoreCase);
+
+    private static string ExtractRouteLabel(string verdict)
+    {
+        string label = verdict.TrimStart()[RouteVerdict.Length..];
+
+        return label.TrimStart(':', ' ').ReplaceLineEndings(" ").Trim();
+    }
 
     private static string BuildUserMessage(AgentContext context)
     {
