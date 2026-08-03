@@ -112,6 +112,24 @@ var agent = new StandardAgent(url, key, "LLooMA2.0")
 
 Pick each nature's home independently; the code above doesn't change when you do.
 
+## Enterprise controls — opt-in, one line each
+
+From a laptop demo to a regulated deployment on the *same* agent definition. Each control is one
+opt-in line with a sane default; the loop, the public API, and the Tri-Nature never change. Full
+walkthrough in [docs/how-to.md](https://github.com/hassanhabib/The-Standard-Agent/blob/main/docs/how-to.md)
+§4–§5 and §9–§10.
+
+| Control | Line | What it does |
+|---|---|---|
+| Audit trail | `.LogTo(path, verbosity)` · `.Audit(path)` | turn-by-turn trace **and** structured JSON decision log — reasons, tokens, timing, failures |
+| PII redaction | `.Redact()` | emails / SSNs / cards / phones tokenized before the brain, rehydrated after — data never leaves in the clear (buffered **and** streaming) |
+| Least-privilege tools | `.AllowTools("calculator")` | the brain may *propose* any tool; only the allow-listed ones *run* |
+| Deterministic guardians | `.RuleGate(…)` · `.RuleJudge(…)` | a Gate / Judge backed by a rule, not a coin-flip model |
+| Guardian reasons | built into Gate / Judge | refuse **and** revise-out carry a reason; the Judge's reason feeds the next revision |
+
+Every one rides an existing seam — a broker swap or an opt-in builder method — so nothing above it
+moves. This is the collapsible substrate: five lines on a laptop, the *same* five lines in a bank.
+
 ## The 1·3·9
 
 ![The Standard for Agents — architecture: Agent Builder → Coordination → the three Orchestrations (Data, Decision, Direction) → nine Foundation services → their Brokers](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-architecture.png)

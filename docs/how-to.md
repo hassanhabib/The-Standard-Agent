@@ -241,6 +241,19 @@ var agent = new StandardAgent()
     .LocalGate(llama.GenerateAsync);   // one local model, now also the gate
 ```
 
+**Deterministic, too.** A guardian doesn't have to be a model. When the policy is a hard rule —
+never let a prompt mentioning a secret reach the brain — `.RuleGate(...)` screens against a plain
+allow-list of forbidden patterns: no inference, no latency, no coin-flip.
+
+```csharp
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .RuleGate("password", "ssn", "wire transfer");   // refuse these deterministically
+```
+
+Any prompt containing one of those (case-insensitive) is refused before the brain runs. It rides the
+same `IClassifierBroker` seam as the model gate — rule *or* model, same wiring — so compliance that
+must never be a probability lives right next to the one that can be.
+
 ---
 
 ## 5 · Judging — a conscience after the brain
@@ -256,15 +269,18 @@ var agent = new StandardAgent(url, key, "LLooMA2.0")
 ```
 
 **Why it's useful.** Without a judge, the first draft is the final answer — including a confident,
-wrong one. With a judge, a low-scoring draft is *rejected*: it's fed back as an observation and the
-agent tries again, so the answer that reaches you has survived a second opinion.
+wrong one. With a judge, a low-scoring draft is *rejected* **with a reason**, and that reason is fed
+back so the next attempt knows what to fix — the agent revises *with feedback*, not blind:
 
 ```
-Draft: "47 * 89 = 4183."   → judge: 0.9 → returned
-Draft: "47 * 89 = 4020."   → judge: 0.1 → rejected, agent revises
+Draft: "47 * 89 = 4183."   → judge: 0.9                          → returned
+Draft: "47 * 89 = 4020."   → judge: 0.1, "the product is wrong"  → rejected; the reason
+                                                                    rides into the next turn
 ```
 
-Like the Gate, the Judge runs its own rubric and is never the brain certifying itself.
+The Judge screens the *output* the way the Gate screens the *input*: accept, or **revise out with a
+reason** — the mirror of the Gate's refuse-with-a-reason. Like the Gate it runs its own rubric and is
+never the brain certifying itself.
 
 **Locally, too.** `.LocalJudge(...)` scores the draft with an in-process model, same delegate shape:
 
@@ -272,6 +288,16 @@ Like the Gate, the Judge runs its own rubric and is never the brain certifying i
 var agent = new StandardAgent()
     .UseGenerator(llama)
     .LocalJudge(llama.GenerateAsync);
+```
+
+**Deterministic, too.** Like `.RuleGate`, `.RuleJudge(...)` reviews with a rule instead of a model:
+the answer passes only if it contains every required phrase, otherwise it's rejected with the first
+missing item named as the revise-out reason. Perfect when compliance is non-negotiable — every answer
+must cite a source, carry a disclaimer:
+
+```csharp
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .RuleJudge("source:");   // reject any answer that doesn't cite a source
 ```
 
 **One law above both.** The Gate and Judge each ship with a built-in policy. To bind them to
@@ -503,6 +529,111 @@ stable seam.
 
 ---
 
+## 9 · The audit trail — every decision, on the record
+
+> §9–§10 (and the rule guardians in §4–§5) are the newest additions — the enterprise controls. They
+> follow the same appliance rule as everything above: one opt-in line, a sane default, the loop and
+> the Tri-Nature unchanged.
+
+An agent a regulator or an incident review can read has to explain *why* it did what it did. Two
+sinks give you that, both opt-in.
+
+**Human-readable — `.LogTo(path, verbosity)`.** A turn-by-turn trace of the whole run: each turn,
+each nature, each process, with the payloads that crossed between them.
+
+```csharp
+using Standard.Agents.Models.Loggings;   // TraceVerbosity
+
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .Gate(apiUrl: url, apiKey: key, model: "LLooMA2.0")
+    .Judge(apiUrl: url, apiKey: key, model: "LLooMA2.0")
+    .LogTo("log.txt", TraceVerbosity.Full);   // ← new this section
+```
+
+The verbosity is the Tri-Nature zoom:
+
+- `Summary` — one line per turn, plus the final outcome.
+- `Natures` — the three natures per turn: `Gate → ACCEPT/ROUTE/REFUSE` (with reason), Brain,
+  `Judge → score`.
+- `Full` — every process with real payloads: the exact system prompt sent to the brain, the brain's
+  reply, each tool's input and output, an estimated token count, and the elapsed time.
+
+```
+Turn 0
+  Step 1: Decision
+    Process 0: Decision: Gate → ACCEPT: accept
+    Process 3: Decision: Brain → ~1180 tokens (prompt + reply, estimated)
+    Process 4: Decision: Judge → scored 0.90 → ACCEPT
+  → turn 0: Responded (1240ms)
+  → done: Responded (1250ms)
+```
+
+Failures are on the record too — when a nature throws, the trace shows the `ERROR`, not silence — as
+is a guardian that oversteps: if the Gate tries to *answer* instead of classify, that overreach is
+neutralized and logged (`Gate overreach … Invariant 6`), never obeyed.
+
+**Machine-readable — `.Audit(path)`.** For a SIEM or a telemetry pipeline, `.Audit(...)` writes the
+same events as **JSON lines** — one object per event, always full detail — alongside the text trace:
+
+```csharp
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .Gate(apiUrl: url, apiKey: key, model: "LLooMA2.0")
+    .Judge(apiUrl: url, apiKey: key, model: "LLooMA2.0")
+    .Audit("audit.jsonl");   // ← structured, one JSON object per decision
+```
+
+```json
+{"kind":"turn","turn":0}
+{"kind":"process","actor":"Decision","message":"Gate → ACCEPT: accept","detail":false}
+{"kind":"outcome","message":"done: Responded","elapsedMs":1250}
+```
+
+Every decision the agent made — screened, generated, scored, acted — is now an exportable record. The
+core stays dependency-free; an OpenTelemetry exporter is a natural next sink behind the same seam.
+
+---
+
+## 10 · The security perimeter — keeping data and tools in bounds
+
+Two controls keep an agent inside the lines: what leaves for the brain, and what the brain is allowed
+to do.
+
+**PII never reaches the brain in the clear — `.Redact()`.** Before any prompt reaches the brain
+(local or remote, streaming or not), emails, SSNs, credit-card and phone numbers are swapped for
+opaque `{{LABEL_N}}` tokens; the reply is rehydrated so *you* get the real values back. The model —
+and any host serving it — never sees the data:
+
+```csharp
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .Redact();   // ← new this section
+```
+
+```
+you say:     "email jane@acme.com the report"
+brain sees:  "email {{EMAIL_0}} the report"     ← never the address
+you get:     "I've emailed jane@acme.com …"     ← restored on the way out
+```
+
+The default rule set (email / SSN / card / phone) is Data; back the seam to bring your own. This is
+the same tokenization boundary a hostile-host network relies on — protect the data at the
+orchestrator, never trust the far end.
+
+**Least-privilege on tools — `.AllowTools()`.** The brain may *propose* any tool, but only the ones
+you name are allowed to *run*. Anything else is denied at the Direction perimeter before it executes,
+and fed back so the agent can pick a permitted path instead of crashing:
+
+```csharp
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .Tool(new CalculatorTool())
+    .AllowTools("calculator");   // ← the brain can ask for "webhook"; it will not run
+```
+
+Off by default (no restriction), case-insensitive, and every denial lands on the audit trail (§9):
+`RBAC → DENIED 'webhook'`. This is the doctrine's least-privilege — capability is gated where it is
+*exercised*, not where it is *proposed*.
+
+---
+
 ## Putting it together
 
 The builder composes cleanly — take only what you need:
@@ -518,7 +649,10 @@ var agent = new StandardAgent(url, key, "LLooMA2.0")      // 0 · talking
     .Judge(apiUrl: url, apiKey: key, model: "LLooMA2.0")  // 5 · review answers
     .Memory("agent-memory.txt")                           // 6 · remember across restarts
     .Knowledge("Knowledge")                               // 7 · ground on your data
-    .LogTo("log.txt");                                    // turn-by-turn trace
+    .Redact()                                             // 10 · PII never reaches the brain
+    .AllowTools("calculator")                             // 10 · least-privilege on tools
+    .LogTo("log.txt")                                     // 9 · turn-by-turn trace
+    .Audit("audit.jsonl");                                // 9 · structured decision log
 ```
 
 No DI container, no config framework — `Compose()` hand-wires the whole graph when you call
