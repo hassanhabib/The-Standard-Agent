@@ -276,15 +276,19 @@ var agent = new StandardAgent(url, key, "LLooMA2.0")
 ```
 
 **Why it's useful.** Without a judge, the first draft is the final answer — including a confident,
-wrong one. With a judge, a low-scoring draft is *rejected*: it's fed back as an observation and the
-agent tries again, so the answer that reaches you has survived a second opinion.
+wrong one. With a judge, a low-scoring draft is *rejected with a reason*, and that reason is fed back
+so the next attempt knows what to fix — the agent revises *with feedback*, not blind, and the answer
+that reaches you has survived a second opinion.
 
 ```
-Draft: "47 * 89 = 4183."   → judge: 0.9 → returned
-Draft: "47 * 89 = 4020."   → judge: 0.1 → rejected, agent revises
+Draft: "47 * 89 = 4183."   → judge: 0.9                          → returned
+Draft: "47 * 89 = 4020."   → judge: 0.1, "the product is wrong"  → rejected; the reason
+                                                                    rides into the next turn
 ```
 
-Like the Gate, the Judge runs its own rubric and is never the brain certifying itself.
+The Judge screens the *output* the way the Gate screens the *input*: accept, or **revise out with a
+reason** — the mirror of the Gate's refuse-with-a-reason. Like the Gate it runs its own rubric and is
+never the brain certifying itself.
 
 **Locally, too.** `.LocalJudge(...)` scores the draft with an in-process model, same delegate shape:
 
