@@ -29,6 +29,10 @@ single core. One brain at the center, the three natures turning around it.
 
 Orchestration is not a fourth nature. It is the composition operator — the loop.
 
+Built for everyone who ships agents: the individual who wants the simplest thing that works, the
+small team that needs it reliable, and the enterprise that needs it accountable — **the same agent
+grows all the way up, never a rewrite.**
+
 ## Watch
 
 [![Create Your First AI Agent from Scratch — The Standard for Agents](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-video-thumbnail.jpg)](https://www.youtube.com/watch?v=UE6QcvQsOyU)
@@ -39,7 +43,17 @@ Orchestration is not a fourth nature. It is the composition operator — the loo
 dotnet add package Standard.Agents
 ```
 
-The bare minimum is a brain — nothing else required:
+## One agent, three sizes
+
+The Tri-Nature is the whole model at **every** size. An agent is always **Data · Decision ·
+Direction** turning in a loop — so a ten-second one-liner and a bank's compliance agent are the
+*same shape*. You never learn a second framework to scale up: you add capability, one opt-in line at
+a time, to natures that are already there. **Enterprise isn't harder — it's the same agent with more
+power and more detail.**
+
+### Simple — an individual, one line, ten seconds
+
+You have a brain (a URL, a key, a model). That is a working agent.
 
 ```csharp
 var agent = new StandardAgent(apiUrl: "https://api.peerllm.com/v1/", apiKey: key, model: "LLooMA2.0");
@@ -47,21 +61,53 @@ var agent = new StandardAgent(apiUrl: "https://api.peerllm.com/v1/", apiKey: key
 string answer = await agent.ProcessPromptAsync("What is 47 * 89?");
 ```
 
-Add skills, tools, and guardians as you grow. Skills and tools are picked up when
-present; the Gate and Judge are **opt-in** (SPEC.md §8.1 — the Core profile may leave
-them pass-through):
+No skills, no tools, no guardians — all opt-in. Nothing to configure. It is already talking.
+
+### Medium — a small team, reliable, a handful of lines
+
+A startup that needs something that *works*: a persona, the ability to act, a conscience on the way
+in and out, and a memory that survives restarts. Same builder, a few more lines.
 
 ```csharp
-var agent = new StandardAgent()
-    .Brain(apiUrl: "https://api.peerllm.com/v1/", apiKey: key, model: "LLooMA2.0")
-    .Skills("Skills")
-    .Tool(new CalculatorTool())
-    .Gate(apiUrl: "https://api.peerllm.com/v1/", apiKey: key, model: "LLooMA2.0")
-    .LogTo("log.txt");
+var agent = new StandardAgent(url, key, "LLooMA2.0")     // your brain
+    .Skills("Skills")                                    // who it is — Markdown, not code
+    .Tool(new CalculatorTool())                          // what it can *do*
+    .Gate(apiUrl: url, apiKey: key, model: "LLooMA2.0")  // screen the request  (Decision)
+    .Judge(apiUrl: url, apiKey: key, model: "LLooMA2.0") // review the answer   (Decision)
+    .Memory("memory.txt");                               // remember across runs (Data)
 ```
 
-Stream the agent thinking and answering — each event is tagged, and the answer
-arrives live:
+### Enterprise — a regulated deployment, more power, same shape
+
+A 20-year professional shipping into a bank. **Every line above is still here — you added, you did
+not rewrite.** What's new is power: data that never leaves in the clear, least-privilege on tools, one
+law over the guardians, and an audit trail a regulator can read.
+
+```csharp
+using Standard.Agents.Models.Loggings;   // TraceVerbosity
+
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .Skills("Skills")
+    .Tool(new CalculatorTool())
+    .Gate(apiUrl: url, apiKey: key, model: "LLooMA2.0")
+    .Judge(apiUrl: url, apiKey: key, model: "LLooMA2.0")
+    .Memory("memory.txt")
+    .Constitution("Constitution/ethics.md")        // one law above both guardians
+    .Redact()                                       // PII tokenized before the brain, restored after
+    .AllowTools("calculator")                       // least-privilege — only this tool may run
+    .LogTo("log.txt", TraceVerbosity.Full)          // full turn-by-turn decision trace
+    .Audit("audit.jsonl");                          // structured decision log → your SIEM
+```
+
+The enterprise agent is the medium agent **plus five opt-in lines** — each with a sane default, none
+of them a new concept. That is the collapsible substrate: the public API, the loop, and the
+Tri-Nature never change; power lives in the brokers and the deployment. Five lines on a laptop, the
+*same* five lines in a bank. The full walkthrough — one capability per step, every snippet runnable —
+is in [**docs/how-to.md**](https://github.com/hassanhabib/The-Standard-Agent/blob/main/docs/how-to.md).
+
+## Streaming, and no DI
+
+Stream the agent thinking and answering — each event is tagged, and the answer arrives live:
 
 ```csharp
 await foreach (AgentStreamEvent streamEvent in agent.StreamPromptAsync("What is 47 * 89?"))
@@ -78,10 +124,6 @@ await foreach (AgentStreamEvent streamEvent in agent.StreamPromptAsync("What is 
 
 No DI container. `Compose()` hand-wires the whole graph — SPEC.md §9: *"DI is OPTIONAL. A
 hand-wired composition root is fully conformant."*
-
-**New here?** [**docs/how-to.md**](https://github.com/hassanhabib/The-Standard-Agent/blob/main/docs/how-to.md)
-walks from a one-line talking agent to skills, tools, guardians, memory, knowledge, and every
-backend below — one capability at a time, every snippet runnable.
 
 ## Backends — every nature is swappable
 
