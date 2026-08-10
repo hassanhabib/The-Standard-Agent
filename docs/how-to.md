@@ -158,6 +158,30 @@ A skill is listed only if it carries a `description` (the opt-in, exactly like a
 index in context and route-in on, the model reaches for the skill it needs — model-driven, the same
 way it reaches for a tool.
 
+### Skills from the registry
+
+A folder isn't the only source. Just as memory swaps to Redis and knowledge to Postgres, skills can
+come from the [PeerLLM registry](https://skills.peerllm.com) — versioned, shared, pulled at runtime —
+through the same `ISkillBroker` seam. The
+[`Standard.Agents.Data.Skills.PeerLLM`](https://www.nuget.org/packages/Standard.Agents.Data.Skills.PeerLLM)
+package points at a **skillset** (a versioned bundle):
+
+```bash
+dotnet add package Standard.Agents.Data.Skills.PeerLLM
+```
+
+```csharp
+using Standard.Agents.Data.Skills.PeerLLM;
+
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .UseSkills(new PeerLLMSkillBroker("hassanhabib/my-skills", SkillSync.Hybrid));
+```
+
+Each skillset member arrives as a `Skill { Name, Description, Content }` — the same shape the file
+broker produces, so routing and the `{{skills}}` index work identically. Three sync modes trade
+freshness for chattiness: `Live` (fetch every turn), `Local` (pull once to a cache), `Hybrid` (cache,
+re-pull only when a newer version ships). Public skills need no key; pass a `psk_…` key for your own.
+
 ---
 
 ## 3 · Tools
