@@ -46,4 +46,17 @@ public partial class SkillService : ISkillService
 
         return string.Join(SkillSeparator, selectedSkills.Select(skill => skill.Content));
     });
+
+    public ValueTask<string> RetrieveSkillCatalogAsync() =>
+    TryCatch(async () =>
+    {
+        IReadOnlyList<Skill> skills = await this.skillBroker.SelectSkillsAsync();
+
+        IEnumerable<string> catalogEntries = skills
+            .Where(skill => string.IsNullOrWhiteSpace(skill.Description) is false)
+            .OrderBy(skill => skill.Name, StringComparer.Ordinal)
+                .Select(skill => $"- {skill.Name} — {skill.Description}");
+
+        return string.Join(Environment.NewLine, catalogEntries);
+    });
 }

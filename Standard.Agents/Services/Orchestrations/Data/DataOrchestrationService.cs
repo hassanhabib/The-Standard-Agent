@@ -14,6 +14,7 @@ namespace Standard.Agents.Services.Orchestrations.Data;
 public partial class DataOrchestrationService : IDataOrchestrationService
 {
     private const string ToolsMarker = "{{tools}}";
+    private const string SkillsMarker = "{{skills}}";
 
     private readonly ISkillService skillService;
     private readonly IMemoryService memoryService;
@@ -45,6 +46,12 @@ public partial class DataOrchestrationService : IDataOrchestrationService
         IReadOnlyList<string> knowledge = await this.knowledgeService.RetrieveKnowledgeAsync(context.Prompt);
 
         string systemPrompt = skills.Replace(ToolsMarker, this.toolCatalog);
+
+        if (systemPrompt.Contains(SkillsMarker))
+        {
+            string skillCatalog = await this.skillService.RetrieveSkillCatalogAsync();
+            systemPrompt = systemPrompt.Replace(SkillsMarker, skillCatalog);
+        }
 
         await this.loggingBroker.LogProcessAsync("Data", $"Received prompt: \"{context.Prompt}\"");
         await this.loggingBroker.LogProcessAsync("Data", $"Recalled {memories.Count} memories");
