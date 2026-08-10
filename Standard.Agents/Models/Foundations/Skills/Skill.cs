@@ -3,11 +3,11 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
-using Standard.Agents.Models.Foundations.Skills;
+namespace Standard.Agents.Models.Foundations.Skills;
 
-namespace Standard.Agents.Brokers.Skills;
-
-public interface ISkillBroker
+public record Skill
 {
-    ValueTask<IReadOnlyList<Skill>> SelectSkillsAsync();
+    public string Name { get; init; } = string.Empty;
+    public string Description { get; init; } = string.Empty;
+    public string Content { get; init; } = string.Empty;
 }

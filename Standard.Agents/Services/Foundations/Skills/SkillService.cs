@@ -3,20 +3,17 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
-using Standard.Agents.Brokers.Files;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Brokers.Skills;
+using Standard.Agents.Models.Foundations.Skills;
 
 namespace Standard.Agents.Services.Foundations.Skills;
 
 public partial class SkillService : ISkillService
 {
-    private const string SkillFilePattern = "*.md";
     private const string SkillSeparator = "\n\n";
 
-    private readonly ISkillBroker? skillBroker;
-    private readonly IFileBroker? fileBroker;
-    private readonly string skillsPath;
+    private readonly ISkillBroker skillBroker;
     private readonly ILoggingBroker loggingBroker;
 
     public SkillService(
@@ -24,59 +21,29 @@ public partial class SkillService : ISkillService
         ILoggingBroker loggingBroker)
     {
         this.skillBroker = skillBroker;
-        this.skillsPath = string.Empty;
-        this.loggingBroker = loggingBroker;
-    }
-
-    public SkillService(
-        IFileBroker fileBroker,
-        string skillsPath,
-        ILoggingBroker loggingBroker)
-    {
-        this.fileBroker = fileBroker;
-        this.skillsPath = skillsPath;
         this.loggingBroker = loggingBroker;
     }
 
     public ValueTask<string> RetrieveSkillsAsync(string route = "") =>
     TryCatch(async () =>
     {
-        return this.fileBroker is not null
-            ? await SelectSkillsFromFilesAsync(this.fileBroker, route)
-            : await this.skillBroker!.SelectSkillsAsync();
-    });
+        IReadOnlyList<Skill> skills = await this.skillBroker.SelectSkillsAsync();
 
-    private async ValueTask<string> SelectSkillsFromFilesAsync(IFileBroker fileBroker, string route)
-    {
-        if (fileBroker.DirectoryExists(this.skillsPath) is false)
-        {
-            return string.Empty;
-        }
-
-        IEnumerable<string> skillFilePaths =
-            fileBroker.SelectFiles(this.skillsPath, SkillFilePattern, SearchOption.TopDirectoryOnly)
-                .OrderBy(skillFilePath => skillFilePath, StringComparer.Ordinal);
+        IEnumerable<Skill> selectedSkills =
+            skills.OrderBy(skill => skill.Name, StringComparer.Ordinal);
 
         if (string.IsNullOrWhiteSpace(route) is false)
         {
-            List<string> routedFilePaths = skillFilePaths
-                .Where(skillFilePath => Path.GetFileNameWithoutExtension(skillFilePath)
-                    .Contains(route, StringComparison.OrdinalIgnoreCase))
-                        .ToList();
+            List<Skill> routedSkills = selectedSkills
+                .Where(skill => skill.Name.Contains(route, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
 
-            if (routedFilePaths.Count > 0)
+            if (routedSkills.Count > 0)
             {
-                skillFilePaths = routedFilePaths;
+                selectedSkills = routedSkills;
             }
         }
 
-        List<string> skills = [];
-
-        foreach (string skillFilePath in skillFilePaths)
-        {
-            skills.Add(await fileBroker.ReadFileAsync(skillFilePath));
-        }
-
-        return string.Join(SkillSeparator, skills);
-    }
+        return string.Join(SkillSeparator, selectedSkills.Select(skill => skill.Content));
+    });
 }

@@ -5,7 +5,7 @@
 
 using FluentAssertions;
 using Moq;
-using Standard.Agents.Services.Foundations.Skills;
+using Standard.Agents.Models.Foundations.Skills;
 using Xunit;
 
 namespace Standard.Agents.Tests.Unit.Services.Foundations.Skills;
@@ -13,50 +13,52 @@ namespace Standard.Agents.Tests.Unit.Services.Foundations.Skills;
 public partial class SkillServiceTests
 {
     [Fact]
-    public async Task ShouldRetrieveOnlyRoutedSkillFileWhenRouteIsGivenAsync()
+    public async Task ShouldRetrieveOnlyRoutedSkillWhenRouteIsGivenAsync()
     {
         // given
-        string skillsPath = CreateRandomString();
-        string calculatorPath = "calculator-skill.md";
-        string identityPath = "identity-skill.md";
-        List<string> filePaths = [identityPath, calculatorPath];
-
         string calculatorSkill = CreateRandomString();
         string identitySkill = CreateRandomString();
 
-        var fileSkillService = new SkillService(
-            fileBroker: this.fileBrokerMock.Object,
-            skillsPath: skillsPath,
-            loggingBroker: this.loggingBrokerMock.Object);
+        var skills = new List<Skill>
+        {
+            new() { Name = "identity-skill.md", Content = identitySkill },
+            new() { Name = "calculator-skill.md", Content = calculatorSkill }
+        };
 
-        this.fileBrokerMock.Setup(broker =>
-            broker.DirectoryExists(skillsPath))
-                .Returns(true);
-
-        this.fileBrokerMock.Setup(broker =>
-            broker.SelectFiles(skillsPath, "*.md", SearchOption.TopDirectoryOnly))
-                .Returns(filePaths);
-
-        this.fileBrokerMock.Setup(broker =>
-            broker.ReadFileAsync(calculatorPath))
-                .ReturnsAsync(calculatorSkill);
-
-        this.fileBrokerMock.Setup(broker =>
-            broker.ReadFileAsync(identityPath))
-                .ReturnsAsync(identitySkill);
+        this.skillBrokerMock.Setup(broker =>
+            broker.SelectSkillsAsync())
+                .ReturnsAsync(skills);
 
         // when
-        string actualSkills = await fileSkillService.RetrieveSkillsAsync(route: "calculator");
+        string actualSkills =
+            await this.skillService.RetrieveSkillsAsync(route: "calculator");
 
-        // then — only the file whose name matches the route label is fanned in
+        // then — only the skill whose name matches the route label is fanned in
         actualSkills.Should().Be(calculatorSkill);
+    }
 
-        this.fileBrokerMock.Verify(broker =>
-            broker.ReadFileAsync(calculatorPath),
-                Times.Once);
+    [Fact]
+    public async Task ShouldRouteByNestedFolderNameWhenRouteIsGivenAsync()
+    {
+        // given — a nested skill is identified by its folder in Name
+        string nestedSkill = CreateRandomString();
+        string otherSkill = CreateRandomString();
 
-        this.fileBrokerMock.Verify(broker =>
-            broker.ReadFileAsync(identityPath),
-                Times.Never);
+        var skills = new List<Skill>
+        {
+            new() { Name = "the-standard-skill/SKILL.md", Content = nestedSkill },
+            new() { Name = "other-skill.md", Content = otherSkill }
+        };
+
+        this.skillBrokerMock.Setup(broker =>
+            broker.SelectSkillsAsync())
+                .ReturnsAsync(skills);
+
+        // when
+        string actualSkills =
+            await this.skillService.RetrieveSkillsAsync(route: "the-standard-skill");
+
+        // then
+        actualSkills.Should().Be(nestedSkill);
     }
 }

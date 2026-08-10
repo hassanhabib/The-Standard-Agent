@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using Standard.Agents.Models.Foundations.Skills;
 using System.IO;
 using FluentAssertions;
 using Moq;
@@ -43,7 +44,7 @@ public class TraceAuditTests
                 .Returns(ToStream("FINAL: 42"));
 
         var skills = new Mock<ISkillBroker>();
-        skills.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync("Answer directly.");
+        skills.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(new List<Skill> { new() { Content = "Answer directly." } });
         var memory = new Mock<IMemoryBroker>();
         memory.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
         var knowledge = new Mock<IKnowledgeBroker>();
