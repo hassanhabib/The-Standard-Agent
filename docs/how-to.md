@@ -138,6 +138,26 @@ Every `.md` **under the folder — subfolders included** — is loaded and conca
 it's stripped from what the brain sees and becomes the skill's index entry. (Remember the
 copy-to-output rule from the top — subfolders travel with it.)
 
+**A `{{skills}}` index.** Just as `{{tools}}` advertises tools, a `{{skills}}` marker in a skill
+expands into an index of your **described** skills — one `- name — description` line each — so the
+agent knows what specialist skills it has and can route to the right one:
+
+```markdown
+You are a helpful assistant. Your specialist skills:
+{{skills}}
+```
+
+becomes:
+
+```
+- weather — answers weather questions
+- billing — explains invoices and charges
+```
+
+A skill is listed only if it carries a `description` (the opt-in, exactly like a tool's). With the
+index in context and route-in on, the model reaches for the skill it needs — model-driven, the same
+way it reaches for a tool.
+
 ---
 
 ## 3 · Tools
