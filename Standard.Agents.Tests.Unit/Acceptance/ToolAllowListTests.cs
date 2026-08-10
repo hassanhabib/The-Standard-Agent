@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using Standard.Agents.Models.Foundations.Skills;
 using FluentAssertions;
 using Moq;
 using Standard.Agents.Brokers.Generators;
@@ -28,7 +29,7 @@ public class ToolAllowListTests
         var mcp = new Mock<IMcpBroker>();
 
         var skills = new Mock<ISkillBroker>();
-        skills.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(string.Empty);
+        skills.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(new List<Skill>());
         var memory = new Mock<IMemoryBroker>();
         memory.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
         var knowledge = new Mock<IKnowledgeBroker>();

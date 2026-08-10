@@ -132,8 +132,11 @@ await agent.ProcessPromptAsync("Explain recursion.");
 // → two tight sentences with an example
 ```
 
-Every `.md` in the folder is loaded and concatenated, in filename order (`00-`, `10-`, …), so you
-can split a persona across files. (Remember the copy-to-output rule from the top.)
+Every `.md` **under the folder — subfolders included** — is loaded and concatenated, in path order
+(`00-`, `10-`, …), so you can split a persona across files or give each skill its own folder
+(`the-standard-skill/SKILL.md`). A skill may open with YAML frontmatter (`name:` / `description:`);
+it's stripped from what the brain sees and becomes the skill's index entry. (Remember the
+copy-to-output rule from the top — subfolders travel with it.)
 
 ---
 

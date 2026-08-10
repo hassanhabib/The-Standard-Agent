@@ -5,6 +5,7 @@
 
 using FluentAssertions;
 using Moq;
+using Standard.Agents.Models.Foundations.Skills;
 using Xunit;
 
 namespace Standard.Agents.Tests.Unit.Services.Foundations.Skills;
@@ -15,9 +16,14 @@ public partial class SkillServiceTests
     public async Task ShouldRetrieveSkillsAsync()
     {
         // given
-        string randomSkills = CreateRandomString();
-        string retrievedSkills = randomSkills;
-        string expectedSkills = retrievedSkills;
+        string skillContent = CreateRandomString();
+
+        var retrievedSkills = new List<Skill>
+        {
+            new() { Name = "00-skill.md", Content = skillContent }
+        };
+
+        string expectedSkills = skillContent;
 
         this.skillBrokerMock.Setup(broker =>
             broker.SelectSkillsAsync())
@@ -27,7 +33,7 @@ public partial class SkillServiceTests
         string actualSkills = await this.skillService.RetrieveSkillsAsync();
 
         // then
-        actualSkills.Should().BeEquivalentTo(expectedSkills);
+        actualSkills.Should().Be(expectedSkills);
 
         this.skillBrokerMock.Verify(broker =>
             broker.SelectSkillsAsync(),

@@ -604,7 +604,9 @@ public sealed partial class StandardAgent : IAgent
 
 
         ISkillService skillService = this.skillBroker is null
-            ? new SkillService(file, Path.Combine(AppContext.BaseDirectory, this.skillsPath), logging)
+            ? new SkillService(
+                new FileSkillBroker(Path.Combine(AppContext.BaseDirectory, this.skillsPath)),
+                logging)
             : new SkillService(this.skillBroker, logging);
 
         IKnowledgeService knowledgeService = this.knowledgeBroker is null

@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using Standard.Agents.Models.Foundations.Skills;
 using FluentAssertions;
 using Moq;
 using Standard.Agents.Tools;
@@ -79,7 +80,7 @@ public class AgentToolTests
                 .ReturnsAsync(() => replies.Dequeue());
 
         var skills = new Mock<Brokers.Skills.ISkillBroker>();
-        skills.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync("you are an agent");
+        skills.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(new List<Skill> { new() { Content = "you are an agent" } });
 
         var memory = new Mock<Brokers.Memorys.IMemoryBroker>();
         memory.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
