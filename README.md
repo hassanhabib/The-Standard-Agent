@@ -125,19 +125,24 @@ await foreach (AgentStreamEvent streamEvent in agent.StreamPromptAsync("What is 
 No DI container. `Compose()` hand-wires the whole graph — SPEC.md §9: *"DI is OPTIONAL. A
 hand-wired composition root is fully conformant."*
 
-## Backends — every nature is swappable
+## Provider packages — swap any nature to a real backend
 
-The core ships dependency-free defaults: a hosted brain, file memory, file knowledge. Swap any
-nature for a real backend with one line — same seam, the dependency living in an opt-in package.
+The core [`Standard.Agents`](https://www.nuget.org/packages/Standard.Agents) is deliberately
+**dependency-free**: a hosted brain, and local-file skills, memory, and knowledge. Reach further with
+an opt-in package — each one backs a single nature with a real provider through the **same broker
+seam**, so it's *one line and nothing else about your agent changes*. Mix them freely: a local brain
+with cloud data, a registry of skills with a Redis memory.
 
-| Nature | Default (in core) | Swap to | Package |
-|---|---|---|---|
-| Brain · *Decision* | hosted `.Brain(url,…)` | local GGUF (llama.cpp) | [`…Decision.Brains.LlamaSharp`](https://www.nuget.org/packages/Standard.Agents.Decision.Brains.LlamaSharp) |
-| Gate / Judge · *Decision* | hosted `.Gate` / `.Judge` | in-process | *core — `.LocalGate` / `.LocalJudge`* |
-| Skills · *Data* | local folder | PeerLLM registry | [`…Data.Skills.PeerLLM`](https://www.nuget.org/packages/Standard.Agents.Data.Skills.PeerLLM) |
-| Memory · *Data* | file | Redis | [`…Data.Memory.Redis`](https://www.nuget.org/packages/Standard.Agents.Data.Memory.Redis) |
-| Knowledge · *Data* | folder | PostgreSQL full-text | [`…Data.Knowledge.Postgres`](https://www.nuget.org/packages/Standard.Agents.Data.Knowledge.Postgres) |
-| Knowledge · *Data* | folder | SQL Server full-text | [`…Data.Knowledge.MsSql`](https://www.nuget.org/packages/Standard.Agents.Data.Knowledge.MsSql) |
+| Package | Backs | Provider |
+|---|---|---|
+| [`Standard.Agents.Decision.Brains.LlamaSharp`](https://www.nuget.org/packages/Standard.Agents.Decision.Brains.LlamaSharp) [![](https://img.shields.io/nuget/v/Standard.Agents.Decision.Brains.LlamaSharp?style=flat-square&label=%20&color=1f6feb&logo=nuget&logoColor=white)](https://www.nuget.org/packages/Standard.Agents.Decision.Brains.LlamaSharp) | Brain · *Decision* | a **local GGUF** model via llama.cpp — no API, no network |
+| [`Standard.Agents.Data.Skills.PeerLLM`](https://www.nuget.org/packages/Standard.Agents.Data.Skills.PeerLLM) [![](https://img.shields.io/nuget/v/Standard.Agents.Data.Skills.PeerLLM?style=flat-square&label=%20&color=1f6feb&logo=nuget&logoColor=white)](https://www.nuget.org/packages/Standard.Agents.Data.Skills.PeerLLM) | Skills · *Data* | versioned skills from the **PeerLLM registry**, pulled at runtime |
+| [`Standard.Agents.Data.Memory.Redis`](https://www.nuget.org/packages/Standard.Agents.Data.Memory.Redis) [![](https://img.shields.io/nuget/v/Standard.Agents.Data.Memory.Redis?style=flat-square&label=%20&color=1f6feb&logo=nuget&logoColor=white)](https://www.nuget.org/packages/Standard.Agents.Data.Memory.Redis) | Memory · *Data* | memory in **Redis**, keyed per agent / user / session |
+| [`Standard.Agents.Data.Knowledge.Postgres`](https://www.nuget.org/packages/Standard.Agents.Data.Knowledge.Postgres) [![](https://img.shields.io/nuget/v/Standard.Agents.Data.Knowledge.Postgres?style=flat-square&label=%20&color=1f6feb&logo=nuget&logoColor=white)](https://www.nuget.org/packages/Standard.Agents.Data.Knowledge.Postgres) | Knowledge · *Data* | knowledge in **PostgreSQL**, ranked `tsvector` full-text |
+| [`Standard.Agents.Data.Knowledge.MsSql`](https://www.nuget.org/packages/Standard.Agents.Data.Knowledge.MsSql) [![](https://img.shields.io/nuget/v/Standard.Agents.Data.Knowledge.MsSql?style=flat-square&label=%20&color=1f6feb&logo=nuget&logoColor=white)](https://www.nuget.org/packages/Standard.Agents.Data.Knowledge.MsSql) | Knowledge · *Data* | knowledge in **SQL Server**, `FREETEXT` full-text |
+
+> The **Gate** and **Judge** go fully local too — `.LocalGate` / `.LocalJudge` drive them with any
+> in-process model, no package needed.
 
 ```csharp
 // fully local — one GGUF drives brain, gate and judge, no network anywhere
@@ -147,13 +152,15 @@ var agent = new StandardAgent()
     .LocalGate(llama.GenerateAsync)
     .LocalJudge(llama.GenerateAsync);
 
-// production data — full-text knowledge in Postgres, shared memory in Redis
+// production — skills from the registry, knowledge in Postgres, memory in Redis
 var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .UseSkills(new PeerLLMSkillBroker("hassanhabib/my-skills", SkillSync.Hybrid))
     .UseKnowledgePostgres(pgConnectionString)
     .UseMemoryRedis("localhost:6379", key: $"agent:{userId}");
 ```
 
-Pick each nature's home independently; the code above doesn't change when you do.
+Pick each nature's home independently; the code above doesn't change when you do — that's the whole
+promise of the broker seam.
 
 ## The 1·3·9
 
