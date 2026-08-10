@@ -134,6 +134,7 @@ nature for a real backend with one line — same seam, the dependency living in 
 |---|---|---|---|
 | Brain · *Decision* | hosted `.Brain(url,…)` | local GGUF (llama.cpp) | [`…Decision.Brains.LlamaSharp`](https://www.nuget.org/packages/Standard.Agents.Decision.Brains.LlamaSharp) |
 | Gate / Judge · *Decision* | hosted `.Gate` / `.Judge` | in-process | *core — `.LocalGate` / `.LocalJudge`* |
+| Skills · *Data* | local folder | PeerLLM registry | [`…Data.Skills.PeerLLM`](https://www.nuget.org/packages/Standard.Agents.Data.Skills.PeerLLM) |
 | Memory · *Data* | file | Redis | [`…Data.Memory.Redis`](https://www.nuget.org/packages/Standard.Agents.Data.Memory.Redis) |
 | Knowledge · *Data* | folder | PostgreSQL full-text | [`…Data.Knowledge.Postgres`](https://www.nuget.org/packages/Standard.Agents.Data.Knowledge.Postgres) |
 | Knowledge · *Data* | folder | SQL Server full-text | [`…Data.Knowledge.MsSql`](https://www.nuget.org/packages/Standard.Agents.Data.Knowledge.MsSql) |
