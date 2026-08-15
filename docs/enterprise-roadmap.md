@@ -1,5 +1,9 @@
 # The Standard Agent — Enterprise Roadmap
 
+> This roadmap owns the **why** — the pillars, the seams, and the appliance guarantee. The
+> release-by-release execution — which branch, which commit, which conformance vector, and how we
+> know it worked — lives in [**enterprise-plan.md**](enterprise-plan.md).
+
 From a five-line laptop demo to a multi-billion-dollar enterprise, on **one** agent
 definition. The trick is the doctrine's own principle — **collapsible substrate**: the
 public API, the loop, and the Tri-Nature never change; scale lives in the **brokers** and
