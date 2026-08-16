@@ -46,6 +46,11 @@ public partial class AgentCoordinationService : IAgentCoordinationService
     {
         ValidatePrompt(prompt);
 
+        // This prompt's run. SPEC.md §4.4: one instance serves prompts concurrently, and each
+        // invocation establishes its own identity, so everything recorded below is credited to
+        // this run and to no other.
+        using IDisposable run = AgentRun.Begin();
+
         await this.loggingBroker.LogResetAsync();
 
         AgentContext context = new() { Prompt = prompt };
@@ -102,6 +107,9 @@ public partial class AgentCoordinationService : IAgentCoordinationService
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         ValidatePrompt(prompt);
+
+        // This prompt's run — see ProcessPromptAsync. A streamed prompt is a run like any other.
+        using IDisposable run = AgentRun.Begin();
 
         await this.loggingBroker.LogResetAsync();
 
