@@ -82,4 +82,30 @@ public class StandardAgentAuditTests
         capturedRecords.Should().Contain(record => record.Kind == AuditKind.Run);
         capturedRecords.Select(record => record.Sequence).Should().BeInAscendingOrder();
     }
+
+    [Fact]
+    public async Task ShouldStampPrincipalOnEveryAuditRecordOnProcessPromptAsync()
+    {
+        // given
+        string expectedPrincipal = "user-42";
+        List<AuditRecord> capturedRecords = [];
+
+        StandardAgent agent = AnsweringAgent()
+            .Principal(() => expectedPrincipal)
+            .OnAudit(record =>
+            {
+                capturedRecords.Add(record);
+
+                return ValueTask.CompletedTask;
+            });
+
+        // when
+        await agent.ProcessPromptAsync(prompt: "what is the answer?");
+
+        // then
+        capturedRecords.Should().NotBeEmpty();
+
+        capturedRecords.Should().OnlyContain(record =>
+            record.Principal == expectedPrincipal);
+    }
 }
