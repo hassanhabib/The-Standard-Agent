@@ -75,6 +75,7 @@ public sealed partial class StandardAgent : IAgent
     private Func<string, string, ValueTask<string>>? localJudgeEvaluate;
     private IMcpBroker? mcpBroker;
     private ILoggingBroker? loggingBroker;
+    private IAuditBroker? auditBroker;
 
     private IAgentCoordinationService? agent;
 
@@ -401,7 +402,7 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="broker">The audit broker to write records to.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent UseAudit(IAuditBroker broker) =>
-        Set(() => { });
+        Set(() => this.auditBroker = broker);
 
     /// <summary>
     /// Sends each decision-log record to your own delegate — the <b>Custom</b> mode (SPEC.md §4.8),
@@ -618,9 +619,10 @@ public sealed partial class StandardAgent : IAgent
                 new TimeBroker(),
                 this.traceVerbosity,
                 string.IsNullOrEmpty(this.logPath) ? null : this.logPath,
-                string.IsNullOrEmpty(this.auditPath)
-                    ? new NotConfiguredAuditBroker()
-                    : new FileAuditBroker(this.auditPath));
+                this.auditBroker
+                    ?? (string.IsNullOrEmpty(this.auditPath)
+                        ? new NotConfiguredAuditBroker()
+                        : new FileAuditBroker(this.auditPath)));
 
         IGeneratorBroker generator =
             this.generatorBroker ?? new GeneratorBroker(
