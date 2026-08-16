@@ -156,6 +156,27 @@ MOVEMENT I — TRUST                MOVEMENT II — CONTROL           MOVEMENT I
                                   0.25  Supply chain
 ```
 
+### Status
+
+| Release | State | Evidence |
+|---|---|---|
+| 0.18 Capability verbs | **landed** | released `v0.18.0` |
+| 0.19 Audit spine | **landed on main** | decision log append-only, hash-chained, three access modes; SPEC §3.3/§4.7/§4.8 |
+| 0.20 Run isolation | **landed on main** | 64 concurrent prompts, one instance, both sinks; SPEC §4.4/§7.4 |
+| 0.21 Guardian integrity | next | — |
+| 0.22 → 1.1 | planned | — |
+
+Nothing is released past `v0.18.0`. The two landed releases are on `main` and will be cut when the
+program is further along — a decision log is more credible shipped alongside the guardians it
+records than ahead of them.
+
+Measured, on `main`, against the two defects that opened this plan:
+
+```
+decision log retention   11 → 11 lines, run 1 erased        ⇒   12 → 24 lines, both runs kept
+concurrent prompts       1 of 8 succeed (IOException)       ⇒   8 of 8, and 64 of 64 under test
+```
+
 **Already shipped — 0.18.0.0, the capability verbs.** Principle 0.5 surfaced a naming collision in
 the existing API (`Local*` meant Custom), and it was fixed *before* the program started rather than
 inside it, because every release below would otherwise have copied the wrong pattern into a new
