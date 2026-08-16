@@ -3,9 +3,10 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
-using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Standard.Agents.Brokers.Audits;
 using Standard.Agents.Brokers.Times;
+using Standard.Agents.Models.Brokers.Audits;
 using Standard.Agents.Models.Loggings;
 
 namespace Standard.Agents.Brokers.Loggings;
@@ -14,10 +15,14 @@ public sealed class LoggingBroker : ILoggingBroker
 {
     private readonly ILogger<LoggingBroker> logger;
     private readonly ITimeBroker timeBroker;
+    private readonly IAuditBroker auditBroker;
     private readonly TraceVerbosity verbosity;
     private readonly string? logPath;
-    private readonly string? auditPath;
+    private readonly Func<string?>? principal;
+
     private int processIndex;
+    private int sequence;
+    private string runId = string.Empty;
     private DateTimeOffset runStart;
 
     public LoggingBroker(
@@ -25,13 +30,15 @@ public sealed class LoggingBroker : ILoggingBroker
         ITimeBroker timeBroker,
         TraceVerbosity verbosity = TraceVerbosity.Full,
         string? logPath = null,
-        string? auditPath = null)
+        IAuditBroker? auditBroker = null,
+        Func<string?>? principal = null)
     {
         this.logger = logger;
         this.timeBroker = timeBroker;
+        this.auditBroker = auditBroker ?? new NotConfiguredAuditBroker();
         this.verbosity = verbosity;
         this.logPath = logPath is null ? null : Path.GetFullPath(logPath);
-        this.auditPath = auditPath is null ? null : Path.GetFullPath(auditPath);
+        this.principal = principal;
     }
 
     public async ValueTask LogInformationAsync(string message) =>
@@ -50,7 +57,7 @@ public sealed class LoggingBroker : ILoggingBroker
     {
         this.logger.LogError(exception, exception.Message);
 
-        await AuditAsync(new { kind = "error", message = exception.Message });
+        await AuditAsync(AuditKind.Error, actor: "Agent", message: exception.Message);
         await EmitAsync($"  → ERROR: {exception.Message.ReplaceLineEndings(" ")}");
     }
 
@@ -58,13 +65,18 @@ public sealed class LoggingBroker : ILoggingBroker
     {
         this.logger.LogCritical(exception, exception.Message);
 
-        await AuditAsync(new { kind = "critical", message = exception.Message });
+        await AuditAsync(AuditKind.Error, actor: "Agent", message: exception.Message);
         await EmitAsync($"  → CRITICAL: {exception.Message.ReplaceLineEndings(" ")}");
     }
 
+    // Starts a run. The human-readable trace is transient and is reset here; the decision
+    // log is durable and MUST NOT be — SPEC.md §4.7 is explicit that this reset does not
+    // propagate to it. Truncating the audit here is exactly the defect this release fixes.
     public async ValueTask LogResetAsync()
     {
         this.processIndex = 0;
+        this.sequence = 0;
+        this.runId = Guid.NewGuid().ToString("n");
         this.runStart = this.timeBroker.GetCurrentDateTimeOffset();
 
         if (this.logPath is not null)
@@ -72,15 +84,12 @@ public sealed class LoggingBroker : ILoggingBroker
             await File.WriteAllTextAsync(this.logPath, string.Empty);
         }
 
-        if (this.auditPath is not null)
-        {
-            await File.WriteAllTextAsync(this.auditPath, string.Empty);
-        }
+        await AuditAsync(AuditKind.Run, actor: "Agent", message: "run started");
     }
 
     public async ValueTask LogTurnAsync(int turn)
     {
-        await AuditAsync(new { kind = "turn", turn });
+        await AuditAsync(AuditKind.Turn, actor: "Agent", message: $"turn {turn}");
 
         await EmitAsync($"{Environment.NewLine}Turn {turn}");
     }
@@ -89,7 +98,7 @@ public sealed class LoggingBroker : ILoggingBroker
     {
         TimeSpan elapsed = this.timeBroker.GetCurrentDateTimeOffset() - this.runStart;
 
-        await AuditAsync(new { kind = "outcome", message, elapsedMs = elapsed.TotalMilliseconds });
+        await AuditAsync(AuditKind.Outcome, actor: "Agent", message: message);
 
         await EmitAsync($"  → {message} ({elapsed.TotalMilliseconds:F0}ms)");
     }
@@ -98,7 +107,7 @@ public sealed class LoggingBroker : ILoggingBroker
     {
         this.processIndex = 0;
 
-        await AuditAsync(new { kind = "step", step = step.ToString() });
+        await AuditAsync(AuditKind.Step, actor: step.ToString(), message: step.ToString());
 
         if (TraceVerbosity.Natures <= this.verbosity)
         {
@@ -108,7 +117,7 @@ public sealed class LoggingBroker : ILoggingBroker
 
     public async ValueTask LogProcessAsync(string actor, string message, bool detail = false)
     {
-        await AuditAsync(new { kind = "process", actor, message, detail });
+        await AuditAsync(AuditKind.Process, actor, message, detail);
 
         TraceVerbosity level = detail ? TraceVerbosity.Full : TraceVerbosity.Natures;
 
@@ -132,12 +141,24 @@ public sealed class LoggingBroker : ILoggingBroker
         }
     }
 
-    private async ValueTask AuditAsync(object record)
+    private async ValueTask AuditAsync(
+        AuditKind kind,
+        string actor,
+        string message,
+        bool detail = false)
     {
-        if (this.auditPath is not null)
+        var record = new AuditRecord
         {
-            await File.AppendAllTextAsync(
-                this.auditPath, JsonSerializer.Serialize(record) + Environment.NewLine);
-        }
+            RunId = this.runId,
+            Sequence = this.sequence++,
+            Timestamp = this.timeBroker.GetCurrentDateTimeOffset(),
+            Kind = kind,
+            Actor = actor,
+            Message = message,
+            Detail = detail,
+            Principal = this.principal?.Invoke()
+        };
+
+        await this.auditBroker.WriteAsync(record);
     }
 }
