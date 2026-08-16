@@ -229,7 +229,7 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="evaluate">A <c>(judgeRubric, draftAnswer) =&gt; score</c> delegate.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent OnJudge(Func<string, string, ValueTask<string>> evaluate) =>
-        Set(() => { });
+        Set(() => this.localJudgeEvaluate = evaluate);
 
     /// <summary>
     /// Turns on the Gate: an opt-in guardian that screens each prompt before the brain sees
