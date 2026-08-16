@@ -52,22 +52,29 @@ lives, it is in the wrong place. Where this plan adds support brokers, they grou
 families** (§4.2) — because eight loose brokers is a list, and three families of brokers is a
 model.
 
-### 0.5 Plug and play, fluent, abstracted
+### 0.5 Local · External · Custom — every capability, all three
 
 `new StandardAgent().Something().SomethingElse()` — fluent, ordered however you like, working
-defaults throughout. Every capability ships as a **triad**, so the same concept is reachable at
-three levels of commitment:
+defaults throughout. And because this is an **enterprise** framework, every capability must be
+reachable three ways, because three different organizations will need three different answers for
+the same capability on the same day:
 
-| Form | Meaning | Existing example |
-|---|---|---|
-| `.X(simple args)` | the built-in default — a file, a URL. Zero ceremony. | `.Skills("Skills")` · `.Memory("memory.txt")` |
-| `.LocalX(delegate)` | in-process, no network, bring your own | `.LocalBrain(...)` · `.LocalGate(...)` |
-| `.UseX(broker)` | the plugin seam — install a NuGet package, pass the broker, change nothing else | `.UseSkills(...)` · `.UseGenerator(...)` |
+| Mode | The user's position | What they get | Verb |
+|---|---|---|---|
+| **Local** | *"It's a file / a folder / a rule / an object I already have. Just use it."* | In the core package. No dependency, no provider, no account. Point and run. | `.X(resource)` |
+| **External** | *"My provider is Redis / Postgres / OPA / Slack / a GGUF on my GPU."* | `dotnet add package`, pass the broker, change nothing else about the agent. | `.UseX(broker)` |
+| **Custom** | *"None of those. I'll write it, right now, inline."* | An open override — a delegate for a quick one, the broker interface for a real one. | `.OnX(delegate)` |
 
-**A capability is not finished until its triad is complete** (where each form is meaningful). This
-is the principle the plan most needed correcting against — see §5.2, where several proposed methods
-were single-form and are now triads, and §5.3, which names the plugin packages this program
-unlocks.
+*External* means **outside the core package** — a third-party service *or* your own infrastructure.
+Redis is external to the library even when it runs in your datacenter. That is what keeps the core
+dependency-free while the enterprise reaches anywhere.
+
+**A capability with a missing mode is an unfinished capability.** Not a roadmap item, not a nice-to-
+have — unfinished, and the release is blocked. §5.2 is the matrix of every capability against all
+three modes, with each cell either filled or marked N/A *with a stated reason*; §5.3 names the
+packages the External column implies; and §6.7 is the release gate that fails a build when a cell
+is empty. This is the principle the plan most needed correcting against, and it is the one most
+likely to erode quietly, so it is the one enforced by a test rather than by good intentions.
 
 ---
 
@@ -231,27 +238,28 @@ tamper-evidence, no external service required.
 #### The public surface
 
 ```csharp
-.Audit("audit.jsonl")                     // unchanged — now append-only and complete
-.LocalAudit(record => myLogger.Log(record))  // in-process sink, no file
-.UseAudit(new OpenTelemetryAuditBroker())    // plugin sink — a package, one line
-.Principal(() => currentUser.Id)          // new, optional: who the run is on behalf of
+.Audit("audit.jsonl")                        // Local    — a file, append-only and complete
+.UseAudit(new OpenTelemetryAuditBroker())    // External — a package, one line
+.OnAudit(record => myLogger.Log(record))     // Custom   — your sink, inline
+.Principal(() => currentUser.Id)             // optional — who the run is on behalf of
 ```
 
-The full triad (§5.2) plus one opt-in method with a working default (`Principal` absent ⇒ `null`).
-Appliance guarantee holds.
+All three modes (§5.2) plus one opt-in method with a working default (`Principal` absent ⇒ `null`).
+Appliance guarantee holds. Audit is the first capability born under the corrected verbs.
 
 #### Work items
 
 | # | Commit / PR title | Branch | Cat. | Pts |
 |---|---|---|---|---|
-| 0 | `STANDARD: Specify The Decision Log Contract` | `users/hassanhabib/STANDARD-audit-specify` | STANDARD | 100 |
+| 0 | `STANDARD: Specify The Decision Log And The Capability Matrix` | `users/hassanhabib/STANDARD-audit-specify` | STANDARD | 100 |
 | 1 | `DATA: Add Audit Record Model` | `users/hassanhabib/DATA-audit-record-create` | DATA | 5 |
 | 2 | `BROKERS: Insert Audit Record` | `users/hassanhabib/BROKERS-audit-insert` | BROKERS | 5 |
 | 3 | `MAJOR BROKERS: Compose The Audit Sink Into Logging` | `users/hassanhabib/BROKERS-logging-update` | MAJOR BROKERS | 5 |
 | 4 | `MINOR CLIENTS: Audit Broker Overload And Principal` | `users/hassanhabib/CLIENTS-agent-audit` | MINOR CLIENTS | 1 |
 | 5 | `MAJOR ACCEPTANCE: Audit Survives Consecutive Runs` | `users/hassanhabib/ACCEPTANCE-audit-retain` | MAJOR ACCEPTANCE | 10 |
 | 6 | `MAJOR INFRA: Declare And Certify Readiness Profiles` | `users/hassanhabib/INFRA-profiles-create` | MAJOR INFRA | 10 |
-| 7 | `RELEASES: Standard.Agents 0.18.0.0 — The Audit Spine` | `users/hassanhabib/RELEASES-standard-agents-0-18-0` | RELEASES | 10 |
+| 7 | `MAJOR CLIENTS: Enforce Local, External And Custom For Every Capability` | `users/hassanhabib/CLIENTS-agent-capabilities` | MAJOR CLIENTS | 5 |
+| 8 | `RELEASES: Standard.Agents 0.18.0.0 — The Audit Spine` | `users/hassanhabib/RELEASES-standard-agents-0-18-0` | RELEASES | 10 |
 
 Items 2 and 3 are brokers — thin, no logic, **no unit tests**, committed as
 `[CATEGORY]: [Description]`. Item 4 is client behavior and follows FAIL/PASS.
@@ -490,18 +498,20 @@ in 0.14.0.0 and correctly released as a service change.
 #### The public surface
 
 ```csharp
-.RequireApproval("wire_transfer", "delete_account")   // simple — pause before irreversible effects
-.LocalApproval(effect => console.Confirm(effect))     // in-process approver
-.UseApprovals(new SlackApprovalBroker(channel))       // plugin — a package, one line
-.ScreenToolOutput()                                    // Gate untrusted inbound (costs a call)
-.AllowTools("calculator")                              // simple — least privilege, unchanged
-.LocalPolicy((principal, effect) => principal.CanRun(effect))
-.UsePolicy(new OpaPolicyBroker(endpoint))              // plugin — any external policy engine
+.RequireApproval("wire_transfer", "delete_account")   // Local    — a list, pause before the act
+.UseApprovals(new SlackApprovalBroker(channel))       // External — a package, one line
+.OnApproval(effect => console.Confirm(effect))        // Custom   — your approver, inline
+
+.AllowTools("calculator")                             // Local    — a list, least privilege
+.UsePolicy(new OpaPolicyBroker(endpoint))             // External — any policy engine
+.OnPolicy((principal, effect) => principal.CanRun(effect))  // Custom
+
+.ScreenToolOutput()                                   // Gate untrusted inbound (costs a call)
 ```
 
-Two capabilities, each a complete triad (§5.2), plus `.ScreenToolOutput()`. All absent by default.
-A user who never writes them gets exactly today's agent — including today's non-idempotent tools,
-because `IdempotencyKey` only binds when a tool declares a `RiskLevel`.
+Two capabilities, each answering Local · External · Custom (§5.2), plus `.ScreenToolOutput()`. All
+absent by default. A user who never writes them gets exactly today's agent — including today's
+non-idempotent tools, because `IdempotencyKey` only binds when a tool declares a `RiskLevel`.
 
 #### Work items
 
@@ -821,8 +831,9 @@ await agent.ResumeAsync(sessionId, "yes, approve it");// AwaitingInput / Awaitin
 | 7 | `MAJOR COORDINATIONS: Checkpoint And Resume A Session` | `users/hassanhabib/COORDINATIONS-agent-modify-resume` | MAJOR COORDINATIONS | 20 |
 | 8 | `MAJOR ORCHESTRATIONS: Compensate An Effect That Cannot Be Repeated` | `users/hassanhabib/ORCHESTRATIONS-direction-modify-compensation` | MAJOR ORCHESTRATIONS | 20 |
 | 9 | `MEDIUM CLIENTS: Session And Resume` | `users/hassanhabib/CLIENTS-agent-session` | MEDIUM CLIENTS | 3 |
-| 10 | `DOCUMENTATION: V0 Deprecation Window And Migration Guide` | `users/hassanhabib/DOCUMENTATION-v0-deprecation` | DOCUMENTATION | 1 |
-| 11 | `RELEASES: Standard.Agents 1.0.0.0 — The Enterprise Model` | `users/hassanhabib/RELEASES-standard-agents-1-0-0` | RELEASES | 10 |
+| 10 | `MAJOR CLIENTS: Complete The Capability Matrix And Retire The Waivers` | `users/hassanhabib/CLIENTS-agent-capabilities-complete` | MAJOR CLIENTS | 5 |
+| 11 | `DOCUMENTATION: V0 Deprecation Window And Migration Guide` | `users/hassanhabib/DOCUMENTATION-v0-deprecation` | DOCUMENTATION | 1 |
+| 12 | `RELEASES: Standard.Agents 1.0.0.0 — The Enterprise Model` | `users/hassanhabib/RELEASES-standard-agents-1-0-0` | RELEASES | 10 |
 
 #### New conformance vectors
 
@@ -842,6 +853,9 @@ await agent.ResumeAsync(sessionId, "yes, approve it");// AwaitingInput / Awaitin
 - Native tool calls round-trip with `tool_call_id`; the text protocol still works unchanged for
   local models.
 - All five provider packages still build against V0 with no source change.
+- **The capability-matrix waiver list is empty** (§5.2, §6.7). Every one of the thirteen
+  capabilities answers Local, External and Custom, and `.LocalBrain` / `.LocalGate` / `.LocalJudge`
+  are `[Obsolete]` aliases of the correctly-named `.OnX` forms.
 
 ---
 
@@ -975,27 +989,62 @@ Everything this plan adds is a line you may choose not to write:
     .Session("user-42")                       // 1.00 — conversation, resumable
 ```
 
-Seven new opt-in methods across nine releases, every one of them absent by default and every one of
-them defaulting to today's behavior — and a first-time user still needs exactly one line.
+Seven new capabilities across nine releases, every one absent by default, every one defaulting to
+today's behavior, and every one reachable Local, External or Custom (§5.2) — and a first-time user
+still needs exactly one line.
 
-### 5.2 · The triad, completed
+### 5.2 · The capability matrix — the enforced contract
 
-Principle 0.5 caught a real inconsistency in the first draft of this plan: several capabilities
-were proposed with only one form — `.Audit(broker)` as an overload, `.UsePolicy(...)` with no
-simple form, approval with no plugin seam. That breaks the pattern a user has already learned from
-`.Brain` / `.LocalBrain` / `.UseGenerator`. Corrected, every capability ships its full triad:
+This is the normative table. It lives in SPEC.md, it is what §6.7 tests, and **every cell is either
+filled or marked N/A with a stated reason.** No third state.
 
-| Capability | `.X(simple)` — built in | `.LocalX(delegate)` — in process | `.UseX(broker)` — plugin |
+| Capability | **Local** — in the core | **External** — a package | **Custom** — your code |
 |---|---|---|---|
-| Audit *(0.18)* | `.Audit("audit.jsonl")` | `.LocalAudit(record => …)` | `.UseAudit(broker)` |
-| Policy *(0.21)* | `.AllowTools("calculator")` | `.LocalPolicy((principal, effect) => …)` | `.UsePolicy(broker)` |
-| Approval *(0.21)* | `.RequireApproval("wire_transfer")` | `.LocalApproval(effect => …)` | `.UseApprovals(broker)` |
-| Resilience *(0.22)* | `.Resilience(retries: 3)` | — | `.UseResilience(broker)` |
-| Sessions *(1.0)* | `.Session("user-42")` | — | `.UseSessions(broker)` |
+| Skills | `.Skills("Skills")` | `.UseSkills(PeerLLM…)` | `.OnSkills(() => …)` ⚠ |
+| Memory | `.Memory("memory.txt")` | `.UseMemory(Redis…)` | `.OnMemory(…)` ⚠ |
+| Knowledge | `.Knowledge("Knowledge")` | `.UseKnowledge(Postgres…)` | `.OnKnowledge(query => …)` ⚠ |
+| Brain | `.Brain("model.gguf")` ⚠ | `.UseGenerator(LlamaSharp…)` · `.Brain(url, key, model)` | `.OnBrain((sys, usr) => …)` ⚠ |
+| Gate | `.RuleGate("password")` | `.Gate(url, key, model)` | `.OnGate(…)` ⚠ |
+| Judge | `.RuleJudge("citation")` | `.Judge(url, key, model)` | `.OnJudge(…)` ⚠ |
+| Tools | `.Tool(new CalculatorTool())` | `.Mcp(endpoint)` | `.Tool(…)` — `ITool` is the override |
+| Trace | `.LogTo("log.txt")` | `.UseLogging(broker)` | `.UseLogging(broker)` |
+| **Audit** *(0.18)* | `.Audit("audit.jsonl")` | `.UseAudit(OpenTelemetry…)` | `.OnAudit(record => …)` |
+| **Policy** *(0.21)* | `.AllowTools("calculator")` | `.UsePolicy(Opa…)` | `.OnPolicy((principal, effect) => …)` |
+| **Approval** *(0.21)* | `.RequireApproval("wire_transfer")` | `.UseApprovals(Slack…)` | `.OnApproval(effect => …)` |
+| **Resilience** *(0.22)* | `.Resilience(retries: 3)` | `.UseResilience(broker)` | `.OnResilience(…)` |
+| **Sessions** *(1.0)* | `.Session("user-42")` — file-backed | `.UseSessions(Redis…)` | `.OnSessions(…)` |
 
-A dash means the form carries no meaning for that capability, not that it was skipped. The rule
-that generated this table is now a release gate: **a capability whose triad is incomplete is not
-done.**
+⚠ = **does not exist today.** Thirteen capabilities × three modes = 39 cells; **eight are empty or
+misnamed right now.** That is the concrete debt principle 0.5 surfaces, and it is why this needed
+to become a test rather than a convention.
+
+#### The naming collision this exposes
+
+The current API uses `Local*` to mean **Custom**, not Local:
+
+```csharp
+.LocalBrain((sys, usr) => MyModelAsync(sys, usr))   // named Local — actually Custom
+.LocalGate(...)  .LocalJudge(...)                    // same
+```
+
+Meanwhile the genuinely *local* brain — a GGUF on your own GPU — has no `.Brain(path)` form at all;
+it is only reachable through `.UseGenerator(new LlamaSharpGeneratorBroker("model.gguf"))`, which
+reads as External. **The two most confusable modes are labelled backwards.** A user who reads
+`.LocalBrain` and expects "runs a model on my machine" is wrong, and nothing in the API tells them.
+
+Resolution, respecting the appliance guarantee (§1.1) and the versioning rules (§1.3):
+
+- **New capabilities use the correct verbs from birth** — `.X` / `.UseX` / `.OnX`. Nothing shipped
+  after 0.18 repeats the mistake.
+- **`.Brain("model.gguf")` is added** as the Local form, resolving a path rather than a URL, so the
+  local-model story finally matches the word "local."
+- **`.LocalBrain` / `.LocalGate` / `.LocalJudge` become `[Obsolete]` aliases** of `.OnBrain` /
+  `.OnGate` / `.OnJudge` at **1.0.0.0** — where the versioning rules already permit a contract
+  change, with a published deprecation window. They keep working; they stop teaching the wrong
+  thing.
+
+One verb per mode, three modes, thirteen capabilities. That is the whole surface, and it is the
+kind of table a person can hold in their head — principle 0.4.
 
 ### 5.3 · The plugin family this unlocks
 
@@ -1038,9 +1087,16 @@ Non-negotiable, from The Standard's practices:
    Standard.Agents.Conformance` exiting 0 is the gate — not a suggestion.
 6. **Every phase's exit criteria is a test, not an opinion.** Where this plan claims a number
    (64/64 concurrent, ≤ 9 model calls, zero clear-text PII), that number is asserted in the suite.
-7. **Every capability ships its complete triad** (§5.2). A capability reachable only through
-   `.UseX(broker)` has no simple form and fails principle 0.5; one reachable only through `.X(...)`
-   has no plugin seam and fails it too.
+7. **Every capability answers Local, External and Custom** (§5.2) — and this is *enforced*, not
+   asked for. `ShouldExposeLocalExternalAndCustomForEveryCapability` reflects over the public
+   `StandardAgent` surface, checks the three verbs for every capability named in the spec's matrix,
+   and fails the build on an empty cell. A cell may be N/A only if the spec states the reason —
+   the test reads that list, so waiving a cell is a spec change, reviewed like any other. Adding a
+   capability without its modes cannot pass CI, which is the point: this is the principle most
+   likely to erode quietly.
+   *Landing it honestly:* the eight cells empty today (§5.2) ship as a dated waiver list in the
+   spec, so the test is green at 0.18 and **the waiver list must be empty at 1.0.0.0** — that is a
+   1.0 exit criterion, not an aspiration. New capabilities get no waiver, ever.
 8. **Every addition names its nature** (§4.1) in its PR description — Data, Decision, Direction, or
    an explicit argument for why it is cross-cutting. "It doesn't really fit" is the signal that the
    design is wrong, never that the Tri-Nature is incomplete.
@@ -1054,18 +1110,18 @@ Using The Standard's own averages — brokers ~1h, foundations ~3h, orchestratio
 
 | Release | Items | Spec | Code | Est. | Profile | Contribution pts |
 |---|---|---|---|---|---|---|
-| 0.18 Audit spine | 8 | 1 | 7 | ~4 days | | 146 |
+| 0.18 Audit spine | 9 | 1 | 8 | ~5 days | | 151 |
 | 0.19 Run isolation | 7 | 1 | 6 | ~4 days | | 148 |
 | 0.20 Guardian integrity | 10 | 1 | 9 | ~5 days | | 171 |
 | 0.21 Perimeter | 10 | 1 | 9 | ~6 days | | 188 |
 | 0.22 Resilience & budget | 11 | 1 | 10 | ~6 days | **Reliable** | 193 |
 | 0.23 Data at scale | 6 | 1 | 5 | ~5 days | | 153 |
 | 0.24 Supply chain & support | 9 | 1 | 8 | ~4 days | **Enterprise** | 157 |
-| 1.00 Enterprise model | 12 | 1 | 11 | ~11 days | | 204 |
+| 1.00 Enterprise model | 13 | 1 | 12 | ~12 days | | 209 |
 | 1.10 Evals & hosting | 6 | 1 | 5 | ~7 days | **Critical** | 145 |
-| | **79** | **9** | **70** | **~10 weeks** | | **1,505** |
+| | **81** | **9** | **72** | **~11 weeks** | | **1,515** |
 
-Movement I alone — the three releases that make the framework trustworthy — is roughly **13 days**
+Movement I alone — the three releases that make the framework trustworthy — is roughly **14 days**
 and closes every defect where a printed promise currently outruns the behavior.
 
 0.24 is the cheapest release in the program, sits entirely outside the loop, and is what converts
@@ -1074,9 +1130,9 @@ nothing and nothing blocks it.
 
 **Spec-first costs about two weeks across the program and is worth every day of it** — it is the
 difference between a C# library and a standard that other languages can implement. The Standard's
-own measurement system already agrees: nine `STANDARD` items score 900 of the 1,505 points here,
-more than all seventy implementation items combined. The points were telling us to write the spec
-first before this plan did.
+own measurement system already agrees: nine `STANDARD` items score 900 of the 1,515 points here,
+more than all seventy-two implementation items combined. The points were telling us to write the
+spec first before this plan did.
 
 ---
 
@@ -1102,9 +1158,10 @@ Named explicitly, so they cannot creep in:
 
 ## 9 · The one-line summary
 
-> Nine releases, each opening with its spec and closing with its vectors. Seventy implementation
-> items, two cross-cutting brokers, seven additions that each name their nature, five capabilities
-> that each ship a complete triad, and four machine-verifiable readiness profiles — and at the end
-> the README's five-line agent is still five lines, the architecture is still 1 · 3 · 9, the
-> Tri-Nature is still the only mental model, someone can build the whole thing in another language
-> from the spec alone, and every promise printed on the box is true.
+> Nine releases, each opening with its spec and closing with its vectors. Seventy-two
+> implementation items, two cross-cutting brokers, seven additions that each name their nature,
+> thirteen capabilities that each answer Local · External · Custom, and four machine-verifiable
+> readiness profiles — and at the end the README's five-line agent is still five lines, the
+> architecture is still 1 · 3 · 9, the Tri-Nature is still the only mental model, someone can build
+> the whole thing in another language from the spec alone, and every promise printed on the box is
+> true.
