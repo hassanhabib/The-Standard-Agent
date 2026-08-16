@@ -214,8 +214,22 @@ public sealed partial class StandardAgent : IAgent
     /// </summary>
     /// <param name="evaluate">A <c>(judgeRubric, draftAnswer) =&gt; score</c> delegate.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
+    [Obsolete("Renamed to OnJudge: a delegate is the Custom mode, not the Local one. " +
+        "Local means a provider that runs on your own machine. This alias keeps working.")]
     public StandardAgent LocalJudge(Func<string, string, ValueTask<string>> evaluate) =>
         Set(() => this.localJudgeEvaluate = evaluate);
+
+    /// <summary>
+    /// Turns on the Judge using your own evaluation delegate — the <b>Custom</b> mode, the open
+    /// override for when neither the built-in <see cref="RuleJudge"/> nor a hosted
+    /// <see cref="Judge(string, string, string, double, int, int)"/> fits. The delegate receives the
+    /// composed judge rubric as the system prompt and the draft answer as the user prompt, and
+    /// returns the score.
+    /// </summary>
+    /// <param name="evaluate">A <c>(judgeRubric, draftAnswer) =&gt; score</c> delegate.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent OnJudge(Func<string, string, ValueTask<string>> evaluate) =>
+        Set(() => { });
 
     /// <summary>
     /// Turns on the Gate: an opt-in guardian that screens each prompt before the brain sees

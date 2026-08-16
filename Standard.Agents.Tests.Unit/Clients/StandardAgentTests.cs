@@ -434,7 +434,7 @@ public class StandardAgentTests
     }
 
     [Fact]
-    public async Task ShouldUseLocalJudgeToScoreOnProcessPromptAsync()
+    public async Task ShouldUseCustomJudgeToScoreOnProcessPromptAsync()
     {
         // given
         bool judgeInvoked = false;
@@ -449,8 +449,8 @@ public class StandardAgentTests
             .UseSkills(skillBroker.Object)
             .UseMemory(memory.Object)
             .UseKnowledge(EmptyKnowledgeBroker())
-            .LocalBrain(async (systemPrompt, userPrompt) => "FINAL: 42")
-            .LocalJudge(async (judgeRubric, draftAnswer) =>
+            .OnBrain(async (systemPrompt, userPrompt) => "FINAL: 42")
+            .OnJudge(async (judgeRubric, draftAnswer) =>
             {
                 judgeInvoked = true;
 
