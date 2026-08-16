@@ -412,7 +412,7 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="write">A <c>record =&gt; ...</c> delegate invoked once per record.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent OnAudit(Func<AuditRecord, ValueTask> write) =>
-        Set(() => { });
+        Set(() => this.auditBroker = new FunctionAuditBroker(write));
 
     /// <summary>
     /// Records <b>on whose behalf</b> each run executes. The value is resolved per record, so a
