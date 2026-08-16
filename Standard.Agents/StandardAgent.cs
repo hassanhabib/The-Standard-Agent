@@ -163,8 +163,23 @@ public sealed partial class StandardAgent : IAgent
     /// A <c>(systemPrompt, userPrompt) =&gt; answer</c> delegate that produces one reply.
     /// </param>
     /// <returns>The same agent, so calls can be chained.</returns>
+    [Obsolete("Renamed to OnBrain: a delegate is the Custom mode, not the Local one. " +
+        "Local means a provider that runs on your own machine. This alias keeps working.")]
     public StandardAgent LocalBrain(Func<string, string, ValueTask<string>> generate) =>
         Set(() => this.generatorBroker = new FunctionGeneratorBroker(generate));
+
+    /// <summary>
+    /// Supplies your own brain as a delegate — the <b>Custom</b> mode, the open override for when
+    /// neither the built-in nor a provider package fits. The agent makes no API calls; you supply
+    /// the inference. For a runtime that streams natively, implement <c>IGeneratorBroker</c> and
+    /// pass it to <see cref="UseGenerator"/> instead.
+    /// </summary>
+    /// <param name="generate">
+    /// A <c>(systemPrompt, userPrompt) =&gt; answer</c> delegate that produces one reply.
+    /// </param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent OnBrain(Func<string, string, ValueTask<string>> generate) =>
+        Set(() => { });
 
     /// <summary>
     /// Turns on the Gate using an in-process model — the local counterpart to <see cref="Gate"/>,

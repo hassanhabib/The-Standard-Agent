@@ -346,10 +346,10 @@ public class StandardAgentTests
     }
 
     [Fact]
-    public async Task ShouldUseLocalBrainOnProcessPromptAsync()
+    public async Task ShouldUseCustomBrainOnProcessPromptAsync()
     {
         // given
-        string expectedAnswer = "answer from the local model";
+        string expectedAnswer = "answer from the custom brain";
 
         var skillBroker = new Mock<ISkillBroker>();
         skillBroker.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(new List<Skill>());
@@ -360,7 +360,7 @@ public class StandardAgentTests
         var agent = new StandardAgent()
             .UseSkills(skillBroker.Object)
             .UseMemory(memory.Object)
-            .LocalBrain(async (systemPrompt, userPrompt) => expectedAnswer);
+            .OnBrain(async (systemPrompt, userPrompt) => expectedAnswer);
         // when
         string actualResult = await agent.ProcessPromptAsync(prompt: "compute something");
 
