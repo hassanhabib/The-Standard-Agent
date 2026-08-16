@@ -42,6 +42,7 @@ namespace Standard.Agents;
 public sealed partial class StandardAgent : IAgent
 {
     private readonly List<ITool> tools = [];
+    private readonly Lock compositionLock = new();
 
     private string skillsPath = "Skills";
     private string constitutionPath = string.Empty;
@@ -541,9 +542,7 @@ public sealed partial class StandardAgent : IAgent
     // be hit at the assignment, nowhere near the await they were guarding.
     public async ValueTask<string> ProcessPromptAsync(string prompt)
     {
-        this.agent ??= Compose();
-
-        return await this.agent.ProcessPromptAsync(prompt);
+        return await ResolveAgent().ProcessPromptAsync(prompt);
     }
 
     /// <summary>
@@ -560,14 +559,23 @@ public sealed partial class StandardAgent : IAgent
         string prompt,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        this.agent ??= Compose();
-
         IAsyncEnumerable<AgentStreamEvent> events =
-            this.agent.ProcessPromptStreamAsync(prompt, cancellationToken);
+            ResolveAgent().ProcessPromptStreamAsync(prompt, cancellationToken);
 
         await foreach (AgentStreamEvent streamEvent in events.WithCancellation(cancellationToken))
         {
             yield return streamEvent;
+        }
+    }
+
+    // Composes once and reuses. Guarded because one agent serves prompts concurrently
+    // (SPEC.md §4.4) and an unguarded `??=` lets two arriving prompts each build a graph —
+    // two brokers over one audit sink, two of everything, one silently discarded.
+    private IAgentCoordinationService ResolveAgent()
+    {
+        lock (this.compositionLock)
+        {
+            return this.agent ??= Compose();
         }
     }
 
@@ -576,8 +584,11 @@ public sealed partial class StandardAgent : IAgent
     // ignore the change.
     private StandardAgent Set(Action configure)
     {
-        configure();
-        this.agent = null;
+        lock (this.compositionLock)
+        {
+            configure();
+            this.agent = null;
+        }
 
         return this;
     }
