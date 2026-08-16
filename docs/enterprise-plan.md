@@ -713,8 +713,10 @@ public method — which is exactly why it is cheap and why it keeps getting defe
 
 - No `global.json`, so builds are not reproducible across machines and CI. (`net10.0` is the
   current LTS and is the correct target — this is about pinning the **SDK**, not retargeting.)
-- Warnings are not build failures. The suite currently ships one: `xUnit1012` in
-  `GateServiceTests.DetectConflict.cs:42`. A zero-warning bar that isn't enforced isn't a bar.
+- Warnings are not build failures. ✅ The one outstanding warning — `xUnit1012` in
+  `GateServiceTests.DetectConflict.cs` — is now fixed and the tree builds clean, so this release
+  only has to *hold* the zero-warning bar rather than reach it first. A bar that isn't enforced
+  isn't a bar.
 - No dependency-vulnerability, license or secret scanning in CI.
 - No SBOM, no package signing, no build provenance — three items that appear verbatim on most
   regulated procurement checklists.
@@ -738,13 +740,15 @@ No source changes to `Standard.Agents`. This is CI, packaging and documentation.
 |---|---|---|---|---|
 | 0 | `STANDARD: Specify Conformance Certification And Support Guarantees` | `users/hassanhabib/STANDARD-support-specify` | STANDARD | 100 |
 | 1 | `MAJOR INFRA: Pin The SDK And Fail The Build On Warnings` | `users/hassanhabib/INFRA-build-setup` | MAJOR INFRA | 10 |
-| 2 | `MINOR FIX: Resolve The xUnit1012 Analyzer Warning` | `users/hassanhabib/FIX-gate-tests-nullable` | MINOR FIX | 5 |
-| 3 | `MAJOR INFRA: Add Vulnerability, License And Secret Scanning` | `users/hassanhabib/INFRA-scanning-setup` | MAJOR INFRA | 10 |
-| 4 | `RELEASES: Generate A Software Bill Of Materials` | `users/hassanhabib/RELEASES-sbom-create` | RELEASES | 10 |
-| 5 | `RELEASES: Sign Packages And Publish Build Provenance` | `users/hassanhabib/RELEASES-signing-setup` | RELEASES | 10 |
-| 6 | `DOCUMENTATION: Thread Safety, Lifetimes And Interface Compatibility` | `users/hassanhabib/DOCUMENTATION-support-guarantees` | DOCUMENTATION | 1 |
-| 7 | `DOCUMENTATION: Upgrade, Deprecation And Rollback Procedures` | `users/hassanhabib/DOCUMENTATION-upgrade-procedures` | DOCUMENTATION | 1 |
-| 8 | `RELEASES: Standard.Agents 0.25.0.0 — Supply Chain And Support` | `users/hassanhabib/RELEASES-standard-agents-0-25-0` | RELEASES | 10 |
+| 2 | `MAJOR INFRA: Add Vulnerability, License And Secret Scanning` | `users/hassanhabib/INFRA-scanning-setup` | MAJOR INFRA | 10 |
+| 3 | `RELEASES: Generate A Software Bill Of Materials` | `users/hassanhabib/RELEASES-sbom-create` | RELEASES | 10 |
+| 4 | `RELEASES: Sign Packages And Publish Build Provenance` | `users/hassanhabib/RELEASES-signing-setup` | RELEASES | 10 |
+| 5 | `DOCUMENTATION: Thread Safety, Lifetimes And Interface Compatibility` | `users/hassanhabib/DOCUMENTATION-support-guarantees` | DOCUMENTATION | 1 |
+| 6 | `DOCUMENTATION: Upgrade, Deprecation And Rollback Procedures` | `users/hassanhabib/DOCUMENTATION-upgrade-procedures` | DOCUMENTATION | 1 |
+| 7 | `RELEASES: Standard.Agents 0.25.0.0 — Supply Chain And Support` | `users/hassanhabib/RELEASES-standard-agents-0-25-0` | RELEASES | 10 |
+
+*(`MINOR FIX: Resolve The xUnit1012 Analyzer Warning` was item 2 here; it shipped early — the
+zero-warning bar is a precondition for enforcing it, not a task inside the enforcement.)*
 
 #### Exit criteria
 
@@ -1125,10 +1129,10 @@ Using The Standard's own averages — brokers ~1h, foundations ~3h, orchestratio
 | 0.22 Perimeter | 10 | 1 | 9 | ~6 days | | 188 |
 | 0.23 Resilience & budget | 11 | 1 | 10 | ~6 days | **Reliable** | 193 |
 | 0.24 Data at scale | 6 | 1 | 5 | ~5 days | | 153 |
-| 0.25 Supply chain & support | 9 | 1 | 8 | ~4 days | **Enterprise** | 157 |
+| 0.25 Supply chain & support | 8 | 1 | 7 | ~4 days | **Enterprise** | 152 |
 | 1.00 Enterprise model | 13 | 1 | 12 | ~12 days | | 209 |
 | 1.10 Evals & hosting | 6 | 1 | 5 | ~7 days | **Critical** | 145 |
-| | **81** | **9** | **72** | **~11 weeks** | | **1,515** |
+| | **80** | **9** | **71** | **~11 weeks** | | **1,510** |
 
 Movement I alone — the three releases that make the framework trustworthy — is roughly **14 days**
 and closes every defect where a printed promise currently outruns the behavior.
@@ -1139,8 +1143,8 @@ nothing and nothing blocks it.
 
 **Spec-first costs about two weeks across the program and is worth every day of it** — it is the
 difference between a C# library and a standard that other languages can implement. The Standard's
-own measurement system already agrees: nine `STANDARD` items score 900 of the 1,515 points here,
-more than all seventy-two implementation items combined. The points were telling us to write the
+own measurement system already agrees: nine `STANDARD` items score 900 of the 1,510 points here,
+more than all seventy-one implementation items combined. The points were telling us to write the
 spec first before this plan did.
 
 ---
@@ -1167,7 +1171,7 @@ Named explicitly, so they cannot creep in:
 
 ## 9 · The one-line summary
 
-> Nine releases, each opening with its spec and closing with its vectors. Seventy-two
+> Nine releases, each opening with its spec and closing with its vectors. Seventy-one
 > implementation items, two cross-cutting brokers, seven additions that each name their nature,
 > thirteen capabilities that each answer Local · External · Custom, and four machine-verifiable
 > readiness profiles — and at the end the README's five-line agent is still five lines, the

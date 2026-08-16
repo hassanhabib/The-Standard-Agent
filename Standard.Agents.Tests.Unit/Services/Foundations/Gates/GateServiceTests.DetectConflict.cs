@@ -43,7 +43,7 @@ public partial class GateServiceTests
     [InlineData("")]
     [InlineData("   ")]
     public async Task ShouldThrowValidationExceptionOnDetectConflictIfInstructionsInvalidAndLogItAsync(
-        string invalidInstructions)
+        string? invalidInstructions)
     {
         // given
         var invalidGateException =
@@ -57,7 +57,7 @@ public partial class GateServiceTests
 
         // when
         ValueTask<string> detectConflictTask =
-            this.gateService.DetectConflictAsync(invalidInstructions);
+            this.gateService.DetectConflictAsync(invalidInstructions!);
 
         GateValidationException actualGateValidationException =
             await Assert.ThrowsAsync<GateValidationException>(detectConflictTask.AsTask);
