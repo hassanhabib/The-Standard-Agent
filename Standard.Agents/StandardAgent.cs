@@ -189,8 +189,22 @@ public sealed partial class StandardAgent : IAgent
     /// </summary>
     /// <param name="screen">A <c>(gateRubric, prompt) =&gt; verdict</c> delegate.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
+    [Obsolete("Renamed to OnGate: a delegate is the Custom mode, not the Local one. " +
+        "Local means a provider that runs on your own machine. This alias keeps working.")]
     public StandardAgent LocalGate(Func<string, string, ValueTask<string>> screen) =>
         Set(() => this.localGateScreen = screen);
+
+    /// <summary>
+    /// Turns on the Gate using your own screening delegate — the <b>Custom</b> mode, the open
+    /// override for when neither the built-in <see cref="RuleGate"/> nor a hosted
+    /// <see cref="Gate(string, string, string, double, int, int)"/> fits. The delegate receives the
+    /// composed gate rubric as the system prompt and the prompt to screen as the user prompt, and
+    /// returns the verdict.
+    /// </summary>
+    /// <param name="screen">A <c>(gateRubric, prompt) =&gt; verdict</c> delegate.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent OnGate(Func<string, string, ValueTask<string>> screen) =>
+        Set(() => { });
 
     /// <summary>
     /// Turns on the Judge using an in-process model — the local counterpart to <see cref="Judge"/>,

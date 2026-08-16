@@ -411,7 +411,7 @@ public class StandardAgentTests
     }
 
     [Fact]
-    public async Task ShouldUseLocalGateToRefuseOnProcessPromptAsync()
+    public async Task ShouldUseCustomGateToRefuseOnProcessPromptAsync()
     {
         // given
         var skillBroker = new Mock<ISkillBroker>();
@@ -424,8 +424,8 @@ public class StandardAgentTests
             .UseSkills(skillBroker.Object)
             .UseMemory(memory.Object)
             .UseKnowledge(EmptyKnowledgeBroker())
-            .LocalBrain(async (systemPrompt, userPrompt) => "FINAL: hello")
-            .LocalGate(async (gateRubric, prompt) => "refuse: not allowed");
+            .OnBrain(async (systemPrompt, userPrompt) => "FINAL: hello")
+            .OnGate(async (gateRubric, prompt) => "refuse: not allowed");
         // when
         string actualResult = await agent.ProcessPromptAsync(prompt: "do something bad");
 
