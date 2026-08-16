@@ -59,6 +59,13 @@ public sealed class AgentRun
         return new Scope(enclosingRun);
     }
 
+    /// <summary>
+    /// A run that is not on any flow — for a trace driven outside the coordination loop, so it
+    /// still numbers its records rather than faulting.
+    /// </summary>
+    public static AgentRun Detached() =>
+        new(Guid.NewGuid().ToString("n"));
+
     /// <summary>The next record number for this run — monotonic, starting at zero.</summary>
     public int NextSequence() =>
         Interlocked.Increment(ref this.sequence) - 1;
