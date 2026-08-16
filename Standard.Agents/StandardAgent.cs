@@ -76,6 +76,7 @@ public sealed partial class StandardAgent : IAgent
     private IMcpBroker? mcpBroker;
     private ILoggingBroker? loggingBroker;
     private IAuditBroker? auditBroker;
+    private Func<string?>? principalResolver;
 
     private IAgentCoordinationService? agent;
 
@@ -423,7 +424,7 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="principal">A function returning the current principal's identifier.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent Principal(Func<string?> principal) =>
-        Set(() => { });
+        Set(() => this.principalResolver = principal);
 
     /// <summary>
     /// Turns on <b>PII redaction at the brain boundary</b>: before any prompt reaches the brain,
@@ -622,7 +623,8 @@ public sealed partial class StandardAgent : IAgent
                 this.auditBroker
                     ?? (string.IsNullOrEmpty(this.auditPath)
                         ? new NotConfiguredAuditBroker()
-                        : new FileAuditBroker(this.auditPath)));
+                        : new FileAuditBroker(this.auditPath)),
+                this.principalResolver);
 
         IGeneratorBroker generator =
             this.generatorBroker ?? new GeneratorBroker(
