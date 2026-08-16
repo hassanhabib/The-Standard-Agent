@@ -464,6 +464,52 @@ public class StandardAgentTests
         judgeInvoked.Should().BeTrue();
     }
 
+    // The Local* verbs were renamed to On* — a delegate is the Custom mode, not the Local one.
+    // They stay behavioral aliases for the published deprecation window, so this pins that they
+    // still compose exactly what the new verbs compose. It characterizes shipped behavior rather
+    // than driving new behavior, so it carries no FAIL commit.
+    [Fact]
+    public async Task ShouldKeepObsoleteLocalAliasesBehavingLikeTheCustomVerbsAsync()
+    {
+        // given
+        bool gateInvoked = false;
+        bool judgeInvoked = false;
+
+        var skillBroker = new Mock<ISkillBroker>();
+        skillBroker.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(new List<Skill>());
+
+        var memory = new Mock<IMemoryBroker>();
+        memory.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
+
+#pragma warning disable CS0618 // the aliases are exactly what is under test
+        var agent = new StandardAgent()
+            .UseSkills(skillBroker.Object)
+            .UseMemory(memory.Object)
+            .UseKnowledge(EmptyKnowledgeBroker())
+            .LocalBrain(async (systemPrompt, userPrompt) => "FINAL: 42")
+            .LocalGate(async (gateRubric, prompt) =>
+            {
+                gateInvoked = true;
+
+                return "allow";
+            })
+            .LocalJudge(async (judgeRubric, draftAnswer) =>
+            {
+                judgeInvoked = true;
+
+                return "1.0";
+            });
+#pragma warning restore CS0618
+
+        // when
+        string actualResult = await agent.ProcessPromptAsync(prompt: "what is the answer?");
+
+        // then
+        actualResult.Should().Be("42");
+        gateInvoked.Should().BeTrue();
+        judgeInvoked.Should().BeTrue();
+    }
+
     [Fact]
     public async Task ShouldPrependConstitutionToGuardianRubricsOnProcessPromptAsync()
     {
