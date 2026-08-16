@@ -36,9 +36,16 @@ Every capability in this plan lands in one of exactly three places:
 | **A cross-cutting broker** | audit, redaction, sessions, approval, time, logging | these have never had foundation services — `ILoggingBroker` and `ITimeBroker` are the precedent |
 | **Behavior inside an existing service** | the loop, the guardian rubric layering, budgets | the tier already owns that decision |
 
-The `Broker` row of the 1·3·9 table grows from **8+2** to **8+6**. The `Coordination`,
+The `Broker` row of the 1·3·9 table grows from **8+2** to **8+8**. The `Coordination`,
 `Orchestration` and `Foundation` rows never change. That is the whole trick: the diagram on the
 README is still true at the end of this plan.
+
+This rule is load-bearing under pressure. The effect envelope in 0.21, for instance, *looks* like
+it wants its own broker and its own service. It gets neither: the envelope is a **model**, it is
+persisted through the session broker, authorized through the policy broker, approved through the
+approval broker, and executed idempotently by the two tool foundations that already exist. When a
+capability seems to need a tenth foundation, that is the signal to decompose it across the nine —
+not to add one.
 
 ### 1.3 Versioning is applied where consumers live, not everywhere
 
@@ -66,7 +73,7 @@ when the shape of an agent actually changes.
 
 ## 2 · The shape of the program
 
-Eight releases in three movements. Each release is independently shippable and independently
+Nine releases in three movements. Each release is independently shippable and independently
 valuable; nothing below is a big-bang.
 
 ```
@@ -78,11 +85,34 @@ MOVEMENT I — TRUST                MOVEMENT II — CONTROL           MOVEMENT I
 0.19  Run isolation               0.22  Resilience &             1.1   Evals & hosting
 0.20  Guardian integrity                budget
                                   0.23  Data at scale
+                                  0.24  Supply chain
 ```
 
 Movement I is not optional and not reorderable — 0.19 needs 0.18's sink, 0.20's evidence is only
 visible in 0.18's trace. Movements II and III can be resequenced against a specific customer's
-needs; a regulated target may pull 0.21 forward.
+needs; a regulated target may pull 0.21 forward, and 0.24 touches nothing inside the loop so it can
+land at any point.
+
+### 2.1 · Readiness profiles — the spine
+
+"Enterprise-ready" is a claim until it is a checklist a machine can verify. The conformance suite
+already distinguishes a **Core** implementation from a **Full** one; this program extends that idea
+into four named profiles, and **every release below declares which profile it advances**.
+
+| Profile | An agent at this profile has | Reached at |
+|---|---|---|
+| **Core** | conversation, skills, knowledge, memory, simple tools | today |
+| **Reliable** | guardians that see what they guard, durable audit, run isolation, cancellation, timeouts | **0.22** |
+| **Enterprise** | identity-aware authorization, telemetry, ranked retrieval, budgets, policy enforcement, supported supply chain | **0.24** |
+| **Critical** | human approval, idempotent effects, crash recovery, adversarial evaluation, operational evidence | **1.1** |
+
+Each profile gets a vector set in `conformance/profiles/`, and the runner grows a
+`--profile <name>` switch that exits non-zero unless every requirement for that profile passes.
+The package's `Description` and the README state the **highest profile the release satisfies** — so
+a consumer never has to infer guarantees from prose.
+
+This is the single most valuable structural addition to the plan: it converts every claim in it
+into something that can fail a build.
 
 ---
 
@@ -157,7 +187,8 @@ holds.
 | 3 | `MAJOR BROKERS: Compose The Audit Sink Into Logging` | `users/hassanhabib/BROKERS-logging-update` | MAJOR BROKERS | 5 |
 | 4 | `MINOR CLIENTS: Audit Broker Overload And Principal` | `users/hassanhabib/CLIENTS-agent-audit` | MINOR CLIENTS | 1 |
 | 5 | `MAJOR ACCEPTANCE: Audit Survives Consecutive Runs` | `users/hassanhabib/ACCEPTANCE-audit-retain` | MAJOR ACCEPTANCE | 10 |
-| 6 | `RELEASES: Standard.Agents 0.18.0.0 — The Audit Spine` | `users/hassanhabib/RELEASES-standard-agents-0-18-0` | RELEASES | 10 |
+| 6 | `MAJOR INFRA: Declare And Certify Readiness Profiles` | `users/hassanhabib/INFRA-profiles-create` | MAJOR INFRA | 10 |
+| 7 | `RELEASES: Standard.Agents 0.18.0.0 — The Audit Spine` | `users/hassanhabib/RELEASES-standard-agents-0-18-0` | RELEASES | 10 |
 
 Items 2 and 3 are brokers — thin, no logic, **no unit tests**, committed as
 `[CATEGORY]: [Description]`. Item 4 is client behavior and follows FAIL/PASS.
@@ -328,8 +359,8 @@ simply start telling the truth.
 
 ### 0.21.0.0 — The Perimeter
 
-> *Least privilege, a human in the loop, and the assumption that everything crossing the boundary
-> is hostile.*
+> *Least privilege, a human in the loop, an effect that cannot happen twice, and the assumption
+> that everything crossing the boundary is hostile.*
 
 #### The gap
 
@@ -341,19 +372,52 @@ simply start telling the truth.
   invocation" — the actual shape of enterprise least-privilege.
 - **No human approval before irreversible actions.** Roadmap Invariant 7 is unimplemented; the
   agent will happily call a `wire_transfer` tool if the model asks for it.
+- **Nothing prevents an effect from happening twice.** This is the gap that only becomes visible
+  once 0.22 adds retries and 1.0 adds resume: both are, by construction, mechanisms for *executing
+  the same tool call again*. A retried `wire_transfer` and a resumed `send_email` are duplicate
+  irreversible effects. The safety property must exist **before** the two features that need it,
+  which is why it lands here rather than later.
 
 #### The design
 
+A proposed tool call stops being a bare `(name, payload)` pair and becomes a durable **effect
+envelope** — a model, not a new tier:
+
 ```
-Brokers/Approvals/IApprovalBroker.cs         RequestAsync(toolName, payload) → Approved | Denied | Pending
+Models/Orchestrations/Agents/AgentEffect.cs
+    RunId · PrincipalId · ToolName · Arguments
+    IdempotencyKey · RiskLevel · ApprovalRequirement · Deadline
+```
+
+`IdempotencyKey` is derived from `(runId, toolName, canonicalized arguments)`, so a retry of the
+same intent produces the same key by construction rather than by the caller remembering to supply
+one.
+
+```
+Brokers/Approvals/IApprovalBroker.cs    RequestAsync(effect) → Approved | Denied | Pending
 Brokers/Approvals/NotConfiguredApprovalBroker.cs
-Brokers/Policies/IToolPolicyBroker.cs        IsPermitted(toolName, principal)
+Brokers/Policies/IPolicyBroker.cs       AuthorizeAsync(principal, effect, context)
+                                          → AuthorizationDecision(Permitted, Reason)
 ```
 
 `DirectionOrchestrationService` already owns the perimeter — `IsToolForbidden` is the seam
-(`DirectionOrchestrationService.cs:42`). It grows two neighbours: a policy check that can consult
-the principal, and an approval request for tools marked as irreversible. Screening untrusted
-inbound reuses the Gate that already exists — no new guardian, no new concept.
+(`DirectionOrchestrationService.cs:42`). It becomes an ordered pipeline over the envelope:
+**authorize → persist intent → approve if required → execute idempotently → persist outcome.**
+Screening untrusted inbound reuses the Gate that already exists — no new guardian, no new concept.
+
+Two deliberate stagings, to protect the appliance guarantee:
+
+- **The decision carries a reason from day one.** `AuthorizationDecision` is
+  `(Permitted, Reason)`, never a bare bool — a denial with no reason is unauditable, and retrofitting
+  the reason later means re-versioning the contract.
+- **Tenancy, jurisdiction, delegated identity and short-lived credentials are deferred to 1.0**,
+  where the session and principal models exist to hold them. Shipping the full seven-dimension
+  policy model here would make an enterprise policy engine the framework's sixth concept. `RiskLevel`,
+  `ApprovalRequirement` and `IdempotencyKey` are the three fields that earn their place now.
+
+Until 1.0's session broker exists, intent and outcome persist through the audit broker's
+append-only stream — enough to make idempotency correct within a process, and upgraded to
+cross-process durability the moment `ISessionBroker` lands.
 
 `AgentStatus` gains `AwaitingApproval`, following the precedent set when `AwaitingInput` was added
 in 0.14.0.0 and correctly released as a service change.
@@ -364,26 +428,33 @@ in 0.14.0.0 and correctly released as a service change.
 .RequireApproval("wire_transfer", "delete_account")   // pause before irreversible effects
 .ScreenToolOutput()                                    // Gate untrusted inbound (costs a call)
 .AllowTools(principal => policy.ToolsFor(principal))   // overload: per-invocation least privilege
+.UsePolicy(new OpaPolicyBroker(endpoint))              // broker swap: any external policy engine
 ```
 
-Three opt-in methods, all absent by default, all with the current behavior as their default.
+Four opt-in methods, all absent by default, all with the current behavior as their default. A user
+who never writes them gets exactly today's agent — including today's non-idempotent tools, because
+`IdempotencyKey` only binds when a tool declares a `RiskLevel`.
 
 #### Work items
 
 | # | Commit / PR title | Branch | Cat. | Pts |
 |---|---|---|---|---|
-| 1 | `BROKERS: Insert Approval Request` | `users/hassanhabib/BROKERS-approval-insert` | BROKERS | 5 |
-| 2 | `BROKERS: Select Tool Policy` | `users/hassanhabib/BROKERS-policy-select` | BROKERS | 5 |
-| 3 | `MAJOR ORCHESTRATIONS: Require Approval Before Irreversible Acts` | `users/hassanhabib/ORCHESTRATIONS-direction-modify-approval` | MAJOR ORCHESTRATIONS | 20 |
-| 4 | `MEDIUM ORCHESTRATIONS: Screen Untrusted Tool Output` | `users/hassanhabib/ORCHESTRATIONS-direction-modify-screening` | MEDIUM ORCHESTRATIONS | 15 |
-| 5 | `MEDIUM ORCHESTRATIONS: Screen Untrusted Knowledge` | `users/hassanhabib/ORCHESTRATIONS-data-modify-screening` | MEDIUM ORCHESTRATIONS | 15 |
-| 6 | `MEDIUM CLIENTS: Per-Invocation Tool Policy` | `users/hassanhabib/CLIENTS-agent-policy` | MEDIUM CLIENTS | 3 |
-| 7 | `RELEASES: Standard.Agents 0.21.0.0 — The Perimeter` | `users/hassanhabib/RELEASES-standard-agents-0-21-0` | RELEASES | 10 |
+| 1 | `DATA: Add Agent Effect Model` | `users/hassanhabib/DATA-agent-effect-create` | DATA | 5 |
+| 2 | `BROKERS: Insert Approval Request` | `users/hassanhabib/BROKERS-approval-insert` | BROKERS | 5 |
+| 3 | `BROKERS: Select Authorization Decision` | `users/hassanhabib/BROKERS-policy-select` | BROKERS | 5 |
+| 4 | `MAJOR ORCHESTRATIONS: Require Approval Before Irreversible Acts` | `users/hassanhabib/ORCHESTRATIONS-direction-modify-approval` | MAJOR ORCHESTRATIONS | 20 |
+| 5 | `MAJOR FOUNDATIONS: Run An Effect At Most Once` | `users/hassanhabib/FOUNDATIONS-internaltool-modify-idempotency` | MAJOR FOUNDATIONS | 10 |
+| 6 | `MEDIUM ORCHESTRATIONS: Screen Untrusted Tool Output` | `users/hassanhabib/ORCHESTRATIONS-direction-modify-screening` | MEDIUM ORCHESTRATIONS | 15 |
+| 7 | `MEDIUM ORCHESTRATIONS: Screen Untrusted Knowledge` | `users/hassanhabib/ORCHESTRATIONS-data-modify-screening` | MEDIUM ORCHESTRATIONS | 15 |
+| 8 | `MEDIUM CLIENTS: Per-Invocation Tool Policy` | `users/hassanhabib/CLIENTS-agent-policy` | MEDIUM CLIENTS | 3 |
+| 9 | `RELEASES: Standard.Agents 0.21.0.0 — The Perimeter` | `users/hassanhabib/RELEASES-standard-agents-0-21-0` | RELEASES | 10 |
 
 #### New conformance vectors
 
 - `16-approval-blocks-irreversible-tool.json`
 - `17-injected-instruction-in-tool-output-is-refused.json`
+- `18-duplicate-effect-executes-once.json` — the same intent proposed twice runs the tool once and
+  replays the first outcome.
 
 #### Exit criteria
 
@@ -391,6 +462,10 @@ Three opt-in methods, all absent by default, all with the current behavior as th
   the refusal is in the audit trail with the offending payload.
 - A tool under `.RequireApproval` never executes without an approval, and the pause is durable
   enough to survive to 1.0.0.0's session store.
+- **The same effect proposed twice executes once** — asserted with a counting tool double, under
+  both a retry and a re-proposal.
+- Every authorization denial carries a machine-readable reason, and that reason is in the audit
+  trail.
 - `.AllowTools` can express a per-tenant policy without the agent definition changing.
 
 ---
@@ -420,7 +495,13 @@ Three opt-in methods, all absent by default, all with the current behavior as th
 #### The design
 
 - `Brokers/Resiliences/IResilienceBroker` — retry with exponential backoff and jitter, 429
-  `Retry-After` honoured, circuit breaker per endpoint. The four HTTP brokers compose it.
+  `Retry-After` honoured, circuit breaker and health tracking per endpoint, bulkheads and
+  concurrency limits, load shedding, and **provider/model fallback** so a degraded primary
+  endpoint degrades the agent rather than failing it. The four HTTP brokers compose it. Retry
+  classification keys off the localized `Xeption` categories the framework already produces —
+  `*DependencyException` retries, `*DependencyValidationException` never does.
+- Rate limits per tenant, user, agent and provider ride the same broker, so a noisy tenant cannot
+  exhaust another's quota.
 - A shared `HttpClient` (or `IHttpClientFactory` when hosted), correctly disposed.
 - `Models/Brokers/Generators/Usage.cs` — the real `prompt_tokens` / `completion_tokens`, carried
   into every audit record alongside elapsed time and computed cost.
@@ -451,14 +532,16 @@ await agent.ProcessPromptAsync(prompt, cancellationToken);   // new overload; ol
 | 5 | `MAJOR COORDINATIONS: Honour Cancellation Between Turns` | `users/hassanhabib/COORDINATIONS-agent-modify-cancellation` | MAJOR COORDINATIONS | 20 |
 | 6 | `MAJOR COORDINATIONS: Enforce The Token And Cost Budget` | `users/hassanhabib/COORDINATIONS-agent-modify-budget` | MAJOR COORDINATIONS | 20 |
 | 7 | `MEDIUM ORCHESTRATIONS: Screen And Detect Conflict Once Per Prompt` | `users/hassanhabib/ORCHESTRATIONS-decision-modify-caching` | MEDIUM ORCHESTRATIONS | 15 |
-| 8 | `MEDIUM CLIENTS: Budget And Resilience Options` | `users/hassanhabib/CLIENTS-agent-budget` | MEDIUM CLIENTS | 3 |
-| 9 | `RELEASES: Standard.Agents 0.22.0.0 — Resilience And Budget` | `users/hassanhabib/RELEASES-standard-agents-0-22-0` | RELEASES | 10 |
+| 8 | `MAJOR BROKERS: Fall Back To A Healthy Provider` | `users/hassanhabib/BROKERS-resilience-update-fallback` | MAJOR BROKERS | 5 |
+| 9 | `MEDIUM CLIENTS: Budget And Resilience Options` | `users/hassanhabib/CLIENTS-agent-budget` | MEDIUM CLIENTS | 3 |
+| 10 | `RELEASES: Standard.Agents 0.22.0.0 — Resilience And Budget` | `users/hassanhabib/RELEASES-standard-agents-0-22-0` | RELEASES | 10 |
 
 #### New conformance vectors
 
-- `18-transient-failure-recovers.json`
-- `19-budget-stops-the-loop.json`
-- `20-guardian-screens-once-per-prompt.json`
+- `19-transient-failure-recovers.json`
+- `20-budget-stops-the-loop.json`
+- `21-guardian-screens-once-per-prompt.json`
+- `22-open-circuit-falls-back-to-secondary.json`
 
 #### Exit criteria
 
@@ -467,6 +550,9 @@ await agent.ProcessPromptAsync(prompt, cancellationToken);   // new overload; ol
 - Every audit record carries real `promptTokens` / `completionTokens` / `costUsd` / `elapsedMs`.
 - A 7-turn prompt makes **≤ 9** model calls where it previously made up to 21 — asserted, not
   estimated.
+- A retry never duplicates an effect — 0.21's idempotency assertion runs again here, with retries
+  switched on. **This is the release where that property is first genuinely under load.**
+- **Profile reached: `Reliable`.** The conformance runner passes `--profile Reliable`.
 
 ---
 
@@ -527,6 +613,61 @@ All three land **inside existing foundations and the Data orchestration** — no
 
 ---
 
+### 0.24.0.0 — Supply Chain and Support
+
+> *The release that has nothing to do with agents, and decides whether a bank's review board says
+> yes.*
+
+#### The gap
+
+Every other release in this plan improves what the agent **does**. This one improves whether an
+enterprise is permitted to **adopt** it. None of it touches the loop, the Tri-Nature, or a single
+public method — which is exactly why it is cheap and why it keeps getting deferred.
+
+- No `global.json`, so builds are not reproducible across machines and CI. (`net10.0` is the
+  current LTS and is the correct target — this is about pinning the **SDK**, not retargeting.)
+- Warnings are not build failures. The suite currently ships one: `xUnit1012` in
+  `GateServiceTests.DetectConflict.cs:42`. A zero-warning bar that isn't enforced isn't a bar.
+- No dependency-vulnerability, license or secret scanning in CI.
+- No SBOM, no package signing, no build provenance — three items that appear verbatim on most
+  regulated procurement checklists.
+- Thread safety and intended `StandardAgent` lifetime are undocumented. After 0.19 the answer is
+  finally a good one ("safe as a singleton") — and it needs to be written down, because today a
+  careful reader has to guess, and would guess wrong.
+- No published compatibility guarantee for the public broker interfaces, which is precisely what a
+  team building a provider package needs before they commit.
+- No documented upgrade, migration, deprecation or rollback procedure.
+- TSSL is not an SPDX identifier. That is a legitimate design choice, and it is also the single
+  most likely reason for an automated procurement scan to reject the package. It needs a review and
+  a prepared answer, not a surprise.
+
+#### The design
+
+No source changes to `Standard.Agents`. This is CI, packaging and documentation.
+
+#### Work items
+
+| # | Commit / PR title | Branch | Cat. | Pts |
+|---|---|---|---|---|
+| 1 | `MAJOR INFRA: Pin The SDK And Fail The Build On Warnings` | `users/hassanhabib/INFRA-build-setup` | MAJOR INFRA | 10 |
+| 2 | `MINOR FIX: Resolve The xUnit1012 Analyzer Warning` | `users/hassanhabib/FIX-gate-tests-nullable` | MINOR FIX | 5 |
+| 3 | `MAJOR INFRA: Add Vulnerability, License And Secret Scanning` | `users/hassanhabib/INFRA-scanning-setup` | MAJOR INFRA | 10 |
+| 4 | `RELEASES: Generate A Software Bill Of Materials` | `users/hassanhabib/RELEASES-sbom-create` | RELEASES | 10 |
+| 5 | `RELEASES: Sign Packages And Publish Build Provenance` | `users/hassanhabib/RELEASES-signing-setup` | RELEASES | 10 |
+| 6 | `DOCUMENTATION: Thread Safety, Lifetimes And Interface Compatibility` | `users/hassanhabib/DOCUMENTATION-support-guarantees` | DOCUMENTATION | 1 |
+| 7 | `DOCUMENTATION: Upgrade, Deprecation And Rollback Procedures` | `users/hassanhabib/DOCUMENTATION-upgrade-procedures` | DOCUMENTATION | 1 |
+| 8 | `RELEASES: Standard.Agents 0.24.0.0 — Supply Chain And Support` | `users/hassanhabib/RELEASES-standard-agents-0-24-0` | RELEASES | 10 |
+
+#### Exit criteria
+
+- `dotnet build` fails on any warning, on any machine, on the pinned SDK.
+- Every release publishes an SBOM, a signature and a provenance attestation.
+- A procurement reviewer can answer "is this maintained, scanned, signed, and licensable?" from the
+  repository alone, without asking.
+- **Profile reached: `Enterprise`.** The conformance runner passes `--profile Enterprise`.
+
+---
+
 ### 1.0.0.0 — The Enterprise Model
 
 > *The one release in this program that moves segment 1 — because this is the one release where
@@ -554,6 +695,7 @@ Per §1.3, every contract an external package can see gets a `V1` sibling and **
 
 ```
 Models/Orchestrations/Agents/V1/AgentContextV1.cs      + SessionId · Usage · Approval · Messages
+Models/Orchestrations/Agents/V1/AgentPrincipalV1.cs    + TenantId · Jurisdiction · Delegation
 Models/Brokers/Generators/V1/                          message list · tool definitions · tool_calls
 Brokers/Generators/IGeneratorBrokerV1.cs               GenerateAsync(IReadOnlyList<Message>, tools)
 Brokers/Generators/GeneratorBrokerV1.cs
@@ -561,6 +703,22 @@ Services/Foundations/Brains/V1/BrainV1Service.cs
 Brokers/Sessions/ISessionBroker.cs                     SelectAsync(sessionId) · InsertAsync(context)
 Brokers/Sessions/FileSessionBroker.cs
 ```
+
+Three capabilities deferred from earlier releases collect here, because this is the release where
+the models exist to hold them:
+
+- **Checkpointing.** The coordination loop commits after each Data, Decision and Direction stage,
+  with lease ownership and optimistic concurrency, so a resumed run restarts from the last
+  committed checkpoint rather than from the top of the prompt. Retention and expiry are part of the
+  session broker's contract.
+- **Compensation.** 0.21 made effects idempotent; 1.0 makes them *reversible where they cannot be
+  idempotent*. An effect may declare a compensating operation, and a run that fails after a
+  committed effect can unwind it. Outcomes persist to the session store, so idempotency finally
+  spans processes rather than one process's audit stream.
+- **Full identity.** `AgentPrincipal` gains tenancy, jurisdiction and delegated identity; the
+  policy broker's `AuthorizeAsync` can finally express "this delegated service principal, in this
+  jurisdiction, on this resource." Short-lived credentials remain a **host** concern — the
+  framework consumes a principal, it does not mint one.
 
 Native tool-calling becomes the **default** when the endpoint advertises it, with the text protocol
 as the automatic fallback for small local models — so LlamaSharp users lose nothing.
@@ -587,22 +745,27 @@ await agent.ResumeAsync(sessionId, "yes, approve it");// AwaitingInput / Awaitin
 | 4 | `BROKERS: Insert And Select Session` | `users/hassanhabib/BROKERS-session-insert` | BROKERS | 5 |
 | 5 | `MAJOR FOUNDATIONS: Add Brain V1 Over The Message List` | `users/hassanhabib/FOUNDATIONS-brain-v1-add` | MAJOR FOUNDATIONS | 10 |
 | 6 | `MAJOR ORCHESTRATIONS: Interpret Native Tool Calls` | `users/hassanhabib/ORCHESTRATIONS-decision-modify-toolcalls` | MAJOR ORCHESTRATIONS | 20 |
-| 7 | `MAJOR COORDINATIONS: Resume A Session` | `users/hassanhabib/COORDINATIONS-agent-modify-resume` | MAJOR COORDINATIONS | 20 |
-| 8 | `MEDIUM CLIENTS: Session And Resume` | `users/hassanhabib/CLIENTS-agent-session` | MEDIUM CLIENTS | 3 |
-| 9 | `DOCUMENTATION: V0 Deprecation Window And Migration Guide` | `users/hassanhabib/DOCUMENTATION-v0-deprecation` | DOCUMENTATION | 1 |
-| 10 | `RELEASES: Standard.Agents 1.0.0.0 — The Enterprise Model` | `users/hassanhabib/RELEASES-standard-agents-1-0-0` | RELEASES | 10 |
+| 7 | `MAJOR COORDINATIONS: Checkpoint And Resume A Session` | `users/hassanhabib/COORDINATIONS-agent-modify-resume` | MAJOR COORDINATIONS | 20 |
+| 8 | `MAJOR ORCHESTRATIONS: Compensate An Effect That Cannot Be Repeated` | `users/hassanhabib/ORCHESTRATIONS-direction-modify-compensation` | MAJOR ORCHESTRATIONS | 20 |
+| 9 | `MEDIUM CLIENTS: Session And Resume` | `users/hassanhabib/CLIENTS-agent-session` | MEDIUM CLIENTS | 3 |
+| 10 | `DOCUMENTATION: V0 Deprecation Window And Migration Guide` | `users/hassanhabib/DOCUMENTATION-v0-deprecation` | DOCUMENTATION | 1 |
+| 11 | `RELEASES: Standard.Agents 1.0.0.0 — The Enterprise Model` | `users/hassanhabib/RELEASES-standard-agents-1-0-0` | RELEASES | 10 |
 
 #### New conformance vectors
 
-- `21-conversation-carries-history.json`
-- `22-native-tool-call-round-trips.json`
-- `23-awaiting-input-resumes-in-a-new-process.json`
+- `23-conversation-carries-history.json`
+- `24-native-tool-call-round-trips.json`
+- `25-awaiting-input-resumes-in-a-new-process.json`
+- `26-effect-outcome-survives-a-crash.json` — a run killed *after* a committed effect resumes
+  without re-executing it.
 
 #### Exit criteria
 
 - A follow-up question resolves against the previous turn.
 - An agent can be killed mid-`AwaitingApproval` and a **different process** rehydrates and
   finishes the run.
+- A run killed immediately after an irreversible effect resumes **without repeating it** — the
+  cross-process form of 0.21's property, and the one an auditor will actually ask about.
 - Native tool calls round-trip with `tool_call_id`; the text protocol still works unchanged for
   local models.
 - All five provider packages still build against V0 with no source change.
@@ -614,20 +777,45 @@ await agent.ResumeAsync(sessionId, "yes, approve it");// AwaitingInput / Awaitin
 > *Conformance pins contracts. Enterprises also need to pin quality — and to deploy the same
 > definition as a service.*
 
-- **`Standard.Agents.Evals`** — golden prompt sets, LLM-judge scoring, drift detection, a CI
-  regression gate. This is the natural extension of the FAIL/PASS discipline the repo already
-  enforces on code, applied to agent behavior; it is also a genuine differentiator, because almost
-  no agent framework ships one.
-- **`.AsWebApi()` / an OpenAI-compatible host** — the same agent definition as a library, a
-  service, or a scale-out deployment (roadmap pillar 7). 0.19's run isolation is what makes this
-  honest rather than aspirational.
+Certification grows from one suite to three, each answering a different question.
+
+**Protocol conformance** — *does the framework behave to spec?* The existing deterministic vectors,
+plus everything this plan adds. Already green, already gating.
+
+**Quality evaluation** — *does the agent do its job?* `Standard.Agents.Evals`: versioned golden
+datasets and thresholds for task completion, groundedness and citation accuracy, retrieval
+precision and recall, tool-selection correctness, refusal correctness, and guardian-revision
+effectiveness. This is the FAIL/PASS discipline the repo already enforces on code, applied to
+behavior — and a genuine differentiator, because almost no agent framework ships one.
+
+**Adversarial evaluation** — *can the agent be turned against its owner?* Run continuously against:
+
+- direct and indirect prompt injection
+- data exfiltration and secret discovery
+- tool authorization bypass
+- malicious MCP responses
+- poisoned skills, knowledge and memory
+- guardian bypass and deliberately conflicting policies
+- cross-tenant data exposure
+
+Every result records the model, provider, prompt, policy, skill, tool and evaluation versions it
+was produced under — otherwise a passing score is unattributable and a regression is
+uninvestigable.
+
+**`.AsWebApi()` / an OpenAI-compatible host** — the same agent definition as a library, a service,
+or a scale-out deployment (roadmap pillar 7). 0.19's run isolation is what makes this honest rather
+than aspirational.
 
 | # | Commit / PR title | Branch | Cat. | Pts |
 |---|---|---|---|---|
 | 1 | `INFRA: Create Standard.Agents.Evals Project` | `users/hassanhabib/INFRA-evals-create` | INFRA | 10 |
 | 2 | `MAJOR FOUNDATIONS: Add Eval Scoring` | `users/hassanhabib/FOUNDATIONS-eval-add` | MAJOR FOUNDATIONS | 10 |
-| 3 | `EXPOSERS: Host The Agent As A Web Api` | `users/hassanhabib/EXPOSERS-agent-create-webapi` | EXPOSERS | 5 |
-| 4 | `RELEASES: Standard.Agents 1.1.0.0 — Evals And Hosting` | `users/hassanhabib/RELEASES-standard-agents-1-1-0` | RELEASES | 10 |
+| 3 | `MAJOR ACCEPTANCE: Add The Adversarial Suite` | `users/hassanhabib/ACCEPTANCE-adversarial-create` | MAJOR ACCEPTANCE | 10 |
+| 4 | `EXPOSERS: Host The Agent As A Web Api` | `users/hassanhabib/EXPOSERS-agent-create-webapi` | EXPOSERS | 5 |
+| 5 | `RELEASES: Standard.Agents 1.1.0.0 — Evals And Hosting` | `users/hassanhabib/RELEASES-standard-agents-1-1-0` | RELEASES | 10 |
+
+**Profile reached: `Critical`.** Releases are gated on observable behavior, not only on
+deterministic framework mechanics.
 
 ---
 
@@ -638,11 +826,16 @@ await agent.ResumeAsync(sessionId, "yes, approve it");// AwaitingInput / Awaitin
 | **Coordination** | 1 | `AgentCoordinationService` — Recall → Think → Act | unchanged |
 | **Orchestration** | 3 | Data · Decision · Direction | unchanged |
 | **Foundation** | 9 | Skills, Memory, Knowledge / Gate, Brain, Judge / Internal, External, Return | unchanged |
-| **Broker** | 8 + 6 | one liaison per resource, plus **logging, time, audit, redaction, approval, policy, resilience, sessions** | +6 cross-cutting |
+| **Broker** | 8 + 8 | one liaison per resource, plus **logging, time, audit, redaction, approval, policy, resilience, sessions** | +6 cross-cutting |
 
 **The mark is unchanged.** Three arcs around one core; the loop is the same loop; the README
 diagram still describes the framework. Every enterprise capability arrived through a broker or an
 opt-in method with a default — exactly as the appliance guarantee requires.
+
+Two capabilities that most obviously "wanted" new tiers did not get them, and it is worth naming
+why: the **effect envelope** is a model decomposed across four existing seams (§1.2), and
+**telemetry** is the audit broker with an OpenTelemetry sink rather than a parallel subsystem. Both
+would have been easier to build as new services. Both would have cost the mark.
 
 ---
 
@@ -663,14 +856,17 @@ Everything this plan adds is a line you may choose not to write:
 
 ```csharp
     .Principal(() => user.Id)                 // 0.18 — who the run is for
-    .RequireApproval("wire_transfer")         // 0.21 — human in the loop
+    .RequireApproval("wire_transfer")         // 0.21 — human in the loop, and run-once
     .ScreenToolOutput()                       // 0.21 — untrusted inbound
+    .UsePolicy(policyBroker)                  // 0.21 — identity-aware authorization
     .Budget(maxTokens: 50_000)                // 0.22 — cost ceiling
+    .Resilience(retries: 3)                   // 0.22 — retry, breaker, fallback
     .ContextBudget(maxTokens: 8_000)          // 0.23 — what Recall may inject
     .Session(sessionId)                       // 1.00 — conversation, resumable
 ```
 
-Eleven builder methods before, seventeen after — and a first-time user still needs exactly one.
+Nine new opt-in methods across nine releases, every one of them absent by default and every one of
+them defaulting to today's behavior — and a first-time user still needs exactly one line.
 
 ---
 
@@ -699,20 +895,25 @@ Non-negotiable, from The Standard's practices:
 Using The Standard's own averages — brokers ~1h, foundations ~3h, orchestration / coordination
 ~5h, clients ~1h — plus tests and conformance:
 
-| Release | Items | Est. | Contribution pts |
-|---|---|---|---|
-| 0.18 Audit spine | 6 | ~2 days | 36 |
-| 0.19 Run isolation | 6 | ~3 days | 48 |
-| 0.20 Guardian integrity | 9 | ~4 days | 71 |
-| 0.21 Perimeter | 7 | ~4 days | 73 |
-| 0.22 Resilience & budget | 9 | ~5 days | 88 |
-| 0.23 Data at scale | 5 | ~4 days | 53 |
-| 1.00 Enterprise model | 10 | ~8 days | 84 |
-| 1.10 Evals & hosting | 4 | ~5 days | 35 |
-| | **56** | **~7 weeks** | **488** |
+| Release | Items | Est. | Profile | Contribution pts |
+|---|---|---|---|---|
+| 0.18 Audit spine | 7 | ~3 days | | 46 |
+| 0.19 Run isolation | 6 | ~3 days | | 48 |
+| 0.20 Guardian integrity | 9 | ~4 days | | 71 |
+| 0.21 Perimeter | 9 | ~5 days | | 88 |
+| 0.22 Resilience & budget | 10 | ~5 days | **Reliable** | 93 |
+| 0.23 Data at scale | 5 | ~4 days | | 53 |
+| 0.24 Supply chain & support | 8 | ~3 days | **Enterprise** | 57 |
+| 1.00 Enterprise model | 11 | ~9 days | | 104 |
+| 1.10 Evals & hosting | 5 | ~6 days | **Critical** | 45 |
+| | **70** | **~8 weeks** | | **605** |
 
-Movement I alone — the three releases that make the framework trustworthy — is roughly **9 days**
+Movement I alone — the three releases that make the framework trustworthy — is roughly **10 days**
 and closes every defect where a printed promise currently outruns the behavior.
+
+0.24 is the cheapest release in the program at ~3 days, sits entirely outside the loop, and is what
+converts "technically ready" into "procurement-approvable." It can be pulled forward at any time;
+it blocks nothing and nothing blocks it.
 
 ---
 
@@ -726,11 +927,17 @@ Named explicitly, so they cannot creep in:
   composition story; it is sufficient.
 - **No config-file-driven agents.** The builder is the API. Policy is Data; wiring is code.
 - **No breaking change without a `Vn` sibling and a published deprecation window.**
+- **No credential minting or identity issuance.** The framework *consumes* a principal; issuing
+  one, rotating it and scoping short-lived tokens are host concerns. A library that mints
+  credentials is a library that must be trusted with secrets.
+- **No policy engine.** `IPolicyBroker` is a seam to *your* engine — OPA, Cedar, an internal
+  service. The framework ships the decision point, never the decision language.
 
 ---
 
 ## 9 · The one-line summary
 
-> Eight releases, fifty-six branch-sized work items, six new cross-cutting brokers and six new
-> opt-in builder methods — and at the end the README's five-line agent is still five lines, the
-> Tri-Nature is still the only mental model, and every promise printed on the box is true.
+> Nine releases, seventy branch-sized work items, six new cross-cutting brokers, nine new opt-in
+> builder methods and four machine-verifiable readiness profiles — and at the end the README's
+> five-line agent is still five lines, the Tri-Nature is still the only mental model, and every
+> promise printed on the box is true.
