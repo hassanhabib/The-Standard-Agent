@@ -108,7 +108,7 @@ The `Broker` row of the 1·3·9 table grows from **8+2** to **8+8**. The `Coordi
 `Orchestration` and `Foundation` rows never change. That is the whole trick: the diagram on the
 README is still true at the end of this plan.
 
-This rule is load-bearing under pressure. The effect envelope in 0.21, for instance, *looks* like
+This rule is load-bearing under pressure. The effect envelope in 0.22, for instance, *looks* like
 it wants its own broker and its own service. It gets neither: the envelope is a **model**, it is
 persisted through the session broker, authorized through the policy broker, approved through the
 approval broker, and executed idempotently by the two tool foundations that already exist. When a
@@ -149,16 +149,22 @@ MOVEMENT I — TRUST                MOVEMENT II — CONTROL           MOVEMENT I
 (nothing else counts until        (what a regulated deployment    (the shape an enterprise
  every decision is provable)       needs to say yes)               fleet actually needs)
 
-0.18  Audit spine        ──▶      0.21  Perimeter        ──▶      1.0   Enterprise model
-0.19  Run isolation               0.22  Resilience &             1.1   Evals & hosting
-0.20  Guardian integrity                budget
-                                  0.23  Data at scale
-                                  0.24  Supply chain
+0.19  Audit spine        ──▶      0.22  Perimeter        ──▶      1.0   Enterprise model
+0.20  Run isolation               0.23  Resilience &             1.1   Evals & hosting
+0.21  Guardian integrity                budget
+                                  0.24  Data at scale
+                                  0.25  Supply chain
 ```
 
-Movement I is not optional and not reorderable — 0.19 needs 0.18's sink, 0.20's evidence is only
-visible in 0.18's trace. Movements II and III can be resequenced against a specific customer's
-needs; a regulated target may pull 0.21 forward, and 0.24 touches nothing inside the loop so it can
+**Already shipped — 0.18.0.0, the capability verbs.** Principle 0.5 surfaced a naming collision in
+the existing API (`Local*` meant Custom), and it was fixed *before* the program started rather than
+inside it, because every release below would otherwise have copied the wrong pattern into a new
+capability. `.OnBrain` / `.OnGate` / `.OnJudge` are the Custom verbs; the `Local*` names remain as
+`[Obsolete]` aliases under a deprecation window. See §5.2.
+
+Movement I is not optional and not reorderable — 0.20 needs 0.19's sink, 0.21's evidence is only
+visible in 0.19's trace. Movements II and III can be resequenced against a specific customer's
+needs; a regulated target may pull 0.22 forward, and 0.25 touches nothing inside the loop so it can
 land at any point.
 
 ### 2.1 · Readiness profiles — the spine
@@ -170,8 +176,8 @@ into four named profiles, and **every release below declares which profile it ad
 | Profile | An agent at this profile has | Reached at |
 |---|---|---|
 | **Core** | conversation, skills, knowledge, memory, simple tools | today |
-| **Reliable** | guardians that see what they guard, durable audit, run isolation, cancellation, timeouts | **0.22** |
-| **Enterprise** | identity-aware authorization, telemetry, ranked retrieval, budgets, policy enforcement, supported supply chain | **0.24** |
+| **Reliable** | guardians that see what they guard, durable audit, run isolation, cancellation, timeouts | **0.23** |
+| **Enterprise** | identity-aware authorization, telemetry, ranked retrieval, budgets, policy enforcement, supported supply chain | **0.25** |
 | **Critical** | human approval, idempotent effects, crash recovery, adversarial evaluation, operational evidence | **1.1** |
 
 Each profile gets a vector set in `conformance/profiles/`, and the runner grows a
@@ -193,7 +199,7 @@ not how we feel).
 
 ---
 
-### 0.18.0.0 — The Audit Spine
+### 0.19.0.0 — The Audit Spine
 
 > *Nothing else in this plan is enterprise-trustworthy until every decision is durable,
 > attributable and exportable.*
@@ -259,7 +265,7 @@ Appliance guarantee holds. Audit is the first capability born under the correcte
 | 5 | `MAJOR ACCEPTANCE: Audit Survives Consecutive Runs` | `users/hassanhabib/ACCEPTANCE-audit-retain` | MAJOR ACCEPTANCE | 10 |
 | 6 | `MAJOR INFRA: Declare And Certify Readiness Profiles` | `users/hassanhabib/INFRA-profiles-create` | MAJOR INFRA | 10 |
 | 7 | `MAJOR CLIENTS: Enforce Local, External And Custom For Every Capability` | `users/hassanhabib/CLIENTS-agent-capabilities` | MAJOR CLIENTS | 5 |
-| 8 | `RELEASES: Standard.Agents 0.18.0.0 — The Audit Spine` | `users/hassanhabib/RELEASES-standard-agents-0-18-0` | RELEASES | 10 |
+| 8 | `RELEASES: Standard.Agents 0.19.0.0 — The Audit Spine` | `users/hassanhabib/RELEASES-standard-agents-0-19-0` | RELEASES | 10 |
 
 Items 2 and 3 are brokers — thin, no logic, **no unit tests**, committed as
 `[CATEGORY]: [Description]`. Item 4 is client behavior and follows FAIL/PASS.
@@ -278,7 +284,7 @@ audit stream contains both, each record carrying a distinct `runId` and a monoto
 
 ---
 
-### 0.19.0.0 — Run Isolation
+### 0.20.0.0 — Run Isolation
 
 > *An agent that cannot serve two requests at once is not an enterprise agent, whatever else
 > it can do.*
@@ -328,7 +334,7 @@ substrate — which is precisely what the collapsible-substrate doctrine predict
 | 3 | `MEDIUM COORDINATIONS: Establish A Run Per Prompt` | `users/hassanhabib/COORDINATIONS-agent-modify-run` | MEDIUM COORDINATIONS | 15 |
 | 4 | `MEDIUM CLIENTS: Guard Composition Against Races` | `users/hassanhabib/CLIENTS-agent-compose` | MEDIUM CLIENTS | 3 |
 | 5 | `MAJOR ACCEPTANCE: Concurrent Runs Stay Isolated` | `users/hassanhabib/ACCEPTANCE-agent-concurrency` | MAJOR ACCEPTANCE | 10 |
-| 6 | `RELEASES: Standard.Agents 0.19.0.0 — Run Isolation` | `users/hassanhabib/RELEASES-standard-agents-0-19-0` | RELEASES | 10 |
+| 6 | `RELEASES: Standard.Agents 0.20.0.0 — Run Isolation` | `users/hassanhabib/RELEASES-standard-agents-0-20-0` | RELEASES | 10 |
 
 #### New conformance vector
 
@@ -344,7 +350,7 @@ run's records are complete, correctly attributed, and never interleaved *within*
 
 ---
 
-### 0.20.0.0 — Guardian Integrity
+### 0.21.0.0 — Guardian Integrity
 
 > *A guardian that cannot see what it is guarding is theatre.*
 
@@ -410,7 +416,7 @@ simply start telling the truth.
 | 6 | `MAJOR FOUNDATIONS: Evaluate The Answer Against Its Task` | `users/hassanhabib/FOUNDATIONS-judge-modify-task` | MAJOR FOUNDATIONS | 10 |
 | 7 | `MEDIUM ORCHESTRATIONS: Enforce Guardian Is Never The Brain` | `users/hassanhabib/ORCHESTRATIONS-decision-modify-invariant` | MEDIUM ORCHESTRATIONS | 15 |
 | 8 | `DOCUMENTATION: Judge Rubric States The Task Is Provided` | `users/hassanhabib/DOCUMENTATION-judge-policy` | DOCUMENTATION | 1 |
-| 9 | `RELEASES: Standard.Agents 0.20.0.0 — Guardian Integrity` | `users/hassanhabib/RELEASES-standard-agents-0-20-0` | RELEASES | 10 |
+| 9 | `RELEASES: Standard.Agents 0.21.0.0 — Guardian Integrity` | `users/hassanhabib/RELEASES-standard-agents-0-21-0` | RELEASES | 10 |
 
 #### New conformance vectors
 
@@ -430,7 +436,7 @@ simply start telling the truth.
 
 ---
 
-### 0.21.0.0 — The Perimeter
+### 0.22.0.0 — The Perimeter
 
 > *Least privilege, a human in the loop, an effect that cannot happen twice, and the assumption
 > that everything crossing the boundary is hostile.*
@@ -446,7 +452,7 @@ simply start telling the truth.
 - **No human approval before irreversible actions.** Roadmap Invariant 7 is unimplemented; the
   agent will happily call a `wire_transfer` tool if the model asks for it.
 - **Nothing prevents an effect from happening twice.** This is the gap that only becomes visible
-  once 0.22 adds retries and 1.0 adds resume: both are, by construction, mechanisms for *executing
+  once 0.23 adds retries and 1.0 adds resume: both are, by construction, mechanisms for *executing
   the same tool call again*. A retried `wire_transfer` and a resumed `send_email` are duplicate
   irreversible effects. The safety property must exist **before** the two features that need it,
   which is why it lands here rather than later.
@@ -526,7 +532,7 @@ non-idempotent tools, because `IdempotencyKey` only binds when a tool declares a
 | 6 | `MEDIUM ORCHESTRATIONS: Screen Untrusted Tool Output` | `users/hassanhabib/ORCHESTRATIONS-direction-modify-screening` | MEDIUM ORCHESTRATIONS | 15 |
 | 7 | `MEDIUM ORCHESTRATIONS: Screen Untrusted Knowledge` | `users/hassanhabib/ORCHESTRATIONS-data-modify-screening` | MEDIUM ORCHESTRATIONS | 15 |
 | 8 | `MEDIUM CLIENTS: Per-Invocation Tool Policy` | `users/hassanhabib/CLIENTS-agent-policy` | MEDIUM CLIENTS | 3 |
-| 9 | `RELEASES: Standard.Agents 0.21.0.0 — The Perimeter` | `users/hassanhabib/RELEASES-standard-agents-0-21-0` | RELEASES | 10 |
+| 9 | `RELEASES: Standard.Agents 0.22.0.0 — The Perimeter` | `users/hassanhabib/RELEASES-standard-agents-0-22-0` | RELEASES | 10 |
 
 #### New conformance vectors
 
@@ -549,7 +555,7 @@ non-idempotent tools, because `IdempotencyKey` only binds when a tool declares a
 
 ---
 
-### 0.22.0.0 — Resilience and Budget
+### 0.23.0.0 — Resilience and Budget
 
 > *One transient 503 must not fail a prompt, and nobody should discover their token bill from an
 > invoice.*
@@ -614,7 +620,7 @@ await agent.ProcessPromptAsync(prompt, cancellationToken);   // new overload; ol
 | 7 | `MEDIUM ORCHESTRATIONS: Screen And Detect Conflict Once Per Prompt` | `users/hassanhabib/ORCHESTRATIONS-decision-modify-caching` | MEDIUM ORCHESTRATIONS | 15 |
 | 8 | `MAJOR BROKERS: Fall Back To A Healthy Provider` | `users/hassanhabib/BROKERS-resilience-update-fallback` | MAJOR BROKERS | 5 |
 | 9 | `MEDIUM CLIENTS: Budget And Resilience Options` | `users/hassanhabib/CLIENTS-agent-budget` | MEDIUM CLIENTS | 3 |
-| 10 | `RELEASES: Standard.Agents 0.22.0.0 — Resilience And Budget` | `users/hassanhabib/RELEASES-standard-agents-0-22-0` | RELEASES | 10 |
+| 10 | `RELEASES: Standard.Agents 0.23.0.0 — Resilience And Budget` | `users/hassanhabib/RELEASES-standard-agents-0-23-0` | RELEASES | 10 |
 
 #### New conformance vectors
 
@@ -630,13 +636,13 @@ await agent.ProcessPromptAsync(prompt, cancellationToken);   // new overload; ol
 - Every audit record carries real `promptTokens` / `completionTokens` / `costUsd` / `elapsedMs`.
 - A 7-turn prompt makes **≤ 9** model calls where it previously made up to 21 — asserted, not
   estimated.
-- A retry never duplicates an effect — 0.21's idempotency assertion runs again here, with retries
+- A retry never duplicates an effect — 0.22's idempotency assertion runs again here, with retries
   switched on. **This is the release where that property is first genuinely under load.**
 - **Profile reached: `Reliable`.** The conformance runner passes `--profile Reliable`.
 
 ---
 
-### 0.23.0.0 — Data at Scale
+### 0.24.0.0 — Data at Scale
 
 > *Finish Data's two stub legs. Today the default knowledge retriever cannot answer a question.*
 
@@ -683,7 +689,7 @@ All three land **inside existing foundations and the Data orchestration** — no
 | 2 | `MAJOR FOUNDATIONS: Retrieve Memories By Relevance And Age` | `users/hassanhabib/FOUNDATIONS-memory-retrieve-ranked` | MAJOR FOUNDATIONS | 10 |
 | 3 | `MAJOR ORCHESTRATIONS: Budget What Recall Injects` | `users/hassanhabib/ORCHESTRATIONS-data-modify-budget` | MAJOR ORCHESTRATIONS | 20 |
 | 4 | `MEDIUM CLIENTS: Retrieval And Context Budget Options` | `users/hassanhabib/CLIENTS-agent-retrieval` | MEDIUM CLIENTS | 3 |
-| 5 | `RELEASES: Standard.Agents 0.23.0.0 — Data At Scale` | `users/hassanhabib/RELEASES-standard-agents-0-23-0` | RELEASES | 10 |
+| 5 | `RELEASES: Standard.Agents 0.24.0.0 — Data At Scale` | `users/hassanhabib/RELEASES-standard-agents-0-24-0` | RELEASES | 10 |
 
 #### Exit criteria
 
@@ -694,7 +700,7 @@ All three land **inside existing foundations and the Data orchestration** — no
 
 ---
 
-### 0.24.0.0 — Supply Chain and Support
+### 0.25.0.0 — Supply Chain and Support
 
 > *The release that has nothing to do with agents, and decides whether a bank's review board says
 > yes.*
@@ -712,7 +718,7 @@ public method — which is exactly why it is cheap and why it keeps getting defe
 - No dependency-vulnerability, license or secret scanning in CI.
 - No SBOM, no package signing, no build provenance — three items that appear verbatim on most
   regulated procurement checklists.
-- Thread safety and intended `StandardAgent` lifetime are undocumented. After 0.19 the answer is
+- Thread safety and intended `StandardAgent` lifetime are undocumented. After 0.20 the answer is
   finally a good one ("safe as a singleton") — and it needs to be written down, because today a
   careful reader has to guess, and would guess wrong.
 - No published compatibility guarantee for the public broker interfaces, which is precisely what a
@@ -738,7 +744,7 @@ No source changes to `Standard.Agents`. This is CI, packaging and documentation.
 | 5 | `RELEASES: Sign Packages And Publish Build Provenance` | `users/hassanhabib/RELEASES-signing-setup` | RELEASES | 10 |
 | 6 | `DOCUMENTATION: Thread Safety, Lifetimes And Interface Compatibility` | `users/hassanhabib/DOCUMENTATION-support-guarantees` | DOCUMENTATION | 1 |
 | 7 | `DOCUMENTATION: Upgrade, Deprecation And Rollback Procedures` | `users/hassanhabib/DOCUMENTATION-upgrade-procedures` | DOCUMENTATION | 1 |
-| 8 | `RELEASES: Standard.Agents 0.24.0.0 — Supply Chain And Support` | `users/hassanhabib/RELEASES-standard-agents-0-24-0` | RELEASES | 10 |
+| 8 | `RELEASES: Standard.Agents 0.25.0.0 — Supply Chain And Support` | `users/hassanhabib/RELEASES-standard-agents-0-25-0` | RELEASES | 10 |
 
 #### Exit criteria
 
@@ -765,7 +771,7 @@ inside a service segment. This release is also the natural home for SPEC.md sett
   `(systemPrompt, userPrompt)` — with no history and no assistant/tool roles
   (`GeneratorBroker.cs:60`). *"And what about Paris?"* has no idea what came before.
 - **`AwaitingInput` is a dead end.** The agent asks a clarifying question and then discards the
-  context needed to use the answer. Same for 0.21's `AwaitingApproval`.
+  context needed to use the answer. Same for 0.22's `AwaitingApproval`.
 - **The model contract is brittle.** `ACTION:` / `TOOL:` / `FINAL:` is first-line string parsing
   (`DecisionOrchestrationService.cs:456`). Frontier models are trained on native tool-calling JSON;
   a text protocol forfeits that training, forfeits parallel tool calls, and — as the defensive
@@ -793,7 +799,7 @@ the models exist to hold them:
   with lease ownership and optimistic concurrency, so a resumed run restarts from the last
   committed checkpoint rather than from the top of the prompt. Retention and expiry are part of the
   session broker's contract.
-- **Compensation.** 0.21 made effects idempotent; 1.0 makes them *reversible where they cannot be
+- **Compensation.** 0.22 made effects idempotent; 1.0 makes them *reversible where they cannot be
   idempotent*. An effect may declare a compensating operation, and a run that fails after a
   committed effect can unwind it. Outcomes persist to the session store, so idempotency finally
   spans processes rather than one process's audit stream.
@@ -849,13 +855,13 @@ await agent.ResumeAsync(sessionId, "yes, approve it");// AwaitingInput / Awaitin
 - An agent can be killed mid-`AwaitingApproval` and a **different process** rehydrates and
   finishes the run.
 - A run killed immediately after an irreversible effect resumes **without repeating it** — the
-  cross-process form of 0.21's property, and the one an auditor will actually ask about.
+  cross-process form of 0.22's property, and the one an auditor will actually ask about.
 - Native tool calls round-trip with `tool_call_id`; the text protocol still works unchanged for
   local models.
 - All five provider packages still build against V0 with no source change.
 - **The capability-matrix waiver list is empty** (§5.2, §6.7). Every one of the thirteen
-  capabilities answers Local, External and Custom, and `.LocalBrain` / `.LocalGate` / `.LocalJudge`
-  are `[Obsolete]` aliases of the correctly-named `.OnX` forms.
+  capabilities answers Local, External and Custom — including `.Brain("model.gguf")`, the last
+  cell left open when 0.18.0.0 closed the Custom column.
 
 ---
 
@@ -890,7 +896,7 @@ was produced under — otherwise a passing score is unattributable and a regress
 uninvestigable.
 
 **`.AsWebApi()` / an OpenAI-compatible host** — the same agent definition as a library, a service,
-or a scale-out deployment (roadmap pillar 7). 0.19's run isolation is what makes this honest rather
+or a scale-out deployment (roadmap pillar 7). 0.20's run isolation is what makes this honest rather
 than aspirational.
 
 | # | Commit / PR title | Branch | Cat. | Pts |
@@ -980,12 +986,12 @@ var agent = new StandardAgent(url, key, "LLooMA2.0")
 Everything this plan adds is a line you may choose not to write:
 
 ```csharp
-    .Principal(() => user.Id)                 // 0.18 — who the run is for
-    .RequireApproval("wire_transfer")         // 0.21 — human in the loop, and run-once
-    .ScreenToolOutput()                       // 0.21 — untrusted inbound
-    .Budget(maxTokens: 50_000)                // 0.22 — cost ceiling
-    .Resilience(retries: 3)                   // 0.22 — retry, breaker, fallback
-    .ContextBudget(maxTokens: 8_000)          // 0.23 — what Recall may inject
+    .Principal(() => user.Id)                 // 0.19 — who the run is for
+    .RequireApproval("wire_transfer")         // 0.22 — human in the loop, and run-once
+    .ScreenToolOutput()                       // 0.22 — untrusted inbound
+    .Budget(maxTokens: 50_000)                // 0.23 — cost ceiling
+    .Resilience(retries: 3)                   // 0.23 — retry, breaker, fallback
+    .ContextBudget(maxTokens: 8_000)          // 0.24 — what Recall may inject
     .Session("user-42")                       // 1.00 — conversation, resumable
 ```
 
@@ -1003,24 +1009,24 @@ filled or marked N/A with a stated reason.** No third state.
 | Skills | `.Skills("Skills")` | `.UseSkills(PeerLLM…)` | `.OnSkills(() => …)` ⚠ |
 | Memory | `.Memory("memory.txt")` | `.UseMemory(Redis…)` | `.OnMemory(…)` ⚠ |
 | Knowledge | `.Knowledge("Knowledge")` | `.UseKnowledge(Postgres…)` | `.OnKnowledge(query => …)` ⚠ |
-| Brain | `.Brain("model.gguf")` ⚠ | `.UseGenerator(LlamaSharp…)` · `.Brain(url, key, model)` | `.OnBrain((sys, usr) => …)` ⚠ |
-| Gate | `.RuleGate("password")` | `.Gate(url, key, model)` | `.OnGate(…)` ⚠ |
-| Judge | `.RuleJudge("citation")` | `.Judge(url, key, model)` | `.OnJudge(…)` ⚠ |
+| Brain | `.Brain("model.gguf")` ⚠ | `.UseGenerator(LlamaSharp…)` · `.Brain(url, key, model)` | `.OnBrain((sys, usr) => …)` ✅ |
+| Gate | `.RuleGate("password")` | `.Gate(url, key, model)` | `.OnGate(…)` ✅ |
+| Judge | `.RuleJudge("citation")` | `.Judge(url, key, model)` | `.OnJudge(…)` ✅ |
 | Tools | `.Tool(new CalculatorTool())` | `.Mcp(endpoint)` | `.Tool(…)` — `ITool` is the override |
 | Trace | `.LogTo("log.txt")` | `.UseLogging(broker)` | `.UseLogging(broker)` |
-| **Audit** *(0.18)* | `.Audit("audit.jsonl")` | `.UseAudit(OpenTelemetry…)` | `.OnAudit(record => …)` |
-| **Policy** *(0.21)* | `.AllowTools("calculator")` | `.UsePolicy(Opa…)` | `.OnPolicy((principal, effect) => …)` |
-| **Approval** *(0.21)* | `.RequireApproval("wire_transfer")` | `.UseApprovals(Slack…)` | `.OnApproval(effect => …)` |
-| **Resilience** *(0.22)* | `.Resilience(retries: 3)` | `.UseResilience(broker)` | `.OnResilience(…)` |
+| **Audit** *(0.19)* | `.Audit("audit.jsonl")` | `.UseAudit(OpenTelemetry…)` | `.OnAudit(record => …)` |
+| **Policy** *(0.22)* | `.AllowTools("calculator")` | `.UsePolicy(Opa…)` | `.OnPolicy((principal, effect) => …)` |
+| **Approval** *(0.22)* | `.RequireApproval("wire_transfer")` | `.UseApprovals(Slack…)` | `.OnApproval(effect => …)` |
+| **Resilience** *(0.23)* | `.Resilience(retries: 3)` | `.UseResilience(broker)` | `.OnResilience(…)` |
 | **Sessions** *(1.0)* | `.Session("user-42")` — file-backed | `.UseSessions(Redis…)` | `.OnSessions(…)` |
 
-⚠ = **does not exist today.** Thirteen capabilities × three modes = 39 cells; **eight are empty or
-misnamed right now.** That is the concrete debt principle 0.5 surfaces, and it is why this needed
-to become a test rather than a convention.
+✅ = **shipped in 0.18.0.0** (below). ⚠ = **does not exist yet.** Thirteen capabilities × three
+modes = 39 cells; eight were empty or misnamed when this principle was written, **three are now
+closed**, and the remaining five are the waiver list §6.7 tracks to zero by 1.0.0.0.
 
-#### The naming collision this exposes
+#### The naming collision — found here, fixed first
 
-The current API uses `Local*` to mean **Custom**, not Local:
+The API used `Local*` to mean **Custom**, not Local:
 
 ```csharp
 .LocalBrain((sys, usr) => MyModelAsync(sys, usr))   // named Local — actually Custom
@@ -1029,19 +1035,22 @@ The current API uses `Local*` to mean **Custom**, not Local:
 
 Meanwhile the genuinely *local* brain — a GGUF on your own GPU — has no `.Brain(path)` form at all;
 it is only reachable through `.UseGenerator(new LlamaSharpGeneratorBroker("model.gguf"))`, which
-reads as External. **The two most confusable modes are labelled backwards.** A user who reads
-`.LocalBrain` and expects "runs a model on my machine" is wrong, and nothing in the API tells them.
+reads as External. **The two most confusable modes were labelled backwards.** A user who read
+`.LocalBrain` and expected "runs a model on my machine" was wrong, and nothing in the API told them.
 
-Resolution, respecting the appliance guarantee (§1.1) and the versioning rules (§1.3):
+This was shipped ahead of the rest of the plan, as **0.18.0.0**, because every release after it
+would otherwise have copied the wrong pattern:
 
-- **New capabilities use the correct verbs from birth** — `.X` / `.UseX` / `.OnX`. Nothing shipped
-  after 0.18 repeats the mistake.
-- **`.Brain("model.gguf")` is added** as the Local form, resolving a path rather than a URL, so the
-  local-model story finally matches the word "local."
-- **`.LocalBrain` / `.LocalGate` / `.LocalJudge` become `[Obsolete]` aliases** of `.OnBrain` /
-  `.OnGate` / `.OnJudge` at **1.0.0.0** — where the versioning rules already permit a contract
-  change, with a published deprecation window. They keep working; they stop teaching the wrong
-  thing.
+- **`.OnBrain` / `.OnGate` / `.OnJudge`** are the Custom verbs. ✅ *shipped*
+- **`.LocalBrain` / `.LocalGate` / `.LocalJudge`** remain as `[Obsolete]` behavioral aliases for a
+  published deprecation window, pinned by
+  `ShouldKeepObsoleteLocalAliasesBehavingLikeTheCustomVerbsAsync` so no consumer breaks.
+  ✅ *shipped*
+- **New capabilities use the correct verbs from birth** — `.X` / `.UseX` / `.OnX`. Nothing after
+  0.18.0.0 repeats the mistake.
+- **`.Brain("model.gguf")`** — the true Local form, resolving a path rather than a URL — still
+  waits for **1.0.0.0**, because running a GGUF in-process needs a provider package and the core
+  stays dependency-free. It is on the waiver list until then. ⚠
 
 One verb per mode, three modes, thirteen capabilities. That is the whole surface, and it is the
 kind of table a person can hold in their head — principle 0.4.
@@ -1095,7 +1104,7 @@ Non-negotiable, from The Standard's practices:
    capability without its modes cannot pass CI, which is the point: this is the principle most
    likely to erode quietly.
    *Landing it honestly:* the eight cells empty today (§5.2) ship as a dated waiver list in the
-   spec, so the test is green at 0.18 and **the waiver list must be empty at 1.0.0.0** — that is a
+   spec, so the test is green at 0.19 and **the waiver list must be empty at 1.0.0.0** — that is a
    1.0 exit criterion, not an aspiration. New capabilities get no waiver, ever.
 8. **Every addition names its nature** (§4.1) in its PR description — Data, Decision, Direction, or
    an explicit argument for why it is cross-cutting. "It doesn't really fit" is the signal that the
@@ -1110,13 +1119,13 @@ Using The Standard's own averages — brokers ~1h, foundations ~3h, orchestratio
 
 | Release | Items | Spec | Code | Est. | Profile | Contribution pts |
 |---|---|---|---|---|---|---|
-| 0.18 Audit spine | 9 | 1 | 8 | ~5 days | | 151 |
-| 0.19 Run isolation | 7 | 1 | 6 | ~4 days | | 148 |
-| 0.20 Guardian integrity | 10 | 1 | 9 | ~5 days | | 171 |
-| 0.21 Perimeter | 10 | 1 | 9 | ~6 days | | 188 |
-| 0.22 Resilience & budget | 11 | 1 | 10 | ~6 days | **Reliable** | 193 |
-| 0.23 Data at scale | 6 | 1 | 5 | ~5 days | | 153 |
-| 0.24 Supply chain & support | 9 | 1 | 8 | ~4 days | **Enterprise** | 157 |
+| 0.19 Audit spine | 9 | 1 | 8 | ~5 days | | 151 |
+| 0.20 Run isolation | 7 | 1 | 6 | ~4 days | | 148 |
+| 0.21 Guardian integrity | 10 | 1 | 9 | ~5 days | | 171 |
+| 0.22 Perimeter | 10 | 1 | 9 | ~6 days | | 188 |
+| 0.23 Resilience & budget | 11 | 1 | 10 | ~6 days | **Reliable** | 193 |
+| 0.24 Data at scale | 6 | 1 | 5 | ~5 days | | 153 |
+| 0.25 Supply chain & support | 9 | 1 | 8 | ~4 days | **Enterprise** | 157 |
 | 1.00 Enterprise model | 13 | 1 | 12 | ~12 days | | 209 |
 | 1.10 Evals & hosting | 6 | 1 | 5 | ~7 days | **Critical** | 145 |
 | | **81** | **9** | **72** | **~11 weeks** | | **1,515** |
@@ -1124,7 +1133,7 @@ Using The Standard's own averages — brokers ~1h, foundations ~3h, orchestratio
 Movement I alone — the three releases that make the framework trustworthy — is roughly **14 days**
 and closes every defect where a printed promise currently outruns the behavior.
 
-0.24 is the cheapest release in the program, sits entirely outside the loop, and is what converts
+0.25 is the cheapest release in the program, sits entirely outside the loop, and is what converts
 "technically ready" into "procurement-approvable." It can be pulled forward at any time; it blocks
 nothing and nothing blocks it.
 

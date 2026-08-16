@@ -20,6 +20,16 @@
     <!-- The Standard's release format is v1.2.3.4 — model . service/routine . fix/config
          . automated build. Deliberately NOT semver; the segments say what KIND of change
          happened, so a model change can never hide in the service segment.
+         0.18.0.0: the capability verbs now say what they mean. Every capability is reachable
+         three ways — Local (in the box: point at a file, a folder, a rule), External (a provider
+         package, passed through .UseX) and Custom (your own code, inline) — and the verbs are
+         .X / .UseX / .OnX in that order. The three delegate-taking methods were named for the
+         wrong mode: a delegate you write is Custom, not Local, so LocalBrain / LocalGate /
+         LocalJudge are now OnBrain / OnGate / OnJudge. The old names remain as behavioral
+         aliases marked [Obsolete] for a published deprecation window and are covered by a test
+         that pins them to the new verbs, so no consumer breaks. New public routines on the
+         client, the spec's core AgentContext model unchanged, so this is a service/routine
+         change: segment 2 advances, 3/4 reset.
          0.14.0.0: skills that contradict each other no longer resolve silently. The Gate detects
          a direct contradiction across the active skill instructions (DetectConflictAsync, model-
          driven) and, instead of picking one, the agent asks the user which to follow
@@ -65,7 +75,7 @@
          3/4 reset. Still tracks SPEC.md v0.1 (draft): segment 1 goes to 1 when the spec settles.
          (0.8.0.0: memory and knowledge came alive — knowledge retrieval in Recall + a built-in
          'remember' tool.) -->
-    <Version>0.17.0.0</Version>
+    <Version>0.18.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>
