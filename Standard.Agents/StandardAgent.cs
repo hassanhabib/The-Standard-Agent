@@ -17,6 +17,7 @@ using Standard.Agents.Brokers.Skills;
 using Standard.Agents.Brokers.Times;
 using Standard.Agents.Brokers.Tools;
 using Standard.Agents.Brokers.Verifiers;
+using Standard.Agents.Models.Brokers.Audits;
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Foundations.Brains;
 using Standard.Agents.Models.Loggings;
@@ -74,6 +75,8 @@ public sealed partial class StandardAgent : IAgent
     private Func<string, string, ValueTask<string>>? localJudgeEvaluate;
     private IMcpBroker? mcpBroker;
     private ILoggingBroker? loggingBroker;
+    private IAuditBroker? auditBroker;
+    private Func<string?>? principalResolver;
 
     private IAgentCoordinationService? agent;
 
@@ -387,10 +390,41 @@ public sealed partial class StandardAgent : IAgent
     /// human-readable <see cref="LogTo"/> trace. Always full detail, for ingestion into a SIEM
     /// or telemetry pipeline.
     /// </summary>
-    /// <param name="path">Path to the JSON-lines audit file (created if it does not exist).</param>
+    /// <param name="path">Path to the JSON-lines decision log (created if it does not exist).</param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent Audit(string path) =>
         Set(() => this.auditPath = path);
+
+    /// <summary>
+    /// Sends the decision log to a provider — the <b>External</b> mode (SPEC.md §4.8). Install a
+    /// sink package (OpenTelemetry, a SIEM, an append-only store), pass its broker, and nothing
+    /// else about the agent changes.
+    /// </summary>
+    /// <param name="broker">The audit broker to write records to.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent UseAudit(IAuditBroker broker) =>
+        Set(() => this.auditBroker = broker);
+
+    /// <summary>
+    /// Sends each decision-log record to your own delegate — the <b>Custom</b> mode (SPEC.md §4.8),
+    /// for when neither a file nor a provider package fits and authoring a whole broker would be
+    /// disproportionate.
+    /// </summary>
+    /// <param name="write">A <c>record =&gt; ...</c> delegate invoked once per record.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent OnAudit(Func<AuditRecord, ValueTask> write) =>
+        Set(() => this.auditBroker = new FunctionAuditBroker(write));
+
+    /// <summary>
+    /// Records <b>on whose behalf</b> each run executes. The value is resolved per record, so a
+    /// per-request principal works on a shared agent, and it is stamped on every record of the run
+    /// — the decision log then answers <i>who</i> as well as <i>what</i> (SPEC.md §4.7). Absent,
+    /// records carry no principal.
+    /// </summary>
+    /// <param name="principal">A function returning the current principal's identifier.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent Principal(Func<string?> principal) =>
+        Set(() => this.principalResolver = principal);
 
     /// <summary>
     /// Turns on <b>PII redaction at the brain boundary</b>: before any prompt reaches the brain,
@@ -586,9 +620,11 @@ public sealed partial class StandardAgent : IAgent
                 new TimeBroker(),
                 this.traceVerbosity,
                 string.IsNullOrEmpty(this.logPath) ? null : this.logPath,
-                string.IsNullOrEmpty(this.auditPath)
-                    ? new NotConfiguredAuditBroker()
-                    : new FileAuditBroker(this.auditPath));
+                this.auditBroker
+                    ?? (string.IsNullOrEmpty(this.auditPath)
+                        ? new NotConfiguredAuditBroker()
+                        : new FileAuditBroker(this.auditPath)),
+                this.principalResolver);
 
         IGeneratorBroker generator =
             this.generatorBroker ?? new GeneratorBroker(
