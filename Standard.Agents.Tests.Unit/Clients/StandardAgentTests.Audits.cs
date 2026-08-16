@@ -60,4 +60,26 @@ public class StandardAgentAuditTests
                 Times.AtLeastOnce);
     }
 
+    [Fact]
+    public async Task ShouldWriteToCustomAuditDelegateOnProcessPromptAsync()
+    {
+        // given
+        List<AuditRecord> capturedRecords = [];
+
+        StandardAgent agent = AnsweringAgent()
+            .OnAudit(record =>
+            {
+                capturedRecords.Add(record);
+
+                return ValueTask.CompletedTask;
+            });
+
+        // when
+        await agent.ProcessPromptAsync(prompt: "what is the answer?");
+
+        // then
+        capturedRecords.Should().NotBeEmpty();
+        capturedRecords.Should().Contain(record => record.Kind == AuditKind.Run);
+        capturedRecords.Select(record => record.Sequence).Should().BeInAscendingOrder();
+    }
 }
