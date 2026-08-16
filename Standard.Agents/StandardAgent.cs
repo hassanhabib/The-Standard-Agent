@@ -5,6 +5,7 @@
 
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging.Abstractions;
+using Standard.Agents.Brokers.Audits;
 using Standard.Agents.Brokers.Classifiers;
 using Standard.Agents.Brokers.Files;
 using Standard.Agents.Brokers.Generators;
@@ -585,7 +586,9 @@ public sealed partial class StandardAgent : IAgent
                 new TimeBroker(),
                 this.traceVerbosity,
                 string.IsNullOrEmpty(this.logPath) ? null : this.logPath,
-                string.IsNullOrEmpty(this.auditPath) ? null : this.auditPath);
+                string.IsNullOrEmpty(this.auditPath)
+                    ? new NotConfiguredAuditBroker()
+                    : new FileAuditBroker(this.auditPath));
 
         IGeneratorBroker generator =
             this.generatorBroker ?? new GeneratorBroker(
