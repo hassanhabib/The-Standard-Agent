@@ -179,7 +179,7 @@ public sealed partial class StandardAgent : IAgent
     /// </param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent OnBrain(Func<string, string, ValueTask<string>> generate) =>
-        Set(() => { });
+        Set(() => this.generatorBroker = new FunctionGeneratorBroker(generate));
 
     /// <summary>
     /// Turns on the Gate using an in-process model — the local counterpart to <see cref="Gate"/>,
