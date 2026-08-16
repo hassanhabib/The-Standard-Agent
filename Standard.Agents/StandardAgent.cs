@@ -204,7 +204,7 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="screen">A <c>(gateRubric, prompt) =&gt; verdict</c> delegate.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent OnGate(Func<string, string, ValueTask<string>> screen) =>
-        Set(() => { });
+        Set(() => this.localGateScreen = screen);
 
     /// <summary>
     /// Turns on the Judge using an in-process model — the local counterpart to <see cref="Judge"/>,
