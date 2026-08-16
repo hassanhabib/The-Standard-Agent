@@ -124,13 +124,73 @@ public class DecisionLogTests : IDisposable
         actualShortenedLink.Should().NotBeNull();
     }
 
-    // Sequential runs only, deliberately. SPEC.md §4.7 also requires that CONCURRENT runs stay
-    // attributable, and this release does not satisfy that: LoggingBroker holds runId and
-    // sequence as instance fields, and one broker is composed per agent, so two prompts in
-    // flight on one instance overwrite each other's run identity. Fixing it moves run identity
-    // out of the broker's state, which is Run Isolation's work — and it is a conformance
-    // prerequisite for the decision log, not an enhancement to it. The concurrency assertion
-    // lands there, with the rest of the isolation guarantee.
+    // SPEC.md §4.4 and §4.7: one instance serves prompts concurrently, records from concurrent
+    // runs MAY interleave in the sink, and every record MUST still be attributable to exactly
+    // one run. This is the assertion that caught run identity living in broker instance fields.
+    [Fact]
+    public async Task ShouldKeepConcurrentRunsAttributableInTheDecisionLogAsync()
+    {
+        // given
+        StandardAgent agent = AnsweringAgent();
+        int expectedRunCount = 64;
+
+        // when — one agent instance, sixty-four prompts in flight at once
+        await Task.WhenAll(Enumerable.Range(0, expectedRunCount).Select(index =>
+            agent.ProcessPromptAsync(prompt: $"question {index}").AsTask()));
+
+        // then
+        string[] actualLines = await File.ReadAllLinesAsync(this.auditPath);
+
+        actualLines.Should().OnlyContain(line => IsParseable(line));
+        actualLines.Select(RunIdOf).Distinct().Should().HaveCount(expectedRunCount);
+
+        foreach (IGrouping<string, string> run in actualLines.GroupBy(RunIdOf))
+        {
+            int[] sequences = run.Select(SequenceOf).ToArray();
+
+            sequences.Should().OnlyHaveUniqueItems();
+            sequences.Should().Contain(0);
+        }
+    }
+
+    // The regression that opened the enterprise plan: with .LogTo and .Audit both on, a single
+    // agent instance failed seven of eight concurrent prompts with an IOException on the sink.
+    // Turning on the enterprise features was exactly what made the agent single-threaded.
+    [Fact]
+    public async Task ShouldServeConcurrentPromptsWithBothSinksConfiguredAsync()
+    {
+        // given
+        string tracePath =
+            Path.Combine(Path.GetTempPath(), $"trace-{Guid.NewGuid():n}.txt");
+
+        StandardAgent agent = AnsweringAgent().LogTo(tracePath);
+        int expectedAnswerCount = 64;
+
+        // when
+        string[] actualAnswers = await Task.WhenAll(
+            Enumerable.Range(0, expectedAnswerCount).Select(index =>
+                agent.ProcessPromptAsync(prompt: $"question {index}").AsTask()));
+
+        // then
+        actualAnswers.Should().HaveCount(expectedAnswerCount);
+        actualAnswers.Should().OnlyContain(answer => answer == "42");
+
+        File.Delete(tracePath);
+    }
+
+    private static bool IsParseable(string line)
+    {
+        try
+        {
+            JsonDocument.Parse(line);
+
+            return true;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
 
     public void Dispose()
     {

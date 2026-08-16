@@ -20,10 +20,14 @@ public sealed class LoggingBroker : ILoggingBroker
     private readonly string? logPath;
     private readonly Func<string?>? principal;
 
-    private int processIndex;
-    private int sequence;
-    private string runId = string.Empty;
-    private DateTimeOffset runStart;
+    // No run state lives here. SPEC.md §4.4: run identity and counters are per invocation,
+    // never per instance — one broker serves every concurrent run, so a field here would let
+    // one prompt overwrite another's record. The run is read from the ambient AgentRun that
+    // Coordination begins; the fallback run covers a broker driven outside the loop.
+    private readonly AgentRun fallbackRun = AgentRun.Detached();
+    private readonly SemaphoreSlim traceLock = new(initialCount: 1, maxCount: 1);
+
+    private AgentRun Run => AgentRun.Current ?? this.fallbackRun;
 
     public LoggingBroker(
         ILogger<LoggingBroker> logger,
@@ -74,14 +78,21 @@ public sealed class LoggingBroker : ILoggingBroker
     // propagate to it. Truncating the audit here is exactly the defect this release fixes.
     public async ValueTask LogResetAsync()
     {
-        this.processIndex = 0;
-        this.sequence = 0;
-        this.runId = Guid.NewGuid().ToString("n");
-        this.runStart = this.timeBroker.GetCurrentDateTimeOffset();
+        this.Run.ResetProcessIndex();
+        this.Run.StartedOn = this.timeBroker.GetCurrentDateTimeOffset();
 
         if (this.logPath is not null)
         {
-            await File.WriteAllTextAsync(this.logPath, string.Empty);
+            await this.traceLock.WaitAsync();
+
+            try
+            {
+                await File.WriteAllTextAsync(this.logPath, string.Empty);
+            }
+            finally
+            {
+                this.traceLock.Release();
+            }
         }
 
         await AuditAsync(AuditKind.Run, actor: "Agent", message: "run started");
@@ -96,7 +107,7 @@ public sealed class LoggingBroker : ILoggingBroker
 
     public async ValueTask LogOutcomeAsync(string message)
     {
-        TimeSpan elapsed = this.timeBroker.GetCurrentDateTimeOffset() - this.runStart;
+        TimeSpan elapsed = this.timeBroker.GetCurrentDateTimeOffset() - this.Run.StartedOn;
 
         await AuditAsync(AuditKind.Outcome, actor: "Agent", message: message);
 
@@ -105,7 +116,7 @@ public sealed class LoggingBroker : ILoggingBroker
 
     public async ValueTask LogStepAsync(AgentStep step)
     {
-        this.processIndex = 0;
+        this.Run.ResetProcessIndex();
 
         await AuditAsync(AuditKind.Step, actor: step.ToString(), message: step.ToString());
 
@@ -125,19 +136,36 @@ public sealed class LoggingBroker : ILoggingBroker
         {
             string indented = message.ReplaceLineEndings($"{Environment.NewLine}      ");
 
-            await EmitAsync($"    Process {this.processIndex++}: {actor}: {indented}");
+            await EmitAsync($"    Process {this.Run.NextProcessIndex()}: {actor}: {indented}");
         }
     }
 
+    // The trace is a shared file and one broker serves every concurrent run, so writes are
+    // serialized — without this, sixty-four prompts in flight collide on the handle and most
+    // of them fail with an IOException rather than an answer.
+    //
+    // Concurrent runs interleave in the trace, and each run's reset truncates it. That is the
+    // trace being what SPEC.md §4.7 calls it: transient, a development aid, resettable. The
+    // artifact for a concurrent deployment is the decision log, which is append-only and keeps
+    // every run whole.
     private async ValueTask EmitAsync(string line)
     {
         if (this.logPath is null)
         {
             this.logger.LogInformation(line);
+
+            return;
         }
-        else
+
+        await this.traceLock.WaitAsync();
+
+        try
         {
             await File.AppendAllTextAsync(this.logPath, line + Environment.NewLine);
+        }
+        finally
+        {
+            this.traceLock.Release();
         }
     }
 
@@ -147,10 +175,12 @@ public sealed class LoggingBroker : ILoggingBroker
         string message,
         bool detail = false)
     {
+        AgentRun run = this.Run;
+
         var record = new AuditRecord
         {
-            RunId = this.runId,
-            Sequence = this.sequence++,
+            RunId = run.Id,
+            Sequence = run.NextSequence(),
             Timestamp = this.timeBroker.GetCurrentDateTimeOffset(),
             Kind = kind,
             Actor = actor,
