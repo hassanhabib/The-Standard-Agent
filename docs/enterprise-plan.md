@@ -10,6 +10,67 @@ adopt without a rewrite.
 
 ---
 
+## 0 · The non-negotiable principles
+
+These five govern everything below. They are not goals to balance against delivery — they are the
+acceptance test for every work item in this plan. A capability that cannot be added without
+breaking one of them **does not get added**, however enterprise it sounds.
+
+### 0.1 Everything is a spec
+
+The C# library is **one implementation of a language-neutral specification**, never the source of
+truth. Anyone must be able to build the same agent SDK in Python, Java, Rust or TypeScript by
+reading [SPEC.md](https://github.com/hassanhabib/The-Standard-Agent-Specs/blob/main/SPEC.md) —
+feeding it to an AI system, or by hand — and land on the same behavior.
+
+**Therefore: spec first, code second, in every single release.** Each release below opens with a
+normative SPEC.md amendment describing the contract in language-neutral terms, and closes with
+conformance vectors — which are JSON, not C#, and are the *executable* half of the spec. C# types
+in this plan are illustrations of a contract, never the contract itself.
+
+> The test: could a competent engineer who has never seen C# build this release from the spec
+> alone, and pass our vectors? If no, the spec is incomplete and the release is not done.
+
+### 0.2 Everything follows The Standard, strictly
+
+Brokers wrap resources and hold no logic. Foundations validate and map exceptions. Orchestrations
+compose. Coordination runs the loop. Clients and exposers are the only public surface. Branch
+names, commit messages, FAIL/PASS pairs, categories, PR titles and release segments follow the
+practices exactly — with no exceptions granted for being in a hurry.
+
+### 0.3 Everything follows the Tri-Nature
+
+Data · Decision · Direction. Every new element in this plan names its nature, or names why it is
+cross-cutting (as logging and time already are). Nothing is added that does not belong to one of
+the three or explicitly serve all three. §4.1 maps every addition.
+
+### 0.4 Simple enough to hold in one human head
+
+The rule of threes. The architecture stays **1 · 3 · 9**. A person with no AI assistance must be
+able to read the framework and understand it. If a capability needs a diagram to explain where it
+lives, it is in the wrong place. Where this plan adds support brokers, they group into **three
+families** (§4.2) — because eight loose brokers is a list, and three families of brokers is a
+model.
+
+### 0.5 Plug and play, fluent, abstracted
+
+`new StandardAgent().Something().SomethingElse()` — fluent, ordered however you like, working
+defaults throughout. Every capability ships as a **triad**, so the same concept is reachable at
+three levels of commitment:
+
+| Form | Meaning | Existing example |
+|---|---|---|
+| `.X(simple args)` | the built-in default — a file, a URL. Zero ceremony. | `.Skills("Skills")` · `.Memory("memory.txt")` |
+| `.LocalX(delegate)` | in-process, no network, bring your own | `.LocalBrain(...)` · `.LocalGate(...)` |
+| `.UseX(broker)` | the plugin seam — install a NuGet package, pass the broker, change nothing else | `.UseSkills(...)` · `.UseGenerator(...)` |
+
+**A capability is not finished until its triad is complete** (where each form is meaningful). This
+is the principle the plan most needed correcting against — see §5.2, where several proposed methods
+were single-form and are now triads, and §5.3, which names the plugin packages this program
+unlocks.
+
+---
+
 ## 1 · The constraints this plan is bound by
 
 Enterprise capability is easy to add badly: a flag here, a subsystem there, and six months later
@@ -170,18 +231,20 @@ tamper-evidence, no external service required.
 #### The public surface
 
 ```csharp
-.Audit("audit.jsonl")                  // unchanged — now append-only and complete
-.Audit(new OpenTelemetryAuditBroker()) // new overload: any sink
-.Principal(() => currentUser.Id)       // new, optional: who the run is on behalf of
+.Audit("audit.jsonl")                     // unchanged — now append-only and complete
+.LocalAudit(record => myLogger.Log(record))  // in-process sink, no file
+.UseAudit(new OpenTelemetryAuditBroker())    // plugin sink — a package, one line
+.Principal(() => currentUser.Id)          // new, optional: who the run is on behalf of
 ```
 
-One new opt-in method with a working default (`Principal` absent ⇒ `null`). Appliance guarantee
-holds.
+The full triad (§5.2) plus one opt-in method with a working default (`Principal` absent ⇒ `null`).
+Appliance guarantee holds.
 
 #### Work items
 
 | # | Commit / PR title | Branch | Cat. | Pts |
 |---|---|---|---|---|
+| 0 | `STANDARD: Specify The Decision Log Contract` | `users/hassanhabib/STANDARD-audit-specify` | STANDARD | 100 |
 | 1 | `DATA: Add Audit Record Model` | `users/hassanhabib/DATA-audit-record-create` | DATA | 5 |
 | 2 | `BROKERS: Insert Audit Record` | `users/hassanhabib/BROKERS-audit-insert` | BROKERS | 5 |
 | 3 | `MAJOR BROKERS: Compose The Audit Sink Into Logging` | `users/hassanhabib/BROKERS-logging-update` | MAJOR BROKERS | 5 |
@@ -251,6 +314,7 @@ substrate — which is precisely what the collapsible-substrate doctrine predict
 
 | # | Commit / PR title | Branch | Cat. | Pts |
 |---|---|---|---|---|
+| 0 | `STANDARD: Specify Run Identity And Isolation` | `users/hassanhabib/STANDARD-run-specify` | STANDARD | 100 |
 | 1 | `MAJOR BROKERS: Carry Run Identity Through Logging` | `users/hassanhabib/BROKERS-logging-update-run` | MAJOR BROKERS | 5 |
 | 2 | `MAJOR BROKERS: Serialize Trace And Audit Writes` | `users/hassanhabib/BROKERS-audit-insert-serialized` | MAJOR BROKERS | 5 |
 | 3 | `MEDIUM COORDINATIONS: Establish A Run Per Prompt` | `users/hassanhabib/COORDINATIONS-agent-modify-run` | MEDIUM COORDINATIONS | 15 |
@@ -329,6 +393,7 @@ simply start telling the truth.
 
 | # | Commit / PR title | Branch | Cat. | Pts |
 |---|---|---|---|---|
+| 0 | `STANDARD: Specify Guardian Inputs And The Redaction Boundary` | `users/hassanhabib/STANDARD-guardians-specify` | STANDARD | 100 |
 | 1 | `BROKERS: Insert Redaction Broker` | `users/hassanhabib/BROKERS-redaction-insert` | BROKERS | 5 |
 | 2 | `MAJOR FOUNDATIONS: Redact At The Gate Boundary` | `users/hassanhabib/FOUNDATIONS-gate-modify-redaction` | MAJOR FOUNDATIONS | 10 |
 | 3 | `MAJOR FOUNDATIONS: Redact At The Judge Boundary` | `users/hassanhabib/FOUNDATIONS-judge-modify-redaction` | MAJOR FOUNDATIONS | 10 |
@@ -425,20 +490,24 @@ in 0.14.0.0 and correctly released as a service change.
 #### The public surface
 
 ```csharp
-.RequireApproval("wire_transfer", "delete_account")   // pause before irreversible effects
+.RequireApproval("wire_transfer", "delete_account")   // simple — pause before irreversible effects
+.LocalApproval(effect => console.Confirm(effect))     // in-process approver
+.UseApprovals(new SlackApprovalBroker(channel))       // plugin — a package, one line
 .ScreenToolOutput()                                    // Gate untrusted inbound (costs a call)
-.AllowTools(principal => policy.ToolsFor(principal))   // overload: per-invocation least privilege
-.UsePolicy(new OpaPolicyBroker(endpoint))              // broker swap: any external policy engine
+.AllowTools("calculator")                              // simple — least privilege, unchanged
+.LocalPolicy((principal, effect) => principal.CanRun(effect))
+.UsePolicy(new OpaPolicyBroker(endpoint))              // plugin — any external policy engine
 ```
 
-Four opt-in methods, all absent by default, all with the current behavior as their default. A user
-who never writes them gets exactly today's agent — including today's non-idempotent tools, because
-`IdempotencyKey` only binds when a tool declares a `RiskLevel`.
+Two capabilities, each a complete triad (§5.2), plus `.ScreenToolOutput()`. All absent by default.
+A user who never writes them gets exactly today's agent — including today's non-idempotent tools,
+because `IdempotencyKey` only binds when a tool declares a `RiskLevel`.
 
 #### Work items
 
 | # | Commit / PR title | Branch | Cat. | Pts |
 |---|---|---|---|---|
+| 0 | `STANDARD: Specify The Effect Envelope, Approval And Idempotency` | `users/hassanhabib/STANDARD-effects-specify` | STANDARD | 100 |
 | 1 | `DATA: Add Agent Effect Model` | `users/hassanhabib/DATA-agent-effect-create` | DATA | 5 |
 | 2 | `BROKERS: Insert Approval Request` | `users/hassanhabib/BROKERS-approval-insert` | BROKERS | 5 |
 | 3 | `BROKERS: Select Authorization Decision` | `users/hassanhabib/BROKERS-policy-select` | BROKERS | 5 |
@@ -525,6 +594,7 @@ await agent.ProcessPromptAsync(prompt, cancellationToken);   // new overload; ol
 
 | # | Commit / PR title | Branch | Cat. | Pts |
 |---|---|---|---|---|
+| 0 | `STANDARD: Specify Budgets, Deadlines And Retry Classification` | `users/hassanhabib/STANDARD-budget-specify` | STANDARD | 100 |
 | 1 | `BROKERS: Insert Resilience Policy` | `users/hassanhabib/BROKERS-resilience-insert` | BROKERS | 5 |
 | 2 | `MAJOR BROKERS: Share And Dispose The Http Client` | `users/hassanhabib/BROKERS-generator-update-client` | MAJOR BROKERS | 5 |
 | 3 | `DATA: Add Usage Model` | `users/hassanhabib/DATA-usage-create` | DATA | 5 |
@@ -598,6 +668,7 @@ All three land **inside existing foundations and the Data orchestration** — no
 
 | # | Commit / PR title | Branch | Cat. | Pts |
 |---|---|---|---|---|
+| 0 | `STANDARD: Specify Retrieval Ranking And Context Budgeting` | `users/hassanhabib/STANDARD-retrieval-specify` | STANDARD | 100 |
 | 1 | `MAJOR FOUNDATIONS: Retrieve Knowledge By Ranked Relevance` | `users/hassanhabib/FOUNDATIONS-knowledge-retrieve-ranked` | MAJOR FOUNDATIONS | 10 |
 | 2 | `MAJOR FOUNDATIONS: Retrieve Memories By Relevance And Age` | `users/hassanhabib/FOUNDATIONS-memory-retrieve-ranked` | MAJOR FOUNDATIONS | 10 |
 | 3 | `MAJOR ORCHESTRATIONS: Budget What Recall Injects` | `users/hassanhabib/ORCHESTRATIONS-data-modify-budget` | MAJOR ORCHESTRATIONS | 20 |
@@ -649,6 +720,7 @@ No source changes to `Standard.Agents`. This is CI, packaging and documentation.
 
 | # | Commit / PR title | Branch | Cat. | Pts |
 |---|---|---|---|---|
+| 0 | `STANDARD: Specify Conformance Certification And Support Guarantees` | `users/hassanhabib/STANDARD-support-specify` | STANDARD | 100 |
 | 1 | `MAJOR INFRA: Pin The SDK And Fail The Build On Warnings` | `users/hassanhabib/INFRA-build-setup` | MAJOR INFRA | 10 |
 | 2 | `MINOR FIX: Resolve The xUnit1012 Analyzer Warning` | `users/hassanhabib/FIX-gate-tests-nullable` | MINOR FIX | 5 |
 | 3 | `MAJOR INFRA: Add Vulnerability, License And Secret Scanning` | `users/hassanhabib/INFRA-scanning-setup` | MAJOR INFRA | 10 |
@@ -739,6 +811,7 @@ await agent.ResumeAsync(sessionId, "yes, approve it");// AwaitingInput / Awaitin
 
 | # | Commit / PR title | Branch | Cat. | Pts |
 |---|---|---|---|---|
+| 0 | `STANDARD: Specify Sessions, Conversation And Native Tool Calls (SPEC v1)` | `users/hassanhabib/STANDARD-sessions-specify` | STANDARD | 100 |
 | 1 | `DATA: Add Agent Context V1 Model` | `users/hassanhabib/DATA-agent-context-v1-create` | DATA | 5 |
 | 2 | `DATA: Add Generator V1 Message Models` | `users/hassanhabib/DATA-generator-v1-create` | DATA | 5 |
 | 3 | `BROKERS: Select Generation From A Message List (V1)` | `users/hassanhabib/BROKERS-generator-select-v1` | BROKERS | 5 |
@@ -808,6 +881,7 @@ than aspirational.
 
 | # | Commit / PR title | Branch | Cat. | Pts |
 |---|---|---|---|---|
+| 0 | `STANDARD: Specify Quality And Adversarial Evaluation` | `users/hassanhabib/STANDARD-evals-specify` | STANDARD | 100 |
 | 1 | `INFRA: Create Standard.Agents.Evals Project` | `users/hassanhabib/INFRA-evals-create` | INFRA | 10 |
 | 2 | `MAJOR FOUNDATIONS: Add Eval Scoring` | `users/hassanhabib/FOUNDATIONS-eval-add` | MAJOR FOUNDATIONS | 10 |
 | 3 | `MAJOR ACCEPTANCE: Add The Adversarial Suite` | `users/hassanhabib/ACCEPTANCE-adversarial-create` | MAJOR ACCEPTANCE | 10 |
@@ -826,7 +900,7 @@ deterministic framework mechanics.
 | **Coordination** | 1 | `AgentCoordinationService` — Recall → Think → Act | unchanged |
 | **Orchestration** | 3 | Data · Decision · Direction | unchanged |
 | **Foundation** | 9 | Skills, Memory, Knowledge / Gate, Brain, Judge / Internal, External, Return | unchanged |
-| **Broker** | 8 + 8 | one liaison per resource, plus **logging, time, audit, redaction, approval, policy, resilience, sessions** | +6 cross-cutting |
+| **Broker** | 8 + 8 | eight nature brokers (one per foundation that needs one), plus eight support brokers: **logging, time, audit, redaction, approval, policy, resilience, sessions** | +6 support |
 
 **The mark is unchanged.** Three arcs around one core; the loop is the same loop; the README
 diagram still describes the framework. Every enterprise capability arrived through a broker or an
@@ -837,9 +911,46 @@ why: the **effect envelope** is a model decomposed across four existing seams (�
 **telemetry** is the audit broker with an OpenTelemetry sink rather than a parallel subsystem. Both
 would have been easier to build as new services. Both would have cost the mark.
 
+### 4.1 · Every addition, and its nature
+
+Principle 0.3 requires each new element to name its nature, or name why it is cross-cutting. A
+*support* broker still has a nature — it does not back a foundation, but it serves one, and saying
+which keeps the Tri-Nature the whole model rather than a label on the front three tiers.
+
+| Addition | Nature | Why |
+|---|---|---|
+| `AgentEffect` envelope | **Direction** | it *is* a proposed act, described |
+| `IApprovalBroker` | **Direction** | it gates an act before it happens |
+| `IPolicyBroker` | **Direction** | it authorizes an act |
+| `ISessionBroker` | **Data** | run state is what the agent *has* — the same nature as memory |
+| `IRedactionBroker` | **Decision** (boundary) | it guards what reaches and leaves a model |
+| `Usage` / budgets | **Decision** | thinking is what costs; the budget bounds it |
+| Ranked retrieval | **Data** | it is Recall, done properly |
+| `IAuditBroker` | *cross-cutting* | it observes all three natures — exactly as `ILoggingBroker` does |
+| `IResilienceBroker` | *cross-cutting* | it wraps every outbound call regardless of nature |
+
+Two cross-cutting brokers, seven additions that belong to a nature. Nothing needed a fourth.
+
+### 4.2 · Eight support brokers, three families
+
+A flat list of eight is a list. Three families of brokers is a model you can hold in your head —
+principle 0.4. The file layout stays flat and Standard-conventional (`Brokers/{Resource}s`); the
+grouping is how the framework is *explained*, taught and documented:
+
+| Family | Brokers | Answers |
+|---|---|---|
+| **Observability** | logging · time · audit | *what happened, and can we prove it?* |
+| **Perimeter** | redaction · policy · approval | *may this cross the boundary?* |
+| **Runtime** | resilience · sessions | *can this survive failure and time?* |
+
+Plus the eight nature brokers — three for Data, three for Decision, two for Direction. Threes all
+the way down.
+
 ---
 
 ## 5 · The public API, before and after
+
+### 5.1 · Nothing you already wrote changes
 
 The five-line agent still works, byte for byte:
 
@@ -858,15 +969,50 @@ Everything this plan adds is a line you may choose not to write:
     .Principal(() => user.Id)                 // 0.18 — who the run is for
     .RequireApproval("wire_transfer")         // 0.21 — human in the loop, and run-once
     .ScreenToolOutput()                       // 0.21 — untrusted inbound
-    .UsePolicy(policyBroker)                  // 0.21 — identity-aware authorization
     .Budget(maxTokens: 50_000)                // 0.22 — cost ceiling
     .Resilience(retries: 3)                   // 0.22 — retry, breaker, fallback
     .ContextBudget(maxTokens: 8_000)          // 0.23 — what Recall may inject
-    .Session(sessionId)                       // 1.00 — conversation, resumable
+    .Session("user-42")                       // 1.00 — conversation, resumable
 ```
 
-Nine new opt-in methods across nine releases, every one of them absent by default and every one of
+Seven new opt-in methods across nine releases, every one of them absent by default and every one of
 them defaulting to today's behavior — and a first-time user still needs exactly one line.
+
+### 5.2 · The triad, completed
+
+Principle 0.5 caught a real inconsistency in the first draft of this plan: several capabilities
+were proposed with only one form — `.Audit(broker)` as an overload, `.UsePolicy(...)` with no
+simple form, approval with no plugin seam. That breaks the pattern a user has already learned from
+`.Brain` / `.LocalBrain` / `.UseGenerator`. Corrected, every capability ships its full triad:
+
+| Capability | `.X(simple)` — built in | `.LocalX(delegate)` — in process | `.UseX(broker)` — plugin |
+|---|---|---|---|
+| Audit *(0.18)* | `.Audit("audit.jsonl")` | `.LocalAudit(record => …)` | `.UseAudit(broker)` |
+| Policy *(0.21)* | `.AllowTools("calculator")` | `.LocalPolicy((principal, effect) => …)` | `.UsePolicy(broker)` |
+| Approval *(0.21)* | `.RequireApproval("wire_transfer")` | `.LocalApproval(effect => …)` | `.UseApprovals(broker)` |
+| Resilience *(0.22)* | `.Resilience(retries: 3)` | — | `.UseResilience(broker)` |
+| Sessions *(1.0)* | `.Session("user-42")` | — | `.UseSessions(broker)` |
+
+A dash means the form carries no meaning for that capability, not that it was skipped. The rule
+that generated this table is now a release gate: **a capability whose triad is incomplete is not
+done.**
+
+### 5.3 · The plugin family this unlocks
+
+The existing packages establish the naming — `Standard.Agents.{Nature}.{Capability}.{Provider}`;
+cross-cutting capabilities omit the nature segment. Each is `dotnet add package`, one `.UseX(...)`
+line, and nothing else about the agent changes:
+
+| Package | Backs | Provider |
+|---|---|---|
+| `Standard.Agents.Data.Sessions.Redis` | Sessions · *Data* | durable, shareable sessions in Redis |
+| `Standard.Agents.Data.Sessions.Postgres` | Sessions · *Data* | sessions and checkpoints in PostgreSQL |
+| `Standard.Agents.Direction.Policies.Opa` | Policy · *Direction* | authorization decisions from Open Policy Agent |
+| `Standard.Agents.Direction.Approvals.Slack` | Approval · *Direction* | human approval routed to a Slack channel |
+| `Standard.Agents.Audit.OpenTelemetry` | Audit · *cross-cutting* | traces and metrics to any OTel collector |
+
+None of these ship in the core package, and the core stays dependency-free. That is the whole point
+of principle 0.5: the enterprise agent is the same agent, plus packages.
 
 ---
 
@@ -874,6 +1020,11 @@ them defaulting to today's behavior — and a first-time user still needs exactl
 
 Non-negotiable, from The Standard's practices:
 
+0. **The spec is item zero of every release.** No implementation branch opens until the SPEC.md
+   amendment for that release is merged. The spec is written language-neutrally — a contract and a
+   behavior, never a C# signature — and the release's conformance vectors are authored against the
+   spec, not against the implementation. If the vectors can only be satisfied by reading the C#,
+   the spec has failed and the release is blocked.
 1. **One issue per method. One branch per issue.** Branch:
    `users/[username]/[CATEGORY]-[entity]-[action]`, where the action speaks its layer's language —
    brokers `insert`/`select`/`update`/`delete`, foundations `add`/`retrieve`/`modify`/`remove`.
@@ -887,33 +1038,45 @@ Non-negotiable, from The Standard's practices:
    Standard.Agents.Conformance` exiting 0 is the gate — not a suggestion.
 6. **Every phase's exit criteria is a test, not an opinion.** Where this plan claims a number
    (64/64 concurrent, ≤ 9 model calls, zero clear-text PII), that number is asserted in the suite.
+7. **Every capability ships its complete triad** (§5.2). A capability reachable only through
+   `.UseX(broker)` has no simple form and fails principle 0.5; one reachable only through `.X(...)`
+   has no plugin seam and fails it too.
+8. **Every addition names its nature** (§4.1) in its PR description — Data, Decision, Direction, or
+   an explicit argument for why it is cross-cutting. "It doesn't really fit" is the signal that the
+   design is wrong, never that the Tri-Nature is incomplete.
 
 ---
 
 ## 7 · Effort
 
 Using The Standard's own averages — brokers ~1h, foundations ~3h, orchestration / coordination
-~5h, clients ~1h — plus tests and conformance:
+~5h, clients ~1h — plus the spec amendment, tests and conformance:
 
-| Release | Items | Est. | Profile | Contribution pts |
-|---|---|---|---|---|
-| 0.18 Audit spine | 7 | ~3 days | | 46 |
-| 0.19 Run isolation | 6 | ~3 days | | 48 |
-| 0.20 Guardian integrity | 9 | ~4 days | | 71 |
-| 0.21 Perimeter | 9 | ~5 days | | 88 |
-| 0.22 Resilience & budget | 10 | ~5 days | **Reliable** | 93 |
-| 0.23 Data at scale | 5 | ~4 days | | 53 |
-| 0.24 Supply chain & support | 8 | ~3 days | **Enterprise** | 57 |
-| 1.00 Enterprise model | 11 | ~9 days | | 104 |
-| 1.10 Evals & hosting | 5 | ~6 days | **Critical** | 45 |
-| | **70** | **~8 weeks** | | **605** |
+| Release | Items | Spec | Code | Est. | Profile | Contribution pts |
+|---|---|---|---|---|---|---|
+| 0.18 Audit spine | 8 | 1 | 7 | ~4 days | | 146 |
+| 0.19 Run isolation | 7 | 1 | 6 | ~4 days | | 148 |
+| 0.20 Guardian integrity | 10 | 1 | 9 | ~5 days | | 171 |
+| 0.21 Perimeter | 10 | 1 | 9 | ~6 days | | 188 |
+| 0.22 Resilience & budget | 11 | 1 | 10 | ~6 days | **Reliable** | 193 |
+| 0.23 Data at scale | 6 | 1 | 5 | ~5 days | | 153 |
+| 0.24 Supply chain & support | 9 | 1 | 8 | ~4 days | **Enterprise** | 157 |
+| 1.00 Enterprise model | 12 | 1 | 11 | ~11 days | | 204 |
+| 1.10 Evals & hosting | 6 | 1 | 5 | ~7 days | **Critical** | 145 |
+| | **79** | **9** | **70** | **~10 weeks** | | **1,505** |
 
-Movement I alone — the three releases that make the framework trustworthy — is roughly **10 days**
+Movement I alone — the three releases that make the framework trustworthy — is roughly **13 days**
 and closes every defect where a printed promise currently outruns the behavior.
 
-0.24 is the cheapest release in the program at ~3 days, sits entirely outside the loop, and is what
-converts "technically ready" into "procurement-approvable." It can be pulled forward at any time;
-it blocks nothing and nothing blocks it.
+0.24 is the cheapest release in the program, sits entirely outside the loop, and is what converts
+"technically ready" into "procurement-approvable." It can be pulled forward at any time; it blocks
+nothing and nothing blocks it.
+
+**Spec-first costs about two weeks across the program and is worth every day of it** — it is the
+difference between a C# library and a standard that other languages can implement. The Standard's
+own measurement system already agrees: nine `STANDARD` items score 900 of the 1,505 points here,
+more than all seventy implementation items combined. The points were telling us to write the spec
+first before this plan did.
 
 ---
 
@@ -932,12 +1095,16 @@ Named explicitly, so they cannot creep in:
   credentials is a library that must be trusted with secrets.
 - **No policy engine.** `IPolicyBroker` is a seam to *your* engine — OPA, Cedar, an internal
   service. The framework ships the decision point, never the decision language.
+- **No capability that exists only in C#.** If it is not in SPEC.md, it is not in the framework —
+  it is a local convenience, and it does not ship.
 
 ---
 
 ## 9 · The one-line summary
 
-> Nine releases, seventy branch-sized work items, six new cross-cutting brokers, nine new opt-in
-> builder methods and four machine-verifiable readiness profiles — and at the end the README's
-> five-line agent is still five lines, the Tri-Nature is still the only mental model, and every
-> promise printed on the box is true.
+> Nine releases, each opening with its spec and closing with its vectors. Seventy implementation
+> items, two cross-cutting brokers, seven additions that each name their nature, five capabilities
+> that each ship a complete triad, and four machine-verifiable readiness profiles — and at the end
+> the README's five-line agent is still five lines, the architecture is still 1 · 3 · 9, the
+> Tri-Nature is still the only mental model, someone can build the whole thing in another language
+> from the spec alone, and every promise printed on the box is true.
