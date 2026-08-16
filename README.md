@@ -141,7 +141,7 @@ with cloud data, a registry of skills with a Redis memory.
 | [`Standard.Agents.Data.Knowledge.Postgres`](https://www.nuget.org/packages/Standard.Agents.Data.Knowledge.Postgres) [![](https://img.shields.io/nuget/v/Standard.Agents.Data.Knowledge.Postgres?style=flat-square&label=%20&color=1f6feb&logo=nuget&logoColor=white)](https://www.nuget.org/packages/Standard.Agents.Data.Knowledge.Postgres) | Knowledge · *Data* | knowledge in **PostgreSQL**, ranked `tsvector` full-text |
 | [`Standard.Agents.Data.Knowledge.MsSql`](https://www.nuget.org/packages/Standard.Agents.Data.Knowledge.MsSql) [![](https://img.shields.io/nuget/v/Standard.Agents.Data.Knowledge.MsSql?style=flat-square&label=%20&color=1f6feb&logo=nuget&logoColor=white)](https://www.nuget.org/packages/Standard.Agents.Data.Knowledge.MsSql) | Knowledge · *Data* | knowledge in **SQL Server**, `FREETEXT` full-text |
 
-> The **Gate** and **Judge** go fully local too — `.LocalGate` / `.LocalJudge` drive them with any
+> The **Gate** and **Judge** take your own delegate too — `.OnGate` / `.OnJudge` drive them with any
 > in-process model, no package needed.
 
 ```csharp
@@ -149,8 +149,8 @@ with cloud data, a registry of skills with a Redis memory.
 var llama = new LlamaSharpGeneratorBroker("model.gguf");
 var agent = new StandardAgent()
     .UseGenerator(llama)
-    .LocalGate(llama.GenerateAsync)
-    .LocalJudge(llama.GenerateAsync);
+    .OnGate(llama.GenerateAsync)
+    .OnJudge(llama.GenerateAsync);
 
 // production — skills from the registry, knowledge in Postgres, memory in Redis
 var agent = new StandardAgent(url, key, "LLooMA2.0")

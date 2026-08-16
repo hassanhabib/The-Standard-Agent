@@ -534,15 +534,15 @@ public class StandardAgentTests
             .UseSkills(skillBroker.Object)
             .UseMemory(memory.Object)
             .UseKnowledge(EmptyKnowledgeBroker())
-            .LocalBrain(async (systemPrompt, userPrompt) => "FINAL: 42")
+            .OnBrain(async (systemPrompt, userPrompt) => "FINAL: 42")
             .Constitution(constitutionPath)
-            .LocalGate(async (gateRubric, prompt) =>
+            .OnGate(async (gateRubric, prompt) =>
             {
                 capturedGateRubric = gateRubric;
 
                 return "allow";
             })
-            .LocalJudge(async (judgeRubric, draftAnswer) =>
+            .OnJudge(async (judgeRubric, draftAnswer) =>
             {
                 capturedJudgeRubric = judgeRubric;
 
@@ -582,15 +582,15 @@ public class StandardAgentTests
             .UseSkills(skillBroker.Object)
             .UseMemory(memory.Object)
             .UseKnowledge(EmptyKnowledgeBroker())
-            .LocalBrain(async (systemPrompt, userPrompt) => "FINAL: 42")
+            .OnBrain(async (systemPrompt, userPrompt) => "FINAL: 42")
             .Consumption(consumptionPath)
-            .LocalGate(async (gateRubric, prompt) =>
+            .OnGate(async (gateRubric, prompt) =>
             {
                 capturedGateRubric = gateRubric;
 
                 return "allow";
             })
-            .LocalJudge(async (judgeRubric, draftAnswer) =>
+            .OnJudge(async (judgeRubric, draftAnswer) =>
             {
                 capturedJudgeRubric = judgeRubric;
 

@@ -99,7 +99,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
             pair => pair.Key,
             pair => new StubTool(name: pair.Key, output: pair.Value));
 
-    // The guardians run through the real composition (LocalGate / LocalJudge), so each is handed
+    // The guardians run through the real composition (OnGate / OnJudge), so each is handed
     // the rubric the framework composed — constitution, then policy (or the consumption skill),
     // then the framework-owned contract. The screen / evaluate delegates capture that rubric and
     // return a scripted verdict; the defaults ("allow" / "1.0") are inert, so a vector that sets
@@ -114,13 +114,13 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         .UseKnowledge(new StubKnowledgeBroker())
         .UseMcp(new NotConfiguredMcpBroker())
         .Tools(stubTools.Values)
-        .LocalGate((rubric, prompt) =>
+        .OnGate((rubric, prompt) =>
         {
             gateRubric ??= rubric;
 
             return new ValueTask<string>(vector.GateVerdict ?? "allow");
         })
-        .LocalJudge((rubric, candidate) =>
+        .OnJudge((rubric, candidate) =>
         {
             judgeRubric = rubric;
 
