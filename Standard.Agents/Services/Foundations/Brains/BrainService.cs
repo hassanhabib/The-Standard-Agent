@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using Standard.Agents.Brokers.Generators;
 using Standard.Agents.Brokers.Loggings;
-using Standard.Agents.Models.Foundations.Brains;
+using Standard.Agents.Brokers.Redactions;
 
 namespace Standard.Agents.Services.Foundations.Brains;
 
@@ -15,16 +15,16 @@ public partial class BrainService : IBrainService
 {
     private readonly IGeneratorBroker generatorBroker;
     private readonly ILoggingBroker loggingBroker;
-    private readonly IReadOnlyList<RedactionRule> redactionRules;
+    private readonly IRedactionBroker redactionBroker;
 
     public BrainService(
         IGeneratorBroker generatorBroker,
         ILoggingBroker loggingBroker,
-        IEnumerable<RedactionRule>? redactionRules = null)
+        IRedactionBroker? redactionBroker = null)
     {
         this.generatorBroker = generatorBroker;
         this.loggingBroker = loggingBroker;
-        this.redactionRules = redactionRules?.ToList() ?? [];
+        this.redactionBroker = redactionBroker ?? new NotConfiguredRedactionBroker();
     }
 
     public ValueTask<string> GenerateAsync(string systemPrompt, string userPrompt) =>
@@ -33,13 +33,13 @@ public partial class BrainService : IBrainService
         ValidateUserPrompt(userPrompt);
 
         var vault = new Dictionary<string, string>();
-        string redactedSystemPrompt = Redact(systemPrompt, vault);
-        string redactedUserPrompt = Redact(userPrompt, vault);
+        string redactedSystemPrompt = this.redactionBroker.Redact(systemPrompt, vault);
+        string redactedUserPrompt = this.redactionBroker.Redact(userPrompt, vault);
 
         string reply = await this.generatorBroker.GenerateAsync(
             redactedSystemPrompt, redactedUserPrompt);
 
-        return Rehydrate(reply, vault);
+        return this.redactionBroker.Rehydrate(reply, vault);
     });
 
     public async IAsyncEnumerable<string> GenerateStreamAsync(
@@ -54,8 +54,8 @@ public partial class BrainService : IBrainService
         {
             ValidateUserPrompt(userPrompt);
 
-            string redactedSystemPrompt = Redact(systemPrompt, vault);
-            string redactedUserPrompt = Redact(userPrompt, vault);
+            string redactedSystemPrompt = this.redactionBroker.Redact(systemPrompt, vault);
+            string redactedUserPrompt = this.redactionBroker.Redact(userPrompt, vault);
 
             tokens = this.generatorBroker
                 .GenerateStreamAsync(redactedSystemPrompt, redactedUserPrompt, cancellationToken)
@@ -96,7 +96,7 @@ public partial class BrainService : IBrainService
                 }
 
                 pending.Append(token);
-                string ready = DrainReady(pending, vault);
+                string ready = DrainReady(pending, vault, this.redactionBroker);
 
                 if (ready.Length > 0)
                 {
@@ -106,7 +106,7 @@ public partial class BrainService : IBrainService
 
             if (vault.Count > 0 && pending.Length > 0)
             {
-                yield return Rehydrate(pending.ToString(), vault);
+                yield return this.redactionBroker.Rehydrate(pending.ToString(), vault);
             }
         }
         finally

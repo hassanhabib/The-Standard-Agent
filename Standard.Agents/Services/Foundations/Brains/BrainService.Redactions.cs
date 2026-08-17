@@ -4,18 +4,25 @@
 // ---------------------------------------------------------------
 
 using System.Text;
-using System.Text.RegularExpressions;
-using Standard.Agents.Models.Foundations.Brains;
+using Standard.Agents.Brokers.Redactions;
 
 namespace Standard.Agents.Services.Foundations.Brains;
 
 public partial class BrainService
 {
+    // Streaming makes rehydration a boundary problem: a placeholder can arrive split across
+    // two tokens, so anything from the last unmatched "{{" onward is held back until more
+    // text arrives. Without it a token boundary mid-placeholder would leak "{{EMAIL_" to the
+    // caller and never restore the value.
+    //
+    // The redaction itself is the broker's (SPEC.md §4.6) — this is only the buffering that
+    // streaming adds on top.
     private static string DrainReady(
         StringBuilder pending,
-        IReadOnlyDictionary<string, string> vault)
+        IReadOnlyDictionary<string, string> vault,
+        IRedactionBroker redactionBroker)
     {
-        string buffer = Rehydrate(pending.ToString(), vault);
+        string buffer = redactionBroker.Rehydrate(pending.ToString(), vault);
 
         int hold = buffer.LastIndexOf('{');
 
@@ -31,56 +38,5 @@ public partial class BrainService
         pending.Append(keep);
 
         return ready;
-    }
-
-    private string Redact(string text, IDictionary<string, string> vault)
-    {
-        if (this.redactionRules.Count == 0 || string.IsNullOrEmpty(text))
-        {
-            return text;
-        }
-
-        string redactedText = text;
-
-        foreach (RedactionRule rule in this.redactionRules)
-        {
-            redactedText = Regex.Replace(
-                redactedText,
-                rule.Pattern,
-                match => Tokenize(rule, match.Value, vault));
-        }
-
-        return redactedText;
-    }
-
-    private static string Tokenize(
-        RedactionRule rule,
-        string value,
-        IDictionary<string, string> vault)
-    {
-        string existingToken =
-            vault.FirstOrDefault(entry => entry.Value == value).Key;
-
-        if (existingToken is not null)
-        {
-            return existingToken;
-        }
-
-        string token = "{{" + rule.Label + "_" + vault.Count + "}}";
-        vault[token] = value;
-
-        return token;
-    }
-
-    private static string Rehydrate(string text, IReadOnlyDictionary<string, string> vault)
-    {
-        string rehydratedText = text;
-
-        foreach (KeyValuePair<string, string> entry in vault)
-        {
-            rehydratedText = rehydratedText.Replace(entry.Key, entry.Value);
-        }
-
-        return rehydratedText;
     }
 }

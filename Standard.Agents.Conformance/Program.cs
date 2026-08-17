@@ -185,9 +185,19 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
     List<AuditRecord> auditRecords = [];
     object auditLock = new();
 
+    // Everything any model was shown, so a vector can certify that a sensitive value reached
+    // none of them (SPEC.md §4.6). The generator is wrapped rather than replaced, so the real
+    // Brain path — redaction, rehydration, streaming buffers — is what gets certified.
+    List<string> modelInputs = [];
+    var scriptedGenerator = new ScriptedGeneratorBroker(vector.GeneratorReplies);
+
+    var recordingGenerator = new RecordingGeneratorBroker(
+        scriptedGenerator,
+        input => { lock (auditLock) { modelInputs.Add(input); } });
+
     StandardAgent agent = new StandardAgent()
         .UseSkills(new StubSkillBroker())
-        .UseGenerator(new ScriptedGeneratorBroker(vector.GeneratorReplies))
+        .UseGenerator(recordingGenerator)
         .UseMemory(new StubMemoryBroker())
         .UseKnowledge(new StubKnowledgeBroker())
         .UseMcp(new NotConfiguredMcpBroker())
@@ -196,12 +206,22 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         {
             gateRubric ??= rubric;
 
+            lock (auditLock)
+            {
+                modelInputs.Add(prompt);
+            }
+
             return new ValueTask<string>(vector.GateVerdict ?? "allow");
         })
         .OnJudge((rubric, candidate) =>
         {
             judgeRubric = rubric;
             judgeInput = candidate;
+
+            lock (auditLock)
+            {
+                modelInputs.Add(candidate);
+            }
 
             return new ValueTask<string>(vector.JudgeScore ?? "1.0");
         })
@@ -214,6 +234,11 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
 
             return ValueTask.CompletedTask;
         });
+
+    if (vector.Redact)
+    {
+        agent.Redact();
+    }
 
     if (string.IsNullOrEmpty(vector.Constitution) is false)
     {
@@ -252,7 +277,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         }
     }
 
-    return new VectorRun(result, stubTools, gateRubric, judgeRubric, judgeInput, auditRecords);
+    return new VectorRun(result, stubTools, gateRubric, judgeRubric, judgeInput, modelInputs, auditRecords);
 }
 
 // The decision log's guarantees, certified from the records themselves: one run per prompt,
@@ -406,6 +431,29 @@ static bool GuardianInputConformant(
         return false;
     }
 
+    // Redaction is only satisfied if EVERY model call is clean. Checking the Brain alone is the
+    // exact mistake this vector exists to catch (SPEC.md §4.6).
+    if (vector.Expect.NoModelSees is string secret)
+    {
+        if (run.ModelInputs.Count == 0)
+        {
+            failure = "no model was called, so nothing was certified";
+
+            return false;
+        }
+
+        int leaking = run.ModelInputs.Count(input =>
+            input.Contains(secret, StringComparison.Ordinal));
+
+        if (leaking > 0)
+        {
+            failure =
+                $"{leaking} of {run.ModelInputs.Count} model call(s) saw {Show(secret)} in the clear";
+
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -490,4 +538,5 @@ internal sealed record VectorRun(
     string? GateRubric,
     string? JudgeRubric,
     string? JudgeInput,
+    List<string> ModelInputs,
     List<AuditRecord> AuditRecords);
