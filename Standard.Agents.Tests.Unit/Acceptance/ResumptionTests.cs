@@ -5,6 +5,7 @@
 
 using FluentAssertions;
 using Moq;
+using Standard.Agents.Brokers.Approvals;
 using Standard.Agents.Brokers.Effects;
 using Standard.Agents.Brokers.Knowledges;
 using Standard.Agents.Brokers.Memorys;
@@ -127,6 +128,38 @@ public class ResumptionTests : IDisposable
         // then — an identity recorded only on success is one the failure case can never use
         actualSession.Should().NotBeNull();
         actualSession!.RunId.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public async Task ShouldPerformAHeldActOnceTheAuthorityApprovesItAsync()
+    {
+        // given — the first process proposes the transfer and the authority has not answered yet
+        var tool = new CountingTool();
+
+        string held = await NewProcess(tool, "ACTION: wire_transfer: 10000")
+            .RequireApproval("wire_transfer")
+            .OnApproval(effect => ValueTask.FromResult(ApprovalDecision.Pending))
+            .ProcessPromptAsync(prompt: "pay the invoice", "invoice-95", CancellationToken.None);
+
+        held.Should().Contain("waiting for approval");
+        tool.ExecutionCount.Should().Be(0);
+
+        // when — the authority says yes, and a second process resumes the run
+        var resumedTool = new CountingTool();
+
+        string actualResult = await NewProcess(
+            resumedTool,
+            "ACTION: wire_transfer: 10000",
+            "FINAL: paid")
+                .RequireApproval("wire_transfer")
+                .OnApproval(effect => ValueTask.FromResult(ApprovalDecision.Approved))
+                .ProcessPromptAsync(
+                    prompt: "yes, approve it", "invoice-95", CancellationToken.None);
+
+        // then — a held act is one that still has to be able to happen; an approval that arrives
+        // after the claim was left standing is an approval that can never be used
+        resumedTool.ExecutionCount.Should().Be(1);
+        actualResult.Should().Be("paid");
     }
 
     [Fact]
