@@ -1,0 +1,18 @@
+{
+  "name": "Reliable",
+  "description": "Core, plus guardians that can see what they guard, a durable decision log, run isolation, cancellation and timeouts. The first level at which a deployment can be trusted to explain itself. Requirements without a vector yet are listed on purpose: a level is earned by evidence, and naming the evidence before it exists is what stops the level being claimed early.",
+  "inherits": "Core",
+  "requires": [
+    "structured-tool-call",
+    "gate-refusal-short-circuits",
+    "constitution-binds-guardians",
+    "consumption-replaces-policy",
+    "audit-retains-every-run",
+    "concurrent-runs-are-isolated",
+    "judge-receives-the-task",
+    "redaction-covers-every-model-call",
+    "guardian-overreach-is-neutralized",
+    "cancellation-stops-the-loop",
+    "transient-failure-recovers"
+  ]
+}

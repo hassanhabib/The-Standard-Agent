@@ -1,0 +1,13 @@
+{
+  "name": "audit-retains-every-run",
+  "description": "SPEC.md 4.7: the decision log is append-only. Beginning a run MUST NOT discard prior records, and the trace reset MUST NOT propagate to it. Two prompts through one agent therefore leave two runs of evidence, each under its own runId, with the first prompt still recoverable after the second has run.",
+  "generatorReplies": ["FINAL: done"],
+  "tools": {},
+  "prompt": "the ALPHA question",
+  "prompts": ["the ALPHA question", "the BRAVO question"],
+  "expect": {
+    "result": "done",
+    "auditRunCount": 2,
+    "auditRetainsEveryPrompt": true
+  }
+}

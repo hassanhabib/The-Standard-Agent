@@ -14,4 +14,17 @@ public sealed record Expectation(
     // from (Excludes) — BOTH the composed Gate rubric AND the composed Judge rubric, since a
     // constitution binds both guardians and a consumption skill replaces the policy in both.
     List<string>? GuardianRubricContains = null,
-    List<string>? GuardianRubricExcludes = null);
+    List<string>? GuardianRubricExcludes = null,
+
+    // Decision-log assertions (SPEC.md §4.7, §4.4), observed through the log's Custom sink so
+    // the certification does not depend on any particular storage.
+    //
+    //   AuditRunCount              — how many distinct runs the log must hold: one per prompt,
+    //                                never fewer. Fewer means runs were merged or discarded.
+    //   AuditRetainsEveryPrompt    — every prompt's evidence must still be present at the end,
+    //                                which is what fails when beginning a run truncates the log.
+    //   AuditSequencesUniquePerRun — within a run the record numbers must not repeat, which is
+    //                                what fails when run counters are shared between runs.
+    int? AuditRunCount = null,
+    bool AuditRetainsEveryPrompt = false,
+    bool AuditSequencesUniquePerRun = false);

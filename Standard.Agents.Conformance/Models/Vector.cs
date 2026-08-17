@@ -21,4 +21,12 @@ public sealed record Vector(
     string? Constitution = null,
     string? Consumption = null,
     string? GateVerdict = null,
-    string? JudgeScore = null);
+    string? JudgeScore = null,
+
+    // Multi-run vectors. The decision log's durability (SPEC.md §4.7) and run isolation
+    // (§4.4) are only observable across more than one run, so a vector may drive several
+    // prompts through one agent instead of one. Prompts overrides Prompt when present;
+    // Concurrent runs them all at once rather than in order, which is the only way to
+    // certify that one run's bookkeeping never leaks into another's.
+    List<string>? Prompts = null,
+    bool Concurrent = false);

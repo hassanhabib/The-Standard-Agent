@@ -6,10 +6,18 @@
 using System.Text.Json;
 using Standard.Agents;
 using Standard.Agents.Conformance;
+using Standard.Agents.Models.Brokers.Audits;
 
-string vectorsPath = args.Length > 0
-    ? args[0]
-    : Path.Combine(FindRepositoryRoot(), "conformance", "vectors");
+string? profileName = ReadProfileArgument(args);
+
+// Drop the flag and the value it consumed, so an optional vectors path stays positional.
+string[] positionalArgs = [.. PositionalArguments(args)];
+
+string conformanceRoot = Path.Combine(FindRepositoryRoot(), "conformance");
+
+string vectorsPath = positionalArgs.Length > 0
+    ? positionalArgs[0]
+    : Path.Combine(conformanceRoot, "vectors");
 
 JsonSerializerOptions jsonOptions = new()
 {
@@ -17,10 +25,17 @@ JsonSerializerOptions jsonOptions = new()
 };
 
 Console.WriteLine($"Conformance vectors: {vectorsPath}");
+
+if (profileName is not null)
+{
+    Console.WriteLine($"Certifying profile: {profileName}");
+}
+
 Console.WriteLine();
 
 int passed = 0;
 int failed = 0;
+HashSet<string> passedVectors = new(StringComparer.OrdinalIgnoreCase);
 
 foreach (string vectorFile in
     Directory.EnumerateFiles(vectorsPath, "*.json").OrderBy(path => path, StringComparer.Ordinal))
@@ -45,9 +60,13 @@ foreach (string vectorFile in
     bool rubricConformant =
         RubricConformant(vector.Expect, run.GateRubric, run.JudgeRubric, out string? rubricFailure);
 
-    if (resultConformant && toolInputConformant && rubricConformant)
+    bool auditConformant =
+        AuditConformant(vector, run.AuditRecords, out string? auditFailure);
+
+    if (resultConformant && toolInputConformant && rubricConformant && auditConformant)
     {
         passed++;
+        passedVectors.Add(vector.Name);
         Console.WriteLine($"PASS  {vector.Name}");
     }
     else
@@ -84,13 +103,52 @@ foreach (string vectorFile in
             Console.WriteLine($"        gate rubric:  {Show(run.GateRubric ?? "(gate never ran)")}");
             Console.WriteLine($"        judge rubric: {Show(run.JudgeRubric ?? "(judge never ran)")}");
         }
+
+        if (auditConformant is false)
+        {
+            Console.WriteLine($"        decision log: {auditFailure}");
+
+            Console.WriteLine(
+                $"        records: {run.AuditRecords.Count} "
+                    + $"across {run.AuditRecords.Select(record => record.RunId).Distinct().Count()} run(s)");
+        }
     }
 }
 
 Console.WriteLine();
 Console.WriteLine($"{passed} passed, {failed} failed");
 
-return failed == 0 ? 0 : 1;
+if (profileName is null)
+{
+    return failed == 0 ? 0 : 1;
+}
+
+// Certifying a profile is a separate question from running the vectors: not "did everything
+// we happen to have pass" but "is every requirement of this level actually evidenced". A
+// requirement whose vector does not exist fails — otherwise a profile could be claimed by
+// never writing its evidence, which is the failure mode profiles exist to prevent.
+List<string> missing =
+    ProfileRequirements(profileName, Path.Combine(conformanceRoot, "profiles"), jsonOptions)
+        .Where(requirement => passedVectors.Contains(requirement) is false)
+        .ToList();
+
+Console.WriteLine();
+
+if (missing.Count == 0)
+{
+    Console.WriteLine($"CERTIFIED  {profileName}");
+
+    return failed == 0 ? 0 : 1;
+}
+
+Console.WriteLine($"NOT CERTIFIED  {profileName} — {missing.Count} requirement(s) unmet:");
+
+foreach (string requirement in missing)
+{
+    Console.WriteLine($"  - {requirement}");
+}
+
+return 1;
 
 async Task<VectorRun> RunVectorAsync(Vector vector)
 {
@@ -106,6 +164,12 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
     // no guardian fields behaves exactly as an always-allowing gate and an always-approving judge.
     string? gateRubric = null;
     string? judgeRubric = null;
+
+    // The decision log is observed through its own Custom sink (SPEC.md §4.8), so the
+    // certification watches the records the framework produces rather than any storage.
+    // Concurrent vectors write from many runs at once, hence the lock.
+    List<AuditRecord> auditRecords = [];
+    object auditLock = new();
 
     StandardAgent agent = new StandardAgent()
         .UseSkills(new StubSkillBroker())
@@ -125,6 +189,15 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
             judgeRubric = rubric;
 
             return new ValueTask<string>(vector.JudgeScore ?? "1.0");
+        })
+        .OnAudit(record =>
+        {
+            lock (auditLock)
+            {
+                auditRecords.Add(record);
+            }
+
+            return ValueTask.CompletedTask;
         });
 
     if (string.IsNullOrEmpty(vector.Constitution) is false)
@@ -141,9 +214,96 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         agent.Consumption(fileName);
     }
 
-    string result = await agent.ProcessPromptAsync(vector.Prompt);
+    IReadOnlyList<string> prompts = vector.Prompts is { Count: > 0 }
+        ? vector.Prompts
+        : [vector.Prompt];
 
-    return new VectorRun(result, stubTools, gateRubric, judgeRubric);
+    string result;
+
+    if (vector.Concurrent)
+    {
+        string[] results = await Task.WhenAll(
+            prompts.Select(prompt => agent.ProcessPromptAsync(prompt).AsTask()));
+
+        result = results[0];
+    }
+    else
+    {
+        result = string.Empty;
+
+        foreach (string prompt in prompts)
+        {
+            result = await agent.ProcessPromptAsync(prompt);
+        }
+    }
+
+    return new VectorRun(result, stubTools, gateRubric, judgeRubric, auditRecords);
+}
+
+// The decision log's guarantees, certified from the records themselves: one run per prompt,
+// every prompt's evidence still present at the end, and record numbers that never repeat
+// within a run (SPEC.md §4.7, §4.4).
+static bool AuditConformant(Vector vector, List<AuditRecord> records, out string? failure)
+{
+    failure = null;
+
+    Expectation expect = vector.Expect;
+
+    if (expect.AuditRunCount is null
+        && expect.AuditRetainsEveryPrompt is false
+        && expect.AuditSequencesUniquePerRun is false)
+    {
+        return true;
+    }
+
+    IReadOnlyList<string> prompts = vector.Prompts is { Count: > 0 }
+        ? vector.Prompts
+        : [vector.Prompt];
+
+    if (expect.AuditRunCount is int expectedRunCount)
+    {
+        int actualRunCount = records.Select(record => record.RunId).Distinct().Count();
+
+        if (actualRunCount != expectedRunCount)
+        {
+            failure = $"expected {expectedRunCount} distinct run(s), found {actualRunCount}";
+
+            return false;
+        }
+    }
+
+    if (expect.AuditRetainsEveryPrompt)
+    {
+        foreach (string prompt in prompts)
+        {
+            bool retained = records.Any(record =>
+                record.Message.Contains(prompt, StringComparison.Ordinal));
+
+            if (retained is false)
+            {
+                failure = $"no record retained evidence of the prompt {Show(prompt)}";
+
+                return false;
+            }
+        }
+    }
+
+    if (expect.AuditSequencesUniquePerRun)
+    {
+        foreach (IGrouping<string, AuditRecord> run in records.GroupBy(record => record.RunId))
+        {
+            int[] sequences = run.Select(record => record.Sequence).ToArray();
+
+            if (sequences.Length != sequences.Distinct().Count())
+            {
+                failure = $"run '{run.Key}' repeated a record number — runs shared a counter";
+
+                return false;
+            }
+        }
+    }
+
+    return true;
 }
 
 // A rubric guarantee is certified against BOTH guardians, so both rubrics must have been
@@ -196,6 +356,62 @@ static bool RubricConformant(
     return true;
 }
 
+static string? ReadProfileArgument(string[] args)
+{
+    int index = Array.FindIndex(args, argument =>
+        argument.Equals("--profile", StringComparison.OrdinalIgnoreCase));
+
+    return index >= 0 && index + 1 < args.Length
+        ? args[index + 1]
+        : null;
+}
+
+static IEnumerable<string> PositionalArguments(string[] args)
+{
+    for (int index = 0; index < args.Length; index++)
+    {
+        if (args[index].Equals("--profile", StringComparison.OrdinalIgnoreCase))
+        {
+            index++;
+
+            continue;
+        }
+
+        yield return args[index];
+    }
+}
+
+// A profile's requirements are its own plus everything it inherits, so certifying Reliable
+// certifies Core too — a level is a floor, never a substitute.
+static List<string> ProfileRequirements(
+    string profileName,
+    string profilesPath,
+    JsonSerializerOptions jsonOptions)
+{
+    List<string> requirements = [];
+    string? nextProfileName = profileName;
+
+    while (nextProfileName is not null)
+    {
+        string profileFile =
+            Path.Combine(profilesPath, $"{nextProfileName.ToLowerInvariant()}.json");
+
+        if (File.Exists(profileFile) is false)
+        {
+            throw new FileNotFoundException(
+                $"No such readiness profile: '{nextProfileName}'. Expected {profileFile}.");
+        }
+
+        Profile profile =
+            JsonSerializer.Deserialize<Profile>(File.ReadAllText(profileFile), jsonOptions)!;
+
+        requirements.AddRange(profile.Requires);
+        nextProfileName = profile.Inherits;
+    }
+
+    return [.. requirements.Distinct(StringComparer.OrdinalIgnoreCase)];
+}
+
 static string Show(string value) =>
     value.Replace("\n", "\\n").Replace("\r", "\\r");
 
@@ -219,4 +435,5 @@ internal sealed record VectorRun(
     string Result,
     Dictionary<string, StubTool> Tools,
     string? GateRubric,
-    string? JudgeRubric);
+    string? JudgeRubric,
+    List<AuditRecord> AuditRecords);

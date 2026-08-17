@@ -1,0 +1,12 @@
+{
+  "name": "Core",
+  "description": "The minimal viable agent (SPEC.md 8.1): the loop, skills, a brain, local tools, a return, and the reply protocol. Guardians may be pass-through.",
+  "requires": [
+    "direct-answer",
+    "tool-then-final",
+    "first-line-action-only",
+    "multiline-final",
+    "unknown-tool-recovers",
+    "max-turns-cap"
+  ]
+}

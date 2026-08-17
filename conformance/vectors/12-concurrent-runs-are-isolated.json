@@ -1,0 +1,24 @@
+{
+  "name": "concurrent-runs-are-isolated",
+  "description": "SPEC.md 4.4: one instance serves prompts concurrently, and each invocation establishes its own run identity. Eight prompts in flight at once produce eight distinct runs whose records never share a number, which is what fails when run identity or counters live in instance state rather than per invocation.",
+  "generatorReplies": ["FINAL: done"],
+  "tools": {},
+  "prompt": "question 0",
+  "prompts": [
+    "question 0",
+    "question 1",
+    "question 2",
+    "question 3",
+    "question 4",
+    "question 5",
+    "question 6",
+    "question 7"
+  ],
+  "concurrent": true,
+  "expect": {
+    "result": "done",
+    "auditRunCount": 8,
+    "auditRetainsEveryPrompt": true,
+    "auditSequencesUniquePerRun": true
+  }
+}

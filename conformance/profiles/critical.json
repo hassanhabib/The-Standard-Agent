@@ -1,0 +1,11 @@
+{
+  "name": "Critical",
+  "description": "Enterprise, plus conversation that survives a process, effects that can be unwound, and adversarial evaluation. The level a wire transfer needs.",
+  "inherits": "Enterprise",
+  "requires": [
+    "conversation-carries-history",
+    "native-tool-call-round-trips",
+    "awaiting-input-resumes-in-a-new-process",
+    "effect-outcome-survives-a-crash"
+  ]
+}
