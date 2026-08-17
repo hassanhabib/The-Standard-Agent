@@ -79,6 +79,37 @@ public partial class AgentCoordinationService
             : $"{message} {unwound}";
     }
 
+    // An async iterator cannot put a catch clause around a yield, so the streamed loop unwinds
+    // through these instead of through one try around the whole body. They cover the two steps
+    // that do not yield — and Direction, the one that performs effects, is among them.
+    private async ValueTask<AgentContext> RecallOrUnwindAsync(AgentContext context)
+    {
+        try
+        {
+            return await this.dataOrchestrationService.RecallAsync(context);
+        }
+        catch (Exception)
+        {
+            await UnwindAsync();
+
+            throw;
+        }
+    }
+
+    private async ValueTask<AgentContext> ActOrUnwindAsync(AgentContext context)
+    {
+        try
+        {
+            return await this.directionOrchestrationService.ActAsync(context);
+        }
+        catch (Exception)
+        {
+            await UnwindAsync();
+
+            throw;
+        }
+    }
+
     // A run that stopped without delivering an answer may have left effects behind. Compensation
     // (SPEC.md §4.9) asks Direction to unwind them, and the caller is told what stood — reporting
     // a run cleanly unwound when it was not is worse than never offering compensation at all.

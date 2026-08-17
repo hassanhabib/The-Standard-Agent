@@ -188,25 +188,55 @@ public partial class AgentCoordinationService : IAgentCoordinationService
         return context.Result;
     });
 
+    public IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
+        string prompt,
+        CancellationToken cancellationToken = default) =>
+        ProcessPromptStreamAsync(prompt, string.Empty, cancellationToken);
+
     public async IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
         string prompt,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        string sessionId,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         ValidatePrompt(prompt);
 
-        // This prompt's run — see ProcessPromptAsync. A streamed prompt is a run like any other.
-        using IDisposable run = AgentRun.Begin();
+        AgentSession? session = await PeekSessionAsync(sessionId);
+
+        // This prompt's run — see ProcessPromptAsync. A streamed prompt is a run like any other,
+        // which is the whole point: every control below is the one the batched loop enforces.
+        using IDisposable run = AgentRun.Begin(ResumedRunId(session));
 
         await this.loggingBroker.LogResetAsync();
 
-        AgentContext context = new() { Prompt = prompt };
+        AgentContext context = new() { Prompt = prompt, SessionId = sessionId };
+
+        await BeginSessionAsync(context, session);
+        context = await LoadSessionAsync(context, session);
+
+        var spend = new AgentSpend();
+        DateTimeOffset startedOn = this.timeBroker.GetCurrentDateTimeOffset();
+        string? stoppedBecause = null;
 
         for (int turn = 0; turn < this.maxTurns; turn++)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                stoppedBecause = CancelledMessage;
+
+                break;
+            }
+
+            if (IsBudgetExhausted(spend, startedOn, out string exhaustion))
+            {
+                stoppedBecause = exhaustion;
+
+                break;
+            }
+
             await this.loggingBroker.LogTurnAsync(turn);
 
             await this.loggingBroker.LogStepAsync(AgentStep.Data);
-            context = await this.dataOrchestrationService.RecallAsync(context);
+            context = await RecallOrUnwindAsync(context);
 
             await this.loggingBroker.LogStepAsync(AgentStep.Decision);
 
@@ -221,6 +251,8 @@ public partial class AgentCoordinationService : IAgentCoordinationService
 
             context = decisionStream.Result;
 
+            spend.AddTokens(context.PromptTokens, context.CompletionTokens);
+
             if (context.Status is AgentStatus.Revising)
             {
                 await this.loggingBroker.LogOutcomeAsync($"turn {turn}: revising");
@@ -229,7 +261,7 @@ public partial class AgentCoordinationService : IAgentCoordinationService
             }
 
             await this.loggingBroker.LogStepAsync(AgentStep.Direction);
-            context = await this.directionOrchestrationService.ActAsync(context);
+            context = await ActOrUnwindAsync(context);
 
             await this.loggingBroker.LogOutcomeAsync($"turn {turn}: {context.Status}");
 
@@ -257,6 +289,18 @@ public partial class AgentCoordinationService : IAgentCoordinationService
             }
         }
 
+        // Cancelled or out of budget. Reported as a Status rather than a Response, because it is
+        // not an answer — the same distinction the batched path draws by returning the message
+        // instead of the result (SPEC.md §4.10).
+        if (stoppedBecause is not null)
+        {
+            await this.loggingBroker.LogOutcomeAsync($"stopped: {stoppedBecause}");
+
+            yield return new AgentStreamEvent(AgentStreamEventType.Status, stoppedBecause);
+
+            context = context with { Status = AgentStatus.Failed };
+        }
+
         if (context.Status is AgentStatus.Revising)
         {
             yield return new AgentStreamEvent(
@@ -266,11 +310,17 @@ public partial class AgentCoordinationService : IAgentCoordinationService
             yield return new AgentStreamEvent(
                 AgentStreamEventType.Response,
                 RetriesExhaustedMessage);
+
+            context = context with
+            {
+                Result = RetriesExhaustedMessage,
+                Status = AgentStatus.Refused
+            };
         }
 
         // The streamed loop unwinds on the same terms as the batched one. A control enforced on
         // one path and not the other is a control a caller can step around by changing method.
-        if (context.Status is AgentStatus.Working)
+        if (context.Status is AgentStatus.Working or AgentStatus.Failed)
         {
             string unwound = await UnwindAsync();
 
@@ -286,5 +336,10 @@ public partial class AgentCoordinationService : IAgentCoordinationService
         {
             await this.dataOrchestrationService.RememberAsync(context.Remember);
         }
+
+        // Recorded on the same terms as the batched path: only a run that delivered an answer.
+        // A streamed answer that never joined the conversation would leave the next prompt
+        // blind to it, and a cancelled one recorded would tell it something that never happened.
+        await SaveSessionAsync(context, completed: stoppedBecause is null);
     }
 }
