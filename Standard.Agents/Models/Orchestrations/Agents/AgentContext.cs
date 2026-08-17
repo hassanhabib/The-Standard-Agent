@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------
 
 using Standard.Agents.Models.Brokers.Sessions;
+using Standard.Agents.Models.Orchestrations.Effects;
 
 namespace Standard.Agents.Models.Orchestrations.Agents;
 
@@ -29,6 +30,11 @@ public sealed record AgentContext
     // The call Direction is performing this turn, so its result can be tied back to it. Empty
     // outside the native path.
     public string ToolCallId { get; init; } = "";
+
+    // The act an authority has been asked to permit and has not yet answered on (SPEC.md §4.9,
+    // §4.11). It rides out to the session so a different process can show a human the act itself
+    // rather than only the news that something is waiting.
+    public AgentEffect? PendingEffect { get; init; }
 
     public string Intent { get; init; } = "";
     public string Route { get; init; } = "";

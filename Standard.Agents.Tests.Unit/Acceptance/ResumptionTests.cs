@@ -221,20 +221,32 @@ public class ResumptionTests : IDisposable
     }
 
     [Fact]
-    public async Task ShouldRememberNoActWhenNothingIsHeldAsync()
+    public async Task ShouldForgetTheHeldActOnceItIsNoLongerWaitingAsync()
     {
-        // given — a run that simply answered
+        // given — an act held for approval, so the session genuinely carries one
         var tool = new CountingTool();
-
-        await NewProcess(tool, "FINAL: nothing to do")
-            .ProcessPromptAsync(prompt: "anything pending?", "invoice-101", CancellationToken.None);
-
-        // when
         var sessionBroker = new FileSessionBroker(SessionsPath);
-        AgentSession? actualSession = await sessionBroker.SelectSessionAsync("invoice-101");
 
-        // then — a session that is waiting on nothing says so
-        actualSession!.PendingEffect.Should().BeNull();
+        await NewProcess(tool, "ACTION: wire_transfer: 10000")
+            .RequireApproval("wire_transfer")
+            .OnApproval(effect => ValueTask.FromResult(ApprovalDecision.Pending))
+            .ProcessPromptAsync(prompt: "pay the invoice", "invoice-101", CancellationToken.None);
+
+        AgentSession? whileHeld = await sessionBroker.SelectSessionAsync("invoice-101");
+        whileHeld!.PendingEffect.Should().NotBeNull();
+
+        // when — the authority permits it and the run finishes
+        await NewProcess(new CountingTool(), "ACTION: wire_transfer: 10000", "FINAL: paid")
+            .RequireApproval("wire_transfer")
+            .OnApproval(effect => ValueTask.FromResult(ApprovalDecision.Approved))
+            .ProcessPromptAsync(prompt: "yes, approve it", "invoice-101", CancellationToken.None);
+
+        AgentSession? afterApproval = await sessionBroker.SelectSessionAsync("invoice-101");
+
+        // then — a session that is waiting on nothing says so. Carrying the act past the pause
+        // would offer an authority an act the agent has already performed.
+        afterApproval!.Status.Should().Be(AgentStatus.Responded);
+        afterApproval.PendingEffect.Should().BeNull();
     }
 
     [Fact]
