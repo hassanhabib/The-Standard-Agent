@@ -1,0 +1,147 @@
+// ---------------------------------------------------------------
+// Copyright (c) Hassan Habib All rights reserved.
+// Licensed under the The Standard Software License (TSSL)
+// ---------------------------------------------------------------
+
+using Standard.Agents.Brokers.Approvals;
+using Standard.Agents.Models.Loggings;
+using Standard.Agents.Models.Orchestrations.Agents;
+using Standard.Agents.Models.Orchestrations.Effects;
+
+namespace Standard.Agents.Services.Orchestrations.Direction;
+
+// The perimeter (SPEC.md §4.9). Direction already owned the boundary; this is enforcement at
+// it, in the order the spec fixes and forbids reordering:
+//
+//   authorize → record the intent → approve → execute at most once → record the outcome
+//
+// The order is the control. Authorizing after execution audits a fait accompli; recording the
+// intent after execution loses the effects that crashed mid-flight; and approving after
+// execution is not approval at all.
+public partial class DirectionOrchestrationService
+{
+    private async ValueTask<AgentContext> ActOnEffectAsync(AgentContext context)
+    {
+        AgentEffect effect = AgentEffect.For(
+            runId: AgentRun.Current?.Id ?? string.Empty,
+            toolName: context.DirectionType,
+            arguments: context.Payload,
+            riskLevel: RiskLevelFor(context.DirectionType),
+            approvalRequired: RequiresApproval(context.DirectionType),
+            principal: null);
+
+        // 1 — authorize
+        AuthorizationDecision decision = await this.policyBroker.AuthorizeAsync(effect);
+
+        if (decision.Permitted is false)
+        {
+            await this.loggingBroker.LogProcessAsync(
+                "Direction",
+                $"Policy → DENIED '{effect.ToolName}': {decision.Reason}");
+
+            return Denied(context, decision.Reason);
+        }
+
+        // 2 — record the intent, and learn whether this act already happened
+        string? priorOutcome = await this.effectLedgerBroker.SelectOutcomeAsync(effect);
+
+        if (priorOutcome is not null)
+        {
+            await this.loggingBroker.LogProcessAsync(
+                "Direction",
+                $"Run-once → '{effect.ToolName}' already ran; replaying its outcome");
+
+            return Observed(context, priorOutcome);
+        }
+
+        // 3 — approve, if required
+        if (effect.ApprovalRequired)
+        {
+            ApprovalDecision approval = await this.approvalBroker.RequestAsync(effect);
+
+            if (approval is not ApprovalDecision.Approved)
+            {
+                return await HandleUnapprovedAsync(context, effect, approval);
+            }
+
+            await this.loggingBroker.LogProcessAsync(
+                "Direction", $"Approval → APPROVED '{effect.ToolName}'");
+        }
+
+        // 4 — execute
+        string output = await RunToolAsync(context);
+
+        // 5 — record the outcome, before the loop advances
+        await this.effectLedgerBroker.InsertOutcomeAsync(effect, output);
+
+        await this.loggingBroker.LogProcessAsync(
+            "Direction", $"Tool '{effect.ToolName}' ← {context.Payload}", detail: true);
+
+        await this.loggingBroker.LogProcessAsync(
+            "Direction", $"Tool '{effect.ToolName}' → {output}");
+
+        return Observed(context, output);
+    }
+
+    private async ValueTask<AgentContext> HandleUnapprovedAsync(
+        AgentContext context,
+        AgentEffect effect,
+        ApprovalDecision approval)
+    {
+        if (approval is ApprovalDecision.Denied)
+        {
+            string denial = $"approval denied for '{effect.ToolName}'";
+
+            await this.loggingBroker.LogProcessAsync(
+                "Direction", $"Approval → DENIED '{effect.ToolName}'");
+
+            return Denied(context, denial);
+        }
+
+        // Pending. The act is held, not performed — waiting is not consent (SPEC.md §4.9).
+        await this.loggingBroker.LogProcessAsync(
+            "Direction",
+            $"Approval → PENDING '{effect.ToolName}'; the effect was not performed");
+
+        return context with
+        {
+            Result = $"'{effect.ToolName}' is waiting for approval before it can run.",
+            Status = AgentStatus.AwaitingApproval
+        };
+    }
+
+    private async ValueTask<string> RunToolAsync(AgentContext context)
+    {
+        bool isLocalTool = await this.internalToolService.HandlesAsync(context.DirectionType);
+
+        return isLocalTool
+            ? await this.internalToolService.RunAsync(context.DirectionType, context.Payload)
+            : await this.externalToolService.CallAsync(context.DirectionType, context.Payload);
+    }
+
+    // A denial is non-terminal: the agent is told and may choose a permitted path on the next
+    // turn, exactly as it recovers from a malformed call (SPEC.md §4.6, §4.9).
+    private static AgentContext Denied(AgentContext context, string reason) =>
+        context with
+        {
+            Result = reason,
+            Observations = [.. context.Observations, $"{context.DirectionType}: {reason}"],
+            Status = AgentStatus.Working
+        };
+
+    private static AgentContext Observed(AgentContext context, string output) =>
+        context with
+        {
+            Result = output,
+            Observations = [.. context.Observations, $"{context.DirectionType}: {output}"],
+            Status = AgentStatus.Working
+        };
+
+    private RiskLevel RiskLevelFor(string toolName) =>
+        this.irreversibleToolNames.Contains(toolName)
+            ? RiskLevel.Irreversible
+            : RiskLevel.Safe;
+
+    private bool RequiresApproval(string toolName) =>
+        this.irreversibleToolNames.Contains(toolName);
+}
