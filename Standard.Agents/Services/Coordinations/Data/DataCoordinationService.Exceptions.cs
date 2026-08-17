@@ -5,14 +5,15 @@
 
 using Standard.Agents.Models.Foundations.Knowledges.Exceptions;
 using Standard.Agents.Models.Foundations.Memorys.Exceptions;
+using Standard.Agents.Models.Foundations.Sessions.Exceptions;
 using Standard.Agents.Models.Foundations.Skills.Exceptions;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Models.Orchestrations.Agents.Exceptions;
 using Xeptions;
 
-namespace Standard.Agents.Services.Orchestrations.Data;
+namespace Standard.Agents.Services.Coordinations.Data;
 
-public partial class DataOrchestrationService
+public partial class DataCoordinationService
 {
     private delegate ValueTask<AgentContext> ReturningContextFunction();
 
@@ -26,6 +27,18 @@ ReturningContextFunction returningContextFunction)
         catch (NullAgentContextException nullAgentContextException)
         {
             throw await CreateAndLogValidationExceptionAsync(nullAgentContextException);
+        }
+
+        // The regions localize their own foundations' failures, so what arrives here is already
+        // in this family and already logged. Re-wrapping it would nest the same exception twice
+        // and log it twice, telling a reader the failure happened at two tiers when it happened
+        // at one.
+        catch (Exception alreadyLocalized) when (alreadyLocalized
+            is AgentOrchestrationDependencyValidationException
+            or AgentOrchestrationDependencyException
+            or AgentOrchestrationServiceException)
+        {
+            throw;
         }
         catch (MemoryValidationException memoryValidationException)
         {

@@ -8,7 +8,7 @@ using Moq;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Services.Coordinations;
-using Standard.Agents.Services.Orchestrations.Data;
+using Standard.Agents.Services.Coordinations.Data;
 using Standard.Agents.Services.Orchestrations.Decision;
 using Standard.Agents.Services.Orchestrations.Direction;
 using Tynamix.ObjectFiller;
@@ -19,7 +19,7 @@ namespace Standard.Agents.Tests.Unit.Services.Coordinations;
 
 public partial class AgentCoordinationServiceTests
 {
-    private readonly Mock<IDataOrchestrationService> dataOrchestrationServiceMock;
+    private readonly Mock<IDataCoordinationService> dataCoordinationServiceMock;
     private readonly Mock<IDecisionOrchestrationService> decisionOrchestrationServiceMock;
     private readonly Mock<IDirectionOrchestrationService> directionOrchestrationServiceMock;
     private readonly Mock<ILoggingBroker> loggingBrokerMock;
@@ -27,13 +27,13 @@ public partial class AgentCoordinationServiceTests
 
     public AgentCoordinationServiceTests()
     {
-        this.dataOrchestrationServiceMock = new Mock<IDataOrchestrationService>();
+        this.dataCoordinationServiceMock = new Mock<IDataCoordinationService>();
         this.decisionOrchestrationServiceMock = new Mock<IDecisionOrchestrationService>();
         this.directionOrchestrationServiceMock = new Mock<IDirectionOrchestrationService>();
         this.loggingBrokerMock = new Mock<ILoggingBroker>();
 
         this.agentCoordinationService = new AgentCoordinationService(
-            dataOrchestrationService: this.dataOrchestrationServiceMock.Object,
+            dataCoordinationService: this.dataCoordinationServiceMock.Object,
             decisionOrchestrationService: this.decisionOrchestrationServiceMock.Object,
             directionOrchestrationService: this.directionOrchestrationServiceMock.Object,
             loggingBroker: this.loggingBrokerMock.Object);
@@ -44,7 +44,7 @@ public partial class AgentCoordinationServiceTests
 
     private void SetupOrchestrationsPassThrough()
     {
-        this.dataOrchestrationServiceMock.Setup(service =>
+        this.dataCoordinationServiceMock.Setup(service =>
             service.RecallAsync(It.IsAny<AgentContext>()))
                 .ReturnsAsync((AgentContext context) => context);
 

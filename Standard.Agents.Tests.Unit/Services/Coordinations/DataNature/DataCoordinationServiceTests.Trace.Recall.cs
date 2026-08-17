@@ -7,33 +7,39 @@ using Moq;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Xunit;
 
-namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Data;
+namespace Standard.Agents.Tests.Unit.Services.Coordinations.DataNature;
 
-public partial class DataOrchestrationServiceTests
+public partial class DataCoordinationServiceTests
 {
     [Fact]
-    public async Task ShouldNarrateSystemPromptSentToDecisionOnRecallAsync()
+    public async Task ShouldNarrateProcessesToLoggingBrokerOnRecallAsync()
     {
         // given
         AgentContext inputContext = CreateRandomAgentContext();
 
         this.skillServiceMock.Setup(service =>
             service.RetrieveSkillsAsync())
-                .ReturnsAsync("SKILL-MARKER-XYZ");
+                .ReturnsAsync(CreateRandomString());
 
         this.memoryServiceMock.Setup(service =>
             service.RecallMemoriesAsync())
                 .ReturnsAsync([]);
 
         // when
-        await this.dataOrchestrationService.RecallAsync(inputContext);
+        await this.dataCoordinationService.RecallAsync(inputContext);
 
         // then
         this.loggingBrokerMock.Verify(broker =>
             broker.LogProcessAsync(
                 "Data",
-                It.Is<string>(message =>
-                    message.Contains("System prompt") && message.Contains("SKILL-MARKER-XYZ")),
+                It.Is<string>(message => message.Contains("memories")),
+                It.IsAny<bool>()),
+                    Times.Once);
+
+        this.loggingBrokerMock.Verify(broker =>
+            broker.LogProcessAsync(
+                "Data",
+                It.Is<string>(message => message.Contains("knowledge")),
                 It.IsAny<bool>()),
                     Times.Once);
     }

@@ -44,7 +44,7 @@ public partial class AgentCoordinationServiceTests
         await this.agentCoordinationService.ProcessPromptAsync(randomPrompt);
 
         // then
-        this.dataOrchestrationServiceMock.Verify(service =>
+        this.dataCoordinationServiceMock.Verify(service =>
             service.RecallAsync(It.Is<AgentContext>(context =>
                 context.Prompt == randomPrompt
                     && context.Status == AgentStatus.Working)),
@@ -58,7 +58,7 @@ public partial class AgentCoordinationServiceTests
         string randomPrompt = CreateRandomString();
         var sequence = new MockSequence();
 
-        this.dataOrchestrationServiceMock.InSequence(sequence)
+        this.dataCoordinationServiceMock.InSequence(sequence)
             .Setup(service => service.RecallAsync(It.IsAny<AgentContext>()))
             .ReturnsAsync((AgentContext context) => context);
 
@@ -103,7 +103,7 @@ AgentStatus terminalStatus)
         // then
         actualResult.Should().Be("stopped");
 
-        this.dataOrchestrationServiceMock.Verify(service =>
+        this.dataCoordinationServiceMock.Verify(service =>
             service.RecallAsync(It.IsAny<AgentContext>()),
                 Times.Once);
     }
@@ -123,7 +123,7 @@ AgentStatus terminalStatus)
         // then
         actualResult.Should().Be("again");
 
-        this.dataOrchestrationServiceMock.Verify(service =>
+        this.dataCoordinationServiceMock.Verify(service =>
 service.RecallAsync(It.IsAny<AgentContext>()),
 Times.Exactly(7));
 
@@ -140,7 +140,7 @@ Times.Exactly(7));
         int configuredMaxTurns = 3;
 
         var boundedCoordinationService = new AgentCoordinationService(
-            dataOrchestrationService: this.dataOrchestrationServiceMock.Object,
+            dataCoordinationService: this.dataCoordinationServiceMock.Object,
             decisionOrchestrationService: this.decisionOrchestrationServiceMock.Object,
             directionOrchestrationService: this.directionOrchestrationServiceMock.Object,
             loggingBroker: this.loggingBrokerMock.Object,
@@ -156,7 +156,7 @@ Times.Exactly(7));
         // then
         actualResult.Should().Be("again");
 
-        this.dataOrchestrationServiceMock.Verify(service =>
+        this.dataCoordinationServiceMock.Verify(service =>
             service.RecallAsync(It.IsAny<AgentContext>()),
                 Times.Exactly(configuredMaxTurns));
     }
@@ -168,7 +168,7 @@ Times.Exactly(7));
         string randomPrompt = CreateRandomString();
         string expectedResult = "I can't help with that at the moment.";
 
-        this.dataOrchestrationServiceMock.Setup(service =>
+        this.dataCoordinationServiceMock.Setup(service =>
             service.RecallAsync(It.IsAny<AgentContext>()))
                 .ReturnsAsync((AgentContext context) => context);
 
@@ -200,7 +200,7 @@ Times.Exactly(7));
         string randomPrompt = CreateRandomString();
         string preference = CreateRandomString();
 
-        this.dataOrchestrationServiceMock.Setup(service =>
+        this.dataCoordinationServiceMock.Setup(service =>
             service.RecallAsync(It.IsAny<AgentContext>()))
                 .ReturnsAsync((AgentContext context) => context);
 
@@ -217,7 +217,7 @@ Times.Exactly(7));
         await this.agentCoordinationService.ProcessPromptAsync(randomPrompt);
 
         // then
-        this.dataOrchestrationServiceMock.Verify(service =>
+        this.dataCoordinationServiceMock.Verify(service =>
             service.RememberAsync(preference),
                 Times.Once);
     }
@@ -229,7 +229,7 @@ Times.Exactly(7));
         string randomPrompt = CreateRandomString();
         int turn = 0;
 
-        this.dataOrchestrationServiceMock.Setup(service =>
+        this.dataCoordinationServiceMock.Setup(service =>
             service.RecallAsync(It.IsAny<AgentContext>()))
                 .ReturnsAsync((AgentContext context) => context);
 
@@ -255,7 +255,7 @@ Times.Exactly(7));
         // then
         actualResult.Should().Be("done");
 
-        this.dataOrchestrationServiceMock.Verify(service =>
+        this.dataCoordinationServiceMock.Verify(service =>
             service.RecallAsync(It.IsAny<AgentContext>()),
                 Times.Exactly(3));
     }
@@ -302,7 +302,7 @@ Times.Exactly(7));
         string secondPrompt = CreateRandomString();
         List<AgentContext> recalledContexts = [];
 
-        this.dataOrchestrationServiceMock.Setup(service =>
+        this.dataCoordinationServiceMock.Setup(service =>
             service.RecallAsync(It.IsAny<AgentContext>()))
                 .ReturnsAsync((AgentContext context) =>
                 {

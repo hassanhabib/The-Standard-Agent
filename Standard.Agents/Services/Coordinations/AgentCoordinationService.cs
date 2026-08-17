@@ -5,14 +5,14 @@
 
 using System.Runtime.CompilerServices;
 using Standard.Agents.Brokers.Loggings;
-using Standard.Agents.Services.Foundations.Sessions;
+
 using Standard.Agents.Brokers.Times;
 using Standard.Agents.Models.Brokers.Sessions;
 using Standard.Agents.Models.Coordinations.Agents;
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Loggings;
 using Standard.Agents.Models.Orchestrations.Agents;
-using Standard.Agents.Services.Orchestrations.Data;
+using Standard.Agents.Services.Coordinations.Data;
 using Standard.Agents.Services.Orchestrations.Decision;
 using Standard.Agents.Services.Orchestrations.Direction;
 
@@ -25,38 +25,35 @@ public partial class AgentCoordinationService : IAgentCoordinationService
     private const string RetriesExhaustedMessage =
         "I can't help with that at the moment.";
 
-    private readonly IDataOrchestrationService dataOrchestrationService;
+    private readonly IDataCoordinationService dataCoordinationService;
     private readonly IDecisionOrchestrationService decisionOrchestrationService;
     private readonly IDirectionOrchestrationService directionOrchestrationService;
     private readonly ILoggingBroker loggingBroker;
     private readonly ITimeBroker timeBroker;
     private readonly AgentBudget? budget;
-    private readonly ISessionService? sessionService;
     private readonly int maxHistoryTurns;
     private readonly int maxTurns;
     private readonly bool compensateOnFailure;
 
     public AgentCoordinationService(
-        IDataOrchestrationService dataOrchestrationService,
+        IDataCoordinationService dataCoordinationService,
         IDecisionOrchestrationService decisionOrchestrationService,
         IDirectionOrchestrationService directionOrchestrationService,
         ILoggingBroker loggingBroker,
         int maxTurns = DefaultMaxTurns,
         ITimeBroker? timeBroker = null,
         AgentBudget? budget = null,
-        ISessionService? sessionService = null,
         int maxHistoryTurns = 20,
         bool compensateOnFailure = false)
     {
         this.compensateOnFailure = compensateOnFailure;
-        this.dataOrchestrationService = dataOrchestrationService;
+        this.dataCoordinationService = dataCoordinationService;
         this.decisionOrchestrationService = decisionOrchestrationService;
         this.directionOrchestrationService = directionOrchestrationService;
         this.loggingBroker = loggingBroker;
         this.maxTurns = maxTurns;
         this.timeBroker = timeBroker ?? new TimeBroker();
         this.budget = budget;
-        this.sessionService = sessionService;
         this.maxHistoryTurns = maxHistoryTurns;
     }
 
@@ -118,7 +115,7 @@ public partial class AgentCoordinationService : IAgentCoordinationService
                 await this.loggingBroker.LogTurnAsync(turn);
 
                 await this.loggingBroker.LogStepAsync(AgentStep.Data);
-                context = await this.dataOrchestrationService.RecallAsync(context);
+                context = await this.dataCoordinationService.RecallAsync(context);
 
                 await this.loggingBroker.LogStepAsync(AgentStep.Decision);
                 context = await this.decisionOrchestrationService.ThinkAsync(context);
@@ -179,7 +176,7 @@ public partial class AgentCoordinationService : IAgentCoordinationService
 
         if (string.IsNullOrEmpty(context.Remember) is false)
         {
-            await this.dataOrchestrationService.RememberAsync(context.Remember);
+            await this.dataCoordinationService.RememberAsync(context.Remember);
         }
 
         // Appended before the call returns, so the next prompt sees it (SPEC.md §4.11).
@@ -334,7 +331,7 @@ public partial class AgentCoordinationService : IAgentCoordinationService
 
         if (string.IsNullOrEmpty(context.Remember) is false)
         {
-            await this.dataOrchestrationService.RememberAsync(context.Remember);
+            await this.dataCoordinationService.RememberAsync(context.Remember);
         }
 
         // Recorded on the same terms as the batched path: only a run that delivered an answer.

@@ -47,7 +47,7 @@ public partial class AgentCoordinationServiceTests
                 Times.Once);
 
         this.loggingBrokerMock.VerifyNoOtherCalls();
-        this.dataOrchestrationServiceMock.VerifyNoOtherCalls();
+        this.dataCoordinationServiceMock.VerifyNoOtherCalls();
     }
 
     [Theory]
@@ -63,7 +63,7 @@ Xeption orchestrationException)
                 message: "Agent coordination dependency error occurred, contact support.",
                 innerException: orchestrationException.InnerException as Xeption);
 
-        this.dataOrchestrationServiceMock.Setup(service =>
+        this.dataCoordinationServiceMock.Setup(service =>
             service.RecallAsync(It.IsAny<AgentContext>()))
                 .ThrowsAsync(orchestrationException);
 
@@ -100,7 +100,7 @@ Xeption orchestrationException)
                 message: "Agent coordination service error occurred, contact support.",
                 innerException: failedAgentCoordinationServiceException);
 
-        this.dataOrchestrationServiceMock.Setup(service =>
+        this.dataCoordinationServiceMock.Setup(service =>
             service.RecallAsync(It.IsAny<AgentContext>()))
                 .ThrowsAsync(serviceException);
 

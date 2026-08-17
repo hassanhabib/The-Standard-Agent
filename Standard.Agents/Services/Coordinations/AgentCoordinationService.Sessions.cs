@@ -21,7 +21,7 @@ public partial class AgentCoordinationService
     private async ValueTask<AgentSession?> PeekSessionAsync(string sessionId) =>
         string.IsNullOrEmpty(sessionId)
             ? null
-            : await this.sessionService!.RetrieveSessionAsync(sessionId);
+            : await this.dataCoordinationService.RecallSessionAsync(sessionId);
 
     // A session that never delivered an answer was interrupted — killed, cancelled, out of turns,
     // or waiting on an authority. The next prompt in that session continues that run rather than
@@ -52,7 +52,7 @@ public partial class AgentCoordinationService
         // History is carried through untouched. The checkpoint records who is working the
         // session, not what was said — this prompt has no answer yet, and writing one here
         // would tell the next prompt the agent said something it never said.
-        await this.sessionService!.RecordSessionAsync(
+        await this.dataCoordinationService.RecordSessionAsync(
             new AgentSession
             {
                 Id = context.SessionId,
@@ -95,7 +95,7 @@ public partial class AgentCoordinationService
         }
 
         AgentSession? existing =
-            await this.sessionService!.RetrieveSessionAsync(context.SessionId);
+            await this.dataCoordinationService.RecallSessionAsync(context.SessionId);
 
         IReadOnlyList<AgentTurn> history = existing?.History ?? [];
 
@@ -119,6 +119,6 @@ public partial class AgentCoordinationService
             PendingEffect = context.PendingEffect
         };
 
-        await this.sessionService!.RecordSessionAsync(session);
+        await this.dataCoordinationService.RecordSessionAsync(session);
     }
 }
