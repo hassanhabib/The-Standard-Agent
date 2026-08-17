@@ -1,0 +1,13 @@
+{
+  "name": "conversation-carries-history",
+  "description": "SPEC.md 4.11: Invariant 4 says the agent instance is stateless across prompts; it does not say the conversation is. When a session is supplied, what was said before is loaded before Decision runs, so a follow-up resolves against it rather than starting from nothing. Two prompts share a session; the second must reach the Brain carrying the first exchange.",
+  "generatorReplies": ["FINAL: Paris", "FINAL: about 2.1 million"],
+  "tools": {},
+  "prompt": "what is the capital of France",
+  "prompts": ["what is the capital of France", "and its population"],
+  "sessionId": "conformance-session",
+  "expect": {
+    "result": "about 2.1 million",
+    "brainSees": "Paris"
+  }
+}

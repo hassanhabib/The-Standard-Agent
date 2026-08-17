@@ -56,4 +56,7 @@ public sealed record Vector(
     Dictionary<string, string>? Knowledge = null,
     string? FallbackReply = null,
     int FailuresBeforeOpen = 3,
-    int KnowledgeMaxResults = 3);
+    int KnowledgeMaxResults = 3,
+
+    // Sessions (SPEC.md 4.11). When set, every prompt in the vector runs in this conversation.
+    string? SessionId = null);

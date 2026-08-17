@@ -5,6 +5,7 @@
 
 using System.Runtime.CompilerServices;
 using Standard.Agents.Brokers.Loggings;
+using Standard.Agents.Brokers.Sessions;
 using Standard.Agents.Brokers.Times;
 using Standard.Agents.Models.Coordinations.Agents;
 using Standard.Agents.Models.Clients.Agents;
@@ -29,6 +30,8 @@ public partial class AgentCoordinationService : IAgentCoordinationService
     private readonly ILoggingBroker loggingBroker;
     private readonly ITimeBroker timeBroker;
     private readonly AgentBudget? budget;
+    private readonly ISessionBroker sessionBroker;
+    private readonly int maxHistoryTurns;
     private readonly int maxTurns;
 
     public AgentCoordinationService(
@@ -38,7 +41,9 @@ public partial class AgentCoordinationService : IAgentCoordinationService
         ILoggingBroker loggingBroker,
         int maxTurns = DefaultMaxTurns,
         ITimeBroker? timeBroker = null,
-        AgentBudget? budget = null)
+        AgentBudget? budget = null,
+        ISessionBroker? sessionBroker = null,
+        int maxHistoryTurns = 20)
     {
         this.dataOrchestrationService = dataOrchestrationService;
         this.decisionOrchestrationService = decisionOrchestrationService;
@@ -47,13 +52,21 @@ public partial class AgentCoordinationService : IAgentCoordinationService
         this.maxTurns = maxTurns;
         this.timeBroker = timeBroker ?? new TimeBroker();
         this.budget = budget;
+        this.sessionBroker = sessionBroker ?? new NotConfiguredSessionBroker();
+        this.maxHistoryTurns = maxHistoryTurns;
     }
 
     public ValueTask<string> ProcessPromptAsync(string prompt) =>
-        ProcessPromptAsync(prompt, CancellationToken.None);
+        ProcessPromptAsync(prompt, string.Empty, CancellationToken.None);
 
     public ValueTask<string> ProcessPromptAsync(
         string prompt,
+        CancellationToken cancellationToken) =>
+        ProcessPromptAsync(prompt, string.Empty, cancellationToken);
+
+    public ValueTask<string> ProcessPromptAsync(
+        string prompt,
+        string sessionId,
         CancellationToken cancellationToken) =>
     TryCatch(async () =>
     {
@@ -66,7 +79,10 @@ public partial class AgentCoordinationService : IAgentCoordinationService
 
         await this.loggingBroker.LogResetAsync();
 
-        AgentContext context = new() { Prompt = prompt };
+        AgentContext context = new() { Prompt = prompt, SessionId = sessionId };
+
+        // What was said before, loaded before Decision runs so the Brain sees it (SPEC.md §4.11).
+        context = await LoadSessionAsync(context);
 
         // Budgets and cancellation are both checked at the turn boundary (SPEC.md §4.10): a turn
         // is the smallest unit the loop can stop between without abandoning work mid-flight —
@@ -129,6 +145,9 @@ public partial class AgentCoordinationService : IAgentCoordinationService
         {
             await this.dataOrchestrationService.RememberAsync(context.Remember);
         }
+
+        // Appended before the call returns, so the next prompt sees it (SPEC.md §4.11).
+        await SaveSessionAsync(context, completed: true);
 
         return context.Result;
     });
