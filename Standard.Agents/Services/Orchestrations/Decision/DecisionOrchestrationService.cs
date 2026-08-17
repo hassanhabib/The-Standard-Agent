@@ -72,6 +72,16 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
             };
         }
 
+        // Invariant 6 holds structurally on both paths — a verdict is only ever read as a
+        // classification, so a Gate that emits FINAL: or ACTION: falls through to the Brain and
+        // its text never becomes the answer. What the batch path was missing is the record:
+        // §7.6 says overreach SHOULD be recorded, and a guardian trying to answer is exactly
+        // the event a security review needs to see. Streaming already logged it; now both do.
+        if (IsGuardianOverreach(verdict))
+        {
+            await LogGuardianOverreachAsync();
+        }
+
         (AgentContext resolvedContext, bool isTerminal) =
             await ResolveSkillConflictAsync(context);
 
@@ -166,11 +176,7 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
 
         if (IsGuardianOverreach(verdict))
         {
-            await this.loggingBroker.LogProcessAsync(
-                "Decision",
-                "Gate overreach — a guardian tried to answer or act instead of classifying; "
-                    + "neutralized and passed to the Brain "
-                    + "(Invariant 6: a guardian is never the Brain)");
+            await LogGuardianOverreachAsync();
         }
 
         await this.loggingBroker.LogProcessAsync(
@@ -421,6 +427,13 @@ verdict.TrimStart().StartsWith(RefuseVerdict, StringComparison.OrdinalIgnoreCase
 
     private static bool IsRoute(string verdict) =>
         verdict.TrimStart().StartsWith(RouteVerdict, StringComparison.OrdinalIgnoreCase);
+
+    private ValueTask LogGuardianOverreachAsync() =>
+        this.loggingBroker.LogProcessAsync(
+            "Decision",
+            "Gate overreach — a guardian tried to answer or act instead of classifying; "
+                + "neutralized and passed to the Brain "
+                + "(Invariant 6: a guardian is never the Brain)");
 
     private static bool IsGuardianOverreach(string verdict) =>
         verdict.Contains(FinalPrefix, StringComparison.OrdinalIgnoreCase)
