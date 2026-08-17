@@ -16,6 +16,7 @@ public partial class KnowledgeService : IKnowledgeService
     private readonly string knowledgePath;
     private readonly string searchPattern;
     private readonly int maxResults;
+    private readonly double minimumScore;
     private readonly ILoggingBroker loggingBroker;
 
     public KnowledgeService(
@@ -33,13 +34,15 @@ public partial class KnowledgeService : IKnowledgeService
         string knowledgePath,
         string searchPattern,
         int maxResults,
-        ILoggingBroker loggingBroker)
+        ILoggingBroker loggingBroker,
+        double minimumScore = 0.0)
     {
         this.fileBroker = fileBroker;
         this.knowledgePath = knowledgePath;
         this.searchPattern = searchPattern;
         this.maxResults = maxResults;
         this.loggingBroker = loggingBroker;
+        this.minimumScore = minimumScore;
     }
 
     public ValueTask<IReadOnlyList<string>> RetrieveKnowledgeAsync(string query) =>
@@ -52,9 +55,18 @@ public partial class KnowledgeService : IKnowledgeService
             : await this.knowledgeBroker!.SelectKnowledgeAsync(query);
     });
 
-    private async ValueTask<IReadOnlyList<string>> SelectKnowledgeFromFilesAsync(IFileBroker fileBroker, string query)
+    private async ValueTask<IReadOnlyList<string>> SelectKnowledgeFromFilesAsync(
+        IFileBroker fileBroker,
+        string query)
     {
         if (fileBroker.DirectoryExists(this.knowledgePath) is false)
+        {
+            return [];
+        }
+
+        string[] queryTerms = Terms(query);
+
+        if (queryTerms.Length == 0)
         {
             return [];
         }
@@ -63,23 +75,42 @@ public partial class KnowledgeService : IKnowledgeService
             fileBroker.SelectFiles(this.knowledgePath, this.searchPattern, SearchOption.AllDirectories)
                 .OrderBy(documentPath => documentPath, StringComparer.Ordinal);
 
-        List<string> matches = [];
+        List<string> documents = [];
 
         foreach (string documentPath in documentPaths)
         {
-            string document = await fileBroker.ReadFileAsync(documentPath);
+            documents.Add(await fileBroker.ReadFileAsync(documentPath));
+        }
 
-            if (document.Contains(query, StringComparison.OrdinalIgnoreCase))
-            {
-                matches.Add(document);
-            }
+        // How many documents each term appears in, so a term common to the whole corpus counts
+        // for less than one that singles a document out.
+        Dictionary<string, int> documentFrequency = new(StringComparer.OrdinalIgnoreCase);
 
-            if (matches.Count == this.maxResults)
+        foreach (string document in documents)
+        {
+            foreach (string term in Terms(document).Distinct(StringComparer.OrdinalIgnoreCase))
             {
-                break;
+                documentFrequency[term] =
+                    documentFrequency.TryGetValue(term, out int count) ? count + 1 : 1;
             }
         }
 
-        return matches;
+        return
+        [
+            .. documents
+                .SelectMany(Passages)
+                .Select(passage => new
+                {
+                    Passage = passage,
+                    Score = Score(queryTerms, passage, documentFrequency, documents.Count)
+                })
+                // A zero score means the passage carries no query term at all, so it is never a
+                // match however low the floor is set. Silence is the right answer when nothing
+                // is relevant — returning the corpus instead is how a retriever becomes noise.
+                .Where(scored => scored.Score > 0 && scored.Score >= this.minimumScore)
+                .OrderByDescending(scored => scored.Score)
+                .Take(this.maxResults)
+                .Select(scored => scored.Passage)
+        ];
     }
 }

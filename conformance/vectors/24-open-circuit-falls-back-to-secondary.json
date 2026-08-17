@@ -1,0 +1,13 @@
+{
+  "name": "open-circuit-falls-back-to-secondary",
+  "description": "SPEC.md 4.10: an unhealthy provider degrades to a configured alternative rather than failing outright, because a degraded answer is worth more than no answer. The Brain fails repeatedly; once the circuit opens the agent answers from the fallback instead of throwing. An implementation with no alternative configured must fail rather than fabricate, which is why the fallback here is explicit.",
+  "generatorReplies": ["FINAL: never reached"],
+  "tools": {},
+  "prompt": "what is the answer",
+  "transientFailures": 99,
+  "fallbackReply": "FINAL: answering from the standby model",
+  "failuresBeforeOpen": 1,
+  "expect": {
+    "resultContains": "standby model"
+  }
+}

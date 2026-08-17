@@ -58,8 +58,7 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
     {
         ValidateContext(context);
 
-        string verdict =
-            await this.gateService.ScreenAsync(context.Prompt);
+        string verdict = await ScreenOncePerPromptAsync(context.Prompt);
 
         if (IsRefusal(verdict))
         {
@@ -153,7 +152,7 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
         Action<AgentContext> setResult,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        string verdict = await this.gateService.ScreenAsync(context.Prompt);
+        string verdict = await ScreenOncePerPromptAsync(context.Prompt);
 
         if (IsRefusal(verdict))
         {

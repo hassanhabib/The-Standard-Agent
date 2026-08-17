@@ -50,4 +50,10 @@ public sealed record Expectation(
     //   BrainNeverSees  — this text must never reach the Brain, however it entered as Data.
     List<string>? ToolNeverRan = null,
     Dictionary<string, int>? ToolRunCount = null,
-    string? BrainNeverSees = null);
+    string? BrainNeverSees = null,
+
+    //   BrainSees                — this text must have reached the Brain, which is how retrieval
+    //                              is certified: the passage that answers the question got there.
+    //   GateScreenedPromptTimes  — exactly how many times the Gate was asked about the prompt.
+    string? BrainSees = null,
+    int? GateScreenedPromptTimes = null);

@@ -1,0 +1,18 @@
+{
+  "name": "knowledge-retrieves-by-relevance",
+  "description": "SPEC.md 4.2: retrieval answers what is relevant to this task, not what exists. A natural question does not appear verbatim inside its own answer, so an implementation matching the whole query literally against whole documents retrieves nothing for exactly the queries a user asks. The knowledge base holds three policies; the question asks about one, and the passage that answers it must reach the Brain.",
+  "generatorReplies": ["FINAL: enterprise customers have 90 days"],
+  "tools": {},
+  "prompt": "what is our refund policy for enterprise customers",
+  "knowledge": {
+    "refunds.md": "Refund policy. Enterprise customers may request a refund within 90 days of purchase.",
+    "shipping.md": "Shipping policy. Orders ship within two business days.",
+    "holidays.md": "The office is closed on public holidays."
+  },
+  "knowledgeMaxResults": 1,
+  "expect": {
+    "resultContains": "90 days",
+    "brainSees": "90 days",
+    "brainNeverSees": "public holidays"
+  }
+}
