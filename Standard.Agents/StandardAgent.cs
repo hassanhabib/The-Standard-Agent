@@ -969,6 +969,33 @@ public sealed partial class StandardAgent : IAgent
         }
     }
 
+    /// <summary>
+    /// Streams the agent's work as part of a <b>conversation</b> — the streamed equivalent of
+    /// <see cref="ProcessPromptAsync(string, string, CancellationToken)"/>.
+    /// </summary>
+    /// <remarks>
+    /// Every control the batched call enforces holds here too: budgets, cancellation, session
+    /// loading and the record of the exchange. A control a caller can step around by changing
+    /// method is not a control (SPEC.md §7.6).
+    /// </remarks>
+    /// <param name="prompt">The user's prompt.</param>
+    /// <param name="sessionId">Which conversation this belongs to.</param>
+    /// <param name="cancellationToken">Token to stop streaming early.</param>
+    /// <returns>An async stream of events describing the agent's run.</returns>
+    public async IAsyncEnumerable<AgentStreamEvent> StreamPromptAsync(
+        string prompt,
+        string sessionId,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        IAsyncEnumerable<AgentStreamEvent> events =
+            ResolveAgent().ProcessPromptStreamAsync(prompt, sessionId, cancellationToken);
+
+        await foreach (AgentStreamEvent streamEvent in events.WithCancellation(cancellationToken))
+        {
+            yield return streamEvent;
+        }
+    }
+
     // Composes once and reuses. Guarded because one agent serves prompts concurrently
     // (SPEC.md §4.4) and an unguarded `??=` lets two arriving prompts each build a graph —
     // two brokers over one audit sink, two of everything, one silently discarded.

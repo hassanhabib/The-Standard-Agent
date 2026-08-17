@@ -188,13 +188,20 @@ public partial class AgentCoordinationService : IAgentCoordinationService
         return context.Result;
     });
 
+    public IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
+        string prompt,
+        CancellationToken cancellationToken = default) =>
+        ProcessPromptStreamAsync(prompt, string.Empty, cancellationToken);
+
     public async IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
         string prompt,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        string sessionId,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         ValidatePrompt(prompt);
 
-        // This prompt's run — see ProcessPromptAsync. A streamed prompt is a run like any other.
+        // This prompt's run — see ProcessPromptAsync. A streamed prompt is a run like any other,
+        // which is the whole point: every control below is the one the batched loop enforces.
         using IDisposable run = AgentRun.Begin();
 
         await this.loggingBroker.LogResetAsync();

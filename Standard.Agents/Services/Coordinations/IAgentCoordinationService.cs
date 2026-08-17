@@ -21,4 +21,14 @@ public interface IAgentCoordinationService
     IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
         string prompt,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The streamed loop, in a conversation. Every control the batched loop enforces — budgets,
+    /// cancellation, sessions — holds here too: a control a caller can step around by changing
+    /// method is not a control (SPEC.md §7.6, §4.10, §4.11).
+    /// </summary>
+    IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
+        string prompt,
+        string sessionId,
+        CancellationToken cancellationToken);
 }
