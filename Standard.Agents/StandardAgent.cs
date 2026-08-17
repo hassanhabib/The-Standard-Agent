@@ -816,6 +816,39 @@ public sealed partial class StandardAgent : IAgent
     }
 
     /// <summary>
+    /// Continues a session that stopped in the middle of something — waiting on a person, waiting
+    /// on an authority, or killed outright (SPEC.md §4.9, §4.11).
+    /// </summary>
+    /// <remarks>
+    /// This is the same call as <see cref="ProcessPromptAsync(string, string, CancellationToken)"/>
+    /// and reads the answer the same way; it exists because <i>resuming</i> is what the caller is
+    /// doing, and a verb that says so is worth more than one saved line of documentation.
+    /// <para>A session that never delivered an answer keeps the interrupted run's identity, so an
+    /// act it already performed is recognised as its own and replayed rather than performed twice.
+    /// That only holds across processes if the ledger is durable — see
+    /// <see cref="EffectLedger(string)"/>; the built-in one lives in memory and dies with the
+    /// instance.</para>
+    /// <para>Nothing is required of the caller beyond the answer. There is no separate resume
+    /// mode and no state to hand back: the session already holds everything, which is what makes
+    /// a different process able to pick it up.</para>
+    /// </remarks>
+    /// <param name="sessionId">The conversation to continue.</param>
+    /// <param name="answer">
+    /// What the agent was waiting for — a reply to its question, or an authority's decision.
+    /// </param>
+    /// <param name="cancellationToken">Token to stop the run.</param>
+    /// <returns>The agent's answer, now that it can finish.</returns>
+    public async ValueTask<string> ResumeAsync(
+        string sessionId,
+        string answer,
+        CancellationToken cancellationToken = default)
+    {
+        await ValueTask.CompletedTask;
+
+        return string.Empty;
+    }
+
+    /// <summary>
     /// Keeps conversations in a folder, one file per session — the <b>Local</b> mode of sessions.
     /// </summary>
     /// <param name="path">Folder to keep sessions in.</param>

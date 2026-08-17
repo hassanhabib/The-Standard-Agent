@@ -163,6 +163,33 @@ public class ResumptionTests : IDisposable
     }
 
     [Fact]
+    public async Task ShouldFinishAHeldRunThroughResumeAsync()
+    {
+        // given — the authority has not answered, so the act is held
+        var tool = new CountingTool();
+
+        await NewProcess(tool, "ACTION: wire_transfer: 10000")
+            .RequireApproval("wire_transfer")
+            .OnApproval(effect => ValueTask.FromResult(ApprovalDecision.Pending))
+            .ProcessPromptAsync(prompt: "pay the invoice", "invoice-97", CancellationToken.None);
+
+        // when — a different process resumes the conversation with the authority's yes
+        var resumedTool = new CountingTool();
+
+        string actualResult = await NewProcess(
+            resumedTool,
+            "ACTION: wire_transfer: 10000",
+            "FINAL: paid")
+                .RequireApproval("wire_transfer")
+                .OnApproval(effect => ValueTask.FromResult(ApprovalDecision.Approved))
+                .ResumeAsync(sessionId: "invoice-97", answer: "yes, approve it");
+
+        // then — resuming asks nothing of the caller but the answer; the session holds the rest
+        resumedTool.ExecutionCount.Should().Be(1);
+        actualResult.Should().Be("paid");
+    }
+
+    [Fact]
     public async Task ShouldStartAFreshRunAfterTheSessionDeliveredAnAnswerAsync()
     {
         // given — the first prompt answers, which completes the run
