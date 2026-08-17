@@ -65,7 +65,7 @@ public sealed record AgentEffect
             // Both views of one identity, kept in step here so they cannot disagree. The
             // identifier stays for the callers that only ever needed "who".
             Principal = principal?.Id,
-            Identity = null,
+            Identity = principal,
             ToolName = toolName,
             Arguments = arguments,
             RiskLevel = riskLevel,
