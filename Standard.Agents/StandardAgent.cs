@@ -47,7 +47,9 @@ using Standard.Agents.Services.Foundations.EffectLedgers;
 using Standard.Agents.Services.Foundations.Policys;
 using Standard.Agents.Services.Foundations.Sessions;
 using Standard.Agents.Services.Foundations.Skills;
-using Standard.Agents.Services.Orchestrations.Data;
+using Standard.Agents.Services.Coordinations.Data;
+using Standard.Agents.Services.Orchestrations.Data.Recollections;
+using Standard.Agents.Services.Orchestrations.Data.Retrievals;
 using Standard.Agents.Services.Orchestrations.Decision;
 using Standard.Agents.Services.Orchestrations.Direction;
 using Standard.Agents.Tools;
@@ -1170,11 +1172,16 @@ public sealed partial class StandardAgent : IAgent
                 logging)
             : new KnowledgeService(this.knowledgeBroker, logging);
 
-        DataOrchestrationService data = new(
-            skillService,
-            memoryService,
-            knowledgeService,
-            RenderToolCatalog(allTools),
+        // The Data nature, as two regions and the coordination that composes them. Retrieval is
+        // authored material selected by relevance; Recollection is what the agent accumulated.
+        DataCoordinationService data = new(
+            new RetrievalOrchestrationService(
+                skillService, knowledgeService, RenderToolCatalog(allTools), logging),
+            new RecollectionOrchestrationService(
+                memoryService,
+                new SessionService(
+                    this.sessionBroker ?? new NotConfiguredSessionBroker(), logging),
+                logging),
             logging);
 
         // One redaction broker across every model the agent drives. SPEC.md §4.6: the Gate
@@ -1238,13 +1245,9 @@ public sealed partial class StandardAgent : IAgent
             this.screenToolOutput ? gate : null,
             this.identityResolver);
 
-        var sessions = new SessionService(
-            this.sessionBroker ?? new NotConfiguredSessionBroker(),
-            logging);
-
         return new AgentCoordinationService(
             data, decision, direction, logging, this.maxTurns, new TimeBroker(), this.budget,
-            sessions, this.maxHistoryTurns, this.compensateOnFailure);
+            this.maxHistoryTurns, this.compensateOnFailure);
     }
 
     // The catalog a "{{tools}}" marker in the agent's Data expands into. Only tools that

@@ -7,9 +7,9 @@ using Moq;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Xunit;
 
-namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Data;
+namespace Standard.Agents.Tests.Unit.Services.Coordinations.DataNature;
 
-public partial class DataOrchestrationServiceTests
+public partial class DataCoordinationServiceTests
 {
     [Fact]
     public async Task ShouldFanInRoutedSkillsUsingContextRouteOnRecallAsync()
@@ -27,7 +27,7 @@ public partial class DataOrchestrationServiceTests
                 .ReturnsAsync([]);
 
         // when
-        await this.dataOrchestrationService.RecallAsync(inputContext);
+        await this.dataCoordinationService.RecallAsync(inputContext);
 
         // then — Data fans skills in on the Gate's route label (carried by the loop)
         this.skillServiceMock.Verify(service =>

@@ -10,9 +10,9 @@ using Standard.Agents.Models.Orchestrations.Agents.Exceptions;
 using Xeptions;
 using Xunit;
 
-namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Data;
+namespace Standard.Agents.Tests.Unit.Services.Coordinations.DataNature;
 
-public partial class DataOrchestrationServiceTests
+public partial class DataCoordinationServiceTests
 {
     [Fact]
     public async Task ShouldThrowValidationExceptionOnRecallIfContextIsNullAndLogItAsync()
@@ -31,7 +31,7 @@ public partial class DataOrchestrationServiceTests
 
         // when
         ValueTask<AgentContext> recallTask =
-            this.dataOrchestrationService.RecallAsync(nullContext!);
+            this.dataCoordinationService.RecallAsync(nullContext!);
 
         AgentOrchestrationValidationException actualException =
             await Assert.ThrowsAsync<AgentOrchestrationValidationException>(
@@ -75,7 +75,7 @@ Xeption foundationException)
 
         // when
         ValueTask<AgentContext> recallTask =
-            this.dataOrchestrationService.RecallAsync(inputContext);
+            this.dataCoordinationService.RecallAsync(inputContext);
 
         AgentOrchestrationDependencyValidationException actualException =
             await Assert.ThrowsAsync<AgentOrchestrationDependencyValidationException>(
@@ -87,6 +87,13 @@ Xeption foundationException)
         this.loggingBrokerMock.Verify(broker =>
             broker.LogErrorAsync(It.Is(SameExceptionAs(expectedException))),
                 Times.Once);
+
+        // The prompt is announced before anything is fetched, so a failure still says which
+        // prompt Data was working on.
+        this.loggingBrokerMock.Verify(broker =>
+            broker.LogProcessAsync(
+                "Data", $"Received prompt: \"{inputContext.Prompt}\"", false),
+                    Times.Once);
 
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
@@ -110,7 +117,7 @@ Xeption foundationException)
 
         // when
         ValueTask<AgentContext> recallTask =
-            this.dataOrchestrationService.RecallAsync(inputContext);
+            this.dataCoordinationService.RecallAsync(inputContext);
 
         AgentOrchestrationDependencyException actualException =
             await Assert.ThrowsAsync<AgentOrchestrationDependencyException>(
@@ -122,6 +129,13 @@ Xeption foundationException)
         this.loggingBrokerMock.Verify(broker =>
             broker.LogErrorAsync(It.Is(SameExceptionAs(expectedException))),
                 Times.Once);
+
+        // The prompt is announced before anything is fetched, so a failure still says which
+        // prompt Data was working on.
+        this.loggingBrokerMock.Verify(broker =>
+            broker.LogProcessAsync(
+                "Data", $"Received prompt: \"{inputContext.Prompt}\"", false),
+                    Times.Once);
 
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
@@ -149,7 +163,7 @@ Xeption foundationException)
 
         // when
         ValueTask<AgentContext> recallTask =
-            this.dataOrchestrationService.RecallAsync(inputContext);
+            this.dataCoordinationService.RecallAsync(inputContext);
 
         AgentOrchestrationServiceException actualException =
             await Assert.ThrowsAsync<AgentOrchestrationServiceException>(
@@ -161,6 +175,13 @@ Xeption foundationException)
         this.loggingBrokerMock.Verify(broker =>
             broker.LogErrorAsync(It.Is(SameExceptionAs(expectedException))),
                 Times.Once);
+
+        // The prompt is announced before anything is fetched, so a failure still says which
+        // prompt Data was working on.
+        this.loggingBrokerMock.Verify(broker =>
+            broker.LogProcessAsync(
+                "Data", $"Received prompt: \"{inputContext.Prompt}\"", false),
+                    Times.Once);
 
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }

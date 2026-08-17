@@ -8,9 +8,9 @@ using Moq;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Xunit;
 
-namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Data;
+namespace Standard.Agents.Tests.Unit.Services.Coordinations.DataNature;
 
-public partial class DataOrchestrationServiceTests
+public partial class DataCoordinationServiceTests
 {
     [Fact]
     public async Task ShouldSetSystemPromptFromSkillServiceOnRecallAsync()
@@ -30,7 +30,7 @@ public partial class DataOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.dataOrchestrationService.RecallAsync(inputContext);
+            await this.dataCoordinationService.RecallAsync(inputContext);
 
         // then
         actualContext.SystemPrompt.Should().BeEquivalentTo(expectedSystemPrompt);
@@ -58,7 +58,7 @@ public partial class DataOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.dataOrchestrationService.RecallAsync(inputContext);
+            await this.dataCoordinationService.RecallAsync(inputContext);
 
         // then
         inputContext.SystemPrompt.Should().BeEmpty();
@@ -85,7 +85,7 @@ public partial class DataOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.dataOrchestrationService.RecallAsync(inputContext);
+            await this.dataCoordinationService.RecallAsync(inputContext);
 
         // then
         actualContext.Observations.Should().Contain(randomMemories);
@@ -117,7 +117,7 @@ public partial class DataOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.dataOrchestrationService.RecallAsync(inputContext);
+            await this.dataCoordinationService.RecallAsync(inputContext);
 
         // then
         actualContext.Observations.Should().Contain(priorObservation);
@@ -140,7 +140,7 @@ public partial class DataOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.dataOrchestrationService.RecallAsync(inputContext);
+            await this.dataCoordinationService.RecallAsync(inputContext);
 
         // then
         actualContext.SystemPrompt.Should().Contain(ToolCatalog);
@@ -168,7 +168,7 @@ public partial class DataOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.dataOrchestrationService.RecallAsync(inputContext);
+            await this.dataCoordinationService.RecallAsync(inputContext);
 
         // then
         actualContext.Observations.Should().Contain(randomKnowledge);

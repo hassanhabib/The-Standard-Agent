@@ -10,14 +10,17 @@ using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Services.Foundations.Knowledges;
 using Standard.Agents.Services.Foundations.Memorys;
 using Standard.Agents.Services.Foundations.Skills;
-using Standard.Agents.Services.Orchestrations.Data;
+using Standard.Agents.Services.Coordinations.Data;
+using Standard.Agents.Services.Foundations.Sessions;
+using Standard.Agents.Services.Orchestrations.Data.Recollections;
+using Standard.Agents.Services.Orchestrations.Data.Retrievals;
 using Tynamix.ObjectFiller;
 using Xeptions;
 using Xunit;
 
-namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Data;
+namespace Standard.Agents.Tests.Unit.Services.Coordinations.DataNature;
 
-public partial class DataOrchestrationServiceTests
+public partial class DataCoordinationServiceTests
 {
     private const string ToolCatalog = "- calculator — Evaluate arithmetic. parameters: {}";
 
@@ -25,9 +28,9 @@ public partial class DataOrchestrationServiceTests
     private readonly Mock<IMemoryService> memoryServiceMock;
     private readonly Mock<IKnowledgeService> knowledgeServiceMock;
     private readonly Mock<ILoggingBroker> loggingBrokerMock;
-    private readonly IDataOrchestrationService dataOrchestrationService;
+    private readonly IDataCoordinationService dataCoordinationService;
 
-    public DataOrchestrationServiceTests()
+    public DataCoordinationServiceTests()
     {
         this.skillServiceMock = new Mock<ISkillService>();
         this.memoryServiceMock = new Mock<IMemoryService>();
@@ -38,11 +41,18 @@ public partial class DataOrchestrationServiceTests
             service.RetrieveKnowledgeAsync(It.IsAny<string>()))
                 .ReturnsAsync([]);
 
-        this.dataOrchestrationService = new DataOrchestrationService(
-            skillService: this.skillServiceMock.Object,
-            memoryService: this.memoryServiceMock.Object,
-            knowledgeService: this.knowledgeServiceMock.Object,
-            toolCatalog: ToolCatalog,
+        // The regions are real; the mocks stay at the FOUNDATION level, which is where they
+        // were before regionalization. Every assertion below is therefore unchanged.
+        this.dataCoordinationService = new DataCoordinationService(
+            retrievalService: new RetrievalOrchestrationService(
+                skillService: this.skillServiceMock.Object,
+                knowledgeService: this.knowledgeServiceMock.Object,
+                toolCatalog: ToolCatalog,
+                loggingBroker: this.loggingBrokerMock.Object),
+            recollectionService: new RecollectionOrchestrationService(
+                memoryService: this.memoryServiceMock.Object,
+                sessionService: new Mock<ISessionService>().Object,
+                loggingBroker: this.loggingBrokerMock.Object),
             loggingBroker: this.loggingBrokerMock.Object);
     }
 

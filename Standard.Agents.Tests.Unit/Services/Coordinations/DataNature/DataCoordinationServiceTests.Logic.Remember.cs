@@ -6,9 +6,9 @@
 using Moq;
 using Xunit;
 
-namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Data;
+namespace Standard.Agents.Tests.Unit.Services.Coordinations.DataNature;
 
-public partial class DataOrchestrationServiceTests
+public partial class DataCoordinationServiceTests
 {
     [Fact]
     public async Task ShouldRememberAsync()
@@ -17,7 +17,7 @@ public partial class DataOrchestrationServiceTests
         string randomMemory = CreateRandomString();
 
         // when
-        await this.dataOrchestrationService.RememberAsync(randomMemory);
+        await this.dataCoordinationService.RememberAsync(randomMemory);
 
         // then
         this.memoryServiceMock.Verify(service =>

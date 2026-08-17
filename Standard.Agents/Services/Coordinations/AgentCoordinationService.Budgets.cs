@@ -86,7 +86,7 @@ public partial class AgentCoordinationService
     {
         try
         {
-            return await this.dataOrchestrationService.RecallAsync(context);
+            return await this.dataCoordinationService.RecallAsync(context);
         }
         catch (Exception)
         {
