@@ -194,20 +194,25 @@ promise of the broker seam.
 
 ## The 1·3·9
 
-![The Standard for Agents — architecture: Agent Builder → Coordination → the three Orchestrations (Data, Decision, Direction) → nine Foundation services → their Brokers](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-architecture.png)
+![The Standard for Agents — architecture: Agent Builder → Coordination → the three Orchestrations (Data, Decision, Direction) → nine Foundation services → their eight nature Brokers, with ten support brokers beneath](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-architecture.png)
+
+<sub>The diagram is generated from
+[`assets/the-standard-agent-architecture.svg`](https://github.com/hassanhabib/The-Standard-Agent/blob/main/assets/the-standard-agent-architecture.svg)
+— edit the SVG, re-render the PNG.</sub>
 
 | Tier | Count | Members |
 |---|---|---|
 | **Coordination** | 1 | `AgentCoordinationService` — the only loop: Recall → Think → Act |
 | **Orchestration** | 3 | Data · Decision · Direction |
 | **Foundation** | 9 | Skills, Memory, Knowledge / Gate, Brain, Judge / Internal, External, Return |
-| **Broker** | 8+8 | one liaison per resource, plus eight support brokers |
+| **Broker** | 8+10 | one liaison per resource, plus ten support brokers |
 
 Nine foundations, eight nature brokers: `ReturnService` has no broker. It is the dead end — the
 terminal Direction hands the result back and touches nothing.
 
-The eight support brokers — logging, time, audit, redaction, policy, approval, resilience, sessions
-— serve a foundation without backing one. **The 1·3·9 is unchanged**, and that is the point: every
+The ten support brokers — logging, time, file, audit, redaction, policy, approval, effect ledger,
+session, resilience — serve a foundation without backing one, and are reached from every tier.
+**The 1·3·9 is unchanged**, and that is the point: every
 enterprise capability arrived through a broker or an opt-in method with a default. Two that most
 obviously "wanted" a new tier did not get one — the effect envelope is a model spread across four
 existing seams, and telemetry is the audit broker with a different sink. Both would have been

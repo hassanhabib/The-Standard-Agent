@@ -996,7 +996,7 @@ deterministic framework mechanics.
 | **Coordination** | 1 | `AgentCoordinationService` — Recall → Think → Act | unchanged |
 | **Orchestration** | 3 | Data · Decision · Direction | unchanged |
 | **Foundation** | 9 | Skills, Memory, Knowledge / Gate, Brain, Judge / Internal, External, Return | unchanged |
-| **Broker** | 8 + 8 | eight nature brokers (one per foundation that needs one), plus eight support brokers: **logging, time, audit, redaction, approval, policy, resilience, sessions** | +6 support |
+| **Broker** | 8 + 10 | eight nature brokers (one per foundation that needs one), plus ten support brokers: **logging, time, file, audit, redaction, approval, policy, effect ledger, session, resilience** | +8 support |
 
 **The mark is unchanged.** Three arcs around one core; the loop is the same loop; the README
 diagram still describes the framework. Every enterprise capability arrived through a broker or an
@@ -1027,20 +1027,23 @@ which keeps the Tri-Nature the whole model rather than a label on the front thre
 
 Two cross-cutting brokers, seven additions that belong to a nature. Nothing needed a fourth.
 
-### 4.2 · Eight support brokers, three families
+### 4.2 · Ten support brokers, three families
 
-A flat list of eight is a list. Three families of brokers is a model you can hold in your head —
+A flat list of ten is a list. Three families of brokers is a model you can hold in your head —
 principle 0.4. The file layout stays flat and Standard-conventional (`Brokers/{Resource}s`); the
 grouping is how the framework is *explained*, taught and documented:
 
 | Family | Brokers | Answers |
 |---|---|---|
 | **Observability** | logging · time · audit | *what happened, and can we prove it?* |
-| **Perimeter** | redaction · policy · approval | *may this cross the boundary?* |
-| **Runtime** | resilience · sessions | *can this survive failure and time?* |
+| **Perimeter** | redaction · policy · approval · effect ledger | *may this cross the boundary, and has it already?* |
+| **Runtime** | resilience · session · file | *can this survive failure, time and a restart?* |
 
 Plus the eight nature brokers — three for Data, three for Decision, two for Direction. Threes all
 the way down.
+
+*(The count grew from the eight this plan first named: the effect ledger arrived with run-once in
+0.22, and the file broker was always there — it predates the plan and was simply never listed.)*
 
 ---
 
