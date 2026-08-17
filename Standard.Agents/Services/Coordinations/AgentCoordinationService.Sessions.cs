@@ -28,14 +28,39 @@ public partial class AgentCoordinationService
     // starting a fresh one, so the effects it already performed keep their idempotency keys and
     // are replayed rather than performed twice (SPEC.md §4.9, §4.11).
     private static string? ResumedRunId(AgentSession? session) =>
-        null;
+        session is not null
+            && string.IsNullOrEmpty(session.RunId) is false
+            && Delivered(session.Status) is false
+                ? session.RunId
+                : null;
+
+    // Delivered means the caller got a conclusion — an answer, or a refusal that is itself an
+    // answer. Everything else left the run in the middle of something.
+    private static bool Delivered(AgentStatus status) =>
+        status is AgentStatus.Responded or AgentStatus.Refused;
 
     // The start-of-run checkpoint. Written before any work, because a crash means nothing at the
     // end runs at all — and an identity recorded only on success is an identity the failure case
     // can never use.
     private async ValueTask BeginSessionAsync(AgentContext context, AgentSession? session)
     {
-        await ValueTask.CompletedTask;
+        if (string.IsNullOrEmpty(context.SessionId))
+        {
+            return;
+        }
+
+        // History is carried through untouched. The checkpoint records who is working the
+        // session, not what was said — this prompt has no answer yet, and writing one here
+        // would tell the next prompt the agent said something it never said.
+        await this.sessionBroker.UpsertSessionAsync(
+            new AgentSession
+            {
+                Id = context.SessionId,
+                History = session?.History ?? [],
+                Status = AgentStatus.Working,
+                PendingQuestion = session?.PendingQuestion ?? string.Empty,
+                RunId = AgentRun.Current?.Id ?? string.Empty
+            });
     }
 
     private async ValueTask<AgentContext> LoadSessionAsync(
