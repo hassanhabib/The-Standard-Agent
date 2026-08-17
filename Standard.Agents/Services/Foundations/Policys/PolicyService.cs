@@ -31,8 +31,10 @@ public partial class PolicyService : IPolicyService
     public ValueTask<AuthorizationDecision> AuthorizeEffectAsync(AgentEffect effect) =>
     TryCatch(async () =>
     {
-        await ValueTask.CompletedTask;
+        ValidateEffect(effect);
 
-        return AuthorizationDecision.Allow();
+        // The broker's decision, unchanged. A foundation that softened a denial would be
+        // deciding policy, which is not its job.
+        return await this.policyBroker.AuthorizeAsync(effect);
     });
 }

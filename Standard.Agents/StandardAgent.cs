@@ -42,6 +42,9 @@ using Standard.Agents.Services.Foundations.Judges;
 using Standard.Agents.Services.Foundations.Knowledges;
 using Standard.Agents.Services.Foundations.Memorys;
 using Standard.Agents.Services.Foundations.Returns;
+using Standard.Agents.Services.Foundations.Approvals;
+using Standard.Agents.Services.Foundations.EffectLedgers;
+using Standard.Agents.Services.Foundations.Policys;
 using Standard.Agents.Services.Foundations.Sessions;
 using Standard.Agents.Services.Foundations.Skills;
 using Standard.Agents.Services.Orchestrations.Data;
@@ -1192,18 +1195,27 @@ public sealed partial class StandardAgent : IAgent
             logging,
             RenderToolDefinitions(allTools));
 
+        // The allow-list is expressed as a policy, so the simple answer and an external policy
+        // engine travel one seam and a denial carries a reason either way (SPEC.md §4.9).
+        IPolicyBroker policy = this.policyBroker
+            ?? (this.allowedTools is null
+                ? new NotConfiguredPolicyBroker()
+                : new AllowListPolicyBroker(this.allowedTools));
+
+        IApprovalBroker approvals = this.approvalBroker
+            ?? (this.approvalRequiredTools is null
+                ? new NotConfiguredApprovalBroker()
+                : new RequireApprovalBroker(this.approvalRequiredTools));
+
         DirectionOrchestrationService direction = new(
             new InternalToolService(toolBroker, logging),
             new ExternalToolService(mcp, logging),
             new ReturnService(logging),
             logging,
-            this.allowedTools,
-            this.policyBroker,
-            this.approvalBroker
-                ?? (this.approvalRequiredTools is null
-                    ? null
-                    : new RequireApprovalBroker(this.approvalRequiredTools)),
-            this.effectLedgerBroker,
+            new PolicyService(policy, logging),
+            new ApprovalService(approvals, logging),
+            new EffectLedgerService(
+                this.effectLedgerBroker ?? new InMemoryEffectLedgerBroker(), logging),
             this.approvalRequiredTools,
             this.screenToolOutput ? gate : null,
             this.identityResolver);

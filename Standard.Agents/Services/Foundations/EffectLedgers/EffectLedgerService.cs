@@ -30,20 +30,26 @@ public partial class EffectLedgerService : IEffectLedgerService
     public ValueTask<string?> RetrieveOutcomeAsync(AgentEffect effect) =>
     TryCatch(async () =>
     {
-        await ValueTask.CompletedTask;
+        ValidateEffect(effect);
 
-        return (string?)null;
+        // Null means this act has not run and the caller should proceed. It has to stay distinct
+        // from a read that failed: one means go, the other means stop.
+        return await this.effectLedgerBroker.SelectOutcomeAsync(effect);
     });
 
     public ValueTask RecordOutcomeAsync(AgentEffect effect, string outcome) =>
     TryCatch(async () =>
     {
-        await ValueTask.CompletedTask;
+        ValidateEffect(effect);
+
+        await this.effectLedgerBroker.InsertOutcomeAsync(effect, outcome);
     });
 
     public ValueTask ReleaseClaimAsync(AgentEffect effect) =>
     TryCatch(async () =>
     {
-        await ValueTask.CompletedTask;
+        ValidateEffect(effect);
+
+        await this.effectLedgerBroker.DeleteClaimAsync(effect);
     });
 }

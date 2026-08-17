@@ -36,7 +36,7 @@ public partial class DirectionOrchestrationService
             principal: this.identityResolver?.Invoke());
 
         // 1 — authorize
-        AuthorizationDecision decision = await this.policyBroker.AuthorizeAsync(effect);
+        AuthorizationDecision decision = await this.policyService.AuthorizeEffectAsync(effect);
 
         if (decision.Permitted is false)
         {
@@ -48,7 +48,7 @@ public partial class DirectionOrchestrationService
         }
 
         // 2 — record the intent, and learn whether this act already happened
-        string? priorOutcome = await this.effectLedgerBroker.SelectOutcomeAsync(effect);
+        string? priorOutcome = await this.effectLedgerService.RetrieveOutcomeAsync(effect);
 
         if (priorOutcome is not null)
         {
@@ -62,7 +62,7 @@ public partial class DirectionOrchestrationService
         // 3 — approve, if required
         if (effect.ApprovalRequired)
         {
-            ApprovalDecision approval = await this.approvalBroker.RequestAsync(effect);
+            ApprovalDecision approval = await this.approvalService.RequestApprovalAsync(effect);
 
             if (approval is not ApprovalDecision.Approved)
             {
@@ -77,7 +77,7 @@ public partial class DirectionOrchestrationService
         string output = await RunToolAsync(context);
 
         // 5 — record the outcome, before the loop advances
-        await this.effectLedgerBroker.InsertOutcomeAsync(effect, output);
+        await this.effectLedgerService.RecordOutcomeAsync(effect, output);
 
         // Remember that this run performed it, so it can be unwound. Only here: an effect denied,
         // held for approval, or replayed from the ledger returned above and was never performed by
@@ -150,7 +150,7 @@ public partial class DirectionOrchestrationService
         // given back (SPEC.md §4.9). Leaving it standing would make the approval unusable when it
         // finally arrives: the authority says yes, the resumed run proposes the act, and the
         // ledger reports it as already done.
-        await this.effectLedgerBroker.DeleteClaimAsync(effect);
+        await this.effectLedgerService.ReleaseClaimAsync(effect);
 
         if (approval is ApprovalDecision.Denied)
         {

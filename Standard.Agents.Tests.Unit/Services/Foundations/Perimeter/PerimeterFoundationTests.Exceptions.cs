@@ -101,6 +101,10 @@ public partial class PerimeterFoundationTests
                 expectedApprovalDependencyException))),
                     Times.Once);
 
+        this.approvalBrokerMock.Verify(broker =>
+            broker.RequestAsync(randomEffect),
+                Times.Once);
+
         this.approvalBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
@@ -144,6 +148,10 @@ public partial class PerimeterFoundationTests
                 expectedEffectLedgerDependencyException))),
                     Times.Once);
 
+        this.effectLedgerBrokerMock.Verify(broker =>
+            broker.InsertOutcomeAsync(randomEffect, randomOutcome),
+                Times.Once);
+
         this.effectLedgerBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
@@ -184,6 +192,10 @@ public partial class PerimeterFoundationTests
                 expectedEffectLedgerDependencyException))),
                     Times.Once);
 
+        this.effectLedgerBrokerMock.Verify(broker =>
+            broker.SelectOutcomeAsync(randomEffect),
+                Times.Once);
+
         this.effectLedgerBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
@@ -223,6 +235,10 @@ public partial class PerimeterFoundationTests
             broker.LogErrorAsync(It.Is(SameExceptionAs(
                 expectedPolicyServiceException))),
                     Times.Once);
+
+        this.policyBrokerMock.Verify(broker =>
+            broker.AuthorizeAsync(randomEffect),
+                Times.Once);
 
         this.policyBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();

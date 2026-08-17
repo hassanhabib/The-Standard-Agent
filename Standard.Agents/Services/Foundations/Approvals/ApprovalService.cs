@@ -31,8 +31,10 @@ public partial class ApprovalService : IApprovalService
     public ValueTask<ApprovalDecision> RequestApprovalAsync(AgentEffect effect) =>
     TryCatch(async () =>
     {
-        await ValueTask.CompletedTask;
+        ValidateEffect(effect);
 
-        return ApprovalDecision.Approved;
+        // Pending must survive the trip untouched. Turning an unanswered request into anything
+        // else here is the one mistake that would let silence look like consent.
+        return await this.approvalBroker.RequestAsync(effect);
     });
 }
