@@ -22,4 +22,14 @@ public interface IEffectLedgerBroker
 
     /// <summary>Records what the effect produced, before the loop advances.</summary>
     ValueTask InsertOutcomeAsync(AgentEffect effect, string outcome);
+
+    /// <summary>
+    /// Gives back a claim on an act that was held rather than performed (SPEC.md §4.9).
+    /// </summary>
+    /// <remarks>
+    /// A held act is one that still has to be able to happen. Leaving its claim standing builds
+    /// an approval that can only ever be granted too late: the authority says yes, the resumed
+    /// run proposes the act, and the ledger reports it as already done.
+    /// </remarks>
+    ValueTask DeleteClaimAsync(AgentEffect effect);
 }
