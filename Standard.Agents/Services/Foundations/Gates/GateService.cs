@@ -41,7 +41,12 @@ public partial class GateService : IGateService
     {
         ValidateScreen(input);
 
-        return await this.classifierBroker.ClassifyAsync(input);
+        var vault = new Dictionary<string, string>();
+        string redactedInput = this.redactionBroker.Redact(input, vault);
+
+        string verdict = await this.classifierBroker.ClassifyAsync(redactedInput);
+
+        return this.redactionBroker.Rehydrate(verdict, vault);
     });
 
     public ValueTask<string> DetectConflictAsync(string instructions) =>
