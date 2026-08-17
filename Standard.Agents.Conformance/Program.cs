@@ -6,6 +6,7 @@
 using System.Text.Json;
 using Standard.Agents;
 using Standard.Agents.Conformance;
+using Standard.Agents.Models.Brokers.Audits;
 
 string vectorsPath = args.Length > 0
     ? args[0]
@@ -45,7 +46,10 @@ foreach (string vectorFile in
     bool rubricConformant =
         RubricConformant(vector.Expect, run.GateRubric, run.JudgeRubric, out string? rubricFailure);
 
-    if (resultConformant && toolInputConformant && rubricConformant)
+    bool auditConformant =
+        AuditConformant(vector, run.AuditRecords, out string? auditFailure);
+
+    if (resultConformant && toolInputConformant && rubricConformant && auditConformant)
     {
         passed++;
         Console.WriteLine($"PASS  {vector.Name}");
@@ -84,6 +88,15 @@ foreach (string vectorFile in
             Console.WriteLine($"        gate rubric:  {Show(run.GateRubric ?? "(gate never ran)")}");
             Console.WriteLine($"        judge rubric: {Show(run.JudgeRubric ?? "(judge never ran)")}");
         }
+
+        if (auditConformant is false)
+        {
+            Console.WriteLine($"        decision log: {auditFailure}");
+
+            Console.WriteLine(
+                $"        records: {run.AuditRecords.Count} "
+                    + $"across {run.AuditRecords.Select(record => record.RunId).Distinct().Count()} run(s)");
+        }
     }
 }
 
@@ -107,6 +120,12 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
     string? gateRubric = null;
     string? judgeRubric = null;
 
+    // The decision log is observed through its own Custom sink (SPEC.md §4.8), so the
+    // certification watches the records the framework produces rather than any storage.
+    // Concurrent vectors write from many runs at once, hence the lock.
+    List<AuditRecord> auditRecords = [];
+    object auditLock = new();
+
     StandardAgent agent = new StandardAgent()
         .UseSkills(new StubSkillBroker())
         .UseGenerator(new ScriptedGeneratorBroker(vector.GeneratorReplies))
@@ -125,6 +144,15 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
             judgeRubric = rubric;
 
             return new ValueTask<string>(vector.JudgeScore ?? "1.0");
+        })
+        .OnAudit(record =>
+        {
+            lock (auditLock)
+            {
+                auditRecords.Add(record);
+            }
+
+            return ValueTask.CompletedTask;
         });
 
     if (string.IsNullOrEmpty(vector.Constitution) is false)
@@ -141,9 +169,96 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         agent.Consumption(fileName);
     }
 
-    string result = await agent.ProcessPromptAsync(vector.Prompt);
+    IReadOnlyList<string> prompts = vector.Prompts is { Count: > 0 }
+        ? vector.Prompts
+        : [vector.Prompt];
 
-    return new VectorRun(result, stubTools, gateRubric, judgeRubric);
+    string result;
+
+    if (vector.Concurrent)
+    {
+        string[] results = await Task.WhenAll(
+            prompts.Select(prompt => agent.ProcessPromptAsync(prompt).AsTask()));
+
+        result = results[0];
+    }
+    else
+    {
+        result = string.Empty;
+
+        foreach (string prompt in prompts)
+        {
+            result = await agent.ProcessPromptAsync(prompt);
+        }
+    }
+
+    return new VectorRun(result, stubTools, gateRubric, judgeRubric, auditRecords);
+}
+
+// The decision log's guarantees, certified from the records themselves: one run per prompt,
+// every prompt's evidence still present at the end, and record numbers that never repeat
+// within a run (SPEC.md §4.7, §4.4).
+static bool AuditConformant(Vector vector, List<AuditRecord> records, out string? failure)
+{
+    failure = null;
+
+    Expectation expect = vector.Expect;
+
+    if (expect.AuditRunCount is null
+        && expect.AuditRetainsEveryPrompt is false
+        && expect.AuditSequencesUniquePerRun is false)
+    {
+        return true;
+    }
+
+    IReadOnlyList<string> prompts = vector.Prompts is { Count: > 0 }
+        ? vector.Prompts
+        : [vector.Prompt];
+
+    if (expect.AuditRunCount is int expectedRunCount)
+    {
+        int actualRunCount = records.Select(record => record.RunId).Distinct().Count();
+
+        if (actualRunCount != expectedRunCount)
+        {
+            failure = $"expected {expectedRunCount} distinct run(s), found {actualRunCount}";
+
+            return false;
+        }
+    }
+
+    if (expect.AuditRetainsEveryPrompt)
+    {
+        foreach (string prompt in prompts)
+        {
+            bool retained = records.Any(record =>
+                record.Message.Contains(prompt, StringComparison.Ordinal));
+
+            if (retained is false)
+            {
+                failure = $"no record retained evidence of the prompt {Show(prompt)}";
+
+                return false;
+            }
+        }
+    }
+
+    if (expect.AuditSequencesUniquePerRun)
+    {
+        foreach (IGrouping<string, AuditRecord> run in records.GroupBy(record => record.RunId))
+        {
+            int[] sequences = run.Select(record => record.Sequence).ToArray();
+
+            if (sequences.Length != sequences.Distinct().Count())
+            {
+                failure = $"run '{run.Key}' repeated a record number — runs shared a counter";
+
+                return false;
+            }
+        }
+    }
+
+    return true;
 }
 
 // A rubric guarantee is certified against BOTH guardians, so both rubrics must have been
@@ -219,4 +334,5 @@ internal sealed record VectorRun(
     string Result,
     Dictionary<string, StubTool> Tools,
     string? GateRubric,
-    string? JudgeRubric);
+    string? JudgeRubric,
+    List<AuditRecord> AuditRecords);
