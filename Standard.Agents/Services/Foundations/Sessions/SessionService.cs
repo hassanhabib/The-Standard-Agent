@@ -31,14 +31,18 @@ public partial class SessionService : ISessionService
     public ValueTask<AgentSession?> RetrieveSessionAsync(string sessionId) =>
     TryCatch(async () =>
     {
-        await ValueTask.CompletedTask;
+        ValidateSessionId(sessionId);
 
-        return (AgentSession?)null;
+        // A conversation that has not started is not an error — null is the ordinary first
+        // prompt, and it has to stay distinguishable from a failure to read.
+        return await this.sessionBroker.SelectSessionAsync(sessionId);
     });
 
     public ValueTask RecordSessionAsync(AgentSession session) =>
     TryCatch(async () =>
     {
-        await ValueTask.CompletedTask;
+        ValidateSession(session);
+
+        await this.sessionBroker.UpsertSessionAsync(session);
     });
 }

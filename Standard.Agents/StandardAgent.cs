@@ -42,6 +42,7 @@ using Standard.Agents.Services.Foundations.Judges;
 using Standard.Agents.Services.Foundations.Knowledges;
 using Standard.Agents.Services.Foundations.Memorys;
 using Standard.Agents.Services.Foundations.Returns;
+using Standard.Agents.Services.Foundations.Sessions;
 using Standard.Agents.Services.Foundations.Skills;
 using Standard.Agents.Services.Orchestrations.Data;
 using Standard.Agents.Services.Orchestrations.Decision;
@@ -1207,9 +1208,13 @@ public sealed partial class StandardAgent : IAgent
             this.screenToolOutput ? gate : null,
             this.identityResolver);
 
+        var sessions = new SessionService(
+            this.sessionBroker ?? new NotConfiguredSessionBroker(),
+            logging);
+
         return new AgentCoordinationService(
             data, decision, direction, logging, this.maxTurns, new TimeBroker(), this.budget,
-            this.sessionBroker, this.maxHistoryTurns, this.compensateOnFailure);
+            sessions, this.maxHistoryTurns, this.compensateOnFailure);
     }
 
     // The catalog a "{{tools}}" marker in the agent's Data expands into. Only tools that
