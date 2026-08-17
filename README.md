@@ -80,30 +80,55 @@ var agent = new StandardAgent(url, key, "LLooMA2.0")     // your brain
 ### Enterprise — a regulated deployment, more power, same shape
 
 A 20-year professional shipping into a bank. **Every line above is still here — you added, you did
-not rewrite.** What's new is power: data that never leaves in the clear, least-privilege on tools, one
-law over the guardians, and an audit trail a regulator can read.
+not rewrite.** What's new is power: data that never leaves in the clear, a person between the agent
+and anything irreversible, effects that cannot happen twice, and an audit trail a regulator can read.
 
 ```csharp
 using Standard.Agents.Models.Loggings;   // TraceVerbosity
 
 var agent = new StandardAgent(url, key, "LLooMA2.0")
     .Skills("Skills")
-    .Tool(new CalculatorTool())
+    .Tool(new WireTransferTool())
     .Gate(apiUrl: url, apiKey: key, model: "LLooMA2.0")
     .Judge(apiUrl: url, apiKey: key, model: "LLooMA2.0")
     .Memory("memory.txt")
-    .Constitution("Constitution/ethics.md")        // one law above both guardians
-    .Redact()                                       // PII tokenized before the brain, restored after
-    .AllowTools("calculator")                       // least-privilege — only this tool may run
-    .LogTo("log.txt", TraceVerbosity.Full)          // full turn-by-turn decision trace
-    .Audit("audit.jsonl");                          // structured decision log → your SIEM
+    .Constitution("Constitution/ethics.md")   // one law above both guardians
+    .Redact()                                  // PII tokenized before the brain, restored after
+    .LogTo("log.txt", TraceVerbosity.Full)     // full turn-by-turn decision trace
+    .Audit("audit.jsonl")                      // structured decision log → your SIEM
+
+    .Principal(() => currentUser.Id)           // authorization has a subject
+    .OnPolicy(Authorize)                       // your rules decide, per act and per identity
+    .RequireApproval("wire_transfer")          // a person, before the act — never after
+    .EffectLedger("ledger")                    // run once, even across a crash
+    .ScreenToolOutput()                        // tool results are untrusted input
+    .Sessions("sessions")                      // conversation that survives the process
+    .Budget(maxCostUsd: 0.25m)                 // bound what one prompt may spend
+    .Resilience(retries: 3)                    // survive a blip without paying twice
+    .CompensateOnFailure();                    // unwind a run that died halfway
 ```
 
-The enterprise agent is the medium agent **plus five opt-in lines** — each with a sane default, none
-of them a new concept. That is the collapsible substrate: the public API, the loop, and the
-Tri-Nature never change; power lives in the brokers and the deployment. Five lines on a laptop, the
-*same* five lines in a bank. The full walkthrough — one capability per step, every snippet runnable —
-is in [**docs/how-to.md**](https://github.com/hassanhabib/The-Standard-Agent/blob/main/docs/how-to.md).
+Everything below the blank line is opt-in, each with a sane default and none of them a new concept.
+That is the collapsible substrate: the public API, the loop, and the Tri-Nature never change; power
+lives in the brokers and the deployment. Delete any line and the agent still runs, with that
+capability absent rather than half-configured.
+
+The full walkthrough — one capability per step, every snippet runnable — is in
+[**docs/how-to.md**](https://github.com/hassanhabib/The-Standard-Agent/blob/main/docs/how-to.md).
+
+### The three ways to reach anything
+
+Every capability answers **Local**, **External** and **Custom**, and the verbs say which:
+
+```csharp
+.Knowledge("Knowledge")                        // Local    — point at what you already have
+.UseKnowledge(new PostgresKnowledgeBroker(cs)) // External — a provider package
+.OnKnowledge(async query => await MyStore(query)) // Custom — your own code, inline
+```
+
+Fifteen capabilities, the same three verbs each. A capability offered fewer ways than that fails the
+build — it is a test, not a convention, because the erosion is otherwise invisible until there are
+six of them.
 
 ## Streaming, and no DI
 
@@ -121,6 +146,11 @@ await foreach (AgentStreamEvent streamEvent in agent.StreamPromptAsync("What is 
     }
 }
 ```
+
+Streaming is not a lesser path. Budgets, cancellation, sessions, the perimeter and compensation all
+hold here exactly as they do on `ProcessPromptAsync` — a control you can step around by changing
+method is not a control. Pass a session id to stream inside a conversation:
+`agent.StreamPromptAsync(prompt, sessionId, cancellationToken)`.
 
 No DI container. `Compose()` hand-wires the whole graph — SPEC.md §9: *"DI is OPTIONAL. A
 hand-wired composition root is fully conformant."*
@@ -171,10 +201,17 @@ promise of the broker seam.
 | **Coordination** | 1 | `AgentCoordinationService` — the only loop: Recall → Think → Act |
 | **Orchestration** | 3 | Data · Decision · Direction |
 | **Foundation** | 9 | Skills, Memory, Knowledge / Gate, Brain, Judge / Internal, External, Return |
-| **Broker** | 8+2 | one liaison per resource, plus logging |
+| **Broker** | 8+8 | one liaison per resource, plus eight support brokers |
 
 Nine foundations, eight nature brokers: `ReturnService` has no broker. It is the dead end — the
 terminal Direction hands the result back and touches nothing.
+
+The eight support brokers — logging, time, audit, redaction, policy, approval, resilience, sessions
+— serve a foundation without backing one. **The 1·3·9 is unchanged**, and that is the point: every
+enterprise capability arrived through a broker or an opt-in method with a default. Two that most
+obviously "wanted" a new tier did not get one — the effect envelope is a model spread across four
+existing seams, and telemetry is the audit broker with a different sink. Both would have been
+easier as new services. Both would have cost the mark.
 
 Flow is forward only. A tier never calls the tier above it.
 
@@ -199,14 +236,21 @@ before any code is written. Build to it.
 ```
 Standard.Agents/                  the library
   |-- Brokers/{Data,Decision,Direction,Loggings}
+  |-- Brokers/{Audits,Policies,Approvals,Effects,Sessions,Resiliences,Redactions}
   |-- Models/Foundations/{Entity}/Exceptions
-  |-- Models/Orchestrations/Agents          AgentContext, AgentStatus
+  |-- Models/Orchestrations/Agents          AgentContext, AgentStatus, ToolExchange
+  |-- Models/Orchestrations/Effects         AgentEffect, AgentPrincipal, CompensationOutcome
+  |-- Models/Brokers/Generators/V1          the native tool-calling contract
   |-- Services/{Foundations,Orchestrations,Coordinations}
   |-- Tools/                                ITool, AgentTool — the fractal bridge
 Standard.Agents.Tests.Unit/       unit tests, mirroring the service tree
 Standard.Agents.Conformance/      the vector runner
 Standard.Agents.Demo/             a console agent you can run
-conformance/                      language-neutral behavioral vectors
+conformance/vectors/              language-neutral behavioral vectors
+conformance/profiles/             what each readiness level requires
+docs/how-to.md                    one capability per step, every snippet runnable
+docs/support.md                   stability, deprecation, supply chain
+docs/generator-contracts.md       text protocol vs native tool calls
 ```
 
 ## Conformance
