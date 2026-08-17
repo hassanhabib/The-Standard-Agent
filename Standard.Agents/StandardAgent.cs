@@ -6,7 +6,10 @@
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging.Abstractions;
 using Standard.Agents.Brokers.Audits;
+using Standard.Agents.Brokers.Approvals;
 using Standard.Agents.Brokers.Classifiers;
+using Standard.Agents.Brokers.Effects;
+using Standard.Agents.Brokers.Policies;
 using Standard.Agents.Brokers.Files;
 using Standard.Agents.Brokers.Generators;
 using Standard.Agents.Brokers.Knowledges;
@@ -21,6 +24,7 @@ using Standard.Agents.Brokers.Verifiers;
 using Standard.Agents.Models.Brokers.Audits;
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Foundations.Brains;
+using Standard.Agents.Models.Orchestrations.Effects;
 using Standard.Agents.Models.Loggings;
 using Standard.Agents.Prompts;
 using Standard.Agents.Services.Coordinations;
@@ -78,6 +82,10 @@ public sealed partial class StandardAgent : IAgent
     private IMcpBroker? mcpBroker;
     private ILoggingBroker? loggingBroker;
     private IAuditBroker? auditBroker;
+    private IPolicyBroker? policyBroker;
+    private IApprovalBroker? approvalBroker;
+    private IEffectLedgerBroker? effectLedgerBroker;
+    private IEnumerable<string>? approvalRequiredTools;
     private Func<string?>? principalResolver;
 
     private IAgentCoordinationService? agent;
@@ -451,6 +459,65 @@ public sealed partial class StandardAgent : IAgent
         Set(() => this.allowedTools = toolNames);
 
     /// <summary>
+    /// Authorizes every act against a provider — the <b>External</b> mode of policy (SPEC.md
+    /// §4.8, §4.9). Install a policy package (OPA, Cedar, your own service), pass its broker, and
+    /// each proposed tool call is submitted with its risk and arguments before it runs.
+    /// </summary>
+    /// <param name="broker">The policy broker deciding each effect.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent UsePolicy(IPolicyBroker broker) =>
+        Set(() => this.policyBroker = broker);
+
+    /// <summary>
+    /// Authorizes every act with your own function — the <b>Custom</b> mode of policy. Return
+    /// <see cref="AuthorizationDecision.Deny"/> with a reason; a denial without one cannot be
+    /// audited or appealed.
+    /// </summary>
+    /// <param name="authorize">An <c>effect =&gt; decision</c> delegate.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent OnPolicy(Func<AgentEffect, ValueTask<AuthorizationDecision>> authorize) =>
+        Set(() => this.policyBroker = new FunctionPolicyBroker(authorize));
+
+    /// <summary>
+    /// Holds the named tools until an authority says yes — the <b>Local</b> mode of approval
+    /// (SPEC.md §4.9). A held act stops the turn with <c>AwaitingApproval</c> and <b>does not
+    /// run</b>: with no approver wired in, waiting is not consent. Name the acts you cannot take
+    /// back — a payment, a message sent, a record deleted.
+    /// </summary>
+    /// <param name="toolNames">Tools that may not run unapproved.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent RequireApproval(params string[] toolNames) =>
+        Set(() => this.approvalRequiredTools = toolNames);
+
+    /// <summary>
+    /// Routes approval to a provider — the <b>External</b> mode (a review queue, a chat channel,
+    /// a ticketing system).
+    /// </summary>
+    /// <param name="broker">The approval broker to ask.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent UseApprovals(IApprovalBroker broker) =>
+        Set(() => this.approvalBroker = broker);
+
+    /// <summary>
+    /// Routes approval to your own function — the <b>Custom</b> mode. Return
+    /// <c>ApprovalDecision.Pending</c> to hold the act rather than perform it.
+    /// </summary>
+    /// <param name="request">An <c>effect =&gt; decision</c> delegate.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent OnApproval(Func<AgentEffect, ValueTask<ApprovalDecision>> request) =>
+        Set(() => this.approvalBroker = new FunctionApprovalBroker(request));
+
+    /// <summary>
+    /// Swaps in a custom effect ledger — the record of which acts have already run. The built-in
+    /// ledger gives run-once within one agent instance; a durable ledger extends that across
+    /// processes.
+    /// </summary>
+    /// <param name="broker">The effect ledger broker to use.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent UseEffectLedger(IEffectLedgerBroker broker) =>
+        Set(() => this.effectLedgerBroker = broker);
+
+    /// <summary>
     /// Caps how many Recall→Think→Act turns a single prompt may take before the agent stops —
     /// the shared budget across tool calls and Judge revisions. Defaults to 7. A value below 1
     /// is treated as 1.
@@ -738,7 +805,14 @@ public sealed partial class StandardAgent : IAgent
             new ExternalToolService(mcp, logging),
             new ReturnService(logging),
             logging,
-            this.allowedTools);
+            this.allowedTools,
+            this.policyBroker,
+            this.approvalBroker
+                ?? (this.approvalRequiredTools is null
+                    ? null
+                    : new RequireApprovalBroker(this.approvalRequiredTools)),
+            this.effectLedgerBroker,
+            this.approvalRequiredTools);
 
         return new AgentCoordinationService(data, decision, direction, logging, this.maxTurns);
     }

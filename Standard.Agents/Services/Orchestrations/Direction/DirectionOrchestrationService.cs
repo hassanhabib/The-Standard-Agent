@@ -3,7 +3,10 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using Standard.Agents.Brokers.Approvals;
+using Standard.Agents.Brokers.Effects;
 using Standard.Agents.Brokers.Loggings;
+using Standard.Agents.Brokers.Policies;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Services.Foundations.ExternalTools;
 using Standard.Agents.Services.Foundations.InternalTools;
@@ -21,27 +24,40 @@ public partial class DirectionOrchestrationService : IDirectionOrchestrationServ
     private readonly IExternalToolService externalToolService;
     private readonly IReturnService returnService;
     private readonly ILoggingBroker loggingBroker;
-    private readonly HashSet<string> allowedToolNames;
+    private readonly IPolicyBroker policyBroker;
+    private readonly IApprovalBroker approvalBroker;
+    private readonly IEffectLedgerBroker effectLedgerBroker;
+    private readonly HashSet<string> irreversibleToolNames;
 
     public DirectionOrchestrationService(
         IInternalToolService internalToolService,
         IExternalToolService externalToolService,
         IReturnService returnService,
         ILoggingBroker loggingBroker,
-        IEnumerable<string>? allowedTools = null)
+        IEnumerable<string>? allowedTools = null,
+        IPolicyBroker? policyBroker = null,
+        IApprovalBroker? approvalBroker = null,
+        IEffectLedgerBroker? effectLedgerBroker = null,
+        IEnumerable<string>? irreversibleTools = null)
     {
         this.internalToolService = internalToolService;
         this.externalToolService = externalToolService;
         this.returnService = returnService;
         this.loggingBroker = loggingBroker;
 
-        this.allowedToolNames =
-            new HashSet<string>(allowedTools ?? [], StringComparer.OrdinalIgnoreCase);
-    }
+        // The allow-list is now expressed as a policy, so the simple answer and an external
+        // policy engine travel one seam and a denial carries a reason either way (SPEC.md §4.9).
+        this.policyBroker = policyBroker
+            ?? (allowedTools is null
+                ? new NotConfiguredPolicyBroker()
+                : new AllowListPolicyBroker(allowedTools));
 
-    private bool IsToolForbidden(string toolName) =>
-        this.allowedToolNames.Count > 0
-            && this.allowedToolNames.Contains(toolName) is false;
+        this.approvalBroker = approvalBroker ?? new NotConfiguredApprovalBroker();
+        this.effectLedgerBroker = effectLedgerBroker ?? new InMemoryEffectLedgerBroker();
+
+        this.irreversibleToolNames =
+            new HashSet<string>(irreversibleTools ?? [], StringComparer.OrdinalIgnoreCase);
+    }
 
     public ValueTask<AgentContext> ActAsync(AgentContext context) =>
     TryCatch(async () =>
@@ -62,40 +78,7 @@ public partial class DirectionOrchestrationService : IDirectionOrchestrationServ
             };
         }
 
-        if (IsToolForbidden(context.DirectionType))
-        {
-            string denial = $"tool '{context.DirectionType}' is not permitted";
-
-            await this.loggingBroker.LogProcessAsync(
-                "Direction",
-                $"RBAC → DENIED '{context.DirectionType}' (not in the allow-list)");
-
-            return context with
-            {
-                Result = denial,
-                Observations = [.. context.Observations, $"{context.DirectionType}: {denial}"],
-                Status = AgentStatus.Working
-            };
-        }
-
-        bool isLocalTool = await this.internalToolService.HandlesAsync(context.DirectionType);
-
-        string output = isLocalTool
-? await this.internalToolService.RunAsync(context.DirectionType, context.Payload)
-: await this.externalToolService.CallAsync(context.DirectionType, context.Payload);
-
-        await this.loggingBroker.LogProcessAsync(
-            "Direction", $"Tool '{context.DirectionType}' ← {context.Payload}", detail: true);
-
-        await this.loggingBroker.LogProcessAsync(
-            "Direction", $"Tool '{context.DirectionType}' → {output}");
-
-        return context with
-        {
-            Result = output,
-            Observations = [.. context.Observations, $"{context.DirectionType}: {output}"],
-            Status = AgentStatus.Working
-        };
+        return await ActOnEffectAsync(context);
     });
 
     private static bool IsTerminal(string directionType) =>
