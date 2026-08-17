@@ -79,6 +79,12 @@ The live example: `.LocalBrain` / `.LocalGate` / `.LocalJudge` became `.OnBrain`
 names still work and are held to the new ones by
 `ShouldKeepObsoleteLocalAliasesBehavingLikeTheCustomVerbsAsync`.
 
+A second live example, from 1.1.0.0: `AgentEffect.Principal` is the principal's identifier and
+`AgentEffect.Identity` is the whole principal — tenant, jurisdiction, delegation. Both are set
+together and cannot disagree. `Principal` is **not** deprecated: it is what a policy that only cares
+who is acting should read. If it ever retires it will be at a major version, through the window
+above.
+
 **The V0 generator contract is not deprecated**, despite V1 arriving beside it. V0 is the text
 protocol, and it is the one that works against any endpoint — including the small local models
 that follow a format more reliably than they emit well-formed tool JSON. Nothing above is running

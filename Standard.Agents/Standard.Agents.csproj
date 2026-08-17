@@ -20,6 +20,24 @@
     <!-- The Standard's release format is v1.2.3.4 — model . service/routine . fix/config
          . automated build. Deliberately NOT semver; the segments say what KIND of change
          happened, so a model change can never hide in the service segment.
+         1.1.0.0: two defects found by auditing 1.0 against its own claims, and the documentation
+         brought up to what shipped. Identity now reaches the AUTHORIZATION decision and not only
+         the record of it: AgentEffect.For was called with principal: null, hardcoded, while the
+         principal resolver was wired to the logging broker alone - so the Enterprise profile
+         claimed identity-aware authorization and delivered identity-aware reporting. It is
+         resolved per act, since a singleton serves many callers. The streamed loop now enforces
+         every control the batched one does - cancellation, budgets, sessions, compensation -
+         because a control a caller can step around by changing method is not a control; it
+         gained a sessionId overload, and cancellation and exhaustion arrive as Status rather
+         than as an answer. Identity grew a shape: AgentPrincipal carries tenant, jurisdiction
+         and delegation, added ALONGSIDE the principal identifier rather than replacing it, so
+         nothing written against 1.0.0 breaks. A session now carries the effect it is waiting on,
+         so a resuming process can show an authority the act rather than only the news that
+         something waits. New public routines and new optional model fields, no existing field
+         repurposed and no contract removed: a service/routine change, so segment 2 advances,
+         3/4 reset. SPEC.md settles at 1.0 in the same pass, naming three mechanisms it had
+         required results from without describing - run continuity across processes, native
+         tool-call attribution, and the principal reaching the decision.
          1.0.0.0: the shape of an agent changed, which is why segment 1 moves — once, here, with
          every model change in the program batched into it rather than dribbled across eight
          releases. A run is no longer confined to one process. AgentSession carries the run that
@@ -97,7 +115,7 @@
          3/4 reset. Still tracks SPEC.md v0.1 (draft): segment 1 goes to 1 when the spec settles.
          (0.8.0.0: memory and knowledge came alive — knowledge retrieval in Recall + a built-in
          'remember' tool.) -->
-    <Version>1.0.0.0</Version>
+    <Version>1.1.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>
