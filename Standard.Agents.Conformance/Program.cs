@@ -190,7 +190,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
     // Brain path — redaction, rehydration, streaming buffers — is what gets certified.
     List<string> modelInputs = [];
     List<string> brainInputs = [];
-    var scriptedGenerator = new ScriptedGeneratorBroker(vector.GeneratorReplies);
+    var scriptedGenerator = new ScriptedGeneratorBroker(vector.GeneratorReplies, vector.TransientFailures);
 
     var recordingGenerator = new RecordingGeneratorBroker(
         scriptedGenerator,
@@ -261,6 +261,16 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         agent.ScreenToolOutput();
     }
 
+    if (vector.Retries > 0)
+    {
+        agent.Resilience(vector.Retries);
+    }
+
+    if (vector.MaxTurns is int maxTurns)
+    {
+        agent.MaxTurns(maxTurns);
+    }
+
     if (string.IsNullOrEmpty(vector.Constitution) is false)
     {
         string fileName = $"{vector.Name}.constitution.md";
@@ -279,6 +289,13 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         ? vector.Prompts
         : [vector.Prompt];
 
+    using var runCancellation = new CancellationTokenSource();
+
+    if (vector.CancelBeforeStart)
+    {
+        await runCancellation.CancelAsync();
+    }
+
     string result;
 
     if (vector.Concurrent)
@@ -294,7 +311,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
 
         foreach (string prompt in prompts)
         {
-            result = await agent.ProcessPromptAsync(prompt);
+            result = await agent.ProcessPromptAsync(prompt, runCancellation.Token);
         }
     }
 
