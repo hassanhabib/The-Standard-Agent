@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------
 
 using Standard.Agents.Models.Orchestrations.Agents;
+using Standard.Agents.Models.Orchestrations.Effects;
 
 namespace Standard.Agents.Models.Brokers.Sessions;
 
@@ -28,6 +29,18 @@ public sealed record AgentSession
 
     /// <summary>The question the agent asked and is waiting on, when awaiting input.</summary>
     public string PendingQuestion { get; init; } = "";
+
+    /// <summary>
+    /// The act this session is waiting on an authority to permit, when awaiting approval
+    /// (SPEC.md §4.11, §4.9).
+    /// </summary>
+    /// <remarks>
+    /// The act travels with the session, not just the fact that something is waiting. A process
+    /// that picks the session up has to be able to show a human <i>what</i> they are approving,
+    /// and an approval broker has to be able to check that the act it is now being asked about is
+    /// the act that was held — its <c>IdempotencyKey</c> is what makes that checkable.
+    /// </remarks>
+    public AgentEffect? PendingEffect { get; init; }
 
     /// <summary>
     /// The run that last worked this session, written when the run <i>starts</i>.

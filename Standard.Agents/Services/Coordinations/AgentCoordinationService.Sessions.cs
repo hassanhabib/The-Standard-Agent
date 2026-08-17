@@ -111,7 +111,12 @@ public partial class AgentCoordinationService
             PendingQuestion = context.Status is AgentStatus.AwaitingInput
                 or AgentStatus.AwaitingApproval
                     ? context.Result
-                    : string.Empty
+                    : string.Empty,
+
+            // Set only by the branch that holds an act, and the context belongs to this run
+            // alone — so a run that did not hold anything carries nothing, and the session
+            // stops advertising a held act as soon as one is permitted and performed.
+            PendingEffect = context.PendingEffect
         };
 
         await this.sessionBroker.UpsertSessionAsync(session);

@@ -171,6 +171,10 @@ public partial class DirectionOrchestrationService
         return context with
         {
             Result = $"'{effect.ToolName}' is waiting for approval before it can run.",
+
+            // The act travels with the pause, so whoever resumes can be shown what they are
+            // permitting rather than only that something is waiting (SPEC.md §4.11).
+            PendingEffect = effect,
             Status = AgentStatus.AwaitingApproval
         };
     }

@@ -13,6 +13,7 @@ using Standard.Agents.Brokers.Sessions;
 using Standard.Agents.Brokers.Skills;
 using Standard.Agents.Models.Brokers.Sessions;
 using Standard.Agents.Models.Foundations.Skills;
+using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Tools;
 using Xunit;
 
@@ -187,6 +188,65 @@ public class ResumptionTests : IDisposable
         // then — resuming asks nothing of the caller but the answer; the session holds the rest
         resumedTool.ExecutionCount.Should().Be(1);
         actualResult.Should().Be("paid");
+    }
+
+    // SPEC.md §4.11 says a session carries `pending : AgentEffect?` — the act it was left waiting
+    // on. Storing only the question text means a resuming process cannot show a human WHAT they
+    // are approving, and an approval broker cannot check that the act it is now approving is the
+    // act that was held.
+    [Fact]
+    public async Task ShouldRememberTheActTheSessionIsWaitingOnAsync()
+    {
+        // given
+        var tool = new CountingTool();
+
+        await NewProcess(tool, "ACTION: wire_transfer: 10000")
+            .RequireApproval("wire_transfer")
+            .OnApproval(effect => ValueTask.FromResult(ApprovalDecision.Pending))
+            .ProcessPromptAsync(prompt: "pay the invoice", "invoice-99", CancellationToken.None);
+
+        // when
+        var sessionBroker = new FileSessionBroker(SessionsPath);
+        AgentSession? actualSession = await sessionBroker.SelectSessionAsync("invoice-99");
+
+        // then — the held act travels with the session, so the authority is shown the act and
+        // not merely told that something is waiting
+        actualSession.Should().NotBeNull();
+        actualSession!.Status.Should().Be(AgentStatus.AwaitingApproval);
+        actualSession.PendingEffect.Should().NotBeNull();
+        actualSession.PendingEffect!.ToolName.Should().Be("wire_transfer");
+        actualSession.PendingEffect.Arguments.Should().Contain("10000");
+        actualSession.PendingEffect.IdempotencyKey.Should().NotBeEmpty();
+        actualSession.PendingEffect.ApprovalRequired.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ShouldForgetTheHeldActOnceItIsNoLongerWaitingAsync()
+    {
+        // given — an act held for approval, so the session genuinely carries one
+        var tool = new CountingTool();
+        var sessionBroker = new FileSessionBroker(SessionsPath);
+
+        await NewProcess(tool, "ACTION: wire_transfer: 10000")
+            .RequireApproval("wire_transfer")
+            .OnApproval(effect => ValueTask.FromResult(ApprovalDecision.Pending))
+            .ProcessPromptAsync(prompt: "pay the invoice", "invoice-101", CancellationToken.None);
+
+        AgentSession? whileHeld = await sessionBroker.SelectSessionAsync("invoice-101");
+        whileHeld!.PendingEffect.Should().NotBeNull();
+
+        // when — the authority permits it and the run finishes
+        await NewProcess(new CountingTool(), "ACTION: wire_transfer: 10000", "FINAL: paid")
+            .RequireApproval("wire_transfer")
+            .OnApproval(effect => ValueTask.FromResult(ApprovalDecision.Approved))
+            .ProcessPromptAsync(prompt: "yes, approve it", "invoice-101", CancellationToken.None);
+
+        AgentSession? afterApproval = await sessionBroker.SelectSessionAsync("invoice-101");
+
+        // then — a session that is waiting on nothing says so. Carrying the act past the pause
+        // would offer an authority an act the agent has already performed.
+        afterApproval!.Status.Should().Be(AgentStatus.Responded);
+        afterApproval.PendingEffect.Should().BeNull();
     }
 
     [Fact]
