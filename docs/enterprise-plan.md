@@ -169,7 +169,19 @@ MOVEMENT I — TRUST                MOVEMENT II — CONTROL           MOVEMENT I
 | 0.24 Data at scale | **landed** | ranked lexical retrieval over passages; vector 22 |
 | 0.25 Supply chain | **landed** | pinned SDK, warnings as errors, vulnerability and licence audit, secret scanning, SBOM, provenance; `docs/support.md` |
 | 1.0 Enterprise model | **landed** | sessions, cross-process run identity, durable run-once, compensation, native tool-call round-trip; vectors 25–29 |
-| 1.1 Evals & hosting | next | — |
+| 1.1 Audit of 1.0 | **landed** | identity reaches authorization, streamed path at parity, full principal, held effect on the session; vector 30; SPEC.md settles at 1.0 |
+| 1.2 Evals & hosting | next | — |
+
+**1.1 was not the release that was planned.** Auditing 1.0 against its own claims turned up two
+defects — `.Principal(...)` never reached the policy broker, and the streamed loop enforced neither
+budgets nor cancellation nor sessions — so 1.1 became the release that fixed them and brought the
+documentation up to what had actually shipped. Evals and hosting move to 1.2, unchanged in scope.
+
+Worth recording *why* neither defect was caught: both were invisible from the outside. An agent that
+authorizes without a principal returns exactly the same answer as one that does it properly, and a
+streamed run that ignores a budget looks identical until the bill arrives. Every vector before 30
+asserted on the returned result. Vector 30 reads what the policy broker was *handed*, which is the
+shape the remaining perimeter vectors should follow.
 
 The readiness levels (§2.1) are machine-verified, and the runner is the authority on where this
 stands — not this table:
