@@ -22,7 +22,7 @@ anything we hold privately.
 | **Core** | conversation, skills, knowledge, memory, simple tools | certified |
 | **Reliable** | guardians that see what they guard, durable decision log, run isolation, cancellation, timeouts | certified |
 | **Enterprise** | identity-aware authorization, approval before irreversible acts, run-once effects, budgets, ranked retrieval | certified |
-| **Critical** | conversation across processes, compensation, adversarial evaluation | not yet |
+| **Critical** | conversation and effects that survive a process, compensation, native tool calls that round-trip | certified |
 
 ---
 
@@ -78,6 +78,12 @@ The live example: `.LocalBrain` / `.LocalGate` / `.LocalJudge` became `.OnBrain`
 `.OnJudge` in 0.18.0.0 — a delegate you write is the *Custom* mode, not the *Local* one. The old
 names still work and are held to the new ones by
 `ShouldKeepObsoleteLocalAliasesBehavingLikeTheCustomVerbsAsync`.
+
+**The V0 generator contract is not deprecated**, despite V1 arriving beside it. V0 is the text
+protocol, and it is the one that works against any endpoint — including the small local models
+that follow a format more reliably than they emit well-formed tool JSON. Nothing above is running
+against it, and provider packages written for it need no change. See
+[`docs/generator-contracts.md`](generator-contracts.md) for which to use and how to move.
 
 ---
 
