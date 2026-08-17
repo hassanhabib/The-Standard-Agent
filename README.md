@@ -222,8 +222,20 @@ dotnet test                                        # unit tests
 dotnet run --project Standard.Agents.Conformance   # spec certification; exit 0 = conformant
 ```
 
-A **Core** implementation is a minimal viable agent. A **Full** implementation adds real memory,
-knowledge, guardian gate/judge, and external tools.
+Readiness is claimed **per profile**, and the claim is checkable by anyone from a clone:
+
+```bash
+dotnet run --project Standard.Agents.Conformance -- --profile Critical
+```
+
+| Profile | What an agent at this level has |
+|---|---|
+| **Core** | conversation, skills, knowledge, memory, simple tools |
+| **Reliable** | guardians that see what they guard, durable decision log, run isolation, cancellation, timeouts |
+| **Enterprise** | identity-aware authorization, approval before irreversible acts, run-once effects, budgets, ranked retrieval |
+| **Critical** | conversation and effects that survive a process, compensation, native tool calls that round-trip |
+
+All four certify. Exit `0` means certified; the runner is the authority, not this table.
 
 ## The fractal
 
