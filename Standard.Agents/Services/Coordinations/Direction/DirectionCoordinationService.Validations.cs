@@ -6,9 +6,9 @@
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Models.Orchestrations.Agents.Exceptions;
 
-namespace Standard.Agents.Services.Orchestrations.Direction;
+namespace Standard.Agents.Services.Coordinations.Direction;
 
-public partial class DirectionOrchestrationService
+public partial class DirectionCoordinationService
 {
     private static void ValidateContext(AgentContext context)
     {

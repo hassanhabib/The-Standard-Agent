@@ -3,35 +3,30 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
-using Standard.Agents.Brokers.Approvals;
-using Standard.Agents.Services.Foundations.Approvals;
-using Standard.Agents.Services.Foundations.EffectLedgers;
-using Standard.Agents.Services.Foundations.Policys;
-using Standard.Agents.Brokers.Effects;
 using Standard.Agents.Brokers.Loggings;
-using Standard.Agents.Brokers.Policies;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Models.Orchestrations.Effects;
-using Standard.Agents.Services.Foundations.ExternalTools;
 using Standard.Agents.Services.Foundations.Gates;
-using Standard.Agents.Services.Foundations.InternalTools;
-using Standard.Agents.Services.Foundations.Returns;
+using Standard.Agents.Services.Orchestrations.Direction.Executions;
+using Standard.Agents.Services.Orchestrations.Direction.Perimeters;
 
-namespace Standard.Agents.Services.Orchestrations.Direction;
+namespace Standard.Agents.Services.Coordinations.Direction;
 
-public partial class DirectionOrchestrationService : IDirectionOrchestrationService
+// The Direction nature: two regions, and the ORDER between them.
+//
+// Perimeter answers whether an act may happen; Execution performs it. Neither can own the
+// sequence, because the sequence interleaves them — authorize, record the intent, approve,
+// execute, record the outcome. That interleaving is Direction's own logic, which is why it lives
+// in Direction's own service rather than in a generic sequencing tier.
+public partial class DirectionCoordinationService : IDirectionCoordinationService
 {
     private const string ReturnResponseDirection = "ReturnResponse";
     private const string RefuseDirection = "Refuse";
     private const string AwaitInputDirection = "AwaitInput";
 
-    private readonly IInternalToolService internalToolService;
-    private readonly IExternalToolService externalToolService;
-    private readonly IReturnService returnService;
+    private readonly IPerimeterOrchestrationService perimeterService;
+    private readonly IExecutionOrchestrationService executionService;
     private readonly ILoggingBroker loggingBroker;
-    private readonly IPolicyService policyService;
-    private readonly IApprovalService approvalService;
-    private readonly IEffectLedgerService effectLedgerService;
     private readonly IGateService? screeningService;
     private readonly HashSet<string> irreversibleToolNames;
 
@@ -40,37 +35,19 @@ public partial class DirectionOrchestrationService : IDirectionOrchestrationServ
     // this framework asks hosts to adopt (SPEC.md §4.4).
     private readonly Func<AgentPrincipal?>? identityResolver;
 
-    public DirectionOrchestrationService(
-        IInternalToolService internalToolService,
-        IExternalToolService externalToolService,
-        IReturnService returnService,
+    public DirectionCoordinationService(
+        IPerimeterOrchestrationService perimeterService,
+        IExecutionOrchestrationService executionService,
         ILoggingBroker loggingBroker,
-        IPolicyService? policyService = null,
-        IApprovalService? approvalService = null,
-        IEffectLedgerService? effectLedgerService = null,
         IEnumerable<string>? irreversibleTools = null,
         IGateService? screeningService = null,
         Func<AgentPrincipal?>? identityResolver = null)
     {
+        this.perimeterService = perimeterService;
+        this.executionService = executionService;
+        this.loggingBroker = loggingBroker;
         this.screeningService = screeningService;
         this.identityResolver = identityResolver;
-
-        this.internalToolService = internalToolService;
-        this.externalToolService = externalToolService;
-        this.returnService = returnService;
-        this.loggingBroker = loggingBroker;
-
-        // The perimeter arrives as three foundations rather than three brokers, so a policy engine
-        // that cannot be reached, an authority that cannot be asked, and a ledger that cannot be
-        // written each fail under their own name (docs/architecture-alignment.md).
-        this.policyService = policyService
-            ?? new PolicyService(new NotConfiguredPolicyBroker(), loggingBroker);
-
-        this.approvalService = approvalService
-            ?? new ApprovalService(new NotConfiguredApprovalBroker(), loggingBroker);
-
-        this.effectLedgerService = effectLedgerService
-            ?? new EffectLedgerService(new InMemoryEffectLedgerBroker(), loggingBroker);
 
         this.irreversibleToolNames =
             new HashSet<string>(irreversibleTools ?? [], StringComparer.OrdinalIgnoreCase);
@@ -83,7 +60,7 @@ public partial class DirectionOrchestrationService : IDirectionOrchestrationServ
 
         if (IsTerminal(context.DirectionType))
         {
-            string result = await this.returnService.ReturnAsync(context.Payload);
+            string result = await this.executionService.ReturnAsync(context.Payload);
 
             await this.loggingBroker.LogProcessAsync(
                 "Direction", $"{context.DirectionType} → returned: {result}");

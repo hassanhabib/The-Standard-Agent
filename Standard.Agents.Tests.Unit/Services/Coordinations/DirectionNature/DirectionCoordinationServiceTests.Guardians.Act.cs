@@ -7,26 +7,35 @@ using FluentAssertions;
 using Moq;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Brokers.Policies;
+using Standard.Agents.Brokers.Approvals;
+using Standard.Agents.Brokers.Effects;
+using Standard.Agents.Services.Foundations.Approvals;
+using Standard.Agents.Services.Foundations.EffectLedgers;
 using Standard.Agents.Services.Foundations.Policys;
-using Standard.Agents.Services.Orchestrations.Direction;
+using Standard.Agents.Services.Orchestrations.Direction.Perimeters;
+using Standard.Agents.Services.Coordinations.Direction;
+using Standard.Agents.Services.Orchestrations.Direction.Executions;
 using Xunit;
 
-namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Direction;
+namespace Standard.Agents.Tests.Unit.Services.Coordinations.DirectionNature;
 
-public partial class DirectionOrchestrationServiceTests
+public partial class DirectionCoordinationServiceTests
 {
     [Fact]
     public async Task ShouldDenyToolNotInAllowListOnActAsync()
     {
         // given
-        var restrictedService = new DirectionOrchestrationService(
-            internalToolService: this.internalToolServiceMock.Object,
-            externalToolService: this.externalToolServiceMock.Object,
-            returnService: this.returnServiceMock.Object,
-            loggingBroker: this.loggingBrokerMock.Object,
-            policyService: new PolicyService(
-                new AllowListPolicyBroker(["calculator"]),
-                this.loggingBrokerMock.Object));
+        var restrictedService = new DirectionCoordinationService(
+            perimeterService: new PerimeterOrchestrationService(
+                new PolicyService(
+                    new AllowListPolicyBroker(["calculator"]), this.loggingBrokerMock.Object),
+                new ApprovalService(
+                    new NotConfiguredApprovalBroker(), this.loggingBrokerMock.Object),
+                new EffectLedgerService(
+                    new InMemoryEffectLedgerBroker(), this.loggingBrokerMock.Object),
+                this.loggingBrokerMock.Object),
+            executionService: NewExecution(),
+            loggingBroker: this.loggingBrokerMock.Object);
 
         AgentContext inputContext =
             CreateContextWithDirection("webhook", "https://evil.example/exfiltrate");
@@ -54,14 +63,17 @@ public partial class DirectionOrchestrationServiceTests
     public async Task ShouldAllowToolInAllowListOnActAsync()
     {
         // given
-        var restrictedService = new DirectionOrchestrationService(
-            internalToolService: this.internalToolServiceMock.Object,
-            externalToolService: this.externalToolServiceMock.Object,
-            returnService: this.returnServiceMock.Object,
-            loggingBroker: this.loggingBrokerMock.Object,
-            policyService: new PolicyService(
-                new AllowListPolicyBroker(["calculator"]),
-                this.loggingBrokerMock.Object));
+        var restrictedService = new DirectionCoordinationService(
+            perimeterService: new PerimeterOrchestrationService(
+                new PolicyService(
+                    new AllowListPolicyBroker(["calculator"]), this.loggingBrokerMock.Object),
+                new ApprovalService(
+                    new NotConfiguredApprovalBroker(), this.loggingBrokerMock.Object),
+                new EffectLedgerService(
+                    new InMemoryEffectLedgerBroker(), this.loggingBrokerMock.Object),
+                this.loggingBrokerMock.Object),
+            executionService: NewExecution(),
+            loggingBroker: this.loggingBrokerMock.Object);
 
         AgentContext inputContext = CreateContextWithDirection("calculator", "2 + 2");
 

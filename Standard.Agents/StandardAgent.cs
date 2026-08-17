@@ -51,7 +51,9 @@ using Standard.Agents.Services.Coordinations.Data;
 using Standard.Agents.Services.Orchestrations.Data.Recollections;
 using Standard.Agents.Services.Orchestrations.Data.Retrievals;
 using Standard.Agents.Services.Orchestrations.Decision;
-using Standard.Agents.Services.Orchestrations.Direction;
+using Standard.Agents.Services.Coordinations.Direction;
+using Standard.Agents.Services.Orchestrations.Direction.Executions;
+using Standard.Agents.Services.Orchestrations.Direction.Perimeters;
 using Standard.Agents.Tools;
 
 namespace Standard.Agents;
@@ -1232,15 +1234,21 @@ public sealed partial class StandardAgent : IAgent
                 ? new NotConfiguredApprovalBroker()
                 : new RequireApprovalBroker(this.approvalRequiredTools));
 
-        DirectionOrchestrationService direction = new(
-            new InternalToolService(toolBroker, logging),
-            new ExternalToolService(mcp, logging),
-            new ReturnService(logging),
+        // The Direction nature, as two regions and the order between them. Perimeter answers
+        // whether an act may happen; Execution performs it; the sequence belongs to neither.
+        DirectionCoordinationService direction = new(
+            new PerimeterOrchestrationService(
+                new PolicyService(policy, logging),
+                new ApprovalService(approvals, logging),
+                new EffectLedgerService(
+                    this.effectLedgerBroker ?? new InMemoryEffectLedgerBroker(), logging),
+                logging),
+            new ExecutionOrchestrationService(
+                new InternalToolService(toolBroker, logging),
+                new ExternalToolService(mcp, logging),
+                new ReturnService(logging),
+                logging),
             logging,
-            new PolicyService(policy, logging),
-            new ApprovalService(approvals, logging),
-            new EffectLedgerService(
-                this.effectLedgerBroker ?? new InMemoryEffectLedgerBroker(), logging),
             this.approvalRequiredTools,
             this.screenToolOutput ? gate : null,
             this.identityResolver);

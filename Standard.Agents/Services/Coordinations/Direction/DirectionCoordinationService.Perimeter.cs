@@ -8,7 +8,7 @@ using Standard.Agents.Models.Loggings;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Models.Orchestrations.Effects;
 
-namespace Standard.Agents.Services.Orchestrations.Direction;
+namespace Standard.Agents.Services.Coordinations.Direction;
 
 // The perimeter (SPEC.md §4.9). Direction already owned the boundary; this is enforcement at
 // it, in the order the spec fixes and forbids reordering:
@@ -18,7 +18,7 @@ namespace Standard.Agents.Services.Orchestrations.Direction;
 // The order is the control. Authorizing after execution audits a fait accompli; recording the
 // intent after execution loses the effects that crashed mid-flight; and approving after
 // execution is not approval at all.
-public partial class DirectionOrchestrationService
+public partial class DirectionCoordinationService
 {
     private async ValueTask<AgentContext> ActOnEffectAsync(AgentContext context)
     {
@@ -36,7 +36,7 @@ public partial class DirectionOrchestrationService
             principal: this.identityResolver?.Invoke());
 
         // 1 — authorize
-        AuthorizationDecision decision = await this.policyService.AuthorizeEffectAsync(effect);
+        AuthorizationDecision decision = await this.perimeterService.AuthorizeAsync(effect);
 
         if (decision.Permitted is false)
         {
@@ -48,7 +48,7 @@ public partial class DirectionOrchestrationService
         }
 
         // 2 — record the intent, and learn whether this act already happened
-        string? priorOutcome = await this.effectLedgerService.RetrieveOutcomeAsync(effect);
+        string? priorOutcome = await this.perimeterService.ClaimAsync(effect);
 
         if (priorOutcome is not null)
         {
@@ -62,7 +62,7 @@ public partial class DirectionOrchestrationService
         // 3 — approve, if required
         if (effect.ApprovalRequired)
         {
-            ApprovalDecision approval = await this.approvalService.RequestApprovalAsync(effect);
+            ApprovalDecision approval = await this.perimeterService.RequestApprovalAsync(effect);
 
             if (approval is not ApprovalDecision.Approved)
             {
@@ -77,7 +77,7 @@ public partial class DirectionOrchestrationService
         string output = await RunToolAsync(context);
 
         // 5 — record the outcome, before the loop advances
-        await this.effectLedgerService.RecordOutcomeAsync(effect, output);
+        await this.perimeterService.RecordOutcomeAsync(effect, output);
 
         // Remember that this run performed it, so it can be unwound. Only here: an effect denied,
         // held for approval, or replayed from the ledger returned above and was never performed by
@@ -150,7 +150,7 @@ public partial class DirectionOrchestrationService
         // given back (SPEC.md §4.9). Leaving it standing would make the approval unusable when it
         // finally arrives: the authority says yes, the resumed run proposes the act, and the
         // ledger reports it as already done.
-        await this.effectLedgerService.ReleaseClaimAsync(effect);
+        await this.perimeterService.ReleaseClaimAsync(effect);
 
         if (approval is ApprovalDecision.Denied)
         {
@@ -217,14 +217,9 @@ public partial class DirectionOrchestrationService
     {
         string stands = $"'{effect.ToolName}' could not be undone; the effect stands.";
 
-        if (await this.internalToolService.HandlesAsync(effect.ToolName) is false)
-        {
-            return new CompensationOutcome(effect.ToolName, Undone: false, Detail: stands);
-        }
-
         try
         {
-            string reversal = await this.internalToolService.CompensateAsync(
+            string reversal = await this.executionService.CompensateAsync(
                 effect.ToolName, effect.Arguments, effect.Outcome);
 
             return string.IsNullOrEmpty(reversal)
@@ -237,14 +232,8 @@ public partial class DirectionOrchestrationService
         }
     }
 
-    private async ValueTask<string> RunToolAsync(AgentContext context)
-    {
-        bool isLocalTool = await this.internalToolService.HandlesAsync(context.DirectionType);
-
-        return isLocalTool
-            ? await this.internalToolService.RunAsync(context.DirectionType, context.Payload)
-            : await this.externalToolService.CallAsync(context.DirectionType, context.Payload);
-    }
+    private ValueTask<string> RunToolAsync(AgentContext context) =>
+        this.executionService.RunAsync(context.DirectionType, context.Payload);
 
     // A denial is non-terminal: the agent is told and may choose a permitted path on the next
     // turn, exactly as it recovers from a malformed call (SPEC.md §4.6, §4.9).

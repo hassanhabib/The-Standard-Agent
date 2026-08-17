@@ -7,9 +7,9 @@ using Moq;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Xunit;
 
-namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Direction;
+namespace Standard.Agents.Tests.Unit.Services.Coordinations.DirectionNature;
 
-public partial class DirectionOrchestrationServiceTests
+public partial class DirectionCoordinationServiceTests
 {
     [Fact]
     public async Task ShouldNarrateReturnedResultContentOnActAsync()
@@ -27,7 +27,7 @@ public partial class DirectionOrchestrationServiceTests
                 .ReturnsAsync("RESULT-MARKER");
 
         // when
-        await this.directionOrchestrationService.ActAsync(inputContext);
+        await this.directionCoordinationService.ActAsync(inputContext);
 
         // then
         this.loggingBrokerMock.Verify(broker =>

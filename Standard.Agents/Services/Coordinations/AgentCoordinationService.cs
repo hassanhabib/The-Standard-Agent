@@ -14,7 +14,7 @@ using Standard.Agents.Models.Loggings;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Services.Coordinations.Data;
 using Standard.Agents.Services.Orchestrations.Decision;
-using Standard.Agents.Services.Orchestrations.Direction;
+using Standard.Agents.Services.Coordinations.Direction;
 
 namespace Standard.Agents.Services.Coordinations;
 
@@ -27,7 +27,7 @@ public partial class AgentCoordinationService : IAgentCoordinationService
 
     private readonly IDataCoordinationService dataCoordinationService;
     private readonly IDecisionOrchestrationService decisionOrchestrationService;
-    private readonly IDirectionOrchestrationService directionOrchestrationService;
+    private readonly IDirectionCoordinationService directionCoordinationService;
     private readonly ILoggingBroker loggingBroker;
     private readonly ITimeBroker timeBroker;
     private readonly AgentBudget? budget;
@@ -38,7 +38,7 @@ public partial class AgentCoordinationService : IAgentCoordinationService
     public AgentCoordinationService(
         IDataCoordinationService dataCoordinationService,
         IDecisionOrchestrationService decisionOrchestrationService,
-        IDirectionOrchestrationService directionOrchestrationService,
+        IDirectionCoordinationService directionCoordinationService,
         ILoggingBroker loggingBroker,
         int maxTurns = DefaultMaxTurns,
         ITimeBroker? timeBroker = null,
@@ -49,7 +49,7 @@ public partial class AgentCoordinationService : IAgentCoordinationService
         this.compensateOnFailure = compensateOnFailure;
         this.dataCoordinationService = dataCoordinationService;
         this.decisionOrchestrationService = decisionOrchestrationService;
-        this.directionOrchestrationService = directionOrchestrationService;
+        this.directionCoordinationService = directionCoordinationService;
         this.loggingBroker = loggingBroker;
         this.maxTurns = maxTurns;
         this.timeBroker = timeBroker ?? new TimeBroker();
@@ -130,7 +130,7 @@ public partial class AgentCoordinationService : IAgentCoordinationService
                 }
 
                 await this.loggingBroker.LogStepAsync(AgentStep.Direction);
-                context = await this.directionOrchestrationService.ActAsync(context);
+                context = await this.directionCoordinationService.ActAsync(context);
 
                 await this.loggingBroker.LogOutcomeAsync($"turn {turn}: {context.Status}");
 

@@ -10,9 +10,9 @@ using Standard.Agents.Models.Orchestrations.Agents.Exceptions;
 using Xeptions;
 using Xunit;
 
-namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Direction;
+namespace Standard.Agents.Tests.Unit.Services.Coordinations.DirectionNature;
 
-public partial class DirectionOrchestrationServiceTests
+public partial class DirectionCoordinationServiceTests
 {
     [Fact]
     public async Task ShouldThrowValidationExceptionOnActIfContextIsNullAndLogItAsync()
@@ -31,7 +31,7 @@ public partial class DirectionOrchestrationServiceTests
 
         // when
         ValueTask<AgentContext> actTask =
-            this.directionOrchestrationService.ActAsync(nullContext!);
+            this.directionCoordinationService.ActAsync(nullContext!);
 
         AgentOrchestrationValidationException actualException =
             await Assert.ThrowsAsync<AgentOrchestrationValidationException>(
@@ -75,7 +75,7 @@ Xeption foundationException)
 
         // when
         ValueTask<AgentContext> actTask =
-            this.directionOrchestrationService.ActAsync(inputContext);
+            this.directionCoordinationService.ActAsync(inputContext);
 
         AgentOrchestrationDependencyValidationException actualException =
             await Assert.ThrowsAsync<AgentOrchestrationDependencyValidationException>(
@@ -110,7 +110,7 @@ Xeption foundationException)
 
         // when
         ValueTask<AgentContext> actTask =
-            this.directionOrchestrationService.ActAsync(inputContext);
+            this.directionCoordinationService.ActAsync(inputContext);
 
         AgentOrchestrationDependencyException actualException =
             await Assert.ThrowsAsync<AgentOrchestrationDependencyException>(
@@ -149,7 +149,7 @@ Xeption foundationException)
 
         // when
         ValueTask<AgentContext> actTask =
-            this.directionOrchestrationService.ActAsync(inputContext);
+            this.directionCoordinationService.ActAsync(inputContext);
 
         AgentOrchestrationServiceException actualException =
             await Assert.ThrowsAsync<AgentOrchestrationServiceException>(

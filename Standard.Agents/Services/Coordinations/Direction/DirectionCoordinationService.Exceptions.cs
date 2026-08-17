@@ -10,9 +10,9 @@ using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Models.Orchestrations.Agents.Exceptions;
 using Xeptions;
 
-namespace Standard.Agents.Services.Orchestrations.Direction;
+namespace Standard.Agents.Services.Coordinations.Direction;
 
-public partial class DirectionOrchestrationService
+public partial class DirectionCoordinationService
 {
     private delegate ValueTask<AgentContext> ReturningContextFunction();
 
@@ -26,6 +26,17 @@ ReturningContextFunction returningContextFunction)
         catch (NullAgentContextException nullAgentContextException)
         {
             throw await CreateAndLogValidationExceptionAsync(nullAgentContextException);
+        }
+
+        // The regions localize their own foundations' failures, so what arrives here is
+        // already in this family and already logged. Wrapping it again would nest and log the
+        // same failure twice.
+        catch (Exception alreadyLocalized) when (alreadyLocalized
+            is AgentOrchestrationDependencyValidationException
+            or AgentOrchestrationDependencyException
+            or AgentOrchestrationServiceException)
+        {
+            throw;
         }
         catch (InternalToolValidationException internalToolValidationException)
         {
