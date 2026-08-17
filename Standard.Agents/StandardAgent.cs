@@ -100,7 +100,7 @@ public sealed partial class StandardAgent : IAgent
     private IGeneratorBrokerV1? generatorBrokerV1;
     private ISessionBroker? sessionBroker;
     private int maxHistoryTurns = 20;
-    private Func<string?>? principalResolver;
+    private Func<AgentPrincipal?>? identityResolver;
 
     private IAgentCoordinationService? agent;
 
@@ -453,7 +453,26 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="principal">A function returning the current principal's identifier.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent Principal(Func<string?> principal) =>
-        Set(() => this.principalResolver = principal);
+        Set(() => this.identityResolver = () =>
+            principal() is string id
+                ? new AgentPrincipal { Id = id }
+                : null);
+
+    /// <summary>
+    /// Declares who is acting, in the terms a policy decides on — tenant, jurisdiction and
+    /// delegation as well as the identifier (SPEC.md §4.9).
+    /// </summary>
+    /// <remarks>
+    /// The identity reaches the policy broker on <c>effect.Identity</c> at the moment it decides,
+    /// and is stamped on every record of the run. It is resolved <b>per act</b>, so a shared agent
+    /// serving many callers answers for the right one each time.
+    /// <para>Only <see cref="AgentPrincipal.Id"/> is required. The framework consumes a principal
+    /// and never mints one: establishing identity stays the host's.</para>
+    /// </remarks>
+    /// <param name="principal">A function returning who is acting right now.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent Principal(Func<AgentPrincipal?> principal) =>
+        Set(() => this.identityResolver = principal);
 
     /// <summary>
     /// Turns on <b>PII redaction at the brain boundary</b>: before any prompt reaches the brain,
@@ -1063,7 +1082,7 @@ public sealed partial class StandardAgent : IAgent
                     ?? (string.IsNullOrEmpty(this.auditPath)
                         ? new NotConfiguredAuditBroker()
                         : new FileAuditBroker(this.auditPath)),
-                this.principalResolver);
+                () => this.identityResolver?.Invoke()?.Id);
 
         // With only a native brain configured there is no V0 generator to build, and none is
         // needed: SpeaksNatively routes every call to the V1 seam. The placeholder exists so the
@@ -1186,7 +1205,7 @@ public sealed partial class StandardAgent : IAgent
             this.effectLedgerBroker,
             this.approvalRequiredTools,
             this.screenToolOutput ? gate : null,
-            this.principalResolver);
+            this.identityResolver);
 
         return new AgentCoordinationService(
             data, decision, direction, logging, this.maxTurns, new TimeBroker(), this.budget,

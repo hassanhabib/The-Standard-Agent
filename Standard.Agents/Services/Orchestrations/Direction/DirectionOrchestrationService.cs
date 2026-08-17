@@ -8,6 +8,7 @@ using Standard.Agents.Brokers.Effects;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Brokers.Policies;
 using Standard.Agents.Models.Orchestrations.Agents;
+using Standard.Agents.Models.Orchestrations.Effects;
 using Standard.Agents.Services.Foundations.ExternalTools;
 using Standard.Agents.Services.Foundations.Gates;
 using Standard.Agents.Services.Foundations.InternalTools;
@@ -34,7 +35,7 @@ public partial class DirectionOrchestrationService : IDirectionOrchestrationServ
     // Asked once per act rather than captured once at composition, because who is acting can
     // change between prompts on the same agent — a singleton serving many callers is the shape
     // this framework asks hosts to adopt (SPEC.md §4.4).
-    private readonly Func<string?>? principalResolver;
+    private readonly Func<AgentPrincipal?>? identityResolver;
 
     public DirectionOrchestrationService(
         IInternalToolService internalToolService,
@@ -47,10 +48,10 @@ public partial class DirectionOrchestrationService : IDirectionOrchestrationServ
         IEffectLedgerBroker? effectLedgerBroker = null,
         IEnumerable<string>? irreversibleTools = null,
         IGateService? screeningService = null,
-        Func<string?>? principalResolver = null)
+        Func<AgentPrincipal?>? identityResolver = null)
     {
         this.screeningService = screeningService;
-        this.principalResolver = principalResolver;
+        this.identityResolver = identityResolver;
 
         this.internalToolService = internalToolService;
         this.externalToolService = externalToolService;

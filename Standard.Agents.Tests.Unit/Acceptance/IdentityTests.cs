@@ -138,6 +138,96 @@ public class IdentityTests
         actualResult.Should().Be("I could not do that");
     }
 
+    // An identifier alone answers "who" and nothing else. A policy engine is routinely written as
+    // "this principal, in this tenant, under this jurisdiction" — and a delegated act, where a
+    // service acts on a person's behalf, is a different question from that service acting for
+    // itself (SPEC.md §4.9).
+    [Fact]
+    public async Task ShouldCarryTheWholeIdentityIntoTheAuthorizationDecisionAsync()
+    {
+        // given
+        var tool = new CountingTool();
+        AgentPrincipal? seenByPolicy = null;
+
+        StandardAgent agent =
+            AgentThatCallsTheTool(tool, "ACTION: wire_transfer: 10000", "FINAL: paid")
+                .Principal(() => new AgentPrincipal
+                {
+                    Id = "svc-payments",
+                    TenantId = "acme-eu",
+                    Jurisdiction = "EU",
+                    DelegatedBy = "teller-42"
+                })
+                .OnPolicy(effect =>
+                {
+                    seenByPolicy = effect.Identity;
+
+                    return ValueTask.FromResult(AuthorizationDecision.Allow());
+                });
+
+        // when
+        await agent.ProcessPromptAsync(prompt: "pay the invoice");
+
+        // then
+        seenByPolicy.Should().NotBeNull();
+        seenByPolicy!.Id.Should().Be("svc-payments");
+        seenByPolicy.TenantId.Should().Be("acme-eu");
+        seenByPolicy.Jurisdiction.Should().Be("EU");
+        seenByPolicy.DelegatedBy.Should().Be("teller-42");
+    }
+
+    [Fact]
+    public async Task ShouldRefuseAnActOnJurisdictionAloneAsync()
+    {
+        // given — the same act, by the same principal, permitted in one regime and not another
+        var tool = new CountingTool();
+
+        StandardAgent agent =
+            AgentThatCallsTheTool(
+                tool, "ACTION: wire_transfer: 10000", "FINAL: I could not do that")
+                .Principal(() => new AgentPrincipal { Id = "teller-42", Jurisdiction = "EU" })
+                .OnPolicy(effect => ValueTask.FromResult(
+                    effect.Identity?.Jurisdiction is "US"
+                        ? AuthorizationDecision.Allow()
+                        : AuthorizationDecision.Deny("cross-border transfers need US booking")));
+
+        // when
+        await agent.ProcessPromptAsync(prompt: "pay the invoice");
+
+        // then
+        tool.ExecutionCount.Should().Be(0);
+    }
+
+    // The id-only overload still works and still reads the same way, so nothing written against
+    // 1.0 has to change to keep authorizing.
+    [Fact]
+    public async Task ShouldKeepTheIdentifierOnlyPrincipalWorkingAsync()
+    {
+        // given
+        var tool = new CountingTool();
+        string? seenId = null;
+        AgentPrincipal? seenIdentity = null;
+
+        StandardAgent agent =
+            AgentThatCallsTheTool(tool, "ACTION: wire_transfer: 10000", "FINAL: paid")
+                .Principal(() => "teller-42")
+                .OnPolicy(effect =>
+                {
+                    seenId = effect.Principal;
+                    seenIdentity = effect.Identity;
+
+                    return ValueTask.FromResult(AuthorizationDecision.Allow());
+                });
+
+        // when
+        await agent.ProcessPromptAsync(prompt: "pay the invoice");
+
+        // then — the id reads as before, and the richer view carries the same identity
+        seenId.Should().Be("teller-42");
+        seenIdentity!.Id.Should().Be("teller-42");
+        seenIdentity.TenantId.Should().BeNull();
+    }
+
     [Fact]
     public async Task ShouldCarryNoPrincipalWhenNoneIsConfiguredAsync()
     {
