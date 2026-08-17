@@ -52,14 +52,16 @@ public sealed class VerifierBroker : IVerifierBroker
         this.systemPrompt = systemPrompt;
     }
 
-    public async ValueTask<string> VerifyAsync(string candidate)
+    public async ValueTask<string> VerifyAsync(string task, string candidate)
     {
         ChatCompletionRequest chatCompletionRequest = new(
             Model: this.model,
             Messages:
             [
                 new ChatMessage(Role: "system", Content: this.systemPrompt),
-                new ChatMessage(Role: "user", Content: candidate)
+                new ChatMessage(
+                    Role: "user",
+                    Content: FunctionVerifierBroker.FormatVerdictRequest(task, candidate))
             ],
             Stream: false,
             Temperature: this.temperature,

@@ -42,7 +42,7 @@ public class StandardAgentTests
             .ReturnsAsync("allow");
 
         var verifierBroker = new Mock<IVerifierBroker>();
-        verifierBroker.Setup(broker => broker.VerifyAsync(It.IsAny<string>()))
+        verifierBroker.Setup(broker => broker.VerifyAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync("1.0");
 
         var mcpBroker = new Mock<IMcpBroker>();
@@ -177,7 +177,7 @@ public class StandardAgentTests
             .ReturnsAsync("allow");
 
         var verifierBroker = new Mock<IVerifierBroker>();
-        verifierBroker.Setup(broker => broker.VerifyAsync(It.IsAny<string>()))
+        verifierBroker.Setup(broker => broker.VerifyAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync("1.0");
 
         var skillBroker = new Mock<ISkillBroker>();
@@ -248,7 +248,7 @@ public class StandardAgentTests
             .ReturnsAsync("allow");
 
         var judge = new Mock<IVerifierBroker>();
-        judge.Setup(broker => broker.VerifyAsync(It.IsAny<string>()))
+        judge.Setup(broker => broker.VerifyAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync("1.0");
 
         var memory = new Mock<IMemoryBroker>();
@@ -290,7 +290,7 @@ public class StandardAgentTests
             .ReturnsAsync("allow");
 
         var judge = new Mock<IVerifierBroker>();
-        judge.Setup(broker => broker.VerifyAsync(It.IsAny<string>()))
+        judge.Setup(broker => broker.VerifyAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync("1.0");
 
         var memory = new Mock<IMemoryBroker>();

@@ -33,7 +33,7 @@ public partial class JudgeServiceTests
 
         // when
         ValueTask<Judgement> evaluateTask =
-            this.judgeService.EvaluateAsync(invalidCandidate!);
+            this.judgeService.EvaluateAsync(CreateRandomString(), invalidCandidate!);
 
         JudgeValidationException actualJudgeValidationException =
             await Assert.ThrowsAsync<JudgeValidationException>(
@@ -49,7 +49,7 @@ public partial class JudgeServiceTests
                     Times.Once);
 
         this.verifierBrokerMock.Verify(broker =>
-            broker.VerifyAsync(It.IsAny<string>()),
+            broker.VerifyAsync(It.IsAny<string>(), It.IsAny<string>()),
                 Times.Never);
 
         this.verifierBrokerMock.VerifyNoOtherCalls();
@@ -79,12 +79,12 @@ public partial class JudgeServiceTests
                 innerException: invalidJudgeScoreException);
 
         this.verifierBrokerMock.Setup(broker =>
-            broker.VerifyAsync(randomCandidate))
+            broker.VerifyAsync(It.IsAny<string>(), randomCandidate))
                 .ReturnsAsync(nonNumericVerdict!);
 
         // when
         ValueTask<Judgement> evaluateTask =
-            this.judgeService.EvaluateAsync(randomCandidate);
+            this.judgeService.EvaluateAsync(CreateRandomString(), randomCandidate);
 
         JudgeValidationException actualJudgeValidationException =
             await Assert.ThrowsAsync<JudgeValidationException>(
@@ -95,7 +95,7 @@ public partial class JudgeServiceTests
             .BeEquivalentTo(expectedJudgeValidationException);
 
         this.verifierBrokerMock.Verify(broker =>
-            broker.VerifyAsync(randomCandidate),
+            broker.VerifyAsync(It.IsAny<string>(), randomCandidate),
                 Times.Once);
 
         this.loggingBrokerMock.Verify(broker =>
@@ -129,12 +129,12 @@ public partial class JudgeServiceTests
                 innerException: invalidJudgeScoreException);
 
         this.verifierBrokerMock.Setup(broker =>
-            broker.VerifyAsync(randomCandidate))
+            broker.VerifyAsync(It.IsAny<string>(), randomCandidate))
                 .ReturnsAsync(verdict);
 
         // when
         ValueTask<Judgement> evaluateTask =
-            this.judgeService.EvaluateAsync(randomCandidate);
+            this.judgeService.EvaluateAsync(CreateRandomString(), randomCandidate);
 
         JudgeValidationException actualJudgeValidationException =
             await Assert.ThrowsAsync<JudgeValidationException>(
@@ -145,7 +145,7 @@ public partial class JudgeServiceTests
             .BeEquivalentTo(expectedJudgeValidationException);
 
         this.verifierBrokerMock.Verify(broker =>
-            broker.VerifyAsync(randomCandidate),
+            broker.VerifyAsync(It.IsAny<string>(), randomCandidate),
                 Times.Once);
 
         this.loggingBrokerMock.Verify(broker =>

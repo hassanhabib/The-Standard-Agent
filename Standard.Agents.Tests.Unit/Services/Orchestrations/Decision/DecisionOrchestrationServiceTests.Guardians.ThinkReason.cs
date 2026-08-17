@@ -25,7 +25,7 @@ public partial class DecisionOrchestrationServiceTests
                 .ReturnsAsync("FINAL: a poor answer");
 
         this.judgeServiceMock.Setup(service =>
-            service.EvaluateAsync(It.IsAny<string>()))
+            service.EvaluateAsync(It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new Judgement
                 {
                     Score = 0.1,

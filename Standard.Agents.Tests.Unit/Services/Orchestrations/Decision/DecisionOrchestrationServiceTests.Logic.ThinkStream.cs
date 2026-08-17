@@ -76,7 +76,7 @@ public partial class DecisionOrchestrationServiceTests
         decisionStream.Result.Payload.Should().Be("2+2");
 
         this.judgeServiceMock.Verify(service =>
-            service.EvaluateAsync(It.IsAny<string>()),
+            service.EvaluateAsync(It.IsAny<string>(), It.IsAny<string>()),
                 Times.Never);
     }
 

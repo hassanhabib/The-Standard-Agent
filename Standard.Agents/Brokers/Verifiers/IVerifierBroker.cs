@@ -7,5 +7,7 @@ namespace Standard.Agents.Brokers.Verifiers;
 
 public interface IVerifierBroker
 {
-    ValueTask<string> VerifyAsync(string candidate);
+    // The task travels with the candidate: an answer is good or bad FOR a question, and a
+    // verdict on a fit the verifier cannot see is noise dressed as a number (SPEC.md §4.2).
+    ValueTask<string> VerifyAsync(string task, string candidate);
 }

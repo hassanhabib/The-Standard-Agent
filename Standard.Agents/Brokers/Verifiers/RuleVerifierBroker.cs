@@ -14,7 +14,7 @@ public sealed class RuleVerifierBroker : IVerifierBroker
     public RuleVerifierBroker(IEnumerable<string> requiredPatterns) =>
         this.requiredPatterns = requiredPatterns.ToList();
 
-    public async ValueTask<string> VerifyAsync(string candidate)
+    public async ValueTask<string> VerifyAsync(string task, string candidate)
     {
         await Task.CompletedTask;
 

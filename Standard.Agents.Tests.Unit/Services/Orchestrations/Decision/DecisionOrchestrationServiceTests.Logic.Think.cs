@@ -274,7 +274,7 @@ public partial class DecisionOrchestrationServiceTests
         actualContext.Payload.Should().BeEmpty();
 
         this.judgeServiceMock.Verify(service =>
-            service.EvaluateAsync(It.IsAny<string>()),
+            service.EvaluateAsync(It.IsAny<string>(), It.IsAny<string>()),
                 Times.Never);
     }
 }

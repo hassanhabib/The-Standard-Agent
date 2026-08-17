@@ -3,11 +3,11 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
-using Standard.Agents.Models.Foundations.Judges;
+namespace Standard.Agents.Brokers.Redactions;
 
-namespace Standard.Agents.Services.Foundations.Judges;
-
-public interface IJudgeService
+public interface IRedactionBroker
 {
-    ValueTask<Judgement> EvaluateAsync(string task, string candidate);
+    string Redact(string text, IDictionary<string, string> vault);
+
+    string Rehydrate(string text, IReadOnlyDictionary<string, string> vault);
 }

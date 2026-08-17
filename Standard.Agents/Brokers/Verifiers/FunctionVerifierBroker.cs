@@ -18,6 +18,14 @@ public sealed class FunctionVerifierBroker : IVerifierBroker
         this.systemPrompt = systemPrompt;
     }
 
-    public async ValueTask<string> VerifyAsync(string candidate) =>
-        await this.evaluate(this.systemPrompt, candidate);
+    // A host-supplied judge is handed the task and the candidate together, so the delegate's
+    // second argument stays a single piece of text while still carrying what SPEC.md §4.2
+    // requires the Judge to see. The labels are the same ones the judge contract already uses.
+    public async ValueTask<string> VerifyAsync(string task, string candidate) =>
+        await this.evaluate(this.systemPrompt, FormatVerdictRequest(task, candidate));
+
+    internal static string FormatVerdictRequest(string task, string candidate) =>
+        string.IsNullOrWhiteSpace(task)
+            ? candidate
+            : $"TASK: {task}{Environment.NewLine}{Environment.NewLine}ANSWER: {candidate}";
 }

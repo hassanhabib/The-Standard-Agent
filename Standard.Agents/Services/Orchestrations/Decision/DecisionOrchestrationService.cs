@@ -107,7 +107,7 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
         }
 
         Judgement judgement =
-            await this.judgeService.EvaluateAsync(candidate: decided.Payload);
+            await this.judgeService.EvaluateAsync(task: context.Prompt, candidate: decided.Payload);
 
         if (judgement.Score < MinimumAcceptableScore)
         {
@@ -262,7 +262,7 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
             yield break;
         }
 
-        Judgement judgement = await this.judgeService.EvaluateAsync(candidate: decided.Payload);
+        Judgement judgement = await this.judgeService.EvaluateAsync(task: context.Prompt, candidate: decided.Payload);
 
         string judgeOutcome = judgement.Score < MinimumAcceptableScore
             ? $"REJECT: {judgement.Reason}".TrimEnd(':', ' ')
