@@ -35,4 +35,9 @@ public sealed record Expectation(
     //   GuardianNeverAnswers — a guardian that tries to answer or act must be neutralized, and
     //                          its text must never become the agent's result.
     bool JudgeSawTask = false,
-    bool GuardianNeverAnswers = false);
+    bool GuardianNeverAnswers = false,
+
+    //   NoModelSees - this text must not appear in ANY model call: not the Brain's prompt,
+    //                 not the Gate's input, not the Judge's. Redaction that covers one call
+    //                 and not the others does not satisfy SPEC.md 4.6.
+    string? NoModelSees = null);

@@ -13,6 +13,7 @@ using Standard.Agents.Brokers.Knowledges;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Brokers.Mcps;
 using Standard.Agents.Brokers.Memorys;
+using Standard.Agents.Brokers.Redactions;
 using Standard.Agents.Brokers.Skills;
 using Standard.Agents.Brokers.Times;
 using Standard.Agents.Brokers.Tools;
@@ -718,10 +719,18 @@ public sealed partial class StandardAgent : IAgent
             RenderToolCatalog(allTools),
             logging);
 
+        // One redaction broker across all three Decision foundations. SPEC.md §4.6: redaction
+        // covers every model the agent drives — the Gate screens the raw task and the Judge
+        // reads the task and the draft, and either may run on a different host than the Brain,
+        // so redacting only the Brain narrows nothing.
+        IRedactionBroker redaction = this.redactionRules is null
+            ? new NotConfiguredRedactionBroker()
+            : new RuleRedactionBroker(this.redactionRules);
+
         DecisionOrchestrationService decision = new(
-            new GateService(classifier, logging),
-            new BrainService(generator, logging, this.redactionRules),
-            new JudgeService(verifier, logging),
+            new GateService(classifier, logging, redaction),
+            new BrainService(generator, logging, redaction),
+            new JudgeService(verifier, logging, redaction),
             logging);
 
         DirectionOrchestrationService direction = new(

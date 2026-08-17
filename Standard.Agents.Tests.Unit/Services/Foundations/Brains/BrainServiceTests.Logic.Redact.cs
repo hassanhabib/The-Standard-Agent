@@ -5,6 +5,7 @@
 
 using FluentAssertions;
 using Moq;
+using Standard.Agents.Brokers.Redactions;
 using Standard.Agents.Models.Foundations.Brains;
 using Standard.Agents.Services.Foundations.Brains;
 using Xunit;
@@ -26,7 +27,7 @@ public partial class BrainServiceTests
         var redactingBrainService = new BrainService(
             generatorBroker: this.generatorBrokerMock.Object,
             loggingBroker: this.loggingBrokerMock.Object,
-            redactionRules: [emailRule]);
+            redactionBroker: new RuleRedactionBroker([emailRule]));
 
         string systemPrompt = CreateRandomString();
         string userPrompt = "please email jane@acme.com the report";

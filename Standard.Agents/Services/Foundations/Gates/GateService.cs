@@ -5,6 +5,7 @@
 
 using Standard.Agents.Brokers.Classifiers;
 using Standard.Agents.Brokers.Loggings;
+using Standard.Agents.Brokers.Redactions;
 
 namespace Standard.Agents.Services.Foundations.Gates;
 
@@ -19,21 +20,33 @@ public partial class GateService : IGateService
 
     private readonly IClassifierBroker classifierBroker;
     private readonly ILoggingBroker loggingBroker;
+    private readonly IRedactionBroker redactionBroker;
 
     public GateService(
         IClassifierBroker classifierBroker,
-        ILoggingBroker loggingBroker)
+        ILoggingBroker loggingBroker,
+        IRedactionBroker? redactionBroker = null)
     {
         this.classifierBroker = classifierBroker;
         this.loggingBroker = loggingBroker;
+        this.redactionBroker = redactionBroker ?? new NotConfiguredRedactionBroker();
     }
 
+    // The Gate screens the raw task, so it sees exactly what redaction exists to hide, and it
+    // may run on a different host than the Brain (SPEC.md §4.6). The vault is per call: a
+    // verdict is a classification, but a refusal reason can quote the input back, so the
+    // verdict is rehydrated before anyone reads it.
     public ValueTask<string> ScreenAsync(string input) =>
     TryCatch(async () =>
     {
         ValidateScreen(input);
 
-        return await this.classifierBroker.ClassifyAsync(input);
+        var vault = new Dictionary<string, string>();
+        string redactedInput = this.redactionBroker.Redact(input, vault);
+
+        string verdict = await this.classifierBroker.ClassifyAsync(redactedInput);
+
+        return this.redactionBroker.Rehydrate(verdict, vault);
     });
 
     public ValueTask<string> DetectConflictAsync(string instructions) =>

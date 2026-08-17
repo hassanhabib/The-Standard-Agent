@@ -29,4 +29,8 @@ public sealed record Vector(
     // Concurrent runs them all at once rather than in order, which is the only way to
     // certify that one run's bookkeeping never leaks into another's.
     List<string>? Prompts = null,
-    bool Concurrent = false);
+    bool Concurrent = false,
+
+    // Turns on boundary redaction (SPEC.md 4.6) so a vector can certify that no model call
+    // carries a sensitive value in the clear.
+    bool Redact = false);
