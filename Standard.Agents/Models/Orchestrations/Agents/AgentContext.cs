@@ -3,11 +3,19 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using Standard.Agents.Models.Brokers.Sessions;
+
 namespace Standard.Agents.Models.Orchestrations.Agents;
 
 public sealed record AgentContext
 {
     public string Prompt { get; init; } = "";
+
+    // The conversation this prompt belongs to, and what was said before (SPEC.md §3.2, §4.11).
+    // Empty when no session is configured, which is exactly the stateless agent that existed
+    // before sessions did.
+    public string SessionId { get; init; } = "";
+    public IReadOnlyList<AgentTurn> History { get; init; } = [];
 
     public string SystemPrompt { get; init; } = "";
     public IReadOnlyList<string> Observations { get; init; } = [];

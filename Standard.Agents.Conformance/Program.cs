@@ -281,6 +281,21 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         agent.Budget(maxWallClock: TimeSpan.FromSeconds(seconds));
     }
 
+    // A real session store, in a folder unique to this vector, so conversation is certified
+    // against something that actually persists rather than an in-memory stand-in that could
+    // never demonstrate resumption.
+    if (vector.SessionId is not null)
+    {
+        string sessionsPath = Path.Combine(AppContext.BaseDirectory, $"sessions-{vector.Name}");
+
+        if (Directory.Exists(sessionsPath))
+        {
+            Directory.Delete(sessionsPath, recursive: true);
+        }
+
+        agent.Sessions(sessionsPath);
+    }
+
     if (vector.FallbackReply is string fallbackReply)
     {
         agent.Fallback(
@@ -351,7 +366,8 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
 
         foreach (string prompt in prompts)
         {
-            result = await agent.ProcessPromptAsync(prompt, runCancellation.Token);
+            result = await agent.ProcessPromptAsync(
+                prompt, vector.SessionId ?? string.Empty, runCancellation.Token);
         }
     }
 

@@ -18,11 +18,13 @@ using Standard.Agents.Brokers.Mcps;
 using Standard.Agents.Brokers.Memorys;
 using Standard.Agents.Brokers.Redactions;
 using Standard.Agents.Brokers.Resiliences;
+using Standard.Agents.Brokers.Sessions;
 using Standard.Agents.Brokers.Skills;
 using Standard.Agents.Brokers.Times;
 using Standard.Agents.Brokers.Tools;
 using Standard.Agents.Brokers.Verifiers;
 using Standard.Agents.Models.Brokers.Audits;
+using Standard.Agents.Models.Brokers.Sessions;
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Coordinations.Agents;
 using Standard.Agents.Models.Foundations.Brains;
@@ -92,6 +94,8 @@ public sealed partial class StandardAgent : IAgent
     private bool screenToolOutput;
     private AgentBudget? budget;
     private IResilienceBroker? resilienceBroker;
+    private ISessionBroker? sessionBroker;
+    private int maxHistoryTurns = 20;
     private Func<string?>? principalResolver;
 
     private IAgentCoordinationService? agent;
@@ -651,6 +655,66 @@ public sealed partial class StandardAgent : IAgent
     }
 
     /// <summary>
+    /// Runs the agent as part of a <b>conversation</b>. What was said before is loaded before the
+    /// brain thinks, and this exchange is appended when it answers — so a follow-up resolves
+    /// against what came before instead of starting from nothing (SPEC.md §4.11).
+    /// </summary>
+    /// <remarks>
+    /// The conversation lives in the session store, not in this instance, so it survives a
+    /// restart and can be continued by a different process. Invariant 4 is intact: the agent is
+    /// still stateless across prompts; the session is not part of the agent.
+    /// <para>A cancelled or budget-stopped run is never recorded as an answer — the next prompt
+    /// would otherwise be told the agent said something it never said.</para>
+    /// </remarks>
+    /// <param name="prompt">The user's prompt.</param>
+    /// <param name="sessionId">Which conversation this belongs to.</param>
+    /// <param name="cancellationToken">Token to stop the run.</param>
+    /// <returns>The agent's final answer.</returns>
+    public async ValueTask<string> ProcessPromptAsync(
+        string prompt,
+        string sessionId,
+        CancellationToken cancellationToken = default)
+    {
+        return await ResolveAgent().ProcessPromptAsync(prompt, sessionId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Keeps conversations in a folder, one file per session — the <b>Local</b> mode of sessions.
+    /// </summary>
+    /// <param name="path">Folder to keep sessions in.</param>
+    /// <param name="maxHistoryTurns">
+    /// How many past exchanges to recall. Bounded on purpose: an unbounded history makes every
+    /// prompt in a long conversation cost more than the last, without limit.
+    /// </param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent Sessions(string path, int maxHistoryTurns = 20) =>
+    Set(() =>
+    {
+        this.sessionBroker = new FileSessionBroker(path);
+        this.maxHistoryTurns = maxHistoryTurns;
+    });
+
+    /// <summary>
+    /// Keeps conversations in a provider — the <b>External</b> mode (Redis, Postgres, your own
+    /// store). This is what makes resumption work across machines, not just across processes.
+    /// </summary>
+    /// <param name="broker">The session broker to use.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent UseSessions(ISessionBroker broker) =>
+        Set(() => this.sessionBroker = broker);
+
+    /// <summary>
+    /// Keeps conversations wherever your own code puts them — the <b>Custom</b> mode.
+    /// </summary>
+    /// <param name="select">Reads a session by id, or returns null when there is none.</param>
+    /// <param name="upsert">Writes a session back.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent OnSessions(
+        Func<string, ValueTask<AgentSession?>> select,
+        Func<AgentSession, ValueTask> upsert) =>
+        Set(() => this.sessionBroker = new FunctionSessionBroker(select, upsert));
+
+    /// <summary>
     /// Bounds what one prompt may consume (SPEC.md §4.10). Checked between turns; exhaustion
     /// stops the loop and says which bound ran out, distinguishably from a refusal — a caller
     /// that cannot tell <i>I will not</i> from <i>I ran out</i> cannot decide whether to retry.
@@ -919,7 +983,8 @@ public sealed partial class StandardAgent : IAgent
             this.screenToolOutput ? gate : null);
 
         return new AgentCoordinationService(
-            data, decision, direction, logging, this.maxTurns, new TimeBroker(), this.budget);
+            data, decision, direction, logging, this.maxTurns, new TimeBroker(), this.budget,
+            this.sessionBroker, this.maxHistoryTurns);
     }
 
     // The catalog a "{{tools}}" marker in the agent's Data expands into. Only tools that

@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.Json;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models.Clients.Agents;
+using Standard.Agents.Models.Brokers.Sessions;
 using Standard.Agents.Models.Foundations.Gates;
 using Standard.Agents.Models.Foundations.Judges;
 using Standard.Agents.Models.Orchestrations.Agents;
@@ -449,6 +450,22 @@ verdict.TrimStart().StartsWith(RefuseVerdict, StringComparison.OrdinalIgnoreCase
     private static string BuildUserMessage(AgentContext context)
     {
         StringBuilder userMessage = new();
+
+        // What was said before, oldest first, so a follow-up resolves against it rather than
+        // starting from nothing (SPEC.md §4.11). Absent a session this is empty and the message
+        // is exactly what it always was.
+        if (context.History.Count > 0)
+        {
+            userMessage.AppendLine("Conversation so far:").AppendLine();
+
+            foreach (AgentTurn turn in context.History)
+            {
+                userMessage.Append("User: ").AppendLine(turn.Prompt);
+                userMessage.Append("You: ").AppendLine(turn.Answer);
+            }
+
+            userMessage.AppendLine();
+        }
 
         userMessage.Append("Task: ").Append(context.Prompt);
 
