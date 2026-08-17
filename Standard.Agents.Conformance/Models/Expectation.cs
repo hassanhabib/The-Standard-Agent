@@ -56,4 +56,9 @@ public sealed record Expectation(
     //                              is certified: the passage that answers the question got there.
     //   GateScreenedPromptTimes  — exactly how many times the Gate was asked about the prompt.
     string? BrainSees = null,
-    int? GateScreenedPromptTimes = null);
+    int? GateScreenedPromptTimes = null,
+
+    //   CompensationOrder — the exact order the tools were reversed in, which is how the reverse
+    //                       unwind is certified: a later effect may depend on an earlier one, so
+    //                       undoing them in the order they ran would leave state inconsistent.
+    List<string>? CompensationOrder = null);
