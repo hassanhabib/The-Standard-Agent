@@ -68,4 +68,9 @@ public sealed record Expectation(
     //                           must be replayed alongside it. This is the one thing the text
     //                           protocol cannot express, so it is the one thing worth certifying
     //                           about native tool calling (SPEC.md §6).
-    string? ToolResultAnswersCall = null);
+    string? ToolResultAnswersCall = null,
+
+    //   PolicySawPrincipal — the identity the policy broker was actually handed when it decided.
+    //                        An audit record naming the caller afterwards is not authorization,
+    //                        so this reads the decision's input rather than the log (SPEC.md §4.9).
+    string? PolicySawPrincipal = null);

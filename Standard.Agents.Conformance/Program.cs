@@ -9,6 +9,7 @@ using Standard.Agents.Brokers.Approvals;
 using Standard.Agents.Conformance;
 using Standard.Agents.Models.Brokers.Audits;
 using Standard.Agents.Models.Brokers.Generators.V1;
+using Standard.Agents.Models.Orchestrations.Effects;
 
 string? profileName = ReadProfileArgument(args);
 
@@ -169,6 +170,9 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
 {
     // The order the run was unwound in, written by the stubs as they reverse themselves.
     List<string> compensationOrder = [];
+
+    // Every identity the policy broker was handed, in order.
+    List<string?> policyPrincipals = [];
 
     // One scripted native model for the whole vector, so its recorded conversations survive
     // across instances exactly as a real endpoint's would.
@@ -331,6 +335,31 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
             agent.UseNativeBrain(nativeGenerator);
         }
 
+        if (vector.Principal is not null)
+        {
+            agent.Principal(() => vector.Principal);
+        }
+
+        // A scripted policy engine that decides on the identity, which the allow-list cannot do:
+        // it can say "not this tool", never "not for them". The principal it was handed is
+        // recorded, because the decision's input is the thing worth certifying.
+        if (vector.Principal is not null || vector.DeniedForPrincipal is { Count: > 0 })
+        {
+            agent.OnPolicy(effect =>
+            {
+                lock (auditLock)
+                {
+                    policyPrincipals.Add(effect.Principal);
+                }
+
+                return ValueTask.FromResult(
+                    (vector.DeniedForPrincipal ?? []).Contains(effect.ToolName)
+                        ? AuthorizationDecision.Deny(
+                            $"'{effect.Principal}' may not use '{effect.ToolName}'")
+                        : AuthorizationDecision.Allow());
+            });
+        }
+
         if (vector.Retries > 0)
         {
             agent.Resilience(vector.Retries);
@@ -449,7 +478,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         }
     }
 
-    return new VectorRun(result, stubTools, gateRubric, judgeRubric, judgeInput, modelInputs, brainInputs, promptScreenings, auditRecords, compensationOrder, nativeGenerator);
+    return new VectorRun(result, stubTools, gateRubric, judgeRubric, judgeInput, modelInputs, brainInputs, promptScreenings, auditRecords, compensationOrder, nativeGenerator, policyPrincipals);
 }
 
 // The decision log's guarantees, certified from the records themselves: one run per prompt,
@@ -601,6 +630,32 @@ static bool GuardianInputConformant(
         failure = "the guardian's own text became the agent's answer";
 
         return false;
+    }
+
+    // Identity must reach the decision, not only the record of it (SPEC.md §4.9). This reads what
+    // the policy broker was handed; an implementation that names the caller in the audit log and
+    // authorizes without them fails here, which is exactly the defect this vector exists for.
+    if (vector.Expect.PolicySawPrincipal is string expectedPrincipal)
+    {
+        if (run.PolicyPrincipals.Count is 0)
+        {
+            failure = "policy was never asked, so it cannot have been told who was acting";
+
+            return false;
+        }
+
+        string?[] wrong =
+            [.. run.PolicyPrincipals.Where(principal =>
+                string.Equals(principal, expectedPrincipal, StringComparison.Ordinal) is false)];
+
+        if (wrong.Length > 0)
+        {
+            failure =
+                $"policy decided for principal(s) [{string.Join(", ", wrong.Select(p => p ?? "null"))}], "
+                    + $"expected '{expectedPrincipal}' every time";
+
+            return false;
+        }
     }
 
     // A tool result must come back as an answer to the call that asked for it (SPEC.md §6). Both
@@ -809,4 +864,5 @@ internal sealed record VectorRun(
     int PromptScreenings,
     List<AuditRecord> AuditRecords,
     List<string> CompensationOrder,
-    ScriptedNativeGeneratorBroker? NativeGenerator);
+    ScriptedNativeGeneratorBroker? NativeGenerator,
+    List<string?> PolicyPrincipals);

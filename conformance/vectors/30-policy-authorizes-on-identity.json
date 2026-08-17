@@ -1,0 +1,23 @@
+{
+  "name": "policy-authorizes-on-identity",
+  "description": "SPEC.md 4.9: authorization is a judgment about an act, and who is acting is part of what the act IS. The host declares a principal; the policy broker must be handed it at the moment it decides, not merely have it written to the audit log afterwards. Here the principal may use the calculator and may not move money - a refusal the allow-list cannot express, because an allow-list can say 'not this tool' and never 'not for them'. The denial names who was refused, which is what makes it reviewable. An implementation that records the caller and authorizes without them passes every audit check and fails this.",
+  "generatorReplies": [
+    "ACTION: wire_transfer: 10000",
+    "ACTION: calculator: 2+2",
+    "FINAL: I could not move the money, but 2+2 is 4"
+  ],
+  "tools": {
+    "wire_transfer": "transfer complete",
+    "calculator": "4"
+  },
+  "prompt": "pay the invoice and add two and two",
+  "principal": "intern-9",
+  "deniedForPrincipal": ["wire_transfer"],
+  "expect": {
+    "result": "I could not move the money, but 2+2 is 4",
+    "policySawPrincipal": "intern-9",
+    "toolNeverRan": ["wire_transfer"],
+    "toolRunCount": { "calculator": 1 },
+    "brainSees": "'intern-9' may not use 'wire_transfer'"
+  }
+}

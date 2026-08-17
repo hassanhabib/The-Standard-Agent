@@ -28,7 +28,12 @@ public partial class DirectionOrchestrationService
             arguments: context.Payload,
             riskLevel: RiskLevelFor(context.DirectionType),
             approvalRequired: RequiresApproval(context.DirectionType),
-            principal: null);
+
+            // Who is acting, asked at the moment the act is described — so the policy broker
+            // deciding whether it may happen is told, not merely the record written afterwards
+            // (SPEC.md §4.9). Null when the host configured no identity, which claims nothing
+            // rather than inventing someone.
+            principal: this.principalResolver?.Invoke());
 
         // 1 — authorize
         AuthorizationDecision decision = await this.policyBroker.AuthorizeAsync(effect);

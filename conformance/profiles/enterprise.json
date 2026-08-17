@@ -4,6 +4,7 @@
   "inherits": "Reliable",
   "requires": [
     "approval-blocks-irreversible-tool",
+    "policy-authorizes-on-identity",
     "injected-instruction-in-tool-output-is-refused",
     "duplicate-effect-executes-once",
     "budget-stops-the-loop",
