@@ -5,7 +5,7 @@
 
 using System.Runtime.CompilerServices;
 using Standard.Agents.Brokers.Loggings;
-using Standard.Agents.Brokers.Sessions;
+using Standard.Agents.Services.Foundations.Sessions;
 using Standard.Agents.Brokers.Times;
 using Standard.Agents.Models.Brokers.Sessions;
 using Standard.Agents.Models.Coordinations.Agents;
@@ -31,7 +31,7 @@ public partial class AgentCoordinationService : IAgentCoordinationService
     private readonly ILoggingBroker loggingBroker;
     private readonly ITimeBroker timeBroker;
     private readonly AgentBudget? budget;
-    private readonly ISessionBroker sessionBroker;
+    private readonly ISessionService? sessionService;
     private readonly int maxHistoryTurns;
     private readonly int maxTurns;
     private readonly bool compensateOnFailure;
@@ -44,7 +44,7 @@ public partial class AgentCoordinationService : IAgentCoordinationService
         int maxTurns = DefaultMaxTurns,
         ITimeBroker? timeBroker = null,
         AgentBudget? budget = null,
-        ISessionBroker? sessionBroker = null,
+        ISessionService? sessionService = null,
         int maxHistoryTurns = 20,
         bool compensateOnFailure = false)
     {
@@ -56,7 +56,7 @@ public partial class AgentCoordinationService : IAgentCoordinationService
         this.maxTurns = maxTurns;
         this.timeBroker = timeBroker ?? new TimeBroker();
         this.budget = budget;
-        this.sessionBroker = sessionBroker ?? new NotConfiguredSessionBroker();
+        this.sessionService = sessionService;
         this.maxHistoryTurns = maxHistoryTurns;
     }
 
