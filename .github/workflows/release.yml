@@ -12,14 +12,22 @@ jobs:
   publish:
     runs-on: ubuntu-latest
 
+    # Provenance attestation needs to write an attestation and read the workflow identity.
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+
     steps:
     - name: Pulling Code
       uses: actions/checkout@v4
 
+    # The SDK comes from global.json, so the package is built with the same compiler a
+    # developer used. Reproducibility starts with agreeing on the toolchain.
     - name: Installing .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 10.0.x
+        global-json-file: global.json
 
     - name: Restoring Packages
       run: dotnet restore
@@ -41,6 +49,30 @@ jobs:
         --no-build
         --configuration Release
         --output ${{ github.workspace }}/artifacts
+
+    # A software bill of materials: what is actually inside the package, transitively. Most
+    # regulated procurement asks for one, and generating it at release time means it describes
+    # the artifact that shipped rather than the repository at some later date.
+    - name: Generating Software Bill Of Materials
+      run: |
+        dotnet tool install --global CycloneDX
+        dotnet CycloneDX Standard.Agents/Standard.Agents.csproj \
+          --out ${{ github.workspace }}/artifacts --json
+
+    # Signed provenance: a verifiable statement of which workflow, from which commit, produced
+    # these bytes. It is not a code-signing certificate — see docs/support.md — but it is the
+    # part a consumer can check without trusting us.
+    - name: Attesting Build Provenance
+      uses: actions/attest-build-provenance@v1
+      with:
+        subject-path: ${{ github.workspace }}/artifacts/*.nupkg
+
+    - name: Attaching Artifacts To The Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          ${{ github.workspace }}/artifacts/*.nupkg
+          ${{ github.workspace }}/artifacts/*.json
 
     - name: Publishing To NuGet
       run: >
