@@ -33,4 +33,12 @@ public sealed record Vector(
 
     // Turns on boundary redaction (SPEC.md 4.6) so a vector can certify that no model call
     // carries a sensitive value in the clear.
-    bool Redact = false);
+    bool Redact = false,
+
+    // Perimeter controls (SPEC.md §4.9). RequireApproval names the acts an authority must
+    // permit; ScreenToolOutput turns on screening of untrusted inbound; GateVerdictOnToolOutput
+    // is the verdict the scripted Gate returns for tool output specifically, so a vector can
+    // refuse a tool result while still accepting the prompt.
+    List<string>? RequireApproval = null,
+    bool ScreenToolOutput = false,
+    string? GateVerdictOnToolOutput = null);

@@ -40,4 +40,14 @@ public sealed record Expectation(
     //   NoModelSees - this text must not appear in ANY model call: not the Brain's prompt,
     //                 not the Gate's input, not the Judge's. Redaction that covers one call
     //                 and not the others does not satisfy SPEC.md 4.6.
-    string? NoModelSees = null);
+    string? NoModelSees = null,
+
+    // Perimeter assertions (SPEC.md §4.9, §7.7).
+    //
+    //   ToolNeverRan    — these tools must not have executed at all. Held is not performed.
+    //   ToolRunCount    — exactly how many times each tool executed, which is how run-once is
+    //                     certified: proposing an act three times must still run it once.
+    //   BrainNeverSees  — this text must never reach the Brain, however it entered as Data.
+    List<string>? ToolNeverRan = null,
+    Dictionary<string, int>? ToolRunCount = null,
+    string? BrainNeverSees = null);

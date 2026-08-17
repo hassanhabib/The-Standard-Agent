@@ -1,0 +1,12 @@
+{
+  "name": "approval-blocks-irreversible-tool",
+  "description": "SPEC.md 4.9 and Invariant 7: an irreversible act must be authorized before execution, never after. With approval required and no approver wired in, the decision is Pending - the act is held, not performed, because waiting is not consent. The turn ends AwaitingApproval and the tool never ran.",
+  "generatorReplies": ["ACTION: wire_transfer: 10000"],
+  "tools": { "wire_transfer": "transfer complete" },
+  "prompt": "pay the invoice",
+  "requireApproval": ["wire_transfer"],
+  "expect": {
+    "resultContains": "waiting for approval",
+    "toolNeverRan": ["wire_transfer"]
+  }
+}

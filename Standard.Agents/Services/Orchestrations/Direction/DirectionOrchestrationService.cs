@@ -9,6 +9,7 @@ using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Brokers.Policies;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Services.Foundations.ExternalTools;
+using Standard.Agents.Services.Foundations.Gates;
 using Standard.Agents.Services.Foundations.InternalTools;
 using Standard.Agents.Services.Foundations.Returns;
 
@@ -27,6 +28,7 @@ public partial class DirectionOrchestrationService : IDirectionOrchestrationServ
     private readonly IPolicyBroker policyBroker;
     private readonly IApprovalBroker approvalBroker;
     private readonly IEffectLedgerBroker effectLedgerBroker;
+    private readonly IGateService? screeningService;
     private readonly HashSet<string> irreversibleToolNames;
 
     public DirectionOrchestrationService(
@@ -38,8 +40,11 @@ public partial class DirectionOrchestrationService : IDirectionOrchestrationServ
         IPolicyBroker? policyBroker = null,
         IApprovalBroker? approvalBroker = null,
         IEffectLedgerBroker? effectLedgerBroker = null,
-        IEnumerable<string>? irreversibleTools = null)
+        IEnumerable<string>? irreversibleTools = null,
+        IGateService? screeningService = null)
     {
+        this.screeningService = screeningService;
+
         this.internalToolService = internalToolService;
         this.externalToolService = externalToolService;
         this.returnService = returnService;
