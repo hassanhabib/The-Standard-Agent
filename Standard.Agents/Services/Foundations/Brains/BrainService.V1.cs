@@ -88,13 +88,49 @@ public partial class BrainService
             Content = context.Prompt
         };
 
-        if (context.Observations.Count > 0)
+        // Native calls go back as what they were: the assistant's request, then the tool's answer
+        // naming the call it answers (SPEC.md §6). This is the shape hosted models are trained on,
+        // and it is the reason the id exists — narrating "calculator: 4183" would leave the model
+        // matching answers to questions by reading.
+        foreach (ToolExchange exchange in context.ToolExchanges)
+        {
+            yield return new ConversationMessage
+            {
+                Role = MessageRole.Assistant,
+
+                ToolCalls =
+                [
+                    new ModelToolCall(
+                        exchange.CallId, exchange.ToolName, exchange.ArgumentsJson)
+                ]
+            };
+
+            yield return new ConversationMessage
+            {
+                Role = MessageRole.Tool,
+                ToolCallId = exchange.CallId,
+                Content = exchange.Result
+            };
+        }
+
+        // What is left is everything the exchanges do not already carry — a denial, a screening
+        // refusal, a V0-shaped observation. Dropping these would lose the very results the
+        // perimeter withheld, which are the ones the model most needs to see.
+        string[] alreadySent =
+            [.. context.ToolExchanges.Select(exchange =>
+                $"{exchange.ToolName}: {exchange.Result}")];
+
+        string[] narrated =
+            [.. context.Observations.Where(observation =>
+                alreadySent.Contains(observation, StringComparer.Ordinal) is false)];
+
+        if (narrated.Length > 0)
         {
             yield return new ConversationMessage
             {
                 Role = MessageRole.Assistant,
                 Content = "Observations so far:\n"
-                    + string.Join('\n', context.Observations.Select(o => $"- {o}"))
+                    + string.Join('\n', narrated.Select(o => $"- {o}"))
             };
         }
     }

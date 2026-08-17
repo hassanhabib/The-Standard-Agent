@@ -128,6 +128,7 @@ public partial class DirectionOrchestrationService
         {
             Result = refusal,
             Observations = [.. context.Observations, $"{context.DirectionType}: {refusal}"],
+            ToolExchanges = WithExchange(context, refusal),
             Status = AgentStatus.Working
         };
     }
@@ -243,14 +244,32 @@ public partial class DirectionOrchestrationService
         {
             Result = reason,
             Observations = [.. context.Observations, $"{context.DirectionType}: {reason}"],
+            ToolExchanges = WithExchange(context, reason),
             Status = AgentStatus.Working
         };
+
+    // A call the model made gets an answer, whatever the answer is. A denial and a withheld
+    // result are answers; leaving the call unanswered would strand it, and some providers reject
+    // a conversation whose tool call has no matching tool message (SPEC.md §6).
+    private static IReadOnlyList<ToolExchange> WithExchange(AgentContext context, string result) =>
+        string.IsNullOrEmpty(context.ToolCallId)
+            ? context.ToolExchanges
+            : [.. context.ToolExchanges,
+                new ToolExchange(
+                    context.ToolCallId, context.DirectionType, context.Payload, result)];
 
     private static AgentContext Observed(AgentContext context, string output) =>
         context with
         {
             Result = output,
             Observations = [.. context.Observations, $"{context.DirectionType}: {output}"],
+
+            // On the native path the result is also kept beside the call that asked for it, so
+            // the next turn can hand it back as a tool message rather than as narration
+            // (SPEC.md §6). Observations still carry it too: they are what the V0 path reads,
+            // and what the trace and the Judge read on both.
+            ToolExchanges = WithExchange(context, output),
+
             Status = AgentStatus.Working
         };
 

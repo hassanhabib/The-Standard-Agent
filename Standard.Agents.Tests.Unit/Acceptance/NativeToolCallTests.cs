@@ -94,6 +94,65 @@ public class NativeToolCallTests
         actualResult.Should().Be("4183");
     }
 
+    // The id is the whole point of native tool calling. A model that asked for call_1 expects the
+    // answer back as a tool message naming call_1 — that is what it was trained on, and it is the
+    // one thing the text protocol cannot express (SPEC.md §6). Replaying the result as narrated
+    // prose leaves the model matching answers to questions by reading, which is exactly the
+    // guessing native calls exist to remove.
+    [Fact]
+    public async Task ShouldReturnAToolResultTiedToTheCallThatAskedForItAsync()
+    {
+        // given
+        var tool = new CalculatorTool();
+        IReadOnlyList<ConversationMessage> secondTurn = [];
+
+        StandardAgent agent = AgentWith(tool, (tools, call) => call == 0
+            ? new GenerationResult
+            {
+                ToolCalls =
+                [
+                    new ModelToolCall("call_7", "calculator", """{"expression":"47*89"}""")
+                ]
+            }
+            : new GenerationResult { Content = "4183" });
+
+        agent = agent.OnNativeBrain((messages, tools) =>
+        {
+            if (messages.Any(message => message.Role is MessageRole.Tool))
+            {
+                secondTurn = messages;
+
+                return ValueTask.FromResult(new GenerationResult { Content = "4183" });
+            }
+
+            return ValueTask.FromResult(new GenerationResult
+            {
+                ToolCalls =
+                [
+                    new ModelToolCall("call_7", "calculator", """{"expression":"47*89"}""")
+                ]
+            });
+        });
+
+        // when
+        await agent.ProcessPromptAsync("what is 47 times 89?");
+
+        // then — the assistant's request and the tool's answer are both present, and the answer
+        // names the call it answers
+        ConversationMessage? request = secondTurn.FirstOrDefault(message =>
+            message.Role is MessageRole.Assistant && message.ToolCalls.Count > 0);
+
+        ConversationMessage? answer =
+            secondTurn.FirstOrDefault(message => message.Role is MessageRole.Tool);
+
+        request.Should().NotBeNull();
+        request!.ToolCalls[0].Id.Should().Be("call_7");
+
+        answer.Should().NotBeNull();
+        answer!.ToolCallId.Should().Be("call_7");
+        answer.Content.Should().Be("4183");
+    }
+
     private sealed class UndescribedTool : ITool
     {
         public string Name => "secret";

@@ -43,6 +43,7 @@ public partial class DecisionOrchestrationService
                 Intent = RespondIntent,
                 DirectionType = ReturnResponseDirection,
                 Payload = result.Content,
+                ToolCallId = string.Empty,
                 RawReply = result.Content
             };
         }
@@ -61,6 +62,9 @@ public partial class DecisionOrchestrationService
             Intent = call.Name,
             DirectionType = call.Name,
             Payload = call.ArgumentsJson,
+
+            // Carried so Direction can tie the result back to the call that asked for it.
+            ToolCallId = call.Id,
             RawReply = result.Content
         };
     }

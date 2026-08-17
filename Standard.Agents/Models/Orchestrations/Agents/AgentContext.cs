@@ -20,6 +20,16 @@ public sealed record AgentContext
     public string SystemPrompt { get; init; } = "";
     public IReadOnlyList<string> Observations { get; init; } = [];
 
+    // What a native call asked for and what came back, kept as a pair (SPEC.md §6). Observations
+    // alone cannot express this: they are prose, and prose cannot say WHICH call a result answers.
+    // On the V0 text path this stays empty and observations remain the whole record, which is the
+    // limitation that path has always had.
+    public IReadOnlyList<ToolExchange> ToolExchanges { get; init; } = [];
+
+    // The call Direction is performing this turn, so its result can be tied back to it. Empty
+    // outside the native path.
+    public string ToolCallId { get; init; } = "";
+
     public string Intent { get; init; } = "";
     public string Route { get; init; } = "";
     public string DirectionType { get; init; } = "";
