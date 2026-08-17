@@ -14,14 +14,17 @@ jobs:
     - name: Pulling Code
       uses: actions/checkout@v4
 
+    # No dotnet-version here on purpose: global.json pins the SDK, so CI and a developer's
+    # machine compile with the same one. A version named in two places drifts in one of them.
     - name: Installing .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 10.0.x
+        global-json-file: global.json
 
     - name: Restoring Packages
       run: dotnet restore
 
+    # Warnings are errors (Directory.Build.props), so this step is also the zero-warning gate.
     - name: Building Solution
       run: dotnet build --no-restore --configuration Release
 
@@ -33,3 +36,50 @@ jobs:
     # breaks it rather than on the next release.
     - name: Certifying Conformance
       run: dotnet run --project Standard.Agents.Conformance --no-build --configuration Release
+
+    # The readiness level the package claims. SPEC.md §1.1: a claim whose evidence has not been
+    # run is not a claim. This is what makes the badge in the README checkable by anyone.
+    - name: Certifying Enterprise Profile
+      run: >
+        dotnet run --project Standard.Agents.Conformance --no-build --configuration Release
+        -- --profile Enterprise
+
+  supply-chain:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Full history: the secret scan diffs a commit against its parent, and the default shallow
+    # clone has no parent to diff against — it fails to scan rather than finding nothing, which
+    # is the failure mode a security check must never have.
+    - name: Pulling Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Installing .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        global-json-file: global.json
+
+    - name: Restoring Packages
+      run: dotnet restore
+
+    # A known-vulnerable transitive dependency is a finding whether or not anyone looked, so
+    # look on every change rather than at release time when it is expensive to act on.
+    - name: Auditing Dependencies For Vulnerabilities
+      run: |
+        dotnet list package --vulnerable --include-transitive 2>&1 | tee audit.txt
+        if grep -q "has the following vulnerable packages" audit.txt; then
+          echo "::error::Vulnerable packages found — see the listing above."
+          exit 1
+        fi
+
+    - name: Listing Dependency Licenses
+      run: dotnet list package --include-transitive
+
+    # Secrets that reach a public repository are already leaked; the value of this check is
+    # catching the commit that would have done it.
+    - name: Scanning For Secrets
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

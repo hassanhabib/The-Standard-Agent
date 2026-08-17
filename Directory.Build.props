@@ -1,0 +1,26 @@
+<Project>
+
+  <!-- Applies to every project in the repository, so the bar cannot be met in one project and
+       quietly missed in another. -->
+  <PropertyGroup>
+    <!-- A zero-warning bar that isn't enforced isn't a bar. The tree has built clean for some
+         time; this is what keeps it that way when someone is in a hurry. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- Analyzer findings count too: xUnit's analyzers caught a real nullability defect in this
+         suite once already, and a warning nobody has to act on is a warning nobody reads. -->
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+
+    <!-- Deterministic output for a given input, so a build is reproducible off this machine.
+         Paired with the pinned SDK in global.json: same compiler, same sources, same bytes. -->
+    <Deterministic>true</Deterministic>
+
+    <!-- Ship the symbols and the sources they point at, so a consumer can step into a failure
+         in this library rather than guessing at it from a stack trace. -->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+
+</Project>
