@@ -27,29 +27,9 @@ public partial class BrainService
     {
         ValidateUserPrompt(context.Prompt);
 
-        var vault = new Dictionary<string, string>();
+        IReadOnlyList<ConversationMessage> messages = [.. BuildConversation(context)];
 
-        IReadOnlyList<ConversationMessage> messages =
-            [.. BuildConversation(context).Select(message => message with
-            {
-                Content = this.redactionBroker.Redact(message.Content, vault)
-            })];
-
-        GenerationResult result = await this.resilienceBroker.ExecuteAsync(() =>
-            this.generatorBrokerV1!.GenerateAsync(messages, tools));
-
-        return result with
-        {
-            Content = this.redactionBroker.Rehydrate(result.Content, vault),
-
-            ToolCalls =
-            [
-                .. result.ToolCalls.Select(call => call with
-                {
-                    ArgumentsJson = this.redactionBroker.Rehydrate(call.ArgumentsJson, vault)
-                })
-            ]
-        };
+        return await this.generatorBrokerV1!.GenerateAsync(messages, tools);
     }
 
     // The conversation the model actually sees: who it is, what was said before, what it has

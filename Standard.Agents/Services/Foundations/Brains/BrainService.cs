@@ -4,20 +4,18 @@
 // ---------------------------------------------------------------
 
 using System.Runtime.CompilerServices;
-using System.Text;
 using Standard.Agents.Brokers.Generators;
 using Standard.Agents.Brokers.Loggings;
-using Standard.Agents.Brokers.Redactions;
-using Standard.Agents.Brokers.Resiliences;
 
 namespace Standard.Agents.Services.Foundations.Brains;
 
+// One broker role, versioned. Redaction and retry used to be held here as two more brokers; both
+// are now decorations applied to the generator at composition, so this service knows about
+// neither and cannot forget either (docs/architecture-alignment.md).
 public partial class BrainService : IBrainService
 {
     private readonly IGeneratorBroker generatorBroker;
     private readonly ILoggingBroker loggingBroker;
-    private readonly IRedactionBroker redactionBroker;
-    private readonly IResilienceBroker resilienceBroker;
     private readonly IGeneratorBrokerV1? generatorBrokerV1;
 
     /// <summary>True when a V1 brain is configured and native tool calling is available.</summary>
@@ -26,14 +24,10 @@ public partial class BrainService : IBrainService
     public BrainService(
         IGeneratorBroker generatorBroker,
         ILoggingBroker loggingBroker,
-        IRedactionBroker? redactionBroker = null,
-        IResilienceBroker? resilienceBroker = null,
         IGeneratorBrokerV1? generatorBrokerV1 = null)
     {
         this.generatorBroker = generatorBroker;
         this.loggingBroker = loggingBroker;
-        this.redactionBroker = redactionBroker ?? new NotConfiguredRedactionBroker();
-        this.resilienceBroker = resilienceBroker ?? new NotConfiguredResilienceBroker();
         this.generatorBrokerV1 = generatorBrokerV1;
     }
 
@@ -42,16 +36,7 @@ public partial class BrainService : IBrainService
     {
         ValidateUserPrompt(userPrompt);
 
-        var vault = new Dictionary<string, string>();
-        string redactedSystemPrompt = this.redactionBroker.Redact(systemPrompt, vault);
-        string redactedUserPrompt = this.redactionBroker.Redact(userPrompt, vault);
-
-        // A retried call is still one turn (SPEC.md §4.10) — retries happen inside the call, so
-        // the loop's turn budget counts the agent's reasoning, not the network's luck.
-        string reply = await this.resilienceBroker.ExecuteAsync(() =>
-            this.generatorBroker.GenerateAsync(redactedSystemPrompt, redactedUserPrompt));
-
-        return this.redactionBroker.Rehydrate(reply, vault);
+        return await this.generatorBroker.GenerateAsync(systemPrompt, userPrompt);
     });
 
     public async IAsyncEnumerable<string> GenerateStreamAsync(
@@ -60,25 +45,19 @@ public partial class BrainService : IBrainService
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         IAsyncEnumerator<string> tokens;
-        var vault = new Dictionary<string, string>();
 
         try
         {
             ValidateUserPrompt(userPrompt);
 
-            string redactedSystemPrompt = this.redactionBroker.Redact(systemPrompt, vault);
-            string redactedUserPrompt = this.redactionBroker.Redact(userPrompt, vault);
-
             tokens = this.generatorBroker
-                .GenerateStreamAsync(redactedSystemPrompt, redactedUserPrompt, cancellationToken)
+                .GenerateStreamAsync(systemPrompt, userPrompt, cancellationToken)
                 .GetAsyncEnumerator(cancellationToken);
         }
         catch (Exception exception)
         {
             throw await MapStreamExceptionAsync(exception);
         }
-
-        var pending = new StringBuilder();
 
         try
         {
@@ -100,25 +79,7 @@ public partial class BrainService : IBrainService
                     throw await MapStreamExceptionAsync(exception);
                 }
 
-                if (vault.Count == 0)
-                {
-                    yield return token;
-
-                    continue;
-                }
-
-                pending.Append(token);
-                string ready = DrainReady(pending, vault, this.redactionBroker);
-
-                if (ready.Length > 0)
-                {
-                    yield return ready;
-                }
-            }
-
-            if (vault.Count > 0 && pending.Length > 0)
-            {
-                yield return this.redactionBroker.Rehydrate(pending.ToString(), vault);
+                yield return token;
             }
         }
         finally

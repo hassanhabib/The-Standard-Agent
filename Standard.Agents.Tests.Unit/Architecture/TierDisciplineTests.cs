@@ -129,25 +129,42 @@ public class TierDisciplineTests
     }
 
     // The one at the bottom, and the last to be noticed. Invariant 3: brokers are thin.
+    //
+    // Stated precisely, because two shapes look like violations and are not:
+    //
+    //   A broker MUST NOT hold a NATURE broker other than the one it implements.
+    //
+    // A nature broker is defined here as one a foundation wraps — derived from the foundations
+    // themselves rather than listed, so the rule cannot drift as foundations are added. That
+    // leaves exactly two legitimate shapes: a decorator holding its own contract plus the
+    // cross-cutting broker it applies (redaction, retry), and observability composing a clock and
+    // a sink. Neither can change what the agent decides or does, which is precisely why neither
+    // can become the hole that Policy, Approval and the effect ledger slipped through.
     [Fact]
-    public void ShouldNotLetAnyBrokerDependOnAnotherBroker()
+    public void ShouldNotLetAnyBrokerDependOnANatureBroker()
     {
         // given
+        HashSet<string> natureBrokers =
+            [.. ServicesUnder("Foundations")
+                .SelectMany(BrokersTakenBy)
+                .Where(broker => utilityBrokers.Contains(broker) is false)];
+
         Type[] brokers =
             [.. agentAssembly.GetTypes()
                 .Where(type => type.IsClass && type.IsAbstract is false)
                 .Where(type => type.Namespace?.Contains(".Brokers.", StringComparison.Ordinal) is true)
                 .Where(type => type.Name.EndsWith("Broker", StringComparison.Ordinal))];
 
-        // when — a decorating broker wraps one of its OWN contract, which is the pattern, not the
-        // violation. What is forbidden is a broker reaching a DIFFERENT resource.
+        // when
         var offenders = new List<string>();
 
         foreach (Type broker in brokers)
         {
             string[] foreign =
                 [.. BrokersTakenBy(broker)
-                    .Where(taken => broker.GetInterfaces().Any(i => i.Name == taken) is false)];
+                    .Where(natureBrokers.Contains)
+                    .Where(taken => broker.GetInterfaces().All(
+                        contract => Role(contract.Name) != taken))];
 
             if (foreign.Length > 0)
             {
@@ -158,7 +175,7 @@ public class TierDisciplineTests
         // then
         offenders.Should().BeEmpty(
             because: "a broker is a thin liaison to ONE resource (Invariant 3). A broker that "
-                + "holds another broker has business flow in it, and it is the hardest kind to "
-                + "see because it sits underneath everything else.");
+                + "reaches another nature's resource has business flow in it, and it is the "
+                + "hardest kind to see because it sits underneath everything else.");
     }
 }

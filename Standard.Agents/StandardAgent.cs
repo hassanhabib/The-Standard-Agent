@@ -1177,21 +1177,39 @@ public sealed partial class StandardAgent : IAgent
             RenderToolCatalog(allTools),
             logging);
 
-        // One redaction broker across all three Decision foundations. SPEC.md §4.6: redaction
-        // covers every model the agent drives — the Gate screens the raw task and the Judge
-        // reads the task and the draft, and either may run on a different host than the Brain,
-        // so redacting only the Brain narrows nothing.
+        // One redaction broker across every model the agent drives. SPEC.md §4.6: the Gate
+        // screens the raw task and the Judge reads the task and the draft, and either may run on
+        // a different host than the Brain, so redacting only the Brain narrows nothing.
+        //
+        // It is applied by DECORATING each model broker rather than by handing it to each
+        // service. That is what makes "every model call" structural: a foundation holds one
+        // broker, knows nothing of redaction, and a fourth model call added tomorrow cannot
+        // forget (docs/architecture-alignment.md).
         IRedactionBroker redaction = this.redactionRules is null
             ? new NotConfiguredRedactionBroker()
             : new RuleRedactionBroker(this.redactionRules);
 
-        GateService gate = new(classifier, logging, redaction);
+        IResilienceBroker resilience =
+            this.resilienceBroker ?? new NotConfiguredResilienceBroker();
+
+        // Retry inside, redaction outside: the redacted prompt is what gets retried, so a value
+        // is tokenized once rather than once per attempt, and rehydration happens once at the end.
+        IGeneratorBroker generatorAtTheWire = new RedactingGeneratorBroker(
+            new RetryingGeneratorBroker(generator, resilience),
+            redaction);
+
+        IGeneratorBrokerV1? nativeAtTheWire = this.generatorBrokerV1 is null
+            ? null
+            : new RedactingGeneratorBrokerV1(
+                new RetryingGeneratorBrokerV1(this.generatorBrokerV1, resilience),
+                redaction);
+
+        GateService gate = new(new RedactingClassifierBroker(classifier, redaction), logging);
 
         DecisionOrchestrationService decision = new(
             gate,
-            new BrainService(
-                generator, logging, redaction, this.resilienceBroker, this.generatorBrokerV1),
-            new JudgeService(verifier, logging, redaction),
+            new BrainService(generatorAtTheWire, logging, nativeAtTheWire),
+            new JudgeService(new RedactingVerifierBroker(verifier, redaction), logging),
             logging,
             RenderToolDefinitions(allTools));
 
