@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------
 
 using Standard.Agents.Brokers.Loggings;
+using Standard.Agents.Brokers.Redactions;
 using Standard.Agents.Brokers.Verifiers;
 using Standard.Agents.Models.Foundations.Judges;
 
@@ -13,13 +14,16 @@ public partial class JudgeService : IJudgeService
 {
     private readonly IVerifierBroker verifierBroker;
     private readonly ILoggingBroker loggingBroker;
+    private readonly IRedactionBroker redactionBroker;
 
     public JudgeService(
         IVerifierBroker verifierBroker,
-        ILoggingBroker loggingBroker)
+        ILoggingBroker loggingBroker,
+        IRedactionBroker? redactionBroker = null)
     {
         this.verifierBroker = verifierBroker;
         this.loggingBroker = loggingBroker;
+        this.redactionBroker = redactionBroker ?? new NotConfiguredRedactionBroker();
     }
 
     public ValueTask<Judgement> EvaluateAsync(string task, string candidate) =>
