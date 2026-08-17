@@ -843,9 +843,7 @@ public sealed partial class StandardAgent : IAgent
         string answer,
         CancellationToken cancellationToken = default)
     {
-        await ValueTask.CompletedTask;
-
-        return string.Empty;
+        return await ResolveAgent().ProcessPromptAsync(answer, sessionId, cancellationToken);
     }
 
     /// <summary>
