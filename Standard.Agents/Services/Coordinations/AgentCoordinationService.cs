@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Brokers.Sessions;
 using Standard.Agents.Brokers.Times;
+using Standard.Agents.Models.Brokers.Sessions;
 using Standard.Agents.Models.Coordinations.Agents;
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Loggings;
@@ -75,17 +76,24 @@ public partial class AgentCoordinationService : IAgentCoordinationService
     {
         ValidatePrompt(prompt);
 
+        // Read before the run begins: a session that never delivered an answer was interrupted,
+        // and the next prompt in it continues that run rather than starting a fresh one.
+        AgentSession? session = await PeekSessionAsync(sessionId);
+
         // This prompt's run. SPEC.md §4.4: one instance serves prompts concurrently, and each
         // invocation establishes its own identity, so everything recorded below is credited to
         // this run and to no other.
-        using IDisposable run = AgentRun.Begin();
+        using IDisposable run = AgentRun.Begin(ResumedRunId(session));
 
         await this.loggingBroker.LogResetAsync();
 
         AgentContext context = new() { Prompt = prompt, SessionId = sessionId };
 
+        // The start-of-run checkpoint, written before any work is done (SPEC.md §4.11).
+        await BeginSessionAsync(context, session);
+
         // What was said before, loaded before Decision runs so the Brain sees it (SPEC.md §4.11).
-        context = await LoadSessionAsync(context);
+        context = await LoadSessionAsync(context, session);
 
         // Budgets and cancellation are both checked at the turn boundary (SPEC.md §4.10): a turn
         // is the smallest unit the loop can stop between without abandoning work mid-flight —

@@ -28,6 +28,17 @@ public sealed record AgentSession
 
     /// <summary>The question the agent asked and is waiting on, when awaiting input.</summary>
     public string PendingQuestion { get; init; } = "";
+
+    /// <summary>
+    /// The run that last worked this session, written when the run <i>starts</i>.
+    /// </summary>
+    /// <remarks>
+    /// Written at the start rather than at the end because a crash means nothing at the end runs
+    /// at all. It is what lets a resumed run keep the identity the interrupted one had — and
+    /// therefore derive the same idempotency keys (SPEC.md §4.9), so an effect that already went
+    /// out is replayed rather than performed a second time.
+    /// </remarks>
+    public string RunId { get; init; } = "";
 }
 
 /// <summary>One exchange: what was asked, and what came back.</summary>

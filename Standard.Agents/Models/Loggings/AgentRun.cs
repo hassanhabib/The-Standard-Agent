@@ -54,10 +54,19 @@ public sealed class AgentRun
     /// Starts a run on the calling flow and returns the scope that ends it. Call it from the
     /// coordination loop, before anything the run should be credited with.
     /// </summary>
-    public static IDisposable Begin()
+    /// <param name="resumedId">
+    /// The identity of a run this one continues, or <c>null</c> to start a new one. A resumed run
+    /// keeps the interrupted run's identity so the effects it already performed are recognised as
+    /// its own rather than proposed again (SPEC.md §4.9, §4.11).
+    /// </param>
+    public static IDisposable Begin(string? resumedId = null)
     {
         AgentRun? enclosingRun = current.Value;
-        current.Value = new AgentRun(Guid.NewGuid().ToString("n"));
+
+        current.Value = new AgentRun(
+            string.IsNullOrEmpty(resumedId)
+                ? Guid.NewGuid().ToString("n")
+                : resumedId);
 
         return new Scope(enclosingRun);
     }
