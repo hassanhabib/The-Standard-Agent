@@ -1,0 +1,15 @@
+{
+  "name": "guardian-screens-once-per-prompt",
+  "description": "SPEC.md 4.10: screening the same unchanged input on every turn is waste, not safety. The prompt does not change across the turns of one run - only the observations do - so a seven-turn prompt used to pay for seven screenings of one string. The task is still screened before the Brain sees it; it is simply screened once. This run takes three turns and the Gate must be asked about the prompt exactly once.",
+  "generatorReplies": [
+    "ACTION: echo: first",
+    "ACTION: echo: second",
+    "FINAL: done"
+  ],
+  "tools": { "echo": "ok" },
+  "prompt": "do the thing twice",
+  "expect": {
+    "result": "done",
+    "gateScreenedPromptTimes": 1
+  }
+}

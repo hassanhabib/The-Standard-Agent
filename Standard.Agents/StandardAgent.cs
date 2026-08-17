@@ -64,6 +64,7 @@ public sealed partial class StandardAgent : IAgent
     private string knowledgePath = "Knowledge";
     private string knowledgePattern = "*.md";
     private int knowledgeMaxResults = 3;
+    private double knowledgeMinScore;
 
     private InferenceSettings? brainSettings;
     private InferenceSettings? gateSettings;
@@ -337,13 +338,18 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="path">Folder holding the knowledge files.</param>
     /// <param name="pattern">Glob for which files to search. Defaults to <c>*.md</c>.</param>
     /// <param name="maxResults">Maximum matches fed in per turn. Defaults to 3.</param>
+    /// <param name="minScore">
+    /// Relevance floor a passage must clear to be injected. Zero admits any passage carrying a
+    /// query term; raise it when weak matches are crowding out good ones.
+    /// </param>
     /// <returns>The same agent, so calls can be chained.</returns>
-    public StandardAgent Knowledge(string path, string pattern = "*.md", int maxResults = 3) =>
+    public StandardAgent Knowledge(string path, string pattern = "*.md", int maxResults = 3, double minScore = 0.0) =>
     Set(() =>
     {
         this.knowledgePath = path;
         this.knowledgePattern = pattern;
         this.knowledgeMaxResults = maxResults;
+        this.knowledgeMinScore = minScore;
     });
 
     /// <summary>
@@ -678,6 +684,26 @@ public sealed partial class StandardAgent : IAgent
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent Resilience(int retries = 3) =>
         Set(() => this.resilienceBroker = new RetryResilienceBroker(retries));
+
+    /// <summary>
+    /// Degrades to an alternative when the brain is failing, rather than failing outright
+    /// (SPEC.md §4.10) — a degraded answer is worth more than no answer. After
+    /// <paramref name="failuresBeforeOpen"/> consecutive failures the circuit opens and calls go
+    /// to <paramref name="fallback"/>; it closes again after a cool-down, so a recovered provider
+    /// is used again without a restart. With no fallback the agent fails rather than fabricating.
+    /// </summary>
+    /// <param name="fallback">What to answer with while the primary is unhealthy.</param>
+    /// <param name="retries">Attempts against the primary before a call counts as failed.</param>
+    /// <param name="failuresBeforeOpen">Consecutive failures that open the circuit.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent Fallback(
+        Func<ValueTask<string>> fallback,
+        int retries = 0,
+        int failuresBeforeOpen = 3) =>
+        Set(() => this.resilienceBroker = new FallbackResilienceBroker(
+            primary: new RetryResilienceBroker(retries),
+            alternative: fallback,
+            failuresBeforeOpen: failuresBeforeOpen));
 
     /// <summary>
     /// Swaps in a custom resilience broker — the plugin seam for a provider's own retry, circuit

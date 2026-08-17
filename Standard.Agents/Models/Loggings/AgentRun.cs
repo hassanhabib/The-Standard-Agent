@@ -32,6 +32,8 @@ public sealed class AgentRun
 {
     private static readonly AsyncLocal<AgentRun?> current = new();
 
+    private readonly Dictionary<string, string> verdicts = [];
+
     private int sequence;
     private int processIndex;
 
@@ -73,6 +75,27 @@ public sealed class AgentRun
     /// <summary>The next process number within the current step.</summary>
     public int NextProcessIndex() =>
         Interlocked.Increment(ref this.processIndex) - 1;
+
+    /// <summary>
+    /// Remembers a guardian verdict for the life of this run, so an unchanged prompt is screened
+    /// once rather than once per turn (SPEC.md §4.10). It lives on the run rather than in a
+    /// service-level cache so it is evicted by the run ending, with nothing to remember to clear.
+    /// </summary>
+    public bool TryGetVerdict(string prompt, out string verdict)
+    {
+        lock (this.verdicts)
+        {
+            return this.verdicts.TryGetValue(prompt, out verdict!);
+        }
+    }
+
+    public void RememberVerdict(string prompt, string verdict)
+    {
+        lock (this.verdicts)
+        {
+            this.verdicts[prompt] = verdict;
+        }
+    }
 
     /// <summary>Restarts process numbering, called when a step begins.</summary>
     public void ResetProcessIndex() =>

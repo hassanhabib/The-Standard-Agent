@@ -190,6 +190,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
     // Brain path — redaction, rehydration, streaming buffers — is what gets certified.
     List<string> modelInputs = [];
     List<string> brainInputs = [];
+    int promptScreenings = 0;
     var scriptedGenerator = new ScriptedGeneratorBroker(vector.GeneratorReplies, vector.TransientFailures);
 
     var recordingGenerator = new RecordingGeneratorBroker(
@@ -200,7 +201,6 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         .UseSkills(new StubSkillBroker())
         .UseGenerator(recordingGenerator)
         .UseMemory(new StubMemoryBroker())
-        .UseKnowledge(new StubKnowledgeBroker())
         .UseMcp(new NotConfiguredMcpBroker())
         .Tools(stubTools.Values)
         .OnGate((rubric, prompt) =>
@@ -210,6 +210,11 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
             lock (auditLock)
             {
                 modelInputs.Add(prompt);
+
+                if (prompt.Equals(vector.Prompt, StringComparison.Ordinal))
+                {
+                    promptScreenings++;
+                }
             }
 
             // Screening reuses the Gate, so the same scripted guardian answers for the prompt
@@ -271,6 +276,41 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         agent.MaxTurns(maxTurns);
     }
 
+    if (vector.BudgetMaxWallClockSeconds is double seconds)
+    {
+        agent.Budget(maxWallClock: TimeSpan.FromSeconds(seconds));
+    }
+
+    if (vector.FallbackReply is string fallbackReply)
+    {
+        agent.Fallback(
+            fallback: () => new ValueTask<string>(fallbackReply),
+            failuresBeforeOpen: vector.FailuresBeforeOpen);
+    }
+
+    // A real knowledge folder, so the ranked retriever is certified against files rather than a
+    // stub that could agree with any implementation. A vector without knowledge keeps the empty
+    // stub, so nothing is retrieved and no vector is disturbed by this one existing.
+    string? knowledgePath = null;
+
+    if (vector.Knowledge is not { Count: > 0 })
+    {
+        agent.UseKnowledge(new StubKnowledgeBroker());
+    }
+    else
+    {
+        knowledgePath = Path.Combine(AppContext.BaseDirectory, $"knowledge-{vector.Name}");
+        Directory.CreateDirectory(knowledgePath);
+
+        foreach (KeyValuePair<string, string> document in vector.Knowledge)
+        {
+            await File.WriteAllTextAsync(
+                Path.Combine(knowledgePath, document.Key), document.Value);
+        }
+
+        agent.Knowledge(knowledgePath, maxResults: vector.KnowledgeMaxResults);
+    }
+
     if (string.IsNullOrEmpty(vector.Constitution) is false)
     {
         string fileName = $"{vector.Name}.constitution.md";
@@ -315,7 +355,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         }
     }
 
-    return new VectorRun(result, stubTools, gateRubric, judgeRubric, judgeInput, modelInputs, brainInputs, auditRecords);
+    return new VectorRun(result, stubTools, gateRubric, judgeRubric, judgeInput, modelInputs, brainInputs, promptScreenings, auditRecords);
 }
 
 // The decision log's guarantees, certified from the records themselves: one run per prompt,
@@ -507,6 +547,26 @@ static bool GuardianInputConformant(
         return false;
     }
 
+    // Retrieval is certified by what reached the Brain: the passage that answers the question
+    // has to actually get there (SPEC.md §4.2).
+    if (vector.Expect.BrainSees is string required
+        && run.BrainInputs.Any(input => input.Contains(required, StringComparison.Ordinal)) is false)
+    {
+        failure = $"the Brain was never shown the retrieved text: {Show(required)}";
+
+        return false;
+    }
+
+    if (vector.Expect.GateScreenedPromptTimes is int expectedScreenings
+        && run.PromptScreenings != expectedScreenings)
+    {
+        failure =
+            $"the Gate screened the prompt {run.PromptScreenings} time(s), "
+                + $"expected {expectedScreenings}";
+
+        return false;
+    }
+
     // Redaction is only satisfied if EVERY model call is clean. Checking the Brain alone is the
     // exact mistake this vector exists to catch (SPEC.md §4.6).
     if (vector.Expect.NoModelSees is string secret)
@@ -616,4 +676,5 @@ internal sealed record VectorRun(
     string? JudgeInput,
     List<string> ModelInputs,
     List<string> BrainInputs,
+    int PromptScreenings,
     List<AuditRecord> AuditRecords);

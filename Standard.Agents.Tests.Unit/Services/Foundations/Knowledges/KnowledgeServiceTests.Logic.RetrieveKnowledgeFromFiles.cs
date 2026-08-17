@@ -47,8 +47,12 @@ public partial class KnowledgeServiceTests
         this.loggingBrokerMock.VerifyNoOtherCalls();
     }
 
+    // Ranking replaced first-N-found (SPEC.md §4.2), and the difference is visible here: every
+    // document is read, because relevance is relative — a term's weight depends on how rare it
+    // is across the corpus, which is not knowable from a prefix of it. The old contract stopped
+    // reading once it had enough matches, and so could only ever return the first ones found.
     [Fact]
-    public async Task ShouldRetrieveMatchingKnowledgeFromOrderedFilesUpToMaxResultsAsync()
+    public async Task ShouldRetrieveTheMostRelevantKnowledgeUpToMaxResultsAsync()
     {
         // given
         string knowledgePath = CreateRandomString();
@@ -62,12 +66,10 @@ public partial class KnowledgeServiceTests
         string fourthPath = "d.md";
         List<string> unorderedPaths = [thirdPath, firstPath, fourthPath, secondPath];
 
-        string firstDocument = "alpha needle";        // matches
-        string secondDocument = "beta";               // no match, skipped
-        string thirdDocument = "gamma NEEDLE";         // matches (case-insensitive) -> reaches maxResults
-        string fourthDocument = "delta needle";        // matches but never read (max already reached)
-
-        IReadOnlyList<string> expectedDocuments = [firstDocument, thirdDocument];
+        string firstDocument = "alpha needle";
+        string secondDocument = "beta";                // carries no query term, scores zero
+        string thirdDocument = "gamma NEEDLE";          // case-insensitive
+        string fourthDocument = "delta needle";
 
         var fileKnowledgeService = new KnowledgeService(
             fileBroker: this.fileBrokerMock.Object,
@@ -104,8 +106,12 @@ public partial class KnowledgeServiceTests
         IReadOnlyList<string> actualDocuments =
             await fileKnowledgeService.RetrieveKnowledgeAsync(query);
 
-        // then
-        actualDocuments.Should().Equal(expectedDocuments);
+        // then — the best matches, capped, and never the document carrying no query term
+        actualDocuments.Should().HaveCount(maxResults);
+        actualDocuments.Should().NotContain(secondDocument);
+
+        actualDocuments.Should().OnlyContain(document =>
+            document.Contains("needle", StringComparison.OrdinalIgnoreCase));
 
         this.fileBrokerMock.Verify(broker =>
             broker.DirectoryExists(knowledgePath),
@@ -129,7 +135,7 @@ public partial class KnowledgeServiceTests
 
         this.fileBrokerMock.Verify(broker =>
             broker.ReadFileAsync(fourthPath),
-                Times.Never);
+                Times.Once);
 
         this.fileBrokerMock.VerifyNoOtherCalls();
         this.loggingBrokerMock.VerifyNoOtherCalls();

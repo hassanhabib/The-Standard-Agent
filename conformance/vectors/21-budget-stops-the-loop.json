@@ -1,0 +1,12 @@
+{
+  "name": "budget-stops-the-loop",
+  "description": "SPEC.md 4.10: a budget is checked between turns and stops the loop when exhausted, and exhaustion is reported distinguishably - it is not a refusal and not an answer. A caller that cannot tell I will not from I ran out cannot decide whether to retry. The Brain would loop through tool calls forever; a zero wall-clock budget stops it on the first boundary.",
+  "generatorReplies": ["ACTION: nonexistent_tool: keep going"],
+  "tools": {},
+  "prompt": "loop forever",
+  "maxTurns": 50,
+  "budgetMaxWallClockSeconds": 0,
+  "expect": {
+    "resultContains": "budget"
+  }
+}

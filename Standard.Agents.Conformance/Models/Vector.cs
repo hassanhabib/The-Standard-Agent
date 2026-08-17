@@ -49,4 +49,11 @@ public sealed record Vector(
     bool CancelBeforeStart = false,
     int TransientFailures = 0,
     int Retries = 0,
-    int? MaxTurns = null);
+    int? MaxTurns = null,
+
+    // Budget, retrieval and degradation (SPEC.md §4.2, §4.10).
+    double? BudgetMaxWallClockSeconds = null,
+    Dictionary<string, string>? Knowledge = null,
+    string? FallbackReply = null,
+    int FailuresBeforeOpen = 3,
+    int KnowledgeMaxResults = 3);
