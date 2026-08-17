@@ -1,0 +1,14 @@
+{
+  "name": "Enterprise",
+  "description": "Reliable, plus a perimeter that assumes everything crossing it is hostile, effects that cannot happen twice, identity-aware authorization, budgets, and retrieval that actually retrieves.",
+  "inherits": "Reliable",
+  "requires": [
+    "approval-blocks-irreversible-tool",
+    "injected-instruction-in-tool-output-is-refused",
+    "duplicate-effect-executes-once",
+    "budget-stops-the-loop",
+    "guardian-screens-once-per-prompt",
+    "open-circuit-falls-back-to-secondary",
+    "knowledge-retrieves-by-relevance"
+  ]
+}

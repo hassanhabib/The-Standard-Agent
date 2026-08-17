@@ -8,9 +8,16 @@ using Standard.Agents;
 using Standard.Agents.Conformance;
 using Standard.Agents.Models.Brokers.Audits;
 
-string vectorsPath = args.Length > 0
-    ? args[0]
-    : Path.Combine(FindRepositoryRoot(), "conformance", "vectors");
+string? profileName = ReadProfileArgument(args);
+
+// Drop the flag and the value it consumed, so an optional vectors path stays positional.
+string[] positionalArgs = [.. PositionalArguments(args)];
+
+string conformanceRoot = Path.Combine(FindRepositoryRoot(), "conformance");
+
+string vectorsPath = positionalArgs.Length > 0
+    ? positionalArgs[0]
+    : Path.Combine(conformanceRoot, "vectors");
 
 JsonSerializerOptions jsonOptions = new()
 {
@@ -18,10 +25,17 @@ JsonSerializerOptions jsonOptions = new()
 };
 
 Console.WriteLine($"Conformance vectors: {vectorsPath}");
+
+if (profileName is not null)
+{
+    Console.WriteLine($"Certifying profile: {profileName}");
+}
+
 Console.WriteLine();
 
 int passed = 0;
 int failed = 0;
+HashSet<string> passedVectors = new(StringComparer.OrdinalIgnoreCase);
 
 foreach (string vectorFile in
     Directory.EnumerateFiles(vectorsPath, "*.json").OrderBy(path => path, StringComparer.Ordinal))
@@ -52,6 +66,7 @@ foreach (string vectorFile in
     if (resultConformant && toolInputConformant && rubricConformant && auditConformant)
     {
         passed++;
+        passedVectors.Add(vector.Name);
         Console.WriteLine($"PASS  {vector.Name}");
     }
     else
@@ -103,7 +118,37 @@ foreach (string vectorFile in
 Console.WriteLine();
 Console.WriteLine($"{passed} passed, {failed} failed");
 
-return failed == 0 ? 0 : 1;
+if (profileName is null)
+{
+    return failed == 0 ? 0 : 1;
+}
+
+// Certifying a profile is a separate question from running the vectors: not "did everything
+// we happen to have pass" but "is every requirement of this level actually evidenced". A
+// requirement whose vector does not exist fails — otherwise a profile could be claimed by
+// never writing its evidence, which is the failure mode profiles exist to prevent.
+List<string> missing =
+    ProfileRequirements(profileName, Path.Combine(conformanceRoot, "profiles"), jsonOptions)
+        .Where(requirement => passedVectors.Contains(requirement) is false)
+        .ToList();
+
+Console.WriteLine();
+
+if (missing.Count == 0)
+{
+    Console.WriteLine($"CERTIFIED  {profileName}");
+
+    return failed == 0 ? 0 : 1;
+}
+
+Console.WriteLine($"NOT CERTIFIED  {profileName} — {missing.Count} requirement(s) unmet:");
+
+foreach (string requirement in missing)
+{
+    Console.WriteLine($"  - {requirement}");
+}
+
+return 1;
 
 async Task<VectorRun> RunVectorAsync(Vector vector)
 {
@@ -309,6 +354,62 @@ static bool RubricConformant(
     }
 
     return true;
+}
+
+static string? ReadProfileArgument(string[] args)
+{
+    int index = Array.FindIndex(args, argument =>
+        argument.Equals("--profile", StringComparison.OrdinalIgnoreCase));
+
+    return index >= 0 && index + 1 < args.Length
+        ? args[index + 1]
+        : null;
+}
+
+static IEnumerable<string> PositionalArguments(string[] args)
+{
+    for (int index = 0; index < args.Length; index++)
+    {
+        if (args[index].Equals("--profile", StringComparison.OrdinalIgnoreCase))
+        {
+            index++;
+
+            continue;
+        }
+
+        yield return args[index];
+    }
+}
+
+// A profile's requirements are its own plus everything it inherits, so certifying Reliable
+// certifies Core too — a level is a floor, never a substitute.
+static List<string> ProfileRequirements(
+    string profileName,
+    string profilesPath,
+    JsonSerializerOptions jsonOptions)
+{
+    List<string> requirements = [];
+    string? nextProfileName = profileName;
+
+    while (nextProfileName is not null)
+    {
+        string profileFile =
+            Path.Combine(profilesPath, $"{nextProfileName.ToLowerInvariant()}.json");
+
+        if (File.Exists(profileFile) is false)
+        {
+            throw new FileNotFoundException(
+                $"No such readiness profile: '{nextProfileName}'. Expected {profileFile}.");
+        }
+
+        Profile profile =
+            JsonSerializer.Deserialize<Profile>(File.ReadAllText(profileFile), jsonOptions)!;
+
+        requirements.AddRange(profile.Requires);
+        nextProfileName = profile.Inherits;
+    }
+
+    return [.. requirements.Distinct(StringComparer.OrdinalIgnoreCase)];
 }
 
 static string Show(string value) =>
