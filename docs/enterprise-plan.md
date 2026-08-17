@@ -161,29 +161,29 @@ MOVEMENT I — TRUST                MOVEMENT II — CONTROL           MOVEMENT I
 | Release | State | Evidence |
 |---|---|---|
 | 0.18 Capability verbs | **landed** | released `v0.18.0` |
-| 0.19 Audit spine | **landed on main** | decision log append-only, hash-chained, three access modes; vector 11; SPEC §3.3/§4.7/§4.8 |
-| 0.20 Run isolation | **landed on main** | 64 concurrent prompts, one instance, both sinks; vector 12; SPEC §4.4/§7.4 |
-| 0.21 Guardian integrity | next | — |
-| 0.22 → 1.1 | planned | — |
+| 0.19 Audit spine | **landed** | decision log append-only, hash-chained, three access modes; vector 11; SPEC §3.3/§4.7/§4.8 |
+| 0.20 Run isolation | **landed** | 64 concurrent prompts, one instance, both sinks; vector 12; SPEC §4.4/§7.4 |
+| 0.21 Guardian integrity | **landed** | Judge sees the task, redaction covers every model call, overreach neutralized on both paths; vectors 13–15 |
+| 0.22 Perimeter | **landed** | authorize → record → approve → run-once → record, screening of untrusted inbound; vectors 16–18; SPEC §4.9 |
+| 0.23 Resilience & budget | **landed** | cancellation, categorized retry, circuit breaker, token/cost/wall-clock budgets; vectors 19–21, 23–24; SPEC §4.10 |
+| 0.24 Data at scale | **landed** | ranked lexical retrieval over passages; vector 22 |
+| 0.25 Supply chain | **landed** | pinned SDK, warnings as errors, vulnerability and licence audit, secret scanning, SBOM, provenance; `docs/support.md` |
+| 1.0 Enterprise model | **landed** | sessions, cross-process run identity, durable run-once, compensation, native tool-call round-trip; vectors 25–29 |
+| 1.1 Evals & hosting | next | — |
 
-The readiness levels (§2.1) are now machine-verified, and the runner is the authority on where
-this stands — not this table:
+The readiness levels (§2.1) are machine-verified, and the runner is the authority on where this
+stands — not this table:
 
 ```
-dotnet run --project Standard.Agents.Conformance -- --profile Core       CERTIFIED       exit 0
-dotnet run --project Standard.Agents.Conformance -- --profile Reliable   NOT CERTIFIED   exit 1
-    - judge-receives-the-task              ─┐
-    - redaction-covers-every-model-call     ├─ 0.21 Guardian integrity
-    - guardian-overreach-is-neutralized    ─┘
-    - cancellation-stops-the-loop          ─┐
-    - transient-failure-recovers           ─┴─ 0.23 Resilience & budget
+dotnet run --project Standard.Agents.Conformance -- --profile Core         CERTIFIED   exit 0
+dotnet run --project Standard.Agents.Conformance -- --profile Reliable     CERTIFIED   exit 0
+dotnet run --project Standard.Agents.Conformance -- --profile Enterprise   CERTIFIED   exit 0
+dotnet run --project Standard.Agents.Conformance -- --profile Critical     CERTIFIED   exit 0
 ```
 
-**Core is certified. Reliable is five requirements away**, and the five name themselves.
-
-Nothing is released past `v0.18.0`. The two landed releases are on `main` and will be cut when the
-program is further along — a decision log is more credible shipped alongside the guardians it
-records than ahead of them.
+**All four certify**, across 29 vectors and 375 tests. Critical was written as the 1.1 target and
+is met at 1.0 — the three requirements that were outstanding (compensation, an effect outcome that
+survives a crash, a native tool call that round-trips) all landed rather than being deferred.
 
 Measured, on `main`, against the two defects that opened this plan:
 
@@ -902,6 +902,30 @@ await agent.ResumeAsync(sessionId, "yes, approve it");// AwaitingInput / Awaitin
 - **The capability-matrix waiver list is empty** (§5.2, §6.7). Every one of the thirteen
   capabilities answers Local, External and Custom — including `.Brain("model.gguf")`, the last
   cell left open when 0.18.0.0 closed the Custom column.
+
+#### What actually shipped, against those criteria
+
+Three of them landed differently than written, and saying so is cheaper than pretending otherwise:
+
+- **Checkpointing became a start-of-run identity, not a per-stage commit.** The stage-by-stage
+  commit with lease ownership was designed for a failure mode nothing here has: what the criteria
+  actually asked for — a run killed after an irreversible effect that resumes without repeating it
+  — needs the run's *identity* to survive, not its intermediate state. `AgentSession.RunId` written
+  before any work does that in one field. Vector 27 certifies it.
+- **The exit criterion named `AwaitingApproval`; the plan named an `awaiting-input` vector.**
+  Approval is the path that matters to a regulated deployment and the one the criterion described,
+  so vector 28 is `awaiting-approval-resumes-in-a-new-process` and the Critical profile names that.
+  Building it surfaced a real defect — a held act left a claim standing, making the approval
+  unusable when it finally arrived — which is fixed here.
+- **V0 is not `[Obsolete]`.** The plan called for a deprecation window; writing it made clear that
+  was wrong. V0 is the contract that works against *any* endpoint, and a 3B local model follows a
+  format more reliably than it emits schema-valid tool JSON. Deprecating it would make the
+  framework worse on the hardware people actually run at home. `docs/generator-contracts.md`
+  documents the choice instead of the deprecation.
+- **The matrix has fifteen capabilities, not thirteen**, and the waiver list is not empty: `Brain`
+  and `NativeBrain` have no Local mode, because in-process inference needs a runtime and the core
+  is dependency-free by design. That is a documented impossibility rather than debt, and the test
+  enforces the distinction — a waiver reading "pending" fails the build.
 
 ---
 

@@ -20,6 +20,28 @@
     <!-- The Standard's release format is v1.2.3.4 — model . service/routine . fix/config
          . automated build. Deliberately NOT semver; the segments say what KIND of change
          happened, so a model change can never hide in the service segment.
+         1.0.0.0: the shape of an agent changed, which is why segment 1 moves — once, here, with
+         every model change in the program batched into it rather than dribbled across eight
+         releases. A run is no longer confined to one process. AgentSession carries the run that
+         worked it, written at the START of the run rather than the end, because a crash means
+         nothing at the end runs at all; a session that never delivered an answer is resumed with
+         the interrupted run's identity, so the idempotency keys still match and an act that
+         already went out is replayed rather than performed twice. FileEffectLedgerBroker makes
+         run-once outlive the process that claimed it, the claim being an atomic file creation.
+         An act that was HELD - denied, or waiting on an authority - now gives its claim back,
+         which fixes an approval that could previously only ever be granted too late. Effects
+         that cannot be made idempotent at all can be unwound: ITool.CompensateAsync declares how
+         a tool is undone, .CompensateOnFailure() unwinds a failed run in reverse order over what
+         it actually performed, and a tool that declares no way back is reported as an effect
+         that stands rather than silently counted as undone. Native tool calls round-trip:
+         a result comes back as a tool message naming the call that asked for it, which is the
+         one thing the text protocol cannot express - and V0 is NOT deprecated, because it is the
+         contract that works against any endpoint. Every one of the fifteen capabilities now
+         answers Local, External and Custom, with the only omissions two documented
+         impossibilities. All four readiness profiles certify, Critical included, across 29
+         conformance vectors and 375 tests. New models (AgentSession.RunId, ToolExchange,
+         PerformedEffect, CompensationOutcome) and a changed AgentContext: a model change, so
+         segment 1 advances, 2/3/4 reset.
          0.18.0.0: the capability verbs now say what they mean. Every capability is reachable
          three ways — Local (in the box: point at a file, a folder, a rule), External (a provider
          package, passed through .UseX) and Custom (your own code, inline) — and the verbs are
@@ -75,7 +97,7 @@
          3/4 reset. Still tracks SPEC.md v0.1 (draft): segment 1 goes to 1 when the spec settles.
          (0.8.0.0: memory and knowledge came alive — knowledge retrieval in Recall + a built-in
          'remember' tool.) -->
-    <Version>0.18.0.0</Version>
+    <Version>1.0.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>
