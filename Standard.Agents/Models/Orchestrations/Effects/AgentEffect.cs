@@ -19,7 +19,15 @@ public sealed record AgentEffect
     private const string KeySeparator = "|";
 
     public string RunId { get; init; } = "";
+
+    /// <summary>Who is acting, as an identifier. The same value as <c>Identity?.Id</c>.</summary>
     public string? Principal { get; init; }
+
+    /// <summary>
+    /// Who is acting, in full — tenant, jurisdiction and delegation where the host knows them
+    /// (SPEC.md §4.9). Null when no identity is configured.
+    /// </summary>
+    public AgentPrincipal? Identity { get; init; }
 
     public string ToolName { get; init; } = "";
     public string Arguments { get; init; } = "";
@@ -49,11 +57,15 @@ public sealed record AgentEffect
         string arguments,
         RiskLevel riskLevel = RiskLevel.Safe,
         bool approvalRequired = false,
-        string? principal = null) =>
+        AgentPrincipal? principal = null) =>
         new()
         {
             RunId = runId,
-            Principal = principal,
+
+            // Both views of one identity, kept in step here so they cannot disagree. The
+            // identifier stays for the callers that only ever needed "who".
+            Principal = principal?.Id,
+            Identity = null,
             ToolName = toolName,
             Arguments = arguments,
             RiskLevel = riskLevel,
