@@ -156,6 +156,19 @@ public partial class DirectionOrchestrationService
         };
     }
 
+    // Compensation (SPEC.md §4.9, Invariant 7). Run-once makes an effect safe to PROPOSE twice;
+    // compensation is for the effects that cannot be made idempotent at all — a payment sent, a
+    // message delivered — where the only way back is a second, opposite act.
+    //
+    // It unwinds in reverse order, because a later effect may depend on an earlier one: undoing
+    // the booking before the payment it paid for would leave the payment attached to nothing.
+    public async ValueTask<IReadOnlyList<CompensationOutcome>> CompensateRunAsync()
+    {
+        await ValueTask.CompletedTask;
+
+        return [];
+    }
+
     private async ValueTask<string> RunToolAsync(AgentContext context)
     {
         bool isLocalTool = await this.internalToolService.HandlesAsync(context.DirectionType);

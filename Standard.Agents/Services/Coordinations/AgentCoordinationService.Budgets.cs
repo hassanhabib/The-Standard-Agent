@@ -5,6 +5,7 @@
 
 using Standard.Agents.Models.Coordinations.Agents;
 using Standard.Agents.Models.Orchestrations.Agents;
+using Standard.Agents.Models.Orchestrations.Effects;
 
 namespace Standard.Agents.Services.Coordinations;
 
@@ -71,6 +72,41 @@ public partial class AgentCoordinationService
     {
         await this.loggingBroker.LogOutcomeAsync($"stopped: {message}");
 
-        return message;
+        string unwound = await UnwindAsync();
+
+        return string.IsNullOrEmpty(unwound)
+            ? message
+            : $"{message} {unwound}";
+    }
+
+    // A run that stopped without delivering an answer may have left effects behind. Compensation
+    // (SPEC.md §4.9) asks Direction to unwind them, and the caller is told what stood — reporting
+    // a run cleanly unwound when it was not is worse than never offering compensation at all.
+    private async ValueTask<string> UnwindAsync()
+    {
+        if (this.compensateOnFailure is false)
+        {
+            return string.Empty;
+        }
+
+        IReadOnlyList<CompensationOutcome> outcomes =
+            await this.directionOrchestrationService.CompensateRunAsync();
+
+        if (outcomes.Count is 0)
+        {
+            return string.Empty;
+        }
+
+        int undoneCount = outcomes.Count(outcome => outcome.Undone);
+        string report = $"Unwound {undoneCount} of {outcomes.Count} effects.";
+
+        string[] standing =
+            [.. outcomes.Where(outcome => outcome.Undone is false).Select(outcome => outcome.Detail)];
+
+        await this.loggingBroker.LogOutcomeAsync($"compensated: {report}");
+
+        return standing.Length is 0
+            ? report
+            : $"{report} {string.Join(" ", standing)}";
     }
 }

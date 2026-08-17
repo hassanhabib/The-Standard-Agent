@@ -36,4 +36,12 @@ TryCatch(async () =>
 
     return await this.toolBroker.RunAsync(name, input);
 });
+
+    public ValueTask<string> CompensateAsync(string name, string input, string outcome) =>
+    TryCatch(async () =>
+    {
+        ValidateName(name);
+
+        return await this.toolBroker.CompensateAsync(name, input, outcome);
+    });
 }
