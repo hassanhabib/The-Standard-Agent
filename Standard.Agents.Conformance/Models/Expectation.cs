@@ -27,4 +27,12 @@ public sealed record Expectation(
     //                                what fails when run counters are shared between runs.
     int? AuditRunCount = null,
     bool AuditRetainsEveryPrompt = false,
-    bool AuditSequencesUniquePerRun = false);
+    bool AuditSequencesUniquePerRun = false,
+
+    // Guardian-input assertions (SPEC.md §4.2, §7.6).
+    //
+    //   JudgeSawTask         — the task must have reached the Judge, not the candidate alone.
+    //   GuardianNeverAnswers — a guardian that tries to answer or act must be neutralized, and
+    //                          its text must never become the agent's result.
+    bool JudgeSawTask = false,
+    bool GuardianNeverAnswers = false);

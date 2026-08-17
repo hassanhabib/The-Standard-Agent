@@ -1,0 +1,11 @@
+{
+  "name": "judge-receives-the-task",
+  "description": "SPEC.md 4.2: the Judge MUST receive the task it is scoring against, not the candidate alone. An answer is good or bad for a question, so a Judge shown only the answer is scoring a fit it cannot see. The vector drives a prompt to a judged final answer and requires the task to have reached the verifier.",
+  "generatorReplies": ["FINAL: 4183"],
+  "tools": {},
+  "prompt": "what is 47 multiplied by 89",
+  "expect": {
+    "result": "4183",
+    "judgeSawTask": true
+  }
+}

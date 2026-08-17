@@ -63,7 +63,14 @@ foreach (string vectorFile in
     bool auditConformant =
         AuditConformant(vector, run.AuditRecords, out string? auditFailure);
 
-    if (resultConformant && toolInputConformant && rubricConformant && auditConformant)
+    bool guardianInputConformant =
+        GuardianInputConformant(vector, run, actualResult, out string? guardianFailure);
+
+    if (resultConformant
+        && toolInputConformant
+        && rubricConformant
+        && auditConformant
+        && guardianInputConformant)
     {
         passed++;
         passedVectors.Add(vector.Name);
@@ -102,6 +109,12 @@ foreach (string vectorFile in
             Console.WriteLine($"        guardian rubric: {rubricFailure}");
             Console.WriteLine($"        gate rubric:  {Show(run.GateRubric ?? "(gate never ran)")}");
             Console.WriteLine($"        judge rubric: {Show(run.JudgeRubric ?? "(judge never ran)")}");
+        }
+
+        if (guardianInputConformant is false)
+        {
+            Console.WriteLine($"        guardian input: {guardianFailure}");
+            Console.WriteLine($"        judge input: {Show(run.JudgeInput ?? "(judge never ran)")}");
         }
 
         if (auditConformant is false)
@@ -164,6 +177,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
     // no guardian fields behaves exactly as an always-allowing gate and an always-approving judge.
     string? gateRubric = null;
     string? judgeRubric = null;
+    string? judgeInput = null;
 
     // The decision log is observed through its own Custom sink (SPEC.md §4.8), so the
     // certification watches the records the framework produces rather than any storage.
@@ -187,6 +201,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         .OnJudge((rubric, candidate) =>
         {
             judgeRubric = rubric;
+            judgeInput = candidate;
 
             return new ValueTask<string>(vector.JudgeScore ?? "1.0");
         })
@@ -237,7 +252,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         }
     }
 
-    return new VectorRun(result, stubTools, gateRubric, judgeRubric, auditRecords);
+    return new VectorRun(result, stubTools, gateRubric, judgeRubric, judgeInput, auditRecords);
 }
 
 // The decision log's guarantees, certified from the records themselves: one run per prompt,
@@ -356,6 +371,44 @@ static bool RubricConformant(
     return true;
 }
 
+// What a guardian was allowed to see, and what it was not allowed to become (SPEC.md §4.2, §7.6).
+static bool GuardianInputConformant(
+    Vector vector,
+    VectorRun run,
+    string actualResult,
+    out string? failure)
+{
+    failure = null;
+
+    if (vector.Expect.JudgeSawTask)
+    {
+        if (run.JudgeInput is null)
+        {
+            failure = "the judge never ran, so it cannot have seen the task";
+
+            return false;
+        }
+
+        if (run.JudgeInput.Contains(vector.Prompt, StringComparison.Ordinal) is false)
+        {
+            failure = $"the judge never saw the task {Show(vector.Prompt)}";
+
+            return false;
+        }
+    }
+
+    if (vector.Expect.GuardianNeverAnswers
+        && vector.GateVerdict is not null
+        && actualResult.Contains(vector.GateVerdict, StringComparison.Ordinal))
+    {
+        failure = "the guardian's own text became the agent's answer";
+
+        return false;
+    }
+
+    return true;
+}
+
 static string? ReadProfileArgument(string[] args)
 {
     int index = Array.FindIndex(args, argument =>
@@ -436,4 +489,5 @@ internal sealed record VectorRun(
     Dictionary<string, StubTool> Tools,
     string? GateRubric,
     string? JudgeRubric,
+    string? JudgeInput,
     List<AuditRecord> AuditRecords);
