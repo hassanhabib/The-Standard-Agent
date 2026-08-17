@@ -4,7 +4,6 @@
 // ---------------------------------------------------------------
 
 using Standard.Agents.Brokers.Loggings;
-using Standard.Agents.Brokers.Redactions;
 using Standard.Agents.Brokers.Verifiers;
 using Standard.Agents.Models.Foundations.Judges;
 
@@ -14,35 +13,29 @@ public partial class JudgeService : IJudgeService
 {
     private readonly IVerifierBroker verifierBroker;
     private readonly ILoggingBroker loggingBroker;
-    private readonly IRedactionBroker redactionBroker;
 
     public JudgeService(
         IVerifierBroker verifierBroker,
-        ILoggingBroker loggingBroker,
-        IRedactionBroker? redactionBroker = null)
+        ILoggingBroker loggingBroker)
     {
         this.verifierBroker = verifierBroker;
         this.loggingBroker = loggingBroker;
-        this.redactionBroker = redactionBroker ?? new NotConfiguredRedactionBroker();
     }
 
+    // The task travels with the candidate: an answer is good or bad FOR a question, and a verdict
+    // on a fit the verifier cannot see is noise dressed as a number (SPEC.md §4.2).
+    //
+    // Redaction across the pair — one vault, so the same value tokenizes identically in the task
+    // and in the answer — is a decoration on the verifier below, applied at composition. This
+    // service holds one broker and does not know redaction exists.
     public ValueTask<Judgement> EvaluateAsync(string task, string candidate) =>
     TryCatch(async () =>
     {
         ValidateEvaluate(candidate);
 
-        // One vault across both, so the same value redacts to the same token in the task and
-        // the answer — otherwise the Judge cannot tell that the answer is about the person the
-        // task asked about. The verdict is rehydrated because a rejection's reason quotes the
-        // answer back, and that reason becomes the revision feedback the Brain reads (§4.3).
-        var vault = new Dictionary<string, string>();
+        string verdict = await this.verifierBroker.VerifyAsync(task, candidate);
 
-        string redactedTask = this.redactionBroker.Redact(task, vault);
-        string redactedCandidate = this.redactionBroker.Redact(candidate, vault);
-
-        string verdict = await this.verifierBroker.VerifyAsync(redactedTask, redactedCandidate);
-
-        Judgement judgement = ParseJudgement(this.redactionBroker.Rehydrate(verdict, vault));
+        Judgement judgement = ParseJudgement(verdict);
 
         ValidateScore(judgement.Score);
 

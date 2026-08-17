@@ -3,59 +3,241 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
-using Standard.Agents.Models.Foundations.Skills;
+using System.Runtime.CompilerServices;
 using FluentAssertions;
 using Moq;
 using Standard.Agents.Brokers.Generators;
 using Standard.Agents.Brokers.Knowledges;
-using Standard.Agents.Brokers.Mcps;
 using Standard.Agents.Brokers.Memorys;
 using Standard.Agents.Brokers.Skills;
+using Standard.Agents.Models.Clients.Agents;
+using Standard.Agents.Models.Foundations.Skills;
 using Xunit;
 
 namespace Standard.Agents.Tests.Unit.Acceptance;
 
+// SPEC.md §4.6, end to end through the real composition.
+//
+// These used to be four unit tests, one per service, back when each of Brain, Gate and Judge held
+// its own redaction broker. Redaction is now a decoration applied at composition, so the failure
+// worth guarding against changed: not "a service forgot to redact" but "a broker was left
+// unwrapped". Only a test that drives the whole composition can see that, which is why these
+// moved up rather than moving sideways onto the decorators.
 public class RedactionTests
 {
+    private const string SecretEmail = "jane@acme.com";
+
+    private static StandardAgent AgentThatRedacts(
+        Func<string, string, ValueTask<string>> brain,
+        Func<string, string, ValueTask<string>>? gate = null,
+        Func<string, string, ValueTask<string>>? judge = null)
+    {
+        var skillBroker = new Mock<ISkillBroker>();
+        skillBroker.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(new List<Skill>());
+
+        var memoryBroker = new Mock<IMemoryBroker>();
+        memoryBroker.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
+
+        var knowledgeBroker = new Mock<IKnowledgeBroker>();
+
+        knowledgeBroker.Setup(broker => broker.SelectKnowledgeAsync(It.IsAny<string>()))
+            .ReturnsAsync([]);
+
+        StandardAgent agent = new StandardAgent()
+            .UseSkills(skillBroker.Object)
+            .UseMemory(memoryBroker.Object)
+            .UseKnowledge(knowledgeBroker.Object)
+            .OnBrain(brain)
+            .Redact();
+
+        if (gate is not null)
+        {
+            agent = agent.OnGate(gate);
+        }
+
+        if (judge is not null)
+        {
+            agent = agent.OnJudge(judge);
+        }
+
+        return agent;
+    }
+
     [Fact]
-    public async Task ShouldHidePiiFromBrainAndRestoreItInTheAnswerAsync()
+    public async Task ShouldHideTheValueFromTheBrainAndGiveItBackToTheCallerAsync()
     {
         // given
-        var generator = new Mock<IGeneratorBroker>();
-        generator.Setup(broker =>
-            broker.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync("FINAL: I've emailed {{EMAIL_0}} the report");
+        string seenByBrain = string.Empty;
 
-        var skills = new Mock<ISkillBroker>();
-        skills.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(new List<Skill>());
-        var memory = new Mock<IMemoryBroker>();
-        memory.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
-        var knowledge = new Mock<IKnowledgeBroker>();
-        knowledge.Setup(broker => broker.SelectKnowledgeAsync(It.IsAny<string>())).ReturnsAsync([]);
+        StandardAgent agent = AgentThatRedacts(async (systemPrompt, userPrompt) =>
+        {
+            seenByBrain = userPrompt;
 
-        var agent = new StandardAgent()
-            .UseGenerator(generator.Object)
-            .UseSkills(skills.Object)
-            .UseMemory(memory.Object)
-            .UseKnowledge(knowledge.Object)
-            .UseMcp(new Mock<IMcpBroker>().Object)
+            return "FINAL: I emailed {{EMAIL_0}} as requested.";
+        });
+
+        // when
+        string actualAnswer =
+            await agent.ProcessPromptAsync($"please email {SecretEmail} the report");
+
+        // then
+        seenByBrain.Should().NotContain(SecretEmail);
+        seenByBrain.Should().Contain("{{EMAIL_0}}");
+        actualAnswer.Should().Be($"I emailed {SecretEmail} as requested.");
+    }
+
+    // The Gate screens the raw task, so it sees exactly what redaction exists to hide — and a
+    // guardian may run on a different host than the Brain, which makes an unredacted Gate a
+    // wider exposure than an unredacted Brain, not a narrower one.
+    [Fact]
+    public async Task ShouldHideTheValueFromTheGateAsync()
+    {
+        // given
+        string seenByGate = string.Empty;
+
+        StandardAgent agent = AgentThatRedacts(
+            brain: async (systemPrompt, userPrompt) => "FINAL: done",
+            gate: async (rubric, input) =>
+            {
+                seenByGate = input;
+
+                return "accept";
+            });
+
+        // when
+        await agent.ProcessPromptAsync($"please email {SecretEmail} the report");
+
+        // then
+        seenByGate.Should().NotBeEmpty();
+        seenByGate.Should().NotContain(SecretEmail);
+    }
+
+    // The Judge reads the task AND the drafted answer, so it sees more sensitive text than any
+    // other guardian — and it is the one most likely to be pointed at a cheap third-party
+    // endpoint, because scoring is the cheapest of the three calls.
+    [Fact]
+    public async Task ShouldHideTheValueFromTheJudgeAsync()
+    {
+        // given
+        string seenByJudge = string.Empty;
+
+        StandardAgent agent = AgentThatRedacts(
+            brain: async (systemPrompt, userPrompt) => $"FINAL: sent to {SecretEmail}",
+            judge: async (rubric, input) =>
+            {
+                seenByJudge = input;
+
+                return "1.0";
+            });
+
+        // when
+        await agent.ProcessPromptAsync($"please email {SecretEmail} the report");
+
+        // then
+        seenByJudge.Should().NotBeEmpty();
+        seenByJudge.Should().NotContain(SecretEmail);
+    }
+
+    // A placeholder can arrive split across two chunks. Without the streaming buffer the caller
+    // sees "{{EMAIL_" and never gets the value back.
+    private sealed class SplittingGeneratorBroker : IGeneratorBroker
+    {
+        public string SeenUserPrompt { get; private set; } = string.Empty;
+
+        public ValueTask<string> GenerateAsync(string systemPrompt, string userPrompt)
+        {
+            SeenUserPrompt = userPrompt;
+
+            return ValueTask.FromResult("FINAL: done");
+        }
+
+        public async IAsyncEnumerable<string> GenerateStreamAsync(
+            string systemPrompt,
+            string userPrompt,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            SeenUserPrompt = userPrompt;
+
+            await ValueTask.CompletedTask;
+
+            yield return "FINAL: sent to {{EMAI";
+            yield return "L_0}} just now";
+        }
+    }
+
+    [Fact]
+    public async Task ShouldRehydrateAStreamedValueSplitAcrossChunksAsync()
+    {
+        // given
+        var generator = new SplittingGeneratorBroker();
+
+        var skillBroker = new Mock<ISkillBroker>();
+        skillBroker.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(new List<Skill>());
+
+        var memoryBroker = new Mock<IMemoryBroker>();
+        memoryBroker.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
+
+        var knowledgeBroker = new Mock<IKnowledgeBroker>();
+
+        knowledgeBroker.Setup(broker => broker.SelectKnowledgeAsync(It.IsAny<string>()))
+            .ReturnsAsync([]);
+
+        StandardAgent agent = new StandardAgent()
+            .UseSkills(skillBroker.Object)
+            .UseMemory(memoryBroker.Object)
+            .UseKnowledge(knowledgeBroker.Object)
+            .UseGenerator(generator)
             .Redact();
 
         // when
-        string answer =
-            await agent.ProcessPromptAsync("please email jane@acme.com the report");
+        var streamed = new List<string>();
 
-        // then — the brain saw a token, never the address
-        generator.Verify(broker =>
-            broker.GenerateAsync(
-                It.IsAny<string>(),
-                It.Is<string>(prompt =>
-                    prompt.Contains("{{EMAIL_0}}")
-                        && prompt.Contains("jane@acme.com") == false)),
-                Times.AtLeastOnce);
+        await foreach (AgentStreamEvent streamEvent in
+            agent.StreamPromptAsync($"please email {SecretEmail} the report"))
+        {
+            streamed.Add(streamEvent.Content);
+        }
 
-        // and the caller got the real address back
-        answer.Should().Contain("jane@acme.com");
-        answer.Should().NotContain("{{EMAIL_0}}");
+        // then
+        generator.SeenUserPrompt.Should().NotContain(SecretEmail);
+
+        string whole = string.Concat(streamed);
+        whole.Should().Contain(SecretEmail);
+        whole.Should().NotContain("{{EMAI");
+    }
+
+    [Fact]
+    public async Task ShouldNotRedactWhenRedactionIsNotConfiguredAsync()
+    {
+        // given — redaction is opt-in; absent it the agent behaves as if §4.6 did not exist
+        string seenByBrain = string.Empty;
+
+        var skillBroker = new Mock<ISkillBroker>();
+        skillBroker.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(new List<Skill>());
+
+        var memoryBroker = new Mock<IMemoryBroker>();
+        memoryBroker.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
+
+        var knowledgeBroker = new Mock<IKnowledgeBroker>();
+
+        knowledgeBroker.Setup(broker => broker.SelectKnowledgeAsync(It.IsAny<string>()))
+            .ReturnsAsync([]);
+
+        StandardAgent agent = new StandardAgent()
+            .UseSkills(skillBroker.Object)
+            .UseMemory(memoryBroker.Object)
+            .UseKnowledge(knowledgeBroker.Object)
+            .OnBrain(async (systemPrompt, userPrompt) =>
+            {
+                seenByBrain = userPrompt;
+
+                return "FINAL: done";
+            });
+
+        // when
+        await agent.ProcessPromptAsync($"please email {SecretEmail} the report");
+
+        // then
+        seenByBrain.Should().Contain(SecretEmail);
     }
 }
