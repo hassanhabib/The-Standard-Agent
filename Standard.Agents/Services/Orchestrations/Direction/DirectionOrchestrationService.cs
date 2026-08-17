@@ -31,6 +31,11 @@ public partial class DirectionOrchestrationService : IDirectionOrchestrationServ
     private readonly IGateService? screeningService;
     private readonly HashSet<string> irreversibleToolNames;
 
+    // Asked once per act rather than captured once at composition, because who is acting can
+    // change between prompts on the same agent — a singleton serving many callers is the shape
+    // this framework asks hosts to adopt (SPEC.md §4.4).
+    private readonly Func<string?>? principalResolver;
+
     public DirectionOrchestrationService(
         IInternalToolService internalToolService,
         IExternalToolService externalToolService,
@@ -41,9 +46,11 @@ public partial class DirectionOrchestrationService : IDirectionOrchestrationServ
         IApprovalBroker? approvalBroker = null,
         IEffectLedgerBroker? effectLedgerBroker = null,
         IEnumerable<string>? irreversibleTools = null,
-        IGateService? screeningService = null)
+        IGateService? screeningService = null,
+        Func<string?>? principalResolver = null)
     {
         this.screeningService = screeningService;
+        this.principalResolver = principalResolver;
 
         this.internalToolService = internalToolService;
         this.externalToolService = externalToolService;

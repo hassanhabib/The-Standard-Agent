@@ -1158,7 +1158,8 @@ public sealed partial class StandardAgent : IAgent
                     : new RequireApprovalBroker(this.approvalRequiredTools)),
             this.effectLedgerBroker,
             this.approvalRequiredTools,
-            this.screenToolOutput ? gate : null);
+            this.screenToolOutput ? gate : null,
+            this.principalResolver);
 
         return new AgentCoordinationService(
             data, decision, direction, logging, this.maxTurns, new TimeBroker(), this.budget,

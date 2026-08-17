@@ -81,4 +81,12 @@ public sealed record Vector(
 
     // Native tool calling (SPEC.md §6). When set, the Brain is a V1 generator and its replies are
     // structured choices rather than lines of text.
-    List<NativeReply>? NativeReplies = null);
+    List<NativeReply>? NativeReplies = null,
+
+    // Identity (SPEC.md §4.9). Who the host says is acting. Set it and the policy broker must be
+    // told; leave it and the effect must claim no identity rather than invent one.
+    string? Principal = null,
+
+    // Tools this principal may not act with, refused by policy on the identity alone. This is a
+    // scripted policy engine, not the allow-list: the allow-list cannot express "not for them".
+    List<string>? DeniedForPrincipal = null);
