@@ -90,7 +90,7 @@ public class AgentToolTests
             .ReturnsAsync("allow");
 
         var judge = new Mock<Brokers.Verifiers.IVerifierBroker>();
-        judge.Setup(broker => broker.VerifyAsync(It.IsAny<string>()))
+        judge.Setup(broker => broker.VerifyAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync("1.0");
 
         var outerAgent = new StandardAgent()

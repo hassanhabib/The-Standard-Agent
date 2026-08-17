@@ -52,7 +52,7 @@ public class TraceAuditTests
         var gate = new Mock<IClassifierBroker>();
         gate.Setup(broker => broker.ClassifyAsync(It.IsAny<string>())).ReturnsAsync("accept");
         var judge = new Mock<IVerifierBroker>();
-        judge.Setup(broker => broker.VerifyAsync(It.IsAny<string>())).ReturnsAsync("1.0");
+        judge.Setup(broker => broker.VerifyAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync("1.0");
 
         var agent = new StandardAgent()
             .UseGenerator(generator.Object)

@@ -74,7 +74,7 @@ public partial class DecisionOrchestrationServiceTests
                 Times.Never);
 
         this.judgeServiceMock.Verify(service =>
-            service.EvaluateAsync(It.IsAny<string>()),
+            service.EvaluateAsync(It.IsAny<string>(), It.IsAny<string>()),
                 Times.Never);
 
         this.brainServiceMock.VerifyNoOtherCalls();
@@ -93,7 +93,7 @@ public partial class DecisionOrchestrationServiceTests
                 .ReturnsAsync("FINAL: a poor answer");
 
         this.judgeServiceMock.Setup(service =>
-            service.EvaluateAsync(It.IsAny<string>()))
+            service.EvaluateAsync(It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new Judgement { Score = 0.1 });
 
         // when
@@ -117,7 +117,7 @@ public partial class DecisionOrchestrationServiceTests
                 .ReturnsAsync("FINAL: a poor answer");
 
         this.judgeServiceMock.Setup(service =>
-            service.EvaluateAsync(It.IsAny<string>()))
+            service.EvaluateAsync(It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new Judgement { Score = 0.1 });
 
         // when
@@ -145,7 +145,7 @@ public partial class DecisionOrchestrationServiceTests
 
         // then
         this.judgeServiceMock.Verify(service =>
-            service.EvaluateAsync(It.IsAny<string>()),
+            service.EvaluateAsync(It.IsAny<string>(), It.IsAny<string>()),
                 Times.Never);
 
         this.judgeServiceMock.VerifyNoOtherCalls();
@@ -172,7 +172,7 @@ public partial class DecisionOrchestrationServiceTests
                 Times.Once);
 
         this.judgeServiceMock.Verify(service =>
-            service.EvaluateAsync("the draft"),
+            service.EvaluateAsync(It.IsAny<string>(), "the draft"),
                 Times.Once);
     }
 }

@@ -57,7 +57,7 @@ public partial class DecisionOrchestrationServiceTests
 
     private void SetupJudgeApproves() =>
         this.judgeServiceMock.Setup(service =>
-            service.EvaluateAsync(It.IsAny<string>()))
+            service.EvaluateAsync(It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(new Judgement { Score = 1.0 });
 
     private static Expression<Func<Xeption, bool>> SameExceptionAs(Xeption expectedException) =>
