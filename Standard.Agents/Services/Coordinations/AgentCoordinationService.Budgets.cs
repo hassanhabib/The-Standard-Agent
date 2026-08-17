@@ -100,7 +100,7 @@ public partial class AgentCoordinationService
     {
         try
         {
-            return await this.directionOrchestrationService.ActAsync(context);
+            return await this.directionCoordinationService.ActAsync(context);
         }
         catch (Exception)
         {
@@ -121,7 +121,7 @@ public partial class AgentCoordinationService
         }
 
         IReadOnlyList<CompensationOutcome> outcomes =
-            await this.directionOrchestrationService.CompensateRunAsync();
+            await this.directionCoordinationService.CompensateRunAsync();
 
         if (outcomes.Count is 0)
         {

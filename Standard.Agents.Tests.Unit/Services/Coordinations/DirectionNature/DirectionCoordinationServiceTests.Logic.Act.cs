@@ -8,9 +8,9 @@ using Moq;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Xunit;
 
-namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Direction;
+namespace Standard.Agents.Tests.Unit.Services.Coordinations.DirectionNature;
 
-public partial class DirectionOrchestrationServiceTests
+public partial class DirectionCoordinationServiceTests
 {
     [Fact]
     public async Task ShouldReturnAndTerminateOnActIfDirectionTypeIsReturnResponseAsync()
@@ -27,7 +27,7 @@ public partial class DirectionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.directionOrchestrationService.ActAsync(inputContext);
+            await this.directionCoordinationService.ActAsync(inputContext);
 
         // then
         actualContext.Result.Should().Be(answer);
@@ -56,7 +56,7 @@ public partial class DirectionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.directionOrchestrationService.ActAsync(inputContext);
+            await this.directionCoordinationService.ActAsync(inputContext);
 
         // then
         actualContext.Result.Should().Be(question);
@@ -85,7 +85,7 @@ public partial class DirectionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.directionOrchestrationService.ActAsync(inputContext);
+            await this.directionCoordinationService.ActAsync(inputContext);
 
         // then
         actualContext.Result.Should().Be(refusal);
@@ -112,7 +112,7 @@ public partial class DirectionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.directionOrchestrationService.ActAsync(inputContext);
+            await this.directionCoordinationService.ActAsync(inputContext);
 
         // then
         actualContext.Status.Should().Be(AgentStatus.Working);
@@ -140,7 +140,7 @@ public partial class DirectionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.directionOrchestrationService.ActAsync(inputContext);
+            await this.directionCoordinationService.ActAsync(inputContext);
 
         // then
         actualContext.Status.Should().Be(AgentStatus.Working);
@@ -179,7 +179,7 @@ public partial class DirectionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.directionOrchestrationService.ActAsync(inputContext);
+            await this.directionCoordinationService.ActAsync(inputContext);
 
         // then
         actualContext.Observations.Should().HaveCount(2);
@@ -203,7 +203,7 @@ public partial class DirectionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.directionOrchestrationService.ActAsync(inputContext);
+            await this.directionCoordinationService.ActAsync(inputContext);
 
         // then
         actualContext.Status.Should().Be(AgentStatus.Working);
@@ -228,7 +228,7 @@ public partial class DirectionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.directionOrchestrationService.ActAsync(inputContext);
+            await this.directionCoordinationService.ActAsync(inputContext);
 
         // then
         actualContext.Result.Should().Be("again");
@@ -252,7 +252,7 @@ public partial class DirectionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.directionOrchestrationService.ActAsync(inputContext);
+            await this.directionCoordinationService.ActAsync(inputContext);
 
         // then
         actualContext.Observations.Should()

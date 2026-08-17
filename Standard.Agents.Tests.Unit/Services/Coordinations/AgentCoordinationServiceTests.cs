@@ -10,7 +10,7 @@ using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Services.Coordinations;
 using Standard.Agents.Services.Coordinations.Data;
 using Standard.Agents.Services.Orchestrations.Decision;
-using Standard.Agents.Services.Orchestrations.Direction;
+using Standard.Agents.Services.Coordinations.Direction;
 using Tynamix.ObjectFiller;
 using Xeptions;
 using Xunit;
@@ -21,7 +21,7 @@ public partial class AgentCoordinationServiceTests
 {
     private readonly Mock<IDataCoordinationService> dataCoordinationServiceMock;
     private readonly Mock<IDecisionOrchestrationService> decisionOrchestrationServiceMock;
-    private readonly Mock<IDirectionOrchestrationService> directionOrchestrationServiceMock;
+    private readonly Mock<IDirectionCoordinationService> directionCoordinationServiceMock;
     private readonly Mock<ILoggingBroker> loggingBrokerMock;
     private readonly IAgentCoordinationService agentCoordinationService;
 
@@ -29,13 +29,13 @@ public partial class AgentCoordinationServiceTests
     {
         this.dataCoordinationServiceMock = new Mock<IDataCoordinationService>();
         this.decisionOrchestrationServiceMock = new Mock<IDecisionOrchestrationService>();
-        this.directionOrchestrationServiceMock = new Mock<IDirectionOrchestrationService>();
+        this.directionCoordinationServiceMock = new Mock<IDirectionCoordinationService>();
         this.loggingBrokerMock = new Mock<ILoggingBroker>();
 
         this.agentCoordinationService = new AgentCoordinationService(
             dataCoordinationService: this.dataCoordinationServiceMock.Object,
             decisionOrchestrationService: this.decisionOrchestrationServiceMock.Object,
-            directionOrchestrationService: this.directionOrchestrationServiceMock.Object,
+            directionCoordinationService: this.directionCoordinationServiceMock.Object,
             loggingBroker: this.loggingBrokerMock.Object);
     }
 
@@ -54,13 +54,13 @@ public partial class AgentCoordinationServiceTests
     }
 
     private void SetupDirectionTerminates(string result) =>
-        this.directionOrchestrationServiceMock.Setup(service =>
+        this.directionCoordinationServiceMock.Setup(service =>
             service.ActAsync(It.IsAny<AgentContext>()))
                 .ReturnsAsync((AgentContext context) =>
                     context with { Result = result, Status = AgentStatus.Responded });
 
     private void SetupDirectionNeverTerminates(string result) =>
-    this.directionOrchestrationServiceMock.Setup(service =>
+    this.directionCoordinationServiceMock.Setup(service =>
         service.ActAsync(It.IsAny<AgentContext>()))
             .ReturnsAsync((AgentContext context) =>
                 context with { Result = result, Status = AgentStatus.Working });

@@ -6,9 +6,9 @@
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Models.Orchestrations.Effects;
 
-namespace Standard.Agents.Services.Orchestrations.Direction;
+namespace Standard.Agents.Services.Coordinations.Direction;
 
-public interface IDirectionOrchestrationService
+public interface IDirectionCoordinationService
 {
     ValueTask<AgentContext> ActAsync(AgentContext context);
 
