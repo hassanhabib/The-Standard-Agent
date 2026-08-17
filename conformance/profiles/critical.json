@@ -6,7 +6,7 @@
     "conversation-carries-history",
     "failed-run-unwinds-in-reverse",
     "native-tool-call-round-trips",
-    "awaiting-input-resumes-in-a-new-process",
+    "awaiting-approval-resumes-in-a-new-process",
     "effect-outcome-survives-a-crash"
   ]
 }

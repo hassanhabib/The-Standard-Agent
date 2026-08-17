@@ -72,4 +72,9 @@ public sealed record Vector(
     // DurableEffectLedger puts run-once in a folder rather than in the instance's memory.
     // Together they are the only way to certify that an effect outcome survives a crash.
     bool NewInstancePerPrompt = false,
-    bool DurableEffectLedger = false);
+    bool DurableEffectLedger = false,
+
+    // A scripted authority — "pending", "approved", "denied" — answered in order, so a vector can
+    // hold an act on one run and permit it on the next. That is the shape of every real approval:
+    // the answer arrives after the agent already stopped.
+    List<string>? ApprovalDecisions = null);

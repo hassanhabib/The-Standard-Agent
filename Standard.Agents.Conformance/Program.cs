@@ -5,6 +5,7 @@
 
 using System.Text.Json;
 using Standard.Agents;
+using Standard.Agents.Brokers.Approvals;
 using Standard.Agents.Conformance;
 using Standard.Agents.Models.Brokers.Audits;
 
@@ -168,6 +169,10 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
     // The order the run was unwound in, written by the stubs as they reverse themselves.
     List<string> compensationOrder = [];
 
+    Queue<ApprovalDecision> approvalDecisions = new(
+        (vector.ApprovalDecisions ?? []).Select(decision =>
+            Enum.Parse<ApprovalDecision>(decision, ignoreCase: true)));
+
     Dictionary<string, StubTool> stubTools =
         (vector.Tools ?? []).ToDictionary(
             pair => pair.Key,
@@ -285,6 +290,23 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         if (vector.RequireApproval is { Count: > 0 })
         {
             agent.RequireApproval([.. vector.RequireApproval]);
+        }
+
+        // A scripted authority, so a vector can hold an act on one run and permit it on the next
+        // — the shape of every real approval, where the answer arrives after the agent stopped.
+        // The queue is shared across instances, so the second process sees the second decision.
+        if (vector.ApprovalDecisions is { Count: > 0 })
+        {
+            agent.OnApproval(effect =>
+            {
+                lock (auditLock)
+                {
+                    return ValueTask.FromResult(
+                        approvalDecisions.Count > 0
+                            ? approvalDecisions.Dequeue()
+                            : ApprovalDecision.Pending);
+                }
+            });
         }
 
         if (vector.ScreenToolOutput)
