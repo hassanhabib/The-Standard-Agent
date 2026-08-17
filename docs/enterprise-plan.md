@@ -161,10 +161,25 @@ MOVEMENT I — TRUST                MOVEMENT II — CONTROL           MOVEMENT I
 | Release | State | Evidence |
 |---|---|---|
 | 0.18 Capability verbs | **landed** | released `v0.18.0` |
-| 0.19 Audit spine | **landed on main** | decision log append-only, hash-chained, three access modes; SPEC §3.3/§4.7/§4.8 |
-| 0.20 Run isolation | **landed on main** | 64 concurrent prompts, one instance, both sinks; SPEC §4.4/§7.4 |
+| 0.19 Audit spine | **landed on main** | decision log append-only, hash-chained, three access modes; vector 11; SPEC §3.3/§4.7/§4.8 |
+| 0.20 Run isolation | **landed on main** | 64 concurrent prompts, one instance, both sinks; vector 12; SPEC §4.4/§7.4 |
 | 0.21 Guardian integrity | next | — |
 | 0.22 → 1.1 | planned | — |
+
+The readiness levels (§2.1) are now machine-verified, and the runner is the authority on where
+this stands — not this table:
+
+```
+dotnet run --project Standard.Agents.Conformance -- --profile Core       CERTIFIED       exit 0
+dotnet run --project Standard.Agents.Conformance -- --profile Reliable   NOT CERTIFIED   exit 1
+    - judge-receives-the-task              ─┐
+    - redaction-covers-every-model-call     ├─ 0.21 Guardian integrity
+    - guardian-overreach-is-neutralized    ─┘
+    - cancellation-stops-the-loop          ─┐
+    - transient-failure-recovers           ─┴─ 0.23 Resilience & budget
+```
+
+**Core is certified. Reliable is five requirements away**, and the five name themselves.
 
 Nothing is released past `v0.18.0`. The two landed releases are on `main` and will be cut when the
 program is further along — a decision log is more credible shipped alongside the guardians it
