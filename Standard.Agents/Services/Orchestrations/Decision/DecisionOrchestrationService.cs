@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.Json;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models.Clients.Agents;
+using Standard.Agents.Models.Brokers.Generators.V1;
 using Standard.Agents.Models.Brokers.Sessions;
 using Standard.Agents.Models.Foundations.Gates;
 using Standard.Agents.Models.Foundations.Judges;
@@ -41,17 +42,20 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
     private readonly IBrainService brainService;
     private readonly IJudgeService judgeService;
     private readonly ILoggingBroker loggingBroker;
+    private readonly IReadOnlyList<ToolDefinition> toolDefinitions;
 
     public DecisionOrchestrationService(
         IGateService gateService,
         IBrainService brainService,
         IJudgeService judgeService,
-        ILoggingBroker loggingBroker)
+        ILoggingBroker loggingBroker,
+        IReadOnlyList<ToolDefinition>? toolDefinitions = null)
     {
         this.gateService = gateService;
         this.brainService = brainService;
         this.judgeService = judgeService;
         this.loggingBroker = loggingBroker;
+        this.toolDefinitions = toolDefinitions ?? [];
     }
 
     public ValueTask<AgentContext> ThinkAsync(AgentContext context) =>
@@ -92,12 +96,13 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
 
         context = resolvedContext;
 
-        string reply =
-            (await this.brainService.GenerateAsync(
-                systemPrompt: context.SystemPrompt,
-                userPrompt: BuildUserMessage(context))).Trim();
-
-        AgentContext decided = Interpret(context, reply);
+        AgentContext decided = this.brainService.SpeaksNatively
+            ? await ThinkNativelyAsync(context)
+            : Interpret(
+                context,
+                (await this.brainService.GenerateAsync(
+                    systemPrompt: context.SystemPrompt,
+                    userPrompt: BuildUserMessage(context))).Trim());
 
         bool isFinalAnswer =
             decided.DirectionType.Equals(
