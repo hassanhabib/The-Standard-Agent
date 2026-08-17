@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------
 
 using Standard.Agents.Models.Brokers.Sessions;
+using Standard.Agents.Models.Loggings;
 using Standard.Agents.Models.Orchestrations.Agents;
 
 namespace Standard.Agents.Services.Coordinations;
@@ -15,16 +16,32 @@ namespace Standard.Agents.Services.Coordinations;
 // a different process, long after the instance that created it is gone.
 public partial class AgentCoordinationService
 {
-    private async ValueTask<AgentContext> LoadSessionAsync(AgentContext context)
+    // Read before the run begins, because a resumed run must keep the identity the interrupted
+    // one had. Nothing is logged here: there is no run yet to credit the record to.
+    private async ValueTask<AgentSession?> PeekSessionAsync(string sessionId) =>
+        string.IsNullOrEmpty(sessionId)
+            ? null
+            : await this.sessionBroker.SelectSessionAsync(sessionId);
+
+    // A session that never delivered an answer was interrupted — killed, cancelled, out of turns,
+    // or waiting on an authority. The next prompt in that session continues that run rather than
+    // starting a fresh one, so the effects it already performed keep their idempotency keys and
+    // are replayed rather than performed twice (SPEC.md §4.9, §4.11).
+    private static string? ResumedRunId(AgentSession? session) =>
+        null;
+
+    // The start-of-run checkpoint. Written before any work, because a crash means nothing at the
+    // end runs at all — and an identity recorded only on success is an identity the failure case
+    // can never use.
+    private async ValueTask BeginSessionAsync(AgentContext context, AgentSession? session)
     {
-        if (string.IsNullOrEmpty(context.SessionId))
-        {
-            return context;
-        }
+        await ValueTask.CompletedTask;
+    }
 
-        AgentSession? session =
-            await this.sessionBroker.SelectSessionAsync(context.SessionId);
-
+    private async ValueTask<AgentContext> LoadSessionAsync(
+        AgentContext context,
+        AgentSession? session)
+    {
         if (session is null)
         {
             return context;
@@ -62,6 +79,7 @@ public partial class AgentCoordinationService
             Id = context.SessionId,
             History = [.. history, new AgentTurn(context.Prompt, context.Result)],
             Status = context.Status,
+            RunId = AgentRun.Current?.Id ?? string.Empty,
 
             // What the agent is waiting on, so a later prompt can see it was mid-question
             // rather than mid-nothing.
