@@ -1,0 +1,16 @@
+{
+  "name": "duplicate-effect-executes-once",
+  "description": "SPEC.md 4.9 and Invariant 7: an effect must not execute more than once for the same derived idempotency key. The Brain proposes the identical transfer three times, with differing whitespace to prove the key is canonical rather than literal; the tool runs once and the first outcome is replayed. Authorizing an act correctly and then performing it twice fails Invariant 7 just as surely as never authorizing it.",
+  "generatorReplies": [
+    "ACTION: wire_transfer: 10000",
+    "ACTION: wire_transfer: 10000",
+    "ACTION: wire_transfer:  10000",
+    "FINAL: paid"
+  ],
+  "tools": { "wire_transfer": "transfer complete" },
+  "prompt": "pay the invoice",
+  "expect": {
+    "result": "paid",
+    "toolRunCount": { "wire_transfer": 1 }
+  }
+}

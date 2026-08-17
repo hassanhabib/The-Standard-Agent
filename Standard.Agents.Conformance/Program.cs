@@ -189,11 +189,12 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
     // none of them (SPEC.md §4.6). The generator is wrapped rather than replaced, so the real
     // Brain path — redaction, rehydration, streaming buffers — is what gets certified.
     List<string> modelInputs = [];
+    List<string> brainInputs = [];
     var scriptedGenerator = new ScriptedGeneratorBroker(vector.GeneratorReplies);
 
     var recordingGenerator = new RecordingGeneratorBroker(
         scriptedGenerator,
-        input => { lock (auditLock) { modelInputs.Add(input); } });
+        input => { lock (auditLock) { modelInputs.Add(input); brainInputs.Add(input); } });
 
     StandardAgent agent = new StandardAgent()
         .UseSkills(new StubSkillBroker())
@@ -211,7 +212,17 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
                 modelInputs.Add(prompt);
             }
 
-            return new ValueTask<string>(vector.GateVerdict ?? "allow");
+            // Screening reuses the Gate, so the same scripted guardian answers for the prompt
+            // and for tool output. A vector may script the two differently, which is how it
+            // refuses an injected result while still letting the task through.
+            bool isToolOutput = vector.ScreenToolOutput
+                && prompt.Equals(vector.Prompt, StringComparison.Ordinal) is false;
+
+            string verdict = isToolOutput && vector.GateVerdictOnToolOutput is not null
+                ? vector.GateVerdictOnToolOutput
+                : vector.GateVerdict ?? "allow";
+
+            return new ValueTask<string>(verdict);
         })
         .OnJudge((rubric, candidate) =>
         {
@@ -238,6 +249,16 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
     if (vector.Redact)
     {
         agent.Redact();
+    }
+
+    if (vector.RequireApproval is { Count: > 0 })
+    {
+        agent.RequireApproval([.. vector.RequireApproval]);
+    }
+
+    if (vector.ScreenToolOutput)
+    {
+        agent.ScreenToolOutput();
     }
 
     if (string.IsNullOrEmpty(vector.Constitution) is false)
@@ -277,7 +298,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         }
     }
 
-    return new VectorRun(result, stubTools, gateRubric, judgeRubric, judgeInput, modelInputs, auditRecords);
+    return new VectorRun(result, stubTools, gateRubric, judgeRubric, judgeInput, modelInputs, brainInputs, auditRecords);
 }
 
 // The decision log's guarantees, certified from the records themselves: one run per prompt,
@@ -431,6 +452,44 @@ static bool GuardianInputConformant(
         return false;
     }
 
+    // Held is not performed, and proposing an act many times is still one act (SPEC.md §4.9).
+    foreach (string toolName in vector.Expect.ToolNeverRan ?? [])
+    {
+        int actualRuns = run.Tools.TryGetValue(toolName, out StubTool? heldTool)
+            ? heldTool.ReceivedInputs.Count
+            : 0;
+
+        if (actualRuns > 0)
+        {
+            failure = $"tool '{toolName}' ran {actualRuns} time(s); it should never have run";
+
+            return false;
+        }
+    }
+
+    foreach (KeyValuePair<string, int> expected in vector.Expect.ToolRunCount ?? [])
+    {
+        int actualRuns = run.Tools.TryGetValue(expected.Key, out StubTool? countedTool)
+            ? countedTool.ReceivedInputs.Count
+            : 0;
+
+        if (actualRuns != expected.Value)
+        {
+            failure =
+                $"tool '{expected.Key}' ran {actualRuns} time(s), expected {expected.Value}";
+
+            return false;
+        }
+    }
+
+    if (vector.Expect.BrainNeverSees is string withheld
+        && run.BrainInputs.Any(input => input.Contains(withheld, StringComparison.Ordinal)))
+    {
+        failure = $"the Brain was shown text that should have been withheld: {Show(withheld)}";
+
+        return false;
+    }
+
     // Redaction is only satisfied if EVERY model call is clean. Checking the Brain alone is the
     // exact mistake this vector exists to catch (SPEC.md §4.6).
     if (vector.Expect.NoModelSees is string secret)
@@ -539,4 +598,5 @@ internal sealed record VectorRun(
     string? JudgeRubric,
     string? JudgeInput,
     List<string> ModelInputs,
+    List<string> BrainInputs,
     List<AuditRecord> AuditRecords);
