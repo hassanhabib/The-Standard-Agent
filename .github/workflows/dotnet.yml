@@ -48,8 +48,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    # Full history: the secret scan diffs a commit against its parent, and the default shallow
+    # clone has no parent to diff against — it fails to scan rather than finding nothing, which
+    # is the failure mode a security check must never have.
     - name: Pulling Code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Installing .NET
       uses: actions/setup-dotnet@v4
