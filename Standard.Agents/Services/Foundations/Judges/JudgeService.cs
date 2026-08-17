@@ -27,7 +27,7 @@ public partial class JudgeService : IJudgeService
     {
         ValidateEvaluate(candidate);
 
-        string verdict = await this.verifierBroker.VerifyAsync(string.Empty, candidate);
+        string verdict = await this.verifierBroker.VerifyAsync(task, candidate);
 
         Judgement judgement = ParseJudgement(verdict);
 
