@@ -4,6 +4,9 @@
 // ---------------------------------------------------------------
 
 using Standard.Agents.Brokers.Approvals;
+using Standard.Agents.Services.Foundations.Approvals;
+using Standard.Agents.Services.Foundations.EffectLedgers;
+using Standard.Agents.Services.Foundations.Policys;
 using Standard.Agents.Brokers.Effects;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Brokers.Policies;
@@ -26,9 +29,9 @@ public partial class DirectionOrchestrationService : IDirectionOrchestrationServ
     private readonly IExternalToolService externalToolService;
     private readonly IReturnService returnService;
     private readonly ILoggingBroker loggingBroker;
-    private readonly IPolicyBroker policyBroker;
-    private readonly IApprovalBroker approvalBroker;
-    private readonly IEffectLedgerBroker effectLedgerBroker;
+    private readonly IPolicyService policyService;
+    private readonly IApprovalService approvalService;
+    private readonly IEffectLedgerService effectLedgerService;
     private readonly IGateService? screeningService;
     private readonly HashSet<string> irreversibleToolNames;
 
@@ -42,10 +45,9 @@ public partial class DirectionOrchestrationService : IDirectionOrchestrationServ
         IExternalToolService externalToolService,
         IReturnService returnService,
         ILoggingBroker loggingBroker,
-        IEnumerable<string>? allowedTools = null,
-        IPolicyBroker? policyBroker = null,
-        IApprovalBroker? approvalBroker = null,
-        IEffectLedgerBroker? effectLedgerBroker = null,
+        IPolicyService? policyService = null,
+        IApprovalService? approvalService = null,
+        IEffectLedgerService? effectLedgerService = null,
         IEnumerable<string>? irreversibleTools = null,
         IGateService? screeningService = null,
         Func<AgentPrincipal?>? identityResolver = null)
@@ -58,15 +60,17 @@ public partial class DirectionOrchestrationService : IDirectionOrchestrationServ
         this.returnService = returnService;
         this.loggingBroker = loggingBroker;
 
-        // The allow-list is now expressed as a policy, so the simple answer and an external
-        // policy engine travel one seam and a denial carries a reason either way (SPEC.md §4.9).
-        this.policyBroker = policyBroker
-            ?? (allowedTools is null
-                ? new NotConfiguredPolicyBroker()
-                : new AllowListPolicyBroker(allowedTools));
+        // The perimeter arrives as three foundations rather than three brokers, so a policy engine
+        // that cannot be reached, an authority that cannot be asked, and a ledger that cannot be
+        // written each fail under their own name (docs/architecture-alignment.md).
+        this.policyService = policyService
+            ?? new PolicyService(new NotConfiguredPolicyBroker(), loggingBroker);
 
-        this.approvalBroker = approvalBroker ?? new NotConfiguredApprovalBroker();
-        this.effectLedgerBroker = effectLedgerBroker ?? new InMemoryEffectLedgerBroker();
+        this.approvalService = approvalService
+            ?? new ApprovalService(new NotConfiguredApprovalBroker(), loggingBroker);
+
+        this.effectLedgerService = effectLedgerService
+            ?? new EffectLedgerService(new InMemoryEffectLedgerBroker(), loggingBroker);
 
         this.irreversibleToolNames =
             new HashSet<string>(irreversibleTools ?? [], StringComparer.OrdinalIgnoreCase);

