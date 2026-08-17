@@ -140,12 +140,18 @@ public partial class DirectionOrchestrationService
         AgentEffect effect,
         ApprovalDecision approval)
     {
+        // The act was held, not performed, so the claim taken when its intent was recorded is
+        // given back (SPEC.md §4.9). Leaving it standing would make the approval unusable when it
+        // finally arrives: the authority says yes, the resumed run proposes the act, and the
+        // ledger reports it as already done.
+        await this.effectLedgerBroker.DeleteClaimAsync(effect);
+
         if (approval is ApprovalDecision.Denied)
         {
             string denial = $"approval denied for '{effect.ToolName}'";
 
             await this.loggingBroker.LogProcessAsync(
-                "Direction", $"Approval → DENIED '{effect.ToolName}'");
+                "Direction", $"Approval → DENIED '{effect.ToolName}'; the claim was released");
 
             return Denied(context, denial);
         }
@@ -153,7 +159,8 @@ public partial class DirectionOrchestrationService
         // Pending. The act is held, not performed — waiting is not consent (SPEC.md §4.9).
         await this.loggingBroker.LogProcessAsync(
             "Direction",
-            $"Approval → PENDING '{effect.ToolName}'; the effect was not performed");
+            $"Approval → PENDING '{effect.ToolName}'; the effect was not performed "
+                + "and the claim was released");
 
         return context with
         {
