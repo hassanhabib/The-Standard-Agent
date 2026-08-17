@@ -31,9 +31,18 @@ public partial class JudgeService : IJudgeService
     {
         ValidateEvaluate(candidate);
 
-        string verdict = await this.verifierBroker.VerifyAsync(task, candidate);
+        // One vault across both, so the same value redacts to the same token in the task and
+        // the answer — otherwise the Judge cannot tell that the answer is about the person the
+        // task asked about. The verdict is rehydrated because a rejection's reason quotes the
+        // answer back, and that reason becomes the revision feedback the Brain reads (§4.3).
+        var vault = new Dictionary<string, string>();
 
-        Judgement judgement = ParseJudgement(verdict);
+        string redactedTask = this.redactionBroker.Redact(task, vault);
+        string redactedCandidate = this.redactionBroker.Redact(candidate, vault);
+
+        string verdict = await this.verifierBroker.VerifyAsync(redactedTask, redactedCandidate);
+
+        Judgement judgement = ParseJudgement(this.redactionBroker.Rehydrate(verdict, vault));
 
         ValidateScore(judgement.Score);
 
