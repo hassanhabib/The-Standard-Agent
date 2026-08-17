@@ -204,153 +204,178 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         scriptedGenerator,
         input => { lock (auditLock) { modelInputs.Add(input); brainInputs.Add(input); } });
 
-    StandardAgent agent = new StandardAgent()
-        .UseSkills(new StubSkillBroker())
-        .UseGenerator(recordingGenerator)
-        .UseMemory(new StubMemoryBroker())
-        .UseMcp(new NotConfiguredMcpBroker())
-        .Tools(stubTools.Values)
-        .OnGate((rubric, prompt) =>
+    // Anything on disk from a previous run is cleared once, here — not inside the builder, which
+    // may be called again for the next prompt and would then erase the very session and ledger
+    // that prompt is meant to resume from.
+    foreach (string folder in
+        (string[])["sessions", "ledger"])
+    {
+        string folderPath = Path.Combine(AppContext.BaseDirectory, $"{folder}-{vector.Name}");
+
+        if (Directory.Exists(folderPath))
         {
-            gateRubric ??= rubric;
+            Directory.Delete(folderPath, recursive: true);
+        }
+    }
 
-            lock (auditLock)
+    // Each prompt may run through a brand-new instance, which is the closest this harness comes
+    // to a different process: nothing but the files on disk survives between them. It is the only
+    // way to certify that a session and an effect ledger outlive the agent that wrote them.
+    async Task<StandardAgent> BuildAgentAsync()
+    {
+        StandardAgent agent = new StandardAgent()
+            .UseSkills(new StubSkillBroker())
+            .UseGenerator(recordingGenerator)
+            .UseMemory(new StubMemoryBroker())
+            .UseMcp(new NotConfiguredMcpBroker())
+            .Tools(stubTools.Values)
+            .OnGate((rubric, prompt) =>
             {
-                modelInputs.Add(prompt);
+                gateRubric ??= rubric;
 
-                if (prompt.Equals(vector.Prompt, StringComparison.Ordinal))
+                lock (auditLock)
                 {
-                    promptScreenings++;
+                    modelInputs.Add(prompt);
+
+                    if (prompt.Equals(vector.Prompt, StringComparison.Ordinal))
+                    {
+                        promptScreenings++;
+                    }
                 }
-            }
 
-            // Screening reuses the Gate, so the same scripted guardian answers for the prompt
-            // and for tool output. A vector may script the two differently, which is how it
-            // refuses an injected result while still letting the task through.
-            bool isToolOutput = vector.ScreenToolOutput
-                && prompt.Equals(vector.Prompt, StringComparison.Ordinal) is false;
+                // Screening reuses the Gate, so the same scripted guardian answers for the prompt
+                // and for tool output. A vector may script the two differently, which is how it
+                // refuses an injected result while still letting the task through.
+                bool isToolOutput = vector.ScreenToolOutput
+                    && prompt.Equals(vector.Prompt, StringComparison.Ordinal) is false;
 
-            string verdict = isToolOutput && vector.GateVerdictOnToolOutput is not null
-                ? vector.GateVerdictOnToolOutput
-                : vector.GateVerdict ?? "allow";
+                string verdict = isToolOutput && vector.GateVerdictOnToolOutput is not null
+                    ? vector.GateVerdictOnToolOutput
+                    : vector.GateVerdict ?? "allow";
 
-            return new ValueTask<string>(verdict);
-        })
-        .OnJudge((rubric, candidate) =>
-        {
-            judgeRubric = rubric;
-            judgeInput = candidate;
-
-            lock (auditLock)
+                return new ValueTask<string>(verdict);
+            })
+            .OnJudge((rubric, candidate) =>
             {
-                modelInputs.Add(candidate);
-            }
+                judgeRubric = rubric;
+                judgeInput = candidate;
 
-            return new ValueTask<string>(vector.JudgeScore ?? "1.0");
-        })
-        .OnAudit(record =>
-        {
-            lock (auditLock)
+                lock (auditLock)
+                {
+                    modelInputs.Add(candidate);
+                }
+
+                return new ValueTask<string>(vector.JudgeScore ?? "1.0");
+            })
+            .OnAudit(record =>
             {
-                auditRecords.Add(record);
-            }
+                lock (auditLock)
+                {
+                    auditRecords.Add(record);
+                }
 
-            return ValueTask.CompletedTask;
-        });
+                return ValueTask.CompletedTask;
+            });
 
-    if (vector.Redact)
-    {
-        agent.Redact();
-    }
-
-    if (vector.RequireApproval is { Count: > 0 })
-    {
-        agent.RequireApproval([.. vector.RequireApproval]);
-    }
-
-    if (vector.ScreenToolOutput)
-    {
-        agent.ScreenToolOutput();
-    }
-
-    if (vector.CompensateOnFailure)
-    {
-        agent.CompensateOnFailure();
-    }
-
-    if (vector.Retries > 0)
-    {
-        agent.Resilience(vector.Retries);
-    }
-
-    if (vector.MaxTurns is int maxTurns)
-    {
-        agent.MaxTurns(maxTurns);
-    }
-
-    if (vector.BudgetMaxWallClockSeconds is double seconds)
-    {
-        agent.Budget(maxWallClock: TimeSpan.FromSeconds(seconds));
-    }
-
-    // A real session store, in a folder unique to this vector, so conversation is certified
-    // against something that actually persists rather than an in-memory stand-in that could
-    // never demonstrate resumption.
-    if (vector.SessionId is not null)
-    {
-        string sessionsPath = Path.Combine(AppContext.BaseDirectory, $"sessions-{vector.Name}");
-
-        if (Directory.Exists(sessionsPath))
+        if (vector.Redact)
         {
-            Directory.Delete(sessionsPath, recursive: true);
+            agent.Redact();
         }
 
-        agent.Sessions(sessionsPath);
-    }
-
-    if (vector.FallbackReply is string fallbackReply)
-    {
-        agent.Fallback(
-            fallback: () => new ValueTask<string>(fallbackReply),
-            failuresBeforeOpen: vector.FailuresBeforeOpen);
-    }
-
-    // A real knowledge folder, so the ranked retriever is certified against files rather than a
-    // stub that could agree with any implementation. A vector without knowledge keeps the empty
-    // stub, so nothing is retrieved and no vector is disturbed by this one existing.
-    string? knowledgePath = null;
-
-    if (vector.Knowledge is not { Count: > 0 })
-    {
-        agent.UseKnowledge(new StubKnowledgeBroker());
-    }
-    else
-    {
-        knowledgePath = Path.Combine(AppContext.BaseDirectory, $"knowledge-{vector.Name}");
-        Directory.CreateDirectory(knowledgePath);
-
-        foreach (KeyValuePair<string, string> document in vector.Knowledge)
+        if (vector.RequireApproval is { Count: > 0 })
         {
-            await File.WriteAllTextAsync(
-                Path.Combine(knowledgePath, document.Key), document.Value);
+            agent.RequireApproval([.. vector.RequireApproval]);
         }
 
-        agent.Knowledge(knowledgePath, maxResults: vector.KnowledgeMaxResults);
+        if (vector.ScreenToolOutput)
+        {
+            agent.ScreenToolOutput();
+        }
+
+        if (vector.CompensateOnFailure)
+        {
+            agent.CompensateOnFailure();
+        }
+
+        if (vector.Retries > 0)
+        {
+            agent.Resilience(vector.Retries);
+        }
+
+        if (vector.MaxTurns is int maxTurns)
+        {
+            agent.MaxTurns(maxTurns);
+        }
+
+        if (vector.BudgetMaxWallClockSeconds is double seconds)
+        {
+            agent.Budget(maxWallClock: TimeSpan.FromSeconds(seconds));
+        }
+
+        // A real session store, in a folder unique to this vector, so conversation is certified
+        // against something that actually persists rather than an in-memory stand-in that could
+        // never demonstrate resumption.
+        if (vector.SessionId is not null)
+        {
+            agent.Sessions(Path.Combine(AppContext.BaseDirectory, $"sessions-{vector.Name}"));
+        }
+
+        if (vector.FallbackReply is string fallbackReply)
+        {
+            agent.Fallback(
+                fallback: () => new ValueTask<string>(fallbackReply),
+                failuresBeforeOpen: vector.FailuresBeforeOpen);
+        }
+
+        // A real knowledge folder, so the ranked retriever is certified against files rather than a
+        // stub that could agree with any implementation. A vector without knowledge keeps the empty
+        // stub, so nothing is retrieved and no vector is disturbed by this one existing.
+        string? knowledgePath = null;
+
+        if (vector.Knowledge is not { Count: > 0 })
+        {
+            agent.UseKnowledge(new StubKnowledgeBroker());
+        }
+        else
+        {
+            knowledgePath = Path.Combine(AppContext.BaseDirectory, $"knowledge-{vector.Name}");
+            Directory.CreateDirectory(knowledgePath);
+
+            foreach (KeyValuePair<string, string> document in vector.Knowledge)
+            {
+                await File.WriteAllTextAsync(
+                    Path.Combine(knowledgePath, document.Key), document.Value);
+            }
+
+            agent.Knowledge(knowledgePath, maxResults: vector.KnowledgeMaxResults);
+        }
+
+        if (string.IsNullOrEmpty(vector.Constitution) is false)
+        {
+            string fileName = $"{vector.Name}.constitution.md";
+            await File.WriteAllTextAsync(Path.Combine(AppContext.BaseDirectory, fileName), vector.Constitution);
+            agent.Constitution(fileName);
+        }
+
+        if (string.IsNullOrEmpty(vector.Consumption) is false)
+        {
+            string fileName = $"{vector.Name}.consumption.md";
+            await File.WriteAllTextAsync(Path.Combine(AppContext.BaseDirectory, fileName), vector.Consumption);
+            agent.Consumption(fileName);
+        }
+
+        // A folder-backed ledger, so run-once is certified against a claim that outlives the
+        // instance that made it rather than one held in the instance's own memory.
+        if (vector.DurableEffectLedger)
+        {
+            agent.EffectLedger(
+                Path.Combine(AppContext.BaseDirectory, $"ledger-{vector.Name}"));
+        }
+
+        return agent;
     }
 
-    if (string.IsNullOrEmpty(vector.Constitution) is false)
-    {
-        string fileName = $"{vector.Name}.constitution.md";
-        await File.WriteAllTextAsync(Path.Combine(AppContext.BaseDirectory, fileName), vector.Constitution);
-        agent.Constitution(fileName);
-    }
-
-    if (string.IsNullOrEmpty(vector.Consumption) is false)
-    {
-        string fileName = $"{vector.Name}.consumption.md";
-        await File.WriteAllTextAsync(Path.Combine(AppContext.BaseDirectory, fileName), vector.Consumption);
-        agent.Consumption(fileName);
-    }
+    StandardAgent agent = await BuildAgentAsync();
 
     IReadOnlyList<string> prompts = vector.Prompts is { Count: > 0 }
         ? vector.Prompts
@@ -378,7 +403,14 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
 
         foreach (string prompt in prompts)
         {
-            result = await agent.ProcessPromptAsync(
+            // A new instance per prompt where the vector asks for it: nothing but the files
+            // survives between them, which is what makes the next prompt a different process
+            // rather than the same one carrying on.
+            StandardAgent instance = vector.NewInstancePerPrompt
+                ? await BuildAgentAsync()
+                : agent;
+
+            result = await instance.ProcessPromptAsync(
                 prompt, vector.SessionId ?? string.Empty, runCancellation.Token);
         }
     }

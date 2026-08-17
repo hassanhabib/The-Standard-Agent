@@ -1,0 +1,21 @@
+{
+  "name": "effect-outcome-survives-a-crash",
+  "description": "SPEC.md 4.9 and 4.11, Invariant 7: run-once inside one instance is the easy half. The half an auditor asks about is the run killed immediately after the transfer went out. The first prompt performs the transfer and runs out of turns before it can answer; a brand-new agent instance then picks the session up and the Brain proposes the identical transfer again. Nothing but the files on disk survives between the two, so the second instance can only know the act happened by reading the ledger - and it can only match the key by resuming the interrupted run's identity, since the key is derived from the run. The tool runs once across both.",
+  "generatorReplies": [
+    "ACTION: wire_transfer: 10000",
+    "ACTION: wire_transfer: 10000",
+    "ACTION: wire_transfer: 10000",
+    "FINAL: already paid"
+  ],
+  "tools": { "wire_transfer": "transfer complete" },
+  "prompt": "pay the invoice",
+  "prompts": ["pay the invoice", "did that go through?"],
+  "sessionId": "invoice-4471",
+  "maxTurns": 2,
+  "newInstancePerPrompt": true,
+  "durableEffectLedger": true,
+  "expect": {
+    "result": "already paid",
+    "toolRunCount": { "wire_transfer": 1 }
+  }
+}

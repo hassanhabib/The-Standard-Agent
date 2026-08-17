@@ -65,4 +65,11 @@ public sealed record Vector(
     // names the tools that know how to reverse themselves. A tool left out keeps the interface
     // default and must be reported as an effect that stands.
     bool CompensateOnFailure = false,
-    List<string>? CompensatingTools = null);
+    List<string>? CompensatingTools = null,
+
+    // Cross-process resumption (SPEC.md §4.9, §4.11). NewInstancePerPrompt builds a brand-new
+    // agent for each prompt, so nothing but the files on disk survives between them;
+    // DurableEffectLedger puts run-once in a folder rather than in the instance's memory.
+    // Together they are the only way to certify that an effect outcome survives a crash.
+    bool NewInstancePerPrompt = false,
+    bool DurableEffectLedger = false);
