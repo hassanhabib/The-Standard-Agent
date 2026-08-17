@@ -9,6 +9,18 @@ public interface IBrainService
 {
     ValueTask<string> GenerateAsync(string systemPrompt, string userPrompt);
 
+    /// <summary>True when a V1 brain is configured and native tool calling is available.</summary>
+    bool SpeaksNatively => false;
+
+    /// <summary>
+    /// The V1 path: a conversation in, a structured choice out. Only called when
+    /// <see cref="SpeaksNatively"/> — the text protocol remains the Core contract.
+    /// </summary>
+    ValueTask<Models.Brokers.Generators.V1.GenerationResult> GenerateAsync(
+        Models.Orchestrations.Agents.AgentContext context,
+        IReadOnlyList<Models.Brokers.Generators.V1.ToolDefinition> tools) =>
+        throw new NotSupportedException("This brain does not speak natively.");
+
     IAsyncEnumerable<string> GenerateStreamAsync(
         string systemPrompt,
         string userPrompt,

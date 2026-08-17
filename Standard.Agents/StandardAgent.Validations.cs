@@ -11,12 +11,20 @@ public sealed partial class StandardAgent
 {
     private void ValidateComposition()
     {
-        if (this.generatorBroker is null && this.brainSettings is null)
+        // A native brain is a brain. Either seam satisfies this — the check exists to catch an
+        // agent with no way to think at all, not to prefer one contract over the other.
+        bool hasBrain =
+            this.generatorBroker is not null
+                || this.brainSettings is not null
+                || this.generatorBrokerV1 is not null;
+
+        if (hasBrain is false)
         {
             throw new InvalidAgentCompositionException(
                 message:
-                    "Agent has no brain. Call Brain(apiUrl, apiKey, model) "
-                        + "or UseGenerator(broker) before processing a prompt.");
+                    "Agent has no brain. Call Brain(apiUrl, apiKey, model), "
+                        + "UseGenerator(broker) or NativeBrain(apiUrl, apiKey, model) "
+                        + "before processing a prompt.");
         }
     }
 }

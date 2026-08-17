@@ -24,6 +24,7 @@ using Standard.Agents.Brokers.Times;
 using Standard.Agents.Brokers.Tools;
 using Standard.Agents.Brokers.Verifiers;
 using Standard.Agents.Models.Brokers.Audits;
+using Standard.Agents.Models.Brokers.Generators.V1;
 using Standard.Agents.Models.Brokers.Sessions;
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Coordinations.Agents;
@@ -94,6 +95,7 @@ public sealed partial class StandardAgent : IAgent
     private bool screenToolOutput;
     private AgentBudget? budget;
     private IResilienceBroker? resilienceBroker;
+    private IGeneratorBrokerV1? generatorBrokerV1;
     private ISessionBroker? sessionBroker;
     private int maxHistoryTurns = 20;
     private Func<string?>? principalResolver;
@@ -572,6 +574,48 @@ public sealed partial class StandardAgent : IAgent
         Set(() => this.generatorBroker = broker);
 
     /// <summary>
+    /// Uses <b>native tool calling</b>: tools are declared to the model as data and its choice
+    /// comes back as structured <c>tool_calls</c>, rather than as a <c>ACTION:</c> line the model
+    /// has to imitate. Frontier models are trained on this; the text protocol remains the default
+    /// because it works against any endpoint and small local models often do better with it.
+    /// </summary>
+    /// <param name="apiUrl">Base URL of the OpenAI-compatible endpoint.</param>
+    /// <param name="apiKey">API key for the endpoint (empty string if none is needed).</param>
+    /// <param name="model">Model name to request.</param>
+    /// <param name="temperature">Sampling temperature. Defaults to 0.7.</param>
+    /// <param name="maxTokens">Maximum tokens per turn. Defaults to 1024.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent NativeBrain(
+        string apiUrl,
+        string apiKey,
+        string model,
+        double temperature = 0.7,
+        int maxTokens = 1024) =>
+        Set(() => this.generatorBrokerV1 =
+            new GeneratorBrokerV1(apiUrl, apiKey, model, temperature, maxTokens));
+
+    /// <summary>
+    /// Swaps in a custom native-brain broker — the <b>External</b> seam for a provider package
+    /// that speaks tool calls.
+    /// </summary>
+    /// <param name="broker">The V1 generator broker to use.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent UseNativeBrain(IGeneratorBrokerV1 broker) =>
+        Set(() => this.generatorBrokerV1 = broker);
+
+    /// <summary>
+    /// Supplies your own native brain as a delegate — the <b>Custom</b> mode of the V1 seam.
+    /// </summary>
+    /// <param name="generate">A <c>(messages, tools) =&gt; result</c> delegate.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent OnNativeBrain(
+        Func<
+            IReadOnlyList<ConversationMessage>,
+            IReadOnlyList<ToolDefinition>,
+            ValueTask<GenerationResult>> generate) =>
+        Set(() => this.generatorBrokerV1 = new FunctionGeneratorBrokerV1(generate));
+
+    /// <summary>
     /// Swaps in a custom memory broker, replacing the default file-backed one set up by
     /// <see cref="Memory"/>.
     /// </summary>
@@ -870,10 +914,18 @@ public sealed partial class StandardAgent : IAgent
                         : new FileAuditBroker(this.auditPath)),
                 this.principalResolver);
 
+        // With only a native brain configured there is no V0 generator to build, and none is
+        // needed: SpeaksNatively routes every call to the V1 seam. The placeholder exists so the
+        // Brain foundation keeps one shape rather than growing a nullable dependency.
         IGeneratorBroker generator =
-            this.generatorBroker ?? new GeneratorBroker(
-                brain!.ApiUrl, brain.ApiKey, brain.Model,
-                brain.Temperature, brain.MaxTokens, brain.TimeoutSeconds);
+            this.generatorBroker
+                ?? (brain is null
+                    ? new FunctionGeneratorBroker((systemPrompt, userPrompt) =>
+                        throw new InvalidOperationException(
+                            "This agent has a native brain; the text protocol is not in use."))
+                    : new GeneratorBroker(
+                        brain.ApiUrl, brain.ApiKey, brain.Model,
+                        brain.Temperature, brain.MaxTokens, brain.TimeoutSeconds));
 
         IMemoryService memoryService = this.memoryBroker is null
             ? new MemoryService(file, Path.GetFullPath(this.memoryPath), logging)
@@ -963,9 +1015,11 @@ public sealed partial class StandardAgent : IAgent
 
         DecisionOrchestrationService decision = new(
             gate,
-            new BrainService(generator, logging, redaction, this.resilienceBroker),
+            new BrainService(
+                generator, logging, redaction, this.resilienceBroker, this.generatorBrokerV1),
             new JudgeService(verifier, logging, redaction),
-            logging);
+            logging,
+            RenderToolDefinitions(allTools));
 
         DirectionOrchestrationService direction = new(
             new InternalToolService(toolBroker, logging),
@@ -991,6 +1045,14 @@ public sealed partial class StandardAgent : IAgent
     // carry a description are listed — a description is the opt-in (SPEC 6.1); a tool with
     // none is callable but not advertised. Derived from the registered tools, so it never
     // drifts from what is actually there.
+    // The same opt-in rule the text catalog uses (SPEC.md §6.1): a description is what offers a
+    // tool to the model. A tool without one stays callable but unadvertised, so declaring tools
+    // as data does not quietly widen what the Brain may reach for.
+    private static IReadOnlyList<ToolDefinition> RenderToolDefinitions(IEnumerable<ITool> tools) =>
+        [.. tools
+            .Where(tool => string.IsNullOrWhiteSpace(tool.Description) is false)
+            .Select(tool => new ToolDefinition(tool.Name, tool.Description, tool.Parameters))];
+
     private static string RenderToolCatalog(IEnumerable<ITool> tools)
     {
         IEnumerable<string> describedTools = tools

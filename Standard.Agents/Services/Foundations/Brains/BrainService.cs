@@ -18,17 +18,23 @@ public partial class BrainService : IBrainService
     private readonly ILoggingBroker loggingBroker;
     private readonly IRedactionBroker redactionBroker;
     private readonly IResilienceBroker resilienceBroker;
+    private readonly IGeneratorBrokerV1? generatorBrokerV1;
+
+    /// <summary>True when a V1 brain is configured and native tool calling is available.</summary>
+    public bool SpeaksNatively => this.generatorBrokerV1 is not null;
 
     public BrainService(
         IGeneratorBroker generatorBroker,
         ILoggingBroker loggingBroker,
         IRedactionBroker? redactionBroker = null,
-        IResilienceBroker? resilienceBroker = null)
+        IResilienceBroker? resilienceBroker = null,
+        IGeneratorBrokerV1? generatorBrokerV1 = null)
     {
         this.generatorBroker = generatorBroker;
         this.loggingBroker = loggingBroker;
         this.redactionBroker = redactionBroker ?? new NotConfiguredRedactionBroker();
         this.resilienceBroker = resilienceBroker ?? new NotConfiguredResilienceBroker();
+        this.generatorBrokerV1 = generatorBrokerV1;
     }
 
     public ValueTask<string> GenerateAsync(string systemPrompt, string userPrompt) =>
