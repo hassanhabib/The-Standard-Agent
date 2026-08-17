@@ -29,6 +29,7 @@ using Standard.Agents.Models.Brokers.Sessions;
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Coordinations.Agents;
 using Standard.Agents.Models.Foundations.Brains;
+using Standard.Agents.Models.Foundations.Skills;
 using Standard.Agents.Models.Orchestrations.Effects;
 using Standard.Agents.Models.Loggings;
 using Standard.Agents.Prompts;
@@ -565,6 +566,15 @@ public sealed partial class StandardAgent : IAgent
         Set(() => this.skillBroker = broker);
 
     /// <summary>
+    /// Supplies skills from your own code — the <b>Custom</b> mode (SPEC.md §4.8), for when they
+    /// come from somewhere with no package and writing a whole broker is disproportionate.
+    /// </summary>
+    /// <param name="select">A <c>() =&gt; skills</c> delegate, called each turn.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent OnSkills(Func<ValueTask<IReadOnlyList<Skill>>> select) =>
+        Set(() => this.skillBroker = new FunctionSkillBroker(select));
+
+    /// <summary>
     /// Swaps in a custom generator (brain) broker — the extension point for a runtime that streams
     /// natively, an alternative to <see cref="Brain"/> or <see cref="LocalBrain"/>.
     /// </summary>
@@ -625,6 +635,17 @@ public sealed partial class StandardAgent : IAgent
         Set(() => this.memoryBroker = broker);
 
     /// <summary>
+    /// Recalls and records memories with your own code — the <b>Custom</b> mode (SPEC.md §4.8).
+    /// </summary>
+    /// <param name="recall">A <c>() =&gt; memories</c> delegate, called each turn.</param>
+    /// <param name="remember">A <c>memory =&gt; ...</c> delegate, called when the agent learns.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent OnMemory(
+        Func<ValueTask<IReadOnlyList<string>>> recall,
+        Func<string, ValueTask> remember) =>
+        Set(() => this.memoryBroker = new FunctionMemoryBroker(recall, remember));
+
+    /// <summary>
     /// Swaps in a custom knowledge broker, replacing the default file-backed one set up by
     /// <see cref="Knowledge"/>.
     /// </summary>
@@ -632,6 +653,15 @@ public sealed partial class StandardAgent : IAgent
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent UseKnowledge(IKnowledgeBroker broker) =>
         Set(() => this.knowledgeBroker = broker);
+
+    /// <summary>
+    /// Retrieves knowledge with your own code — the <b>Custom</b> mode (SPEC.md §4.8). Ranking is
+    /// yours to do: return the passages relevant to the query, best first.
+    /// </summary>
+    /// <param name="retrieve">A <c>query =&gt; passages</c> delegate.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent OnKnowledge(Func<string, ValueTask<IReadOnlyList<string>>> retrieve) =>
+        Set(() => this.knowledgeBroker = new FunctionKnowledgeBroker(retrieve));
 
     /// <summary>
     /// Swaps in a custom classifier broker to back the Gate, replacing the endpoint-backed one set
