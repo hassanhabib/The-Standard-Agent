@@ -5,6 +5,8 @@
 
 using System.Runtime.CompilerServices;
 using Standard.Agents.Brokers.Loggings;
+using Standard.Agents.Brokers.Times;
+using Standard.Agents.Models.Coordinations.Agents;
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Loggings;
 using Standard.Agents.Models.Orchestrations.Agents;
@@ -25,6 +27,8 @@ public partial class AgentCoordinationService : IAgentCoordinationService
     private readonly IDecisionOrchestrationService decisionOrchestrationService;
     private readonly IDirectionOrchestrationService directionOrchestrationService;
     private readonly ILoggingBroker loggingBroker;
+    private readonly ITimeBroker timeBroker;
+    private readonly AgentBudget? budget;
     private readonly int maxTurns;
 
     public AgentCoordinationService(
@@ -32,16 +36,25 @@ public partial class AgentCoordinationService : IAgentCoordinationService
         IDecisionOrchestrationService decisionOrchestrationService,
         IDirectionOrchestrationService directionOrchestrationService,
         ILoggingBroker loggingBroker,
-        int maxTurns = DefaultMaxTurns)
+        int maxTurns = DefaultMaxTurns,
+        ITimeBroker? timeBroker = null,
+        AgentBudget? budget = null)
     {
         this.dataOrchestrationService = dataOrchestrationService;
         this.decisionOrchestrationService = decisionOrchestrationService;
         this.directionOrchestrationService = directionOrchestrationService;
         this.loggingBroker = loggingBroker;
         this.maxTurns = maxTurns;
+        this.timeBroker = timeBroker ?? new TimeBroker();
+        this.budget = budget;
     }
 
     public ValueTask<string> ProcessPromptAsync(string prompt) =>
+        ProcessPromptAsync(prompt, CancellationToken.None);
+
+    public ValueTask<string> ProcessPromptAsync(
+        string prompt,
+        CancellationToken cancellationToken) =>
     TryCatch(async () =>
     {
         ValidatePrompt(prompt);
@@ -55,8 +68,24 @@ public partial class AgentCoordinationService : IAgentCoordinationService
 
         AgentContext context = new() { Prompt = prompt };
 
+        // Budgets and cancellation are both checked at the turn boundary (SPEC.md §4.10): a turn
+        // is the smallest unit the loop can stop between without abandoning work mid-flight —
+        // in particular without leaving an effect half-recorded.
+        var spend = new AgentSpend();
+        DateTimeOffset startedOn = this.timeBroker.GetCurrentDateTimeOffset();
+
         for (int turn = 0; turn < this.maxTurns; turn++)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return await StopAsync(context, CancelledMessage, AgentStatus.Failed);
+            }
+
+            if (IsBudgetExhausted(spend, startedOn, out string exhaustion))
+            {
+                return await StopAsync(context, exhaustion, AgentStatus.Failed);
+            }
+
             await this.loggingBroker.LogTurnAsync(turn);
 
             await this.loggingBroker.LogStepAsync(AgentStep.Data);
@@ -64,6 +93,8 @@ public partial class AgentCoordinationService : IAgentCoordinationService
 
             await this.loggingBroker.LogStepAsync(AgentStep.Decision);
             context = await this.decisionOrchestrationService.ThinkAsync(context);
+
+            spend.AddTokens(context.PromptTokens, context.CompletionTokens);
 
             if (context.Status is AgentStatus.Revising)
             {

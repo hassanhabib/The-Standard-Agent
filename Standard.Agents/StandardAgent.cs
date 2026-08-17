@@ -17,12 +17,14 @@ using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Brokers.Mcps;
 using Standard.Agents.Brokers.Memorys;
 using Standard.Agents.Brokers.Redactions;
+using Standard.Agents.Brokers.Resiliences;
 using Standard.Agents.Brokers.Skills;
 using Standard.Agents.Brokers.Times;
 using Standard.Agents.Brokers.Tools;
 using Standard.Agents.Brokers.Verifiers;
 using Standard.Agents.Models.Brokers.Audits;
 using Standard.Agents.Models.Clients.Agents;
+using Standard.Agents.Models.Coordinations.Agents;
 using Standard.Agents.Models.Foundations.Brains;
 using Standard.Agents.Models.Orchestrations.Effects;
 using Standard.Agents.Models.Loggings;
@@ -87,6 +89,8 @@ public sealed partial class StandardAgent : IAgent
     private IEffectLedgerBroker? effectLedgerBroker;
     private IEnumerable<string>? approvalRequiredTools;
     private bool screenToolOutput;
+    private AgentBudget? budget;
+    private IResilienceBroker? resilienceBroker;
     private Func<string?>? principalResolver;
 
     private IAgentCoordinationService? agent;
@@ -626,6 +630,65 @@ public sealed partial class StandardAgent : IAgent
     }
 
     /// <summary>
+    /// Runs the agent on a prompt and stops when <paramref name="cancellationToken"/> is
+    /// cancelled — at the next turn boundary at the latest, so no effect is left half-recorded
+    /// (SPEC.md §4.10). A cancelled run returns a message saying so rather than an answer.
+    /// </summary>
+    /// <param name="prompt">The user's prompt.</param>
+    /// <param name="cancellationToken">Token to stop the run.</param>
+    /// <returns>The agent's final answer, or a message explaining why it stopped.</returns>
+    public async ValueTask<string> ProcessPromptAsync(
+        string prompt,
+        CancellationToken cancellationToken)
+    {
+        return await ResolveAgent().ProcessPromptAsync(prompt, cancellationToken);
+    }
+
+    /// <summary>
+    /// Bounds what one prompt may consume (SPEC.md §4.10). Checked between turns; exhaustion
+    /// stops the loop and says which bound ran out, distinguishably from a refusal — a caller
+    /// that cannot tell <i>I will not</i> from <i>I ran out</i> cannot decide whether to retry.
+    /// Token spend is measured against what providers <b>reported</b>, never an estimate.
+    /// </summary>
+    /// <param name="maxTokens">Total tokens across the run.</param>
+    /// <param name="maxCostUsd">Total cost, priced by <paramref name="costPerThousandTokens"/>.</param>
+    /// <param name="maxWallClock">Total elapsed time.</param>
+    /// <param name="costPerThousandTokens">Your rate, when bounding by cost.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent Budget(
+        int? maxTokens = null,
+        decimal? maxCostUsd = null,
+        TimeSpan? maxWallClock = null,
+        decimal costPerThousandTokens = 0m) =>
+        Set(() => this.budget = new AgentBudget
+        {
+            MaxTokens = maxTokens,
+            MaxCostUsd = maxCostUsd,
+            MaxWallClock = maxWallClock,
+            CostPerThousandTokens = costPerThousandTokens
+        });
+
+    /// <summary>
+    /// Retries a failed model call with exponential backoff and jitter (SPEC.md §4.10). What is
+    /// retryable is decided by the error's <b>category</b>, never its text: a dependency failure
+    /// is the network having a bad moment; a validation failure is the request being wrong, and
+    /// retrying it only spends the budget. A retried call is still one turn.
+    /// </summary>
+    /// <param name="retries">How many additional attempts. Defaults to 3.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent Resilience(int retries = 3) =>
+        Set(() => this.resilienceBroker = new RetryResilienceBroker(retries));
+
+    /// <summary>
+    /// Swaps in a custom resilience broker — the plugin seam for a provider's own retry, circuit
+    /// breaker or bulkhead policy.
+    /// </summary>
+    /// <param name="broker">The resilience broker to use.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent UseResilience(IResilienceBroker broker) =>
+        Set(() => this.resilienceBroker = broker);
+
+    /// <summary>
     /// Runs the agent on a prompt and streams its progress as it happens — status updates, the
     /// brain's thinking, and response text arrive as <see cref="AgentStreamEvent"/> values rather
     /// than waiting for the final answer. Use this to surface a live view of the agent's work.
@@ -810,7 +873,7 @@ public sealed partial class StandardAgent : IAgent
 
         DecisionOrchestrationService decision = new(
             gate,
-            new BrainService(generator, logging, redaction),
+            new BrainService(generator, logging, redaction, this.resilienceBroker),
             new JudgeService(verifier, logging, redaction),
             logging);
 
@@ -829,7 +892,8 @@ public sealed partial class StandardAgent : IAgent
             this.approvalRequiredTools,
             this.screenToolOutput ? gate : null);
 
-        return new AgentCoordinationService(data, decision, direction, logging, this.maxTurns);
+        return new AgentCoordinationService(
+            data, decision, direction, logging, this.maxTurns, new TimeBroker(), this.budget);
     }
 
     // The catalog a "{{tools}}" marker in the agent's Data expands into. Only tools that

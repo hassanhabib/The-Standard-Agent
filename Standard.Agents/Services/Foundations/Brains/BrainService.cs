@@ -8,6 +8,7 @@ using System.Text;
 using Standard.Agents.Brokers.Generators;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Brokers.Redactions;
+using Standard.Agents.Brokers.Resiliences;
 
 namespace Standard.Agents.Services.Foundations.Brains;
 
@@ -16,15 +17,18 @@ public partial class BrainService : IBrainService
     private readonly IGeneratorBroker generatorBroker;
     private readonly ILoggingBroker loggingBroker;
     private readonly IRedactionBroker redactionBroker;
+    private readonly IResilienceBroker resilienceBroker;
 
     public BrainService(
         IGeneratorBroker generatorBroker,
         ILoggingBroker loggingBroker,
-        IRedactionBroker? redactionBroker = null)
+        IRedactionBroker? redactionBroker = null,
+        IResilienceBroker? resilienceBroker = null)
     {
         this.generatorBroker = generatorBroker;
         this.loggingBroker = loggingBroker;
         this.redactionBroker = redactionBroker ?? new NotConfiguredRedactionBroker();
+        this.resilienceBroker = resilienceBroker ?? new NotConfiguredResilienceBroker();
     }
 
     public ValueTask<string> GenerateAsync(string systemPrompt, string userPrompt) =>
@@ -36,8 +40,10 @@ public partial class BrainService : IBrainService
         string redactedSystemPrompt = this.redactionBroker.Redact(systemPrompt, vault);
         string redactedUserPrompt = this.redactionBroker.Redact(userPrompt, vault);
 
-        string reply = await this.generatorBroker.GenerateAsync(
-            redactedSystemPrompt, redactedUserPrompt);
+        // A retried call is still one turn (SPEC.md §4.10) — retries happen inside the call, so
+        // the loop's turn budget counts the agent's reasoning, not the network's luck.
+        string reply = await this.resilienceBroker.ExecuteAsync(() =>
+            this.generatorBroker.GenerateAsync(redactedSystemPrompt, redactedUserPrompt));
 
         return this.redactionBroker.Rehydrate(reply, vault);
     });

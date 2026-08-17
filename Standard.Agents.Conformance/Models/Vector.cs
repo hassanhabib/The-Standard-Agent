@@ -41,4 +41,12 @@ public sealed record Vector(
     // refuse a tool result while still accepting the prompt.
     List<string>? RequireApproval = null,
     bool ScreenToolOutput = false,
-    string? GateVerdictOnToolOutput = null);
+    string? GateVerdictOnToolOutput = null,
+
+    // Resilience and budget (SPEC.md §4.10). CancelBeforeStart cancels the run before the first
+    // turn; TransientFailures makes the scripted Brain fail that many times with a dependency
+    // failure before succeeding, so retry can be certified without a real network.
+    bool CancelBeforeStart = false,
+    int TransientFailures = 0,
+    int Retries = 0,
+    int? MaxTurns = null);

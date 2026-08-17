@@ -1,0 +1,13 @@
+{
+  "name": "transient-failure-recovers",
+  "description": "SPEC.md 4.10: a transient failure may be retried, and a retried call is still one turn - a turn is a unit of the agent's reasoning, not of the network's luck. The Brain fails twice with a dependency failure and answers on the third attempt; the run succeeds within a single turn.",
+  "generatorReplies": ["FINAL: 4183"],
+  "tools": {},
+  "prompt": "what is 47 multiplied by 89",
+  "transientFailures": 2,
+  "retries": 3,
+  "maxTurns": 1,
+  "expect": {
+    "result": "4183"
+  }
+}

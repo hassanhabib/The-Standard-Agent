@@ -11,6 +11,8 @@ public interface IAgentCoordinationService
 {
     ValueTask<string> ProcessPromptAsync(string prompt);
 
+    ValueTask<string> ProcessPromptAsync(string prompt, CancellationToken cancellationToken);
+
     IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
         string prompt,
         CancellationToken cancellationToken = default);

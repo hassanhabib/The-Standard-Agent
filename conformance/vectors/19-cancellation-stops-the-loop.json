@@ -1,0 +1,11 @@
+{
+  "name": "cancellation-stops-the-loop",
+  "description": "SPEC.md 4.10: a cancelled run stops at the next turn boundary at the latest, must not begin a new turn, and must not be reported as success - a cancelled run's result is not an answer. The Brain would answer 42, but the run is cancelled before it starts, so the caller is told it was cancelled instead.",
+  "generatorReplies": ["FINAL: 42"],
+  "tools": {},
+  "prompt": "what is the answer",
+  "cancelBeforeStart": true,
+  "expect": {
+    "resultContains": "cancelled"
+  }
+}
