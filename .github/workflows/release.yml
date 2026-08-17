@@ -13,8 +13,11 @@ jobs:
     runs-on: ubuntu-latest
 
     # Provenance attestation needs to write an attestation and read the workflow identity.
+    # `contents: write` is on top of that, because attaching the package and the bill of
+    # materials to the release updates the release itself — read is enough to build, and not
+    # enough to ship.
     permissions:
-      contents: read
+      contents: write
       id-token: write
       attestations: write
 
