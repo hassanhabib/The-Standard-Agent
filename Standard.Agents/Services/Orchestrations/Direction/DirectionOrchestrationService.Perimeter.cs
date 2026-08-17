@@ -74,6 +74,12 @@ public partial class DirectionOrchestrationService
         // 5 — record the outcome, before the loop advances
         await this.effectLedgerBroker.InsertOutcomeAsync(effect, output);
 
+        // Remember that this run performed it, so it can be unwound. Only here: an effect denied,
+        // held for approval, or replayed from the ledger returned above and was never performed by
+        // this run, and compensating it would undo something this run did not do (SPEC.md §4.9).
+        AgentRun.Current?.RecordPerformed(
+            new PerformedEffect(effect.ToolName, effect.Arguments, output));
+
         await this.loggingBroker.LogProcessAsync(
             "Direction", $"Tool '{effect.ToolName}' ← {context.Payload}", detail: true);
 
@@ -154,6 +160,64 @@ public partial class DirectionOrchestrationService
             Result = $"'{effect.ToolName}' is waiting for approval before it can run.",
             Status = AgentStatus.AwaitingApproval
         };
+    }
+
+    // Compensation (SPEC.md §4.9, Invariant 7). Run-once makes an effect safe to PROPOSE twice;
+    // compensation is for the effects that cannot be made idempotent at all — a payment sent, a
+    // message delivered — where the only way back is a second, opposite act.
+    //
+    // It unwinds in reverse order, because a later effect may depend on an earlier one: undoing
+    // the booking before the payment it paid for would leave the payment attached to nothing.
+    public async ValueTask<IReadOnlyList<CompensationOutcome>> CompensateRunAsync()
+    {
+        AgentRun? run = AgentRun.Current;
+
+        if (run is null)
+        {
+            return [];
+        }
+
+        List<CompensationOutcome> outcomes = [];
+
+        foreach (PerformedEffect effect in run.PerformedEffects.Reverse())
+        {
+            CompensationOutcome outcome = await CompensateEffectAsync(effect);
+
+            await this.loggingBroker.LogProcessAsync(
+                "Direction",
+                $"Compensate '{effect.ToolName}' → "
+                    + $"{(outcome.Undone ? "UNDONE" : "STANDS")}: {outcome.Detail}");
+
+            outcomes.Add(outcome);
+        }
+
+        return outcomes;
+    }
+
+    // Best effort per effect. A reversal is itself an act against the world, and acts fail;
+    // abandoning the rest because this one refused would leave more standing, not less.
+    private async ValueTask<CompensationOutcome> CompensateEffectAsync(PerformedEffect effect)
+    {
+        string stands = $"'{effect.ToolName}' could not be undone; the effect stands.";
+
+        if (await this.internalToolService.HandlesAsync(effect.ToolName) is false)
+        {
+            return new CompensationOutcome(effect.ToolName, Undone: false, Detail: stands);
+        }
+
+        try
+        {
+            string reversal = await this.internalToolService.CompensateAsync(
+                effect.ToolName, effect.Arguments, effect.Outcome);
+
+            return string.IsNullOrEmpty(reversal)
+                ? new CompensationOutcome(effect.ToolName, Undone: false, Detail: stands)
+                : new CompensationOutcome(effect.ToolName, Undone: true, Detail: reversal);
+        }
+        catch (Exception)
+        {
+            return new CompensationOutcome(effect.ToolName, Undone: false, Detail: stands);
+        }
     }
 
     private async ValueTask<string> RunToolAsync(AgentContext context)

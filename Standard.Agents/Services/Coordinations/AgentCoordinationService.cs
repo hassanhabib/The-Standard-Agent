@@ -33,6 +33,7 @@ public partial class AgentCoordinationService : IAgentCoordinationService
     private readonly ISessionBroker sessionBroker;
     private readonly int maxHistoryTurns;
     private readonly int maxTurns;
+    private readonly bool compensateOnFailure;
 
     public AgentCoordinationService(
         IDataOrchestrationService dataOrchestrationService,
@@ -43,8 +44,10 @@ public partial class AgentCoordinationService : IAgentCoordinationService
         ITimeBroker? timeBroker = null,
         AgentBudget? budget = null,
         ISessionBroker? sessionBroker = null,
-        int maxHistoryTurns = 20)
+        int maxHistoryTurns = 20,
+        bool compensateOnFailure = false)
     {
+        this.compensateOnFailure = compensateOnFailure;
         this.dataOrchestrationService = dataOrchestrationService;
         this.decisionOrchestrationService = decisionOrchestrationService;
         this.directionOrchestrationService = directionOrchestrationService;
@@ -90,43 +93,68 @@ public partial class AgentCoordinationService : IAgentCoordinationService
         var spend = new AgentSpend();
         DateTimeOffset startedOn = this.timeBroker.GetCurrentDateTimeOffset();
 
-        for (int turn = 0; turn < this.maxTurns; turn++)
+        try
         {
-            if (cancellationToken.IsCancellationRequested)
+            for (int turn = 0; turn < this.maxTurns; turn++)
             {
-                return await StopAsync(context, CancelledMessage, AgentStatus.Failed);
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return await StopAsync(context, CancelledMessage, AgentStatus.Failed);
+                }
+
+                if (IsBudgetExhausted(spend, startedOn, out string exhaustion))
+                {
+                    return await StopAsync(context, exhaustion, AgentStatus.Failed);
+                }
+
+                await this.loggingBroker.LogTurnAsync(turn);
+
+                await this.loggingBroker.LogStepAsync(AgentStep.Data);
+                context = await this.dataOrchestrationService.RecallAsync(context);
+
+                await this.loggingBroker.LogStepAsync(AgentStep.Decision);
+                context = await this.decisionOrchestrationService.ThinkAsync(context);
+
+                spend.AddTokens(context.PromptTokens, context.CompletionTokens);
+
+                if (context.Status is AgentStatus.Revising)
+                {
+                    await this.loggingBroker.LogOutcomeAsync($"turn {turn}: revising");
+
+                    continue;
+                }
+
+                await this.loggingBroker.LogStepAsync(AgentStep.Direction);
+                context = await this.directionOrchestrationService.ActAsync(context);
+
+                await this.loggingBroker.LogOutcomeAsync($"turn {turn}: {context.Status}");
+
+                if (context.Status != AgentStatus.Working)
+                {
+                    break;
+                }
             }
+        }
+        catch (Exception)
+        {
+            // A run that faulted mid-flight is the case compensation exists for: the effects it
+            // already performed are real, and nothing else will unwind them (SPEC.md §4.9).
+            await UnwindAsync();
 
-            if (IsBudgetExhausted(spend, startedOn, out string exhaustion))
+            throw;
+        }
+
+        // Turns ran out with the loop still Working: effects may have been performed and no answer
+        // was ever delivered, which is a failed run however calmly it ended.
+        if (context.Status is AgentStatus.Working)
+        {
+            string unwound = await UnwindAsync();
+
+            if (string.IsNullOrEmpty(unwound) is false)
             {
-                return await StopAsync(context, exhaustion, AgentStatus.Failed);
-            }
+                await this.loggingBroker.LogOutcomeAsync($"done: {context.Status}");
 
-            await this.loggingBroker.LogTurnAsync(turn);
-
-            await this.loggingBroker.LogStepAsync(AgentStep.Data);
-            context = await this.dataOrchestrationService.RecallAsync(context);
-
-            await this.loggingBroker.LogStepAsync(AgentStep.Decision);
-            context = await this.decisionOrchestrationService.ThinkAsync(context);
-
-            spend.AddTokens(context.PromptTokens, context.CompletionTokens);
-
-            if (context.Status is AgentStatus.Revising)
-            {
-                await this.loggingBroker.LogOutcomeAsync($"turn {turn}: revising");
-
-                continue;
-            }
-
-            await this.loggingBroker.LogStepAsync(AgentStep.Direction);
-            context = await this.directionOrchestrationService.ActAsync(context);
-
-            await this.loggingBroker.LogOutcomeAsync($"turn {turn}: {context.Status}");
-
-            if (context.Status != AgentStatus.Working)
-            {
-                break;
+                return $"{context.Result} {unwound}".Trim();
             }
         }
 
@@ -230,6 +258,18 @@ public partial class AgentCoordinationService : IAgentCoordinationService
             yield return new AgentStreamEvent(
                 AgentStreamEventType.Response,
                 RetriesExhaustedMessage);
+        }
+
+        // The streamed loop unwinds on the same terms as the batched one. A control enforced on
+        // one path and not the other is a control a caller can step around by changing method.
+        if (context.Status is AgentStatus.Working)
+        {
+            string unwound = await UnwindAsync();
+
+            if (string.IsNullOrEmpty(unwound) is false)
+            {
+                yield return new AgentStreamEvent(AgentStreamEventType.Status, unwound);
+            }
         }
 
         await this.loggingBroker.LogOutcomeAsync($"done: {context.Status}");

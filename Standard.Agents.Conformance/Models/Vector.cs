@@ -59,4 +59,10 @@ public sealed record Vector(
     int KnowledgeMaxResults = 3,
 
     // Sessions (SPEC.md 4.11). When set, every prompt in the vector runs in this conversation.
-    string? SessionId = null);
+    string? SessionId = null,
+
+    // Compensation (SPEC.md §4.9). CompensateOnFailure turns the unwind on; CompensatingTools
+    // names the tools that know how to reverse themselves. A tool left out keeps the interface
+    // default and must be reported as an effect that stands.
+    bool CompensateOnFailure = false,
+    List<string>? CompensatingTools = null);

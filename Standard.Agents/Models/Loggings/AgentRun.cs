@@ -33,6 +33,7 @@ public sealed class AgentRun
     private static readonly AsyncLocal<AgentRun?> current = new();
 
     private readonly Dictionary<string, string> verdicts = [];
+    private readonly List<PerformedEffect> performedEffects = [];
 
     private int sequence;
     private int processIndex;
@@ -94,6 +95,29 @@ public sealed class AgentRun
         lock (this.verdicts)
         {
             this.verdicts[prompt] = verdict;
+        }
+    }
+
+    /// <summary>
+    /// What this run actually performed, in order. Kept so the run can be unwound: compensation
+    /// needs to know what happened, and only the run knows (SPEC.md §4.9).
+    /// </summary>
+    public IReadOnlyList<PerformedEffect> PerformedEffects
+    {
+        get
+        {
+            lock (this.performedEffects)
+            {
+                return [.. this.performedEffects];
+            }
+        }
+    }
+
+    public void RecordPerformed(PerformedEffect effect)
+    {
+        lock (this.performedEffects)
+        {
+            this.performedEffects.Add(effect);
         }
     }
 

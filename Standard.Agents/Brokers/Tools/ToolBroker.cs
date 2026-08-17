@@ -21,4 +21,9 @@ public sealed class ToolBroker : IToolBroker
 
     public async ValueTask<string> RunAsync(string name, string input) =>
         await this.tools[name].ExecuteAsync(input);
+
+    // A tool that declares no way back returns null; the broker hands the natures an empty string,
+    // so nothing above it has to reason about null (SPEC.md §4.9).
+    public async ValueTask<string> CompensateAsync(string name, string input, string outcome) =>
+        await this.tools[name].CompensateAsync(input, outcome) ?? string.Empty;
 }

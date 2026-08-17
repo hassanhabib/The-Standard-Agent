@@ -165,10 +165,17 @@ return 1;
 
 async Task<VectorRun> RunVectorAsync(Vector vector)
 {
+    // The order the run was unwound in, written by the stubs as they reverse themselves.
+    List<string> compensationOrder = [];
+
     Dictionary<string, StubTool> stubTools =
         (vector.Tools ?? []).ToDictionary(
             pair => pair.Key,
-            pair => new StubTool(name: pair.Key, output: pair.Value));
+            pair => new StubTool(
+                name: pair.Key,
+                output: pair.Value,
+                reversible: vector.CompensatingTools?.Contains(pair.Key) is true,
+                compensationOrder: compensationOrder));
 
     // The guardians run through the real composition (OnGate / OnJudge), so each is handed
     // the rubric the framework composed — constitution, then policy (or the consumption skill),
@@ -264,6 +271,11 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
     if (vector.ScreenToolOutput)
     {
         agent.ScreenToolOutput();
+    }
+
+    if (vector.CompensateOnFailure)
+    {
+        agent.CompensateOnFailure();
     }
 
     if (vector.Retries > 0)
@@ -371,7 +383,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         }
     }
 
-    return new VectorRun(result, stubTools, gateRubric, judgeRubric, judgeInput, modelInputs, brainInputs, promptScreenings, auditRecords);
+    return new VectorRun(result, stubTools, gateRubric, judgeRubric, judgeInput, modelInputs, brainInputs, promptScreenings, auditRecords, compensationOrder);
 }
 
 // The decision log's guarantees, certified from the records themselves: one run per prompt,
@@ -521,6 +533,17 @@ static bool GuardianInputConformant(
         && actualResult.Contains(vector.GateVerdict, StringComparison.Ordinal))
     {
         failure = "the guardian's own text became the agent's answer";
+
+        return false;
+    }
+
+    // The unwind runs in reverse, and only over what the run actually performed (SPEC.md §4.9).
+    if (vector.Expect.CompensationOrder is List<string> expectedOrder
+        && run.CompensationOrder.SequenceEqual(expectedOrder) is false)
+    {
+        failure =
+            $"compensation ran [{string.Join(", ", run.CompensationOrder)}], "
+                + $"expected [{string.Join(", ", expectedOrder)}]";
 
         return false;
     }
@@ -693,4 +716,5 @@ internal sealed record VectorRun(
     List<string> ModelInputs,
     List<string> BrainInputs,
     int PromptScreenings,
-    List<AuditRecord> AuditRecords);
+    List<AuditRecord> AuditRecords,
+    List<string> CompensationOrder);

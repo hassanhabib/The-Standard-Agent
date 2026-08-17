@@ -11,6 +11,8 @@ public sealed class StubTool : ITool
 {
     private readonly string output;
     private readonly List<string> receivedInputs = [];
+    private readonly bool reversible;
+    private readonly List<string>? compensationOrder;
 
     public string Name { get; }
 
@@ -20,10 +22,16 @@ public sealed class StubTool : ITool
     // still passes (conformance issue #78).
     public IReadOnlyList<string> ReceivedInputs => this.receivedInputs;
 
-    public StubTool(string name, string output)
+    public StubTool(
+        string name,
+        string output,
+        bool reversible = false,
+        List<string>? compensationOrder = null)
     {
         this.Name = name;
         this.output = output;
+        this.reversible = reversible;
+        this.compensationOrder = compensationOrder;
     }
 
     public async ValueTask<string> ExecuteAsync(string input)
@@ -31,5 +39,21 @@ public sealed class StubTool : ITool
         this.receivedInputs.Add(input);
 
         return this.output;
+    }
+
+    // A stub that was declared reversible reverses itself and writes its name to the shared
+    // order, so a vector can certify that the unwind ran in reverse. A stub that was not keeps
+    // the interface default, returning null — the case a vector needs to prove is reported as
+    // an effect that stands rather than silently counted as undone (SPEC.md §4.9).
+    public ValueTask<string?> CompensateAsync(string input, string outcome)
+    {
+        if (this.reversible is false)
+        {
+            return ValueTask.FromResult<string?>(null);
+        }
+
+        this.compensationOrder?.Add(Name);
+
+        return ValueTask.FromResult<string?>($"reversed {outcome}");
     }
 }

@@ -94,6 +94,7 @@ public sealed partial class StandardAgent : IAgent
     private IEffectLedgerBroker? effectLedgerBroker;
     private IEnumerable<string>? approvalRequiredTools;
     private bool screenToolOutput;
+    private bool compensateOnFailure;
     private AgentBudget? budget;
     private IResilienceBroker? resilienceBroker;
     private IGeneratorBrokerV1? generatorBrokerV1;
@@ -545,6 +546,24 @@ public sealed partial class StandardAgent : IAgent
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent ScreenToolOutput() =>
         Set(() => this.screenToolOutput = true);
+
+    /// <summary>
+    /// Unwinds what a run performed when the run fails before it delivers an answer — cancelled,
+    /// out of budget, out of turns, or faulted (SPEC.md §4.9).
+    /// </summary>
+    /// <remarks>
+    /// Run-once makes an effect safe to <i>propose</i> twice. Compensation is for the effects that
+    /// cannot be made idempotent at all — a payment sent, a message delivered — where the only way
+    /// back is a second, opposite act.
+    /// <para>Each tool says how it is undone by overriding
+    /// <see cref="Tools.ITool.CompensateAsync"/>; a tool that does not is reported as an effect
+    /// that stands. Unwinding runs in reverse order, because a later effect may depend on an
+    /// earlier one, and it touches only what this run actually performed — never an effect that
+    /// was denied, held for approval, or replayed from the ledger.</para>
+    /// </remarks>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent CompensateOnFailure() =>
+        Set(() => this.compensateOnFailure = true);
 
     /// <summary>
     /// Caps how many Recall→Think→Act turns a single prompt may take before the agent stops —
@@ -1068,7 +1087,7 @@ public sealed partial class StandardAgent : IAgent
 
         return new AgentCoordinationService(
             data, decision, direction, logging, this.maxTurns, new TimeBroker(), this.budget,
-            this.sessionBroker, this.maxHistoryTurns);
+            this.sessionBroker, this.maxHistoryTurns, this.compensateOnFailure);
     }
 
     // The catalog a "{{tools}}" marker in the agent's Data expands into. Only tools that

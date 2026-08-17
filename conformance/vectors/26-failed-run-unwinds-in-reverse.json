@@ -1,0 +1,22 @@
+{
+  "name": "failed-run-unwinds-in-reverse",
+  "description": "SPEC.md 4.9 and Invariant 7: run-once makes an effect safe to propose twice, but it does nothing for an effect that cannot be made idempotent at all. The run books a flight, charges a card, then emails a confirmation, and never delivers an answer. Compensation unwinds what it actually performed, in reverse order - the charge is reversed before the booking it paid for, because undoing the booking first would leave the payment attached to nothing. The email tool declares no way back, so it is reported as an effect that stands rather than silently counted as undone: a run that reports itself cleanly unwound when it was not is worse than one that never offered compensation.",
+  "generatorReplies": [
+    "ACTION: book_flight: LHR-JFK",
+    "ACTION: charge_card: 480.00",
+    "ACTION: send_email: your ticket is confirmed"
+  ],
+  "tools": {
+    "book_flight": "booking QX7A21",
+    "charge_card": "charge CH99120",
+    "send_email": "message sent"
+  },
+  "prompt": "book me a flight to New York",
+  "maxTurns": 3,
+  "compensateOnFailure": true,
+  "compensatingTools": ["book_flight", "charge_card"],
+  "expect": {
+    "compensationOrder": ["charge_card", "book_flight"],
+    "resultContains": "'send_email' could not be undone; the effect stands."
+  }
+}
