@@ -69,6 +69,33 @@ public sealed class FileEffectLedgerBroker : IEffectLedgerBroker
         File.Move(temporaryFile, claimFile, overwrite: true);
     }
 
+    // Only an unfinished claim is given back. A file that already carries an outcome names an act
+    // that happened, and deleting it would turn run-once back into run-again.
+    public async ValueTask DeleteClaimAsync(AgentEffect effect)
+    {
+        string claimFile = FileFor(effect);
+
+        if (File.Exists(claimFile) is false)
+        {
+            return;
+        }
+
+        if (string.IsNullOrEmpty(await ReadOutcomeAsync(claimFile)) is false)
+        {
+            return;
+        }
+
+        try
+        {
+            File.Delete(claimFile);
+        }
+        catch (IOException)
+        {
+            // Another process is holding it; it owns the claim, and forcing it open would be
+            // worse than leaving a claim that a later run will read as in flight.
+        }
+    }
+
     // A ledger written by a process that then died can be read by one that is still starting up,
     // so the read tolerates a claim that is empty or being replaced rather than faulting.
     private static async ValueTask<string> ReadOutcomeAsync(string claimFile)

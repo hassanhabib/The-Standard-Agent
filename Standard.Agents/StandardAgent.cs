@@ -565,11 +565,20 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="record">
     /// An <c>(effect, outcome) =&gt; ...</c> delegate, called once the act has been performed.
     /// </param>
+    /// <param name="release">
+    /// An <c>effect =&gt; ...</c> delegate, called when the act was <i>held</i> rather than
+    /// performed — denied, or waiting on an authority. Give the claim back: a held act is one
+    /// that still has to be able to happen, and a claim left standing makes the approval
+    /// unusable when it finally arrives. Release only an unfinished claim; a key that already
+    /// carries an outcome names an act that happened.
+    /// </param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent OnEffectLedger(
         Func<AgentEffect, ValueTask<string?>> claim,
-        Func<AgentEffect, string, ValueTask> record) =>
-        Set(() => this.effectLedgerBroker = new FunctionEffectLedgerBroker(claim, record));
+        Func<AgentEffect, string, ValueTask> record,
+        Func<AgentEffect, ValueTask> release) =>
+        Set(() =>
+            this.effectLedgerBroker = new FunctionEffectLedgerBroker(claim, record, release));
 
     /// <summary>
     /// Screens what tools hand back before the Brain reads it (SPEC.md §4.9). A tool result is

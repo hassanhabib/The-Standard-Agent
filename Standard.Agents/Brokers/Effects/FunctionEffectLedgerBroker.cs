@@ -14,13 +14,16 @@ public sealed class FunctionEffectLedgerBroker : IEffectLedgerBroker
 {
     private readonly Func<AgentEffect, ValueTask<string?>> claim;
     private readonly Func<AgentEffect, string, ValueTask> record;
+    private readonly Func<AgentEffect, ValueTask> release;
 
     public FunctionEffectLedgerBroker(
         Func<AgentEffect, ValueTask<string?>> claim,
-        Func<AgentEffect, string, ValueTask> record)
+        Func<AgentEffect, string, ValueTask> record,
+        Func<AgentEffect, ValueTask> release)
     {
         this.claim = claim;
         this.record = record;
+        this.release = release;
     }
 
     public ValueTask<string?> SelectOutcomeAsync(AgentEffect effect) =>
@@ -28,4 +31,7 @@ public sealed class FunctionEffectLedgerBroker : IEffectLedgerBroker
 
     public ValueTask InsertOutcomeAsync(AgentEffect effect, string outcome) =>
         this.record(effect, outcome);
+
+    public ValueTask DeleteClaimAsync(AgentEffect effect) =>
+        this.release(effect);
 }

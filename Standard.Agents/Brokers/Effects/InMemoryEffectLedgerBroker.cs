@@ -41,4 +41,14 @@ public sealed class InMemoryEffectLedgerBroker : IEffectLedgerBroker
 
         return ValueTask.CompletedTask;
     }
+
+    // Only an unfinished claim is given back. A key that already carries an outcome names an act
+    // that happened, and forgetting that would turn run-once back into run-again.
+    public ValueTask DeleteClaimAsync(AgentEffect effect)
+    {
+        this.outcomesByKey.TryRemove(
+            new KeyValuePair<string, string?>(effect.IdempotencyKey, null));
+
+        return ValueTask.CompletedTask;
+    }
 }
