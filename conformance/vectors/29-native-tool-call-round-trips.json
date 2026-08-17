@@ -1,0 +1,25 @@
+{
+  "name": "native-tool-call-round-trips",
+  "description": "SPEC.md 6: a hosted model that asked for call_7 expects the answer back as a tool message naming call_7 - that is what it was trained on, and it is the one thing the text protocol cannot express. The model asks for the calculator natively, the framework performs it, and the next turn hands back the assistant's request with its id and the tool's answer against that id. Narrating the result as prose instead would leave the model matching answers to questions by reading, which is exactly the guessing native tool calling exists to remove. Adopting native calls changes how a choice is READ, not what the agent is: the same tool ran, with the arguments the model sent.",
+  "generatorReplies": [],
+  "nativeReplies": [
+    {
+      "toolCalls": [
+        {
+          "id": "call_7",
+          "name": "calculator",
+          "argumentsJson": "{\"expression\":\"47*89\"}"
+        }
+      ]
+    },
+    { "content": "4183" }
+  ],
+  "tools": { "calculator": "4183" },
+  "prompt": "what is 47 times 89?",
+  "expect": {
+    "result": "4183",
+    "toolRunCount": { "calculator": 1 },
+    "toolInput": { "calculator": "{\"expression\":\"47*89\"}" },
+    "toolResultAnswersCall": "call_7"
+  }
+}

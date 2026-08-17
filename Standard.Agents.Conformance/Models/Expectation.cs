@@ -61,4 +61,11 @@ public sealed record Expectation(
     //   CompensationOrder — the exact order the tools were reversed in, which is how the reverse
     //                       unwind is certified: a later effect may depend on an earlier one, so
     //                       undoing them in the order they ran would leave state inconsistent.
-    List<string>? CompensationOrder = null);
+    List<string>? CompensationOrder = null,
+
+    //   ToolResultAnswersCall — the tool's result must come back to the model as a tool message
+    //                           naming the call that asked for it, and the assistant's request
+    //                           must be replayed alongside it. This is the one thing the text
+    //                           protocol cannot express, so it is the one thing worth certifying
+    //                           about native tool calling (SPEC.md §6).
+    string? ToolResultAnswersCall = null);

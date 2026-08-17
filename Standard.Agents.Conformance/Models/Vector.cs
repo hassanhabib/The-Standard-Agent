@@ -77,4 +77,8 @@ public sealed record Vector(
     // A scripted authority — "pending", "approved", "denied" — answered in order, so a vector can
     // hold an act on one run and permit it on the next. That is the shape of every real approval:
     // the answer arrives after the agent already stopped.
-    List<string>? ApprovalDecisions = null);
+    List<string>? ApprovalDecisions = null,
+
+    // Native tool calling (SPEC.md §6). When set, the Brain is a V1 generator and its replies are
+    // structured choices rather than lines of text.
+    List<NativeReply>? NativeReplies = null);

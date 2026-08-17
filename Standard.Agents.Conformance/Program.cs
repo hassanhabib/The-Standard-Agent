@@ -8,6 +8,7 @@ using Standard.Agents;
 using Standard.Agents.Brokers.Approvals;
 using Standard.Agents.Conformance;
 using Standard.Agents.Models.Brokers.Audits;
+using Standard.Agents.Models.Brokers.Generators.V1;
 
 string? profileName = ReadProfileArgument(args);
 
@@ -169,6 +170,12 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
     // The order the run was unwound in, written by the stubs as they reverse themselves.
     List<string> compensationOrder = [];
 
+    // One scripted native model for the whole vector, so its recorded conversations survive
+    // across instances exactly as a real endpoint's would.
+    ScriptedNativeGeneratorBroker? nativeGenerator = vector.NativeReplies is { Count: > 0 }
+        ? new ScriptedNativeGeneratorBroker(vector.NativeReplies)
+        : null;
+
     Queue<ApprovalDecision> approvalDecisions = new(
         (vector.ApprovalDecisions ?? []).Select(decision =>
             Enum.Parse<ApprovalDecision>(decision, ignoreCase: true)));
@@ -319,6 +326,11 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
             agent.CompensateOnFailure();
         }
 
+        if (nativeGenerator is not null)
+        {
+            agent.UseNativeBrain(nativeGenerator);
+        }
+
         if (vector.Retries > 0)
         {
             agent.Resilience(vector.Retries);
@@ -437,7 +449,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         }
     }
 
-    return new VectorRun(result, stubTools, gateRubric, judgeRubric, judgeInput, modelInputs, brainInputs, promptScreenings, auditRecords, compensationOrder);
+    return new VectorRun(result, stubTools, gateRubric, judgeRubric, judgeInput, modelInputs, brainInputs, promptScreenings, auditRecords, compensationOrder, nativeGenerator);
 }
 
 // The decision log's guarantees, certified from the records themselves: one run per prompt,
@@ -589,6 +601,31 @@ static bool GuardianInputConformant(
         failure = "the guardian's own text became the agent's answer";
 
         return false;
+    }
+
+    // A tool result must come back as an answer to the call that asked for it (SPEC.md §6). Both
+    // halves are checked: the assistant's request replayed with its id, and the tool's answer
+    // naming that id. A framework that narrates the result as prose fails on the second.
+    if (vector.Expect.ToolResultAnswersCall is string expectedCallId)
+    {
+        IReadOnlyList<ConversationMessage> lastConversation =
+            run.NativeGenerator?.Conversations.LastOrDefault() ?? [];
+
+        bool requestReplayed = lastConversation.Any(message =>
+            message.Role is MessageRole.Assistant
+                && message.ToolCalls.Any(call => call.Id == expectedCallId));
+
+        bool answerNamesCall = lastConversation.Any(message =>
+            message.Role is MessageRole.Tool && message.ToolCallId == expectedCallId);
+
+        if (requestReplayed is false || answerNamesCall is false)
+        {
+            failure =
+                $"the model was not handed call '{expectedCallId}' and its answer "
+                    + $"(request replayed: {requestReplayed}, answer names call: {answerNamesCall})";
+
+            return false;
+        }
     }
 
     // The unwind runs in reverse, and only over what the run actually performed (SPEC.md §4.9).
@@ -771,4 +808,5 @@ internal sealed record VectorRun(
     List<string> BrainInputs,
     int PromptScreenings,
     List<AuditRecord> AuditRecords,
-    List<string> CompensationOrder);
+    List<string> CompensationOrder,
+    ScriptedNativeGeneratorBroker? NativeGenerator);
