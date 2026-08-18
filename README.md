@@ -1,7 +1,5 @@
 ![The Standard for Agents](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-cover.png)
 
-<div align="center">
-
 # The Standard AI Agent Framework
 
 **`Agent = Orchestration(Data, Decision, Direction)`**
@@ -15,8 +13,6 @@ The C# reference implementation of **[The Standard for Agents](https://github.co
 [![The Standard](https://img.shields.io/github/v/release/hassanhabib/The-Standard?filter=v2.50.0&style=default&label=Standard%20Version&color=2ea44f)](https://github.com/hassanhabib/The-Standard)
 [![The Standard Community](https://img.shields.io/discord/934130100008538142?style=default&color=%237289da&label=The%20Standard%20Community&logo=Discord)](https://discord.gg/vdPZ7hS52X)
 [![License: TSSL](https://img.shields.io/badge/license-TSSL%20v1.1-blue.svg)](https://github.com/hassanhabib/The-Standard-Agent/blob/main/LICENSE.txt)
-
-</div>
 
 ---
 
@@ -196,9 +192,9 @@ promise of the broker seam.
 
 ![The Standard for Agents — architecture: StandardAgent → RunManagement → the three nature Coordinations (Data, Decision, Direction) → six Orchestration regions → thirteen Foundation services → their twelve nature Brokers, with three utility and two decorating brokers beneath](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-architecture.png)
 
-<sub>The diagram is generated from
+*The diagram is generated from
 [`assets/the-standard-agent-architecture.svg`](https://github.com/hassanhabib/The-Standard-Agent/blob/main/assets/the-standard-agent-architecture.svg)
-— edit the SVG, re-render the PNG.</sub>
+— edit the SVG, re-render the PNG.*
 
 **The 1·3·9 is the agent.** One loop, three natures, nine foundations — and it is all you need to
 build one:

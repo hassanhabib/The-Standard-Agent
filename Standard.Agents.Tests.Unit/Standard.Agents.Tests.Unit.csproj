@@ -24,4 +24,11 @@
     <ProjectReference Include="..\Standard.Agents\Standard.Agents.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The README ships as the NuGet package page, so it is an artifact under test rather than
+         just documentation. Copied next to the assembly so PackageReadmeTests can read the same
+         bytes that get packed. -->
+    <None Include="..\README.md" Link="README.md" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
