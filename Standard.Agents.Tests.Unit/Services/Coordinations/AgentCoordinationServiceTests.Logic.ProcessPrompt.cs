@@ -62,7 +62,7 @@ public partial class AgentCoordinationServiceTests
             .Setup(service => service.RecallAsync(It.IsAny<AgentContext>()))
             .ReturnsAsync((AgentContext context) => context);
 
-        this.decisionOrchestrationServiceMock.InSequence(sequence)
+        this.decisionCoordinationServiceMock.InSequence(sequence)
             .Setup(service => service.ThinkAsync(It.IsAny<AgentContext>()))
             .ReturnsAsync((AgentContext context) => context);
 
@@ -127,7 +127,7 @@ AgentStatus terminalStatus)
 service.RecallAsync(It.IsAny<AgentContext>()),
 Times.Exactly(7));
 
-        this.decisionOrchestrationServiceMock.Verify(service =>
+        this.decisionCoordinationServiceMock.Verify(service =>
             service.ThinkAsync(It.IsAny<AgentContext>()),
                 Times.Exactly(7));
     }
@@ -141,7 +141,7 @@ Times.Exactly(7));
 
         var boundedCoordinationService = new AgentCoordinationService(
             dataCoordinationService: this.dataCoordinationServiceMock.Object,
-            decisionOrchestrationService: this.decisionOrchestrationServiceMock.Object,
+            decisionCoordinationService: this.decisionCoordinationServiceMock.Object,
             directionCoordinationService: this.directionCoordinationServiceMock.Object,
             loggingBroker: this.loggingBrokerMock.Object,
             maxTurns: configuredMaxTurns);
@@ -172,7 +172,7 @@ Times.Exactly(7));
             service.RecallAsync(It.IsAny<AgentContext>()))
                 .ReturnsAsync((AgentContext context) => context);
 
-        this.decisionOrchestrationServiceMock.Setup(service =>
+        this.decisionCoordinationServiceMock.Setup(service =>
             service.ThinkAsync(It.IsAny<AgentContext>()))
                 .ReturnsAsync((AgentContext context) =>
                     context with { Status = AgentStatus.Revising });
@@ -184,7 +184,7 @@ Times.Exactly(7));
         // then
         actualResult.Should().Be(expectedResult);
 
-        this.decisionOrchestrationServiceMock.Verify(service =>
+        this.decisionCoordinationServiceMock.Verify(service =>
             service.ThinkAsync(It.IsAny<AgentContext>()),
                 Times.Exactly(7));
 
@@ -204,7 +204,7 @@ Times.Exactly(7));
             service.RecallAsync(It.IsAny<AgentContext>()))
                 .ReturnsAsync((AgentContext context) => context);
 
-        this.decisionOrchestrationServiceMock.Setup(service =>
+        this.decisionCoordinationServiceMock.Setup(service =>
             service.ThinkAsync(It.IsAny<AgentContext>()))
                 .ReturnsAsync((AgentContext context) => context with { Remember = preference });
 
@@ -233,7 +233,7 @@ Times.Exactly(7));
             service.RecallAsync(It.IsAny<AgentContext>()))
                 .ReturnsAsync((AgentContext context) => context);
 
-        this.decisionOrchestrationServiceMock.Setup(service =>
+        this.decisionCoordinationServiceMock.Setup(service =>
             service.ThinkAsync(It.IsAny<AgentContext>()))
                 .ReturnsAsync((AgentContext context) => context);
 
@@ -314,7 +314,7 @@ Times.Exactly(7));
                     };
                 });
 
-        this.decisionOrchestrationServiceMock.Setup(service =>
+        this.decisionCoordinationServiceMock.Setup(service =>
             service.ThinkAsync(It.IsAny<AgentContext>()))
                 .ReturnsAsync((AgentContext context) => context);
 

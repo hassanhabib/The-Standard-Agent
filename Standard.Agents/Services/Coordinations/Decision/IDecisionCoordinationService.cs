@@ -5,9 +5,9 @@
 
 using Standard.Agents.Models.Orchestrations.Agents;
 
-namespace Standard.Agents.Services.Orchestrations.Decision;
+namespace Standard.Agents.Services.Coordinations.Decision;
 
-public interface IDecisionOrchestrationService
+public interface IDecisionCoordinationService
 {
     ValueTask<AgentContext> ThinkAsync(AgentContext context);
 

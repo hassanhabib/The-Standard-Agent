@@ -50,7 +50,9 @@ using Standard.Agents.Services.Foundations.Skills;
 using Standard.Agents.Services.Coordinations.Data;
 using Standard.Agents.Services.Orchestrations.Data.Recollections;
 using Standard.Agents.Services.Orchestrations.Data.Retrievals;
-using Standard.Agents.Services.Orchestrations.Decision;
+using Standard.Agents.Services.Coordinations.Decision;
+using Standard.Agents.Services.Orchestrations.Decision.Guardians;
+using Standard.Agents.Services.Orchestrations.Decision.Inferences;
 using Standard.Agents.Services.Coordinations.Direction;
 using Standard.Agents.Services.Orchestrations.Direction.Executions;
 using Standard.Agents.Services.Orchestrations.Direction.Perimeters;
@@ -1215,12 +1217,18 @@ public sealed partial class StandardAgent : IAgent
 
         GateService gate = new(new RedactingClassifierBroker(classifier, redaction), logging);
 
-        DecisionOrchestrationService decision = new(
-            gate,
-            new BrainService(generatorAtTheWire, logging, nativeAtTheWire),
-            new JudgeService(new RedactingVerifierBroker(verifier, redaction), logging),
-            logging,
-            RenderToolDefinitions(allTools));
+        // The Decision nature, as two regions and the judgment between them. Inference asks the
+        // model and reads its answer; Guardian screens what goes in and scores what comes out.
+        DecisionCoordinationService decision = new(
+            new InferenceOrchestrationService(
+                new BrainService(generatorAtTheWire, logging, nativeAtTheWire),
+                logging,
+                RenderToolDefinitions(allTools)),
+            new GuardianOrchestrationService(
+                gate,
+                new JudgeService(new RedactingVerifierBroker(verifier, redaction), logging),
+                logging),
+            logging);
 
         // The allow-list is expressed as a policy, so the simple answer and an external policy
         // engine travel one seam and a denial carries a reason either way (SPEC.md §4.9).

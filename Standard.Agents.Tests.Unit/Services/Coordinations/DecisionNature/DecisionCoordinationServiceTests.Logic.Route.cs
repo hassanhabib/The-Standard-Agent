@@ -6,15 +6,17 @@
 using FluentAssertions;
 using Moq;
 using Standard.Agents.Models.Orchestrations.Agents;
-using Standard.Agents.Services.Orchestrations.Decision;
+using Standard.Agents.Services.Coordinations.Decision;
+using Standard.Agents.Services.Orchestrations.Decision.Guardians;
+using Standard.Agents.Services.Orchestrations.Decision.Inferences;
 using Xunit;
 
-namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Decision;
+namespace Standard.Agents.Tests.Unit.Services.Coordinations.DecisionNature;
 
-public partial class DecisionOrchestrationServiceTests
+public partial class DecisionCoordinationServiceTests
 {
     [Fact]
-    public async Task ShouldNarrateGateRouteAndProceedOnThinkStreamAsync()
+    public async Task ShouldCaptureGateRouteLabelAsDataOnThinkStreamAsync()
     {
         // given
         AgentContext inputContext = CreateRandomAgentContext();
@@ -31,19 +33,11 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         IDecisionStream decisionStream =
-            this.decisionOrchestrationService.ThinkStreamAsync(inputContext);
+            this.decisionCoordinationService.ThinkStreamAsync(inputContext);
 
         await DrainAsync(decisionStream);
 
-        // then a route proceeds to the Brain (not refused) and is narrated as ROUTE
-        decisionStream.Result.DirectionType.Should().Be("ReturnResponse");
-
-        this.loggingBrokerMock.Verify(broker =>
-            broker.LogProcessAsync(
-                "Decision",
-                It.Is<string>(message =>
-                    message.Contains("ROUTE") && message.Contains("arithmetic")),
-                It.IsAny<bool>()),
-                    Times.Once);
+        // then — the label rode through as Data on the resulting context
+        decisionStream.Result.Route.Should().Be("arithmetic");
     }
 }

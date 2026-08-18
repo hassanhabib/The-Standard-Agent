@@ -9,9 +9,9 @@ using Standard.Agents.Models.Foundations.Judges;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Xunit;
 
-namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Decision;
+namespace Standard.Agents.Tests.Unit.Services.Coordinations.DecisionNature;
 
-public partial class DecisionOrchestrationServiceTests
+public partial class DecisionCoordinationServiceTests
 {
     [Fact]
     public async Task ShouldRefuseOnThinkIfGateScreensRefuseAsync()
@@ -25,7 +25,7 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.decisionOrchestrationService.ThinkAsync(inputContext);
+            await this.decisionCoordinationService.ThinkAsync(inputContext);
 
         // then
         actualContext.DirectionType.Should().Be("Refuse");
@@ -48,7 +48,7 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.decisionOrchestrationService.ThinkAsync(inputContext);
+            await this.decisionCoordinationService.ThinkAsync(inputContext);
 
         // then
         actualContext.DirectionType.Should().Be("Refuse");
@@ -66,7 +66,7 @@ public partial class DecisionOrchestrationServiceTests
                 .ReturnsAsync("refuse");
 
         // when
-        await this.decisionOrchestrationService.ThinkAsync(inputContext);
+        await this.decisionCoordinationService.ThinkAsync(inputContext);
 
         // then
         this.brainServiceMock.Verify(service =>
@@ -98,7 +98,7 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.decisionOrchestrationService.ThinkAsync(inputContext);
+            await this.decisionCoordinationService.ThinkAsync(inputContext);
 
         // then
         actualContext.Status.Should().Be(AgentStatus.Revising);
@@ -122,7 +122,7 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.decisionOrchestrationService.ThinkAsync(inputContext);
+            await this.decisionCoordinationService.ThinkAsync(inputContext);
 
         // then
         actualContext.Observations.Should()
@@ -141,7 +141,7 @@ public partial class DecisionOrchestrationServiceTests
                 .ReturnsAsync("ACTION: calculator: 1+1");
 
         // when
-        await this.decisionOrchestrationService.ThinkAsync(inputContext);
+        await this.decisionCoordinationService.ThinkAsync(inputContext);
 
         // then
         this.judgeServiceMock.Verify(service =>
@@ -164,7 +164,7 @@ public partial class DecisionOrchestrationServiceTests
                 .ReturnsAsync("FINAL: the draft");
 
         // when
-        await this.decisionOrchestrationService.ThinkAsync(inputContext);
+        await this.decisionCoordinationService.ThinkAsync(inputContext);
 
         // then
         this.gateServiceMock.Verify(service =>

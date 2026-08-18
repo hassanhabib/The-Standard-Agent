@@ -5,23 +5,22 @@
 
 using Moq;
 using Standard.Agents.Models.Orchestrations.Agents;
-using Standard.Agents.Services.Orchestrations.Decision;
+using Standard.Agents.Services.Coordinations.Decision;
+using Standard.Agents.Services.Orchestrations.Decision.Guardians;
+using Standard.Agents.Services.Orchestrations.Decision.Inferences;
 using Xunit;
 
-namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Decision;
+namespace Standard.Agents.Tests.Unit.Services.Coordinations.DecisionNature;
 
-public partial class DecisionOrchestrationServiceTests
+public partial class DecisionCoordinationServiceTests
 {
     [Fact]
-    public async Task ShouldNarrateGateAcceptVerdictOnThinkStreamAsync()
+    public async Task ShouldNarrateEstimatedTokensOnThinkStreamAsync()
     {
         // given
         AgentContext inputContext = CreateRandomAgentContext();
+        SetupGateAllows();
         SetupJudgeApproves();
-
-        this.gateServiceMock.Setup(service =>
-            service.ScreenAsync(It.IsAny<string>()))
-                .ReturnsAsync("allow because the request is safe");
 
         this.brainServiceMock.Setup(service =>
             service.GenerateStreamAsync(
@@ -30,16 +29,16 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         IDecisionStream decisionStream =
-            this.decisionOrchestrationService.ThinkStreamAsync(inputContext);
+            this.decisionCoordinationService.ThinkStreamAsync(inputContext);
 
         await DrainAsync(decisionStream);
 
-        // then
+        // then — a cost signal is recorded for the brain exchange
         this.loggingBrokerMock.Verify(broker =>
             broker.LogProcessAsync(
                 "Decision",
                 It.Is<string>(message =>
-                    message.Contains("ACCEPT") && message.Contains("safe")),
+                    message.Contains("tokens") && message.Contains("estimated")),
                 It.IsAny<bool>()),
                     Times.Once);
     }

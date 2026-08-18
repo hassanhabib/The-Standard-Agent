@@ -3,18 +3,19 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
-using FluentAssertions;
 using Moq;
 using Standard.Agents.Models.Orchestrations.Agents;
-using Standard.Agents.Services.Orchestrations.Decision;
+using Standard.Agents.Services.Coordinations.Decision;
+using Standard.Agents.Services.Orchestrations.Decision.Guardians;
+using Standard.Agents.Services.Orchestrations.Decision.Inferences;
 using Xunit;
 
-namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Decision;
+namespace Standard.Agents.Tests.Unit.Services.Coordinations.DecisionNature;
 
-public partial class DecisionOrchestrationServiceTests
+public partial class DecisionCoordinationServiceTests
 {
     [Fact]
-    public async Task ShouldCaptureGateRouteLabelAsDataOnThinkStreamAsync()
+    public async Task ShouldNarrateGateAcceptVerdictOnThinkStreamAsync()
     {
         // given
         AgentContext inputContext = CreateRandomAgentContext();
@@ -22,7 +23,7 @@ public partial class DecisionOrchestrationServiceTests
 
         this.gateServiceMock.Setup(service =>
             service.ScreenAsync(It.IsAny<string>()))
-                .ReturnsAsync("route: arithmetic");
+                .ReturnsAsync("allow because the request is safe");
 
         this.brainServiceMock.Setup(service =>
             service.GenerateStreamAsync(
@@ -31,11 +32,17 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         IDecisionStream decisionStream =
-            this.decisionOrchestrationService.ThinkStreamAsync(inputContext);
+            this.decisionCoordinationService.ThinkStreamAsync(inputContext);
 
         await DrainAsync(decisionStream);
 
-        // then — the label rode through as Data on the resulting context
-        decisionStream.Result.Route.Should().Be("arithmetic");
+        // then
+        this.loggingBrokerMock.Verify(broker =>
+            broker.LogProcessAsync(
+                "Decision",
+                It.Is<string>(message =>
+                    message.Contains("ACCEPT") && message.Contains("safe")),
+                It.IsAny<bool>()),
+                    Times.Once);
     }
 }

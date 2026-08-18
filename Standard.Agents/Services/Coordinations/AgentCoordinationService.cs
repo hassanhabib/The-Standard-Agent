@@ -13,7 +13,7 @@ using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Loggings;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Services.Coordinations.Data;
-using Standard.Agents.Services.Orchestrations.Decision;
+using Standard.Agents.Services.Coordinations.Decision;
 using Standard.Agents.Services.Coordinations.Direction;
 
 namespace Standard.Agents.Services.Coordinations;
@@ -26,7 +26,7 @@ public partial class AgentCoordinationService : IAgentCoordinationService
         "I can't help with that at the moment.";
 
     private readonly IDataCoordinationService dataCoordinationService;
-    private readonly IDecisionOrchestrationService decisionOrchestrationService;
+    private readonly IDecisionCoordinationService decisionCoordinationService;
     private readonly IDirectionCoordinationService directionCoordinationService;
     private readonly ILoggingBroker loggingBroker;
     private readonly ITimeBroker timeBroker;
@@ -37,7 +37,7 @@ public partial class AgentCoordinationService : IAgentCoordinationService
 
     public AgentCoordinationService(
         IDataCoordinationService dataCoordinationService,
-        IDecisionOrchestrationService decisionOrchestrationService,
+        IDecisionCoordinationService decisionCoordinationService,
         IDirectionCoordinationService directionCoordinationService,
         ILoggingBroker loggingBroker,
         int maxTurns = DefaultMaxTurns,
@@ -48,7 +48,7 @@ public partial class AgentCoordinationService : IAgentCoordinationService
     {
         this.compensateOnFailure = compensateOnFailure;
         this.dataCoordinationService = dataCoordinationService;
-        this.decisionOrchestrationService = decisionOrchestrationService;
+        this.decisionCoordinationService = decisionCoordinationService;
         this.directionCoordinationService = directionCoordinationService;
         this.loggingBroker = loggingBroker;
         this.maxTurns = maxTurns;
@@ -118,7 +118,7 @@ public partial class AgentCoordinationService : IAgentCoordinationService
                 context = await this.dataCoordinationService.RecallAsync(context);
 
                 await this.loggingBroker.LogStepAsync(AgentStep.Decision);
-                context = await this.decisionOrchestrationService.ThinkAsync(context);
+                context = await this.decisionCoordinationService.ThinkAsync(context);
 
                 spend.AddTokens(context.PromptTokens, context.CompletionTokens);
 
@@ -238,7 +238,7 @@ public partial class AgentCoordinationService : IAgentCoordinationService
             await this.loggingBroker.LogStepAsync(AgentStep.Decision);
 
             IDecisionStream decisionStream =
-                this.decisionOrchestrationService.ThinkStreamAsync(context, cancellationToken);
+                this.decisionCoordinationService.ThinkStreamAsync(context, cancellationToken);
 
             await foreach (AgentStreamEvent decisionEvent in
                 decisionStream.WithCancellation(cancellationToken))

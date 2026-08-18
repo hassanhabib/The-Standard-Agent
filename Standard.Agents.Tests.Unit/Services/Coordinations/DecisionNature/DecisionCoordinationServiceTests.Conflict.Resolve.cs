@@ -8,9 +8,9 @@ using Moq;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Xunit;
 
-namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Decision;
+namespace Standard.Agents.Tests.Unit.Services.Coordinations.DecisionNature;
 
-public partial class DecisionOrchestrationServiceTests
+public partial class DecisionCoordinationServiceTests
 {
     [Fact]
     public async Task ShouldAutoResolveSkillConflictFromLearnedPreferenceOnThinkAsync()
@@ -35,7 +35,7 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.decisionOrchestrationService.ThinkAsync(inputContext);
+            await this.decisionCoordinationService.ThinkAsync(inputContext);
 
         // then
         actualContext.DirectionType.Should().Be("ReturnResponse");
@@ -63,7 +63,7 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.decisionOrchestrationService.ThinkAsync(inputContext);
+            await this.decisionCoordinationService.ThinkAsync(inputContext);
 
         // then
         actualContext.DirectionType.Should().Be("ReturnResponse");

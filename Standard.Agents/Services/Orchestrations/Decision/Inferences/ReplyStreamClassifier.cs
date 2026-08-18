@@ -6,7 +6,7 @@
 using System.Text;
 using Standard.Agents.Models.Clients.Agents;
 
-namespace Standard.Agents.Services.Orchestrations.Decision;
+namespace Standard.Agents.Services.Orchestrations.Decision.Inferences;
 
 internal sealed class ReplyStreamClassifier
 {

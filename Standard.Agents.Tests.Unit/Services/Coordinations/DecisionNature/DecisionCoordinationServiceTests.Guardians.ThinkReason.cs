@@ -9,9 +9,9 @@ using Standard.Agents.Models.Foundations.Judges;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Xunit;
 
-namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Decision;
+namespace Standard.Agents.Tests.Unit.Services.Coordinations.DecisionNature;
 
-public partial class DecisionOrchestrationServiceTests
+public partial class DecisionCoordinationServiceTests
 {
     [Fact]
     public async Task ShouldFeedJudgeReasonBackAsRevisionFeedbackOnThinkAsync()
@@ -34,7 +34,7 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.decisionOrchestrationService.ThinkAsync(inputContext);
+            await this.decisionCoordinationService.ThinkAsync(inputContext);
 
         // then
         actualContext.Status.Should().Be(AgentStatus.Revising);
