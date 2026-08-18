@@ -457,8 +457,8 @@ You have seen `.LogTo("log.txt")` in the examples above. Here is what it writes,
 machine-readable companion that rides alongside it.
 
 **Human-readable trace, with `.LogTo(path, verbosity)`.** Writes a step-by-step transcript
-organised as `Turn → Step → Process`, mirroring the Coordination, Orchestration and Foundation
-tiers. The optional `verbosity` picks the depth:
+organised as `Turn → Step → Process` — a Turn is one pass of the loop, a Step is one nature, a
+Process is one foundation. The optional `verbosity` picks the depth:
 
 ```csharp
 using Standard.Agents.Models.Loggings;
