@@ -7,14 +7,14 @@ using Standard.Agents.Models.Brokers.Sessions;
 using Standard.Agents.Models.Loggings;
 using Standard.Agents.Models.Orchestrations.Agents;
 
-namespace Standard.Agents.Services.Coordinations;
+namespace Standard.Agents.Services.Managements;
 
 // Conversation and resumption (SPEC.md §4.11).
 //
 // Invariant 4 still holds: the instance is stateless across prompts. What persists is the
 // session, and it lives in a broker outside the agent — which is what lets a pause be resumed by
 // a different process, long after the instance that created it is gone.
-public partial class AgentCoordinationService
+public partial class RunManagementService
 {
     // Read before the run begins, because a resumed run must keep the identity the interrupted
     // one had. Nothing is logged here: there is no run yet to credit the record to.

@@ -16,9 +16,9 @@ using Standard.Agents.Services.Coordinations.Data;
 using Standard.Agents.Services.Coordinations.Decision;
 using Standard.Agents.Services.Coordinations.Direction;
 
-namespace Standard.Agents.Services.Coordinations;
+namespace Standard.Agents.Services.Managements;
 
-public partial class AgentCoordinationService : IAgentCoordinationService
+public partial class RunManagementService : IRunManagementService
 {
     private const int DefaultMaxTurns = 7;
 
@@ -35,7 +35,7 @@ public partial class AgentCoordinationService : IAgentCoordinationService
     private readonly int maxTurns;
     private readonly bool compensateOnFailure;
 
-    public AgentCoordinationService(
+    public RunManagementService(
         IDataCoordinationService dataCoordinationService,
         IDecisionCoordinationService decisionCoordinationService,
         IDirectionCoordinationService directionCoordinationService,

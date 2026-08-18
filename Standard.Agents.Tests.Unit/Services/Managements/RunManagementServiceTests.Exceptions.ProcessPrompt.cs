@@ -10,9 +10,9 @@ using Standard.Agents.Models.Orchestrations.Agents;
 using Xeptions;
 using Xunit;
 
-namespace Standard.Agents.Tests.Unit.Services.Coordinations;
+namespace Standard.Agents.Tests.Unit.Services.Managements;
 
-public partial class AgentCoordinationServiceTests
+public partial class RunManagementServiceTests
 {
     [Theory]
     [InlineData(null)]
@@ -90,15 +90,15 @@ Xeption orchestrationException)
         string randomPrompt = CreateRandomString();
         var serviceException = new Exception();
 
-        var failedAgentCoordinationServiceException =
-            new FailedAgentCoordinationServiceException(
+        var failedRunManagementServiceException =
+            new FailedRunManagementServiceException(
                 message: "Failed agent coordination service error occurred, contact support.",
                 innerException: serviceException);
 
         var expectedException =
-            new AgentCoordinationServiceException(
+            new RunManagementServiceException(
                 message: "Agent coordination service error occurred, contact support.",
-                innerException: failedAgentCoordinationServiceException);
+                innerException: failedRunManagementServiceException);
 
         this.dataCoordinationServiceMock.Setup(service =>
             service.RecallAsync(It.IsAny<AgentContext>()))
@@ -108,8 +108,8 @@ Xeption orchestrationException)
         ValueTask<string> processTask =
             this.agentCoordinationService.ProcessPromptAsync(randomPrompt);
 
-        AgentCoordinationServiceException actualException =
-            await Assert.ThrowsAsync<AgentCoordinationServiceException>(
+        RunManagementServiceException actualException =
+            await Assert.ThrowsAsync<RunManagementServiceException>(
                 processTask.AsTask);
 
         // then

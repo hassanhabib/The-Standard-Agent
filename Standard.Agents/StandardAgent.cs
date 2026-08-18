@@ -33,7 +33,7 @@ using Standard.Agents.Models.Foundations.Skills;
 using Standard.Agents.Models.Orchestrations.Effects;
 using Standard.Agents.Models.Loggings;
 using Standard.Agents.Prompts;
-using Standard.Agents.Services.Coordinations;
+using Standard.Agents.Services.Managements;
 using Standard.Agents.Services.Foundations.Brains;
 using Standard.Agents.Services.Foundations.ExternalTools;
 using Standard.Agents.Services.Foundations.Gates;
@@ -112,7 +112,7 @@ public sealed partial class StandardAgent : IAgent
     private int maxHistoryTurns = 20;
     private Func<AgentPrincipal?>? identityResolver;
 
-    private IAgentCoordinationService? agent;
+    private IRunManagementService? agent;
 
     /// <summary>
     /// Creates an agent with nothing configured yet — set it up with the builder methods
@@ -1028,7 +1028,7 @@ public sealed partial class StandardAgent : IAgent
     // Composes once and reuses. Guarded because one agent serves prompts concurrently
     // (SPEC.md §4.4) and an unguarded `??=` lets two arriving prompts each build a graph —
     // two brokers over one audit sink, two of everything, one silently discarded.
-    private IAgentCoordinationService ResolveAgent()
+    private IRunManagementService ResolveAgent()
     {
         lock (this.compositionLock)
         {
@@ -1074,7 +1074,7 @@ public sealed partial class StandardAgent : IAgent
     private static string ComposeGuardianRubric(params string[] parts) =>
         string.Join("\n\n", parts.Where(part => string.IsNullOrWhiteSpace(part) is false));
 
-    private IAgentCoordinationService Compose()
+    private IRunManagementService Compose()
     {
         ValidateComposition();
 
@@ -1261,7 +1261,7 @@ public sealed partial class StandardAgent : IAgent
             this.screenToolOutput ? gate : null,
             this.identityResolver);
 
-        return new AgentCoordinationService(
+        return new RunManagementService(
             data, decision, direction, logging, this.maxTurns, new TimeBroker(), this.budget,
             this.maxHistoryTurns, this.compensateOnFailure);
     }

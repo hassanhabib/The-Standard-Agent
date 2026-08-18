@@ -6,12 +6,12 @@
 using FluentAssertions;
 using Moq;
 using Standard.Agents.Models.Orchestrations.Agents;
-using Standard.Agents.Services.Coordinations;
+using Standard.Agents.Services.Managements;
 using Xunit;
 
-namespace Standard.Agents.Tests.Unit.Services.Coordinations;
+namespace Standard.Agents.Tests.Unit.Services.Managements;
 
-public partial class AgentCoordinationServiceTests
+public partial class RunManagementServiceTests
 {
     [Fact]
     public async Task ShouldProcessPromptAsync()
@@ -139,7 +139,7 @@ Times.Exactly(7));
         string randomPrompt = CreateRandomString();
         int configuredMaxTurns = 3;
 
-        var boundedCoordinationService = new AgentCoordinationService(
+        var boundedCoordinationService = new RunManagementService(
             dataCoordinationService: this.dataCoordinationServiceMock.Object,
             decisionCoordinationService: this.decisionCoordinationServiceMock.Object,
             directionCoordinationService: this.directionCoordinationServiceMock.Object,

@@ -93,11 +93,19 @@ public class TierDisciplineTests
                 + "belongs in a decorating broker at composition.");
     }
 
+    // Every tier above foundations, named explicitly. A tier missing from this list is a tier
+    // nobody is checking - which is how the loop briefly escaped the rule when it moved from
+    // Coordinations to Managements.
+    private static IEnumerable<Type> ServicesAboveFoundations() =>
+        ServicesUnder("Orchestrations")
+            .Concat(ServicesUnder("Coordinations"))
+            .Concat(ServicesUnder("Managements"));
+
     public static TheoryData<string> ServicesAboveTheFoundationTier()
     {
         var services = new TheoryData<string>();
 
-        foreach (Type service in ServicesUnder("Orchestrations").Concat(ServicesUnder("Coordinations")))
+        foreach (Type service in ServicesAboveFoundations())
         {
             services.Add(service.Name);
         }
@@ -112,9 +120,7 @@ public class TierDisciplineTests
     public void ShouldTakeNoBrokerAboveTheFoundationTierBeyondTheUtilities(string serviceName)
     {
         // given
-        Type service = ServicesUnder("Orchestrations")
-            .Concat(ServicesUnder("Coordinations"))
-            .Single(type => type.Name == serviceName);
+        Type service = ServicesAboveFoundations().Single(type => type.Name == serviceName);
 
         // when
         string[] resourceBrokers =

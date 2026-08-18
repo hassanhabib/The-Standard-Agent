@@ -7,7 +7,7 @@ using System.Linq.Expressions;
 using Moq;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models.Orchestrations.Agents;
-using Standard.Agents.Services.Coordinations;
+using Standard.Agents.Services.Managements;
 using Standard.Agents.Services.Coordinations.Data;
 using Standard.Agents.Services.Coordinations.Decision;
 using Standard.Agents.Services.Coordinations.Direction;
@@ -15,24 +15,24 @@ using Tynamix.ObjectFiller;
 using Xeptions;
 using Xunit;
 
-namespace Standard.Agents.Tests.Unit.Services.Coordinations;
+namespace Standard.Agents.Tests.Unit.Services.Managements;
 
-public partial class AgentCoordinationServiceTests
+public partial class RunManagementServiceTests
 {
     private readonly Mock<IDataCoordinationService> dataCoordinationServiceMock;
     private readonly Mock<IDecisionCoordinationService> decisionCoordinationServiceMock;
     private readonly Mock<IDirectionCoordinationService> directionCoordinationServiceMock;
     private readonly Mock<ILoggingBroker> loggingBrokerMock;
-    private readonly IAgentCoordinationService agentCoordinationService;
+    private readonly IRunManagementService agentCoordinationService;
 
-    public AgentCoordinationServiceTests()
+    public RunManagementServiceTests()
     {
         this.dataCoordinationServiceMock = new Mock<IDataCoordinationService>();
         this.decisionCoordinationServiceMock = new Mock<IDecisionCoordinationService>();
         this.directionCoordinationServiceMock = new Mock<IDirectionCoordinationService>();
         this.loggingBrokerMock = new Mock<ILoggingBroker>();
 
-        this.agentCoordinationService = new AgentCoordinationService(
+        this.agentCoordinationService = new RunManagementService(
             dataCoordinationService: this.dataCoordinationServiceMock.Object,
             decisionCoordinationService: this.decisionCoordinationServiceMock.Object,
             directionCoordinationService: this.directionCoordinationServiceMock.Object,

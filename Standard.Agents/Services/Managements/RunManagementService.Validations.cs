@@ -5,9 +5,9 @@
 
 using Standard.Agents.Models.Coordinations.Agents.Exceptions;
 
-namespace Standard.Agents.Services.Coordinations;
+namespace Standard.Agents.Services.Managements;
 
-public partial class AgentCoordinationService
+public partial class RunManagementService
 {
     private static void ValidatePrompt(string prompt)
     {
