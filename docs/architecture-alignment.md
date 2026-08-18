@@ -134,16 +134,30 @@ vectors gate every one.
 | 2 | `PolicyService` foundation | B |
 | 3 | `ApprovalService` foundation | B |
 | 4 | `EffectLedgerService` foundation | B |
-| 5 | `RedactionService` foundation; redact/rehydrate moves out of Brain, Gate, Judge | D |
+| 5 | Redaction becomes a decorating broker; Brain, Gate and Judge drop it | D |
 | 6 | Resilience becomes a decorating broker; `BrainService` drops it | D |
 | 7 | Un-nest audit and time from `LoggingBroker` | A |
 | 8 | Six orchestration services, one per region | 2–3 rule |
 | 9 | Three coordination services, one per nature | 2–3 rule |
 | 10 | `AgentCoordinationService` → `RunManagementService` | naming |
-| 11 | SPEC.md §4.2/§4.3 state the placement rule; README and diagram swap | the record |
+| 11 | README states the placement rule; diagram swap | the record |
 
 Steps 1–7 are independent and can land in any order. 8–10 are sequential. Step 11 lands last,
 because the README should describe what ships rather than what is planned.
+
+**Step 5 landed as the dissent, not as the plan.** It is written above as a foundation because
+that is what was decided at §3; the dissent recorded there won on the way in. A `RedactionService`
+would have made "every model call is redacted" a thing three services each had to remember, and
+the rule the program exists to enforce — nothing above the foundation tier takes a broker — would
+then have needed an exception for the one service that redacts. `RedactingGeneratorBroker` and its
+siblings make it true by construction instead, and the four redaction tests moved *up* to
+acceptance level to follow the failure: it is no longer "a service forgot to redact" but "a broker
+was left unwrapped." That is why the count is thirteen foundations and not fourteen.
+
+**Shipped in `1.2.0.0`.** All eleven steps landed; 432 tests, 30 vectors, all four profiles
+certified, zero warnings. `TierDisciplineTests` is the part that outlives the program: the four
+violations are closed, and the next one fails the build rather than waiting for someone to read
+the constructors.
 
 **No public API change.** `docs/support.md` already states that service classes and their
 constructors are not a public contract, and the builder surface is untouched. This is `1.2.0.0` —

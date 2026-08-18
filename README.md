@@ -194,31 +194,65 @@ promise of the broker seam.
 
 ## The 1·3·9
 
-![The Standard for Agents — architecture: Agent Builder → Coordination → the three Orchestrations (Data, Decision, Direction) → nine Foundation services → their eight nature Brokers, with ten support brokers beneath](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-architecture.png)
+![The Standard for Agents — architecture: StandardAgent → RunManagement → the three nature Coordinations (Data, Decision, Direction) → six Orchestration regions → thirteen Foundation services → their twelve nature Brokers, with three utility and two decorating brokers beneath](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-architecture.png)
 
 <sub>The diagram is generated from
 [`assets/the-standard-agent-architecture.svg`](https://github.com/hassanhabib/The-Standard-Agent/blob/main/assets/the-standard-agent-architecture.svg)
 — edit the SVG, re-render the PNG.</sub>
 
+**The 1·3·9 is the agent.** One loop, three natures, nine foundations — and it is all you need to
+build one:
+
 | Tier | Count | Members |
 |---|---|---|
-| **Coordination** | 1 | `AgentCoordinationService` — the only loop: Recall → Think → Act |
-| **Orchestration** | 3 | Data · Decision · Direction |
-| **Foundation** | 9 | Skills, Memory, Knowledge / Gate, Brain, Judge / Internal, External, Return |
-| **Broker** | 8+10 | one liaison per resource, plus ten support brokers |
+| **Management** | 1 | `RunManagementService` — the only loop: Recall → Think → Act |
+| **Coordination** | 3 | Data · Decision · Direction — the three natures |
+| **Foundation** | 9 | Skill, Knowledge, Memory / Brain, Gate, Judge / InternalTool, ExternalTool, Return |
+| **Broker** | 8 | one liaison per resource |
 
 Nine foundations, eight nature brokers: `ReturnService` has no broker. It is the dead end — the
 terminal Direction hands the result back and touches nothing.
 
-The ten support brokers — logging, time, file, audit, redaction, policy, approval, effect ledger,
-session, resilience — serve a foundation without backing one, and are reached from every tier.
-**The 1·3·9 is unchanged**, and that is the point: every
-enterprise capability arrived through a broker or an opt-in method with a default. Two that most
-obviously "wanted" a new tier did not get one — the effect envelope is a model spread across four
-existing seams, and telemetry is the audit broker with a different sink. Both would have been
-easier as new services. Both would have cost the mark.
+### The 1·3·6·13
 
-Flow is forward only. A tier never calls the tier above it.
+Turn on the enterprise capabilities and four more foundations appear — `Session`, `Policy`,
+`Approval`, `EffectLedger` — because each is a distinct resource with its own failures, and a
+resource reached without a foundation has no validation, no exception mapping, and its failures get
+blamed on the caller. That put six foundations under Direction alone, which breaks the 2–3 rule and
+says the nature is holding two concepts, not one. So each nature splits into two **regions**, and
+the natures become coordinations over them:
+
+| Tier | Count | Members |
+|---|---|---|
+| **Management** | 1 | `RunManagementService` |
+| **Coordination** | 3 | Data · Decision · Direction |
+| **Orchestration** | 6 | Retrieval, Recollection / Inference, Guardian / Perimeter, Execution |
+| **Foundation** | 13 | the nine, plus Session, Policy, Approval, EffectLedger |
+| **Broker** | 12 + 5 | twelve nature brokers, three utility, two decorating |
+
+The regions are named for concepts, not for what they contain: **Retrieval** is what was authored
+and ranked, **Recollection** is what accumulated; **Perimeter** asks *may this happen*, **Execution**
+does it. Drop the four optional foundations and every nature is back to three — the regions and the
+coordination tier collapse, and you are looking at the 1·3·9 again. The full shape is the same
+picture at a second magnification, which is the only reason it is allowed to exist.
+
+**Placement, stated as a rule** (and enforced by
+[`TierDisciplineTests`](https://github.com/hassanhabib/The-Standard-Agent/blob/main/Standard.Agents.Tests.Unit/Architecture/TierDisciplineTests.cs),
+not by convention):
+
+- A **foundation wraps exactly one nature broker.** The role may be versioned —
+  `IGeneratorBrokerV1` is the same seam as `IGeneratorBroker` under a newer contract — but it is
+  one role. A second broker in a foundation is a capability that wants its own foundation.
+- **Nothing above the foundation tier takes a broker at all**, beyond the three utilities.
+- **Utility brokers** — logging, time, audit — are held by any tier. None of them can change what
+  the agent decides, which is exactly why they are exempt.
+- **Decorating brokers** — redaction, resilience — are wrapped around another broker at
+  composition. No service holds them, so "every model call is redacted" is true by construction
+  rather than by nine services each remembering to do it.
+- Support brokers are **not counted against the 1·3·9.** They serve a foundation without backing
+  one.
+
+Flow is forward only. A tier never calls the tier above it, and no foundation calls a sibling.
 
 ## Governance
 
@@ -246,7 +280,10 @@ Standard.Agents/                  the library
   |-- Models/Orchestrations/Agents          AgentContext, AgentStatus, ToolExchange
   |-- Models/Orchestrations/Effects         AgentEffect, AgentPrincipal, CompensationOutcome
   |-- Models/Brokers/Generators/V1          the native tool-calling contract
-  |-- Services/{Foundations,Orchestrations,Coordinations}
+  |-- Services/Foundations/{Entity}s          thirteen, one broker each
+  |-- Services/Orchestrations/{Nature}/...    six regions, grouped by nature
+  |-- Services/Coordinations/{Nature}         Data, Decision, Direction
+  |-- Services/Managements                    RunManagementService — the loop
   |-- Tools/                                ITool, AgentTool — the fractal bridge
 Standard.Agents.Tests.Unit/       unit tests, mirroring the service tree
 Standard.Agents.Conformance/      the vector runner

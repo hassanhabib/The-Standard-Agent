@@ -20,6 +20,25 @@
     <!-- The Standard's release format is v1.2.3.4 — model . service/routine . fix/config
          . automated build. Deliberately NOT semver; the segments say what KIND of change
          happened, so a model change can never hide in the service segment.
+         1.2.0.0: the architecture put back on The Standard. Auditing the diagram against the
+         code found five brokers in tiers where a broker is not allowed - all of them added by
+         the enterprise program, none of them caught, because nothing was checking. The cost was
+         not stylistic: a tier that calls a broker directly skips the foundation that would have
+         given it validation and exception mapping, so a full disk in the effect ledger surfaced
+         as a raw IOException blamed on Direction. Policy, Approval, EffectLedger and Session are
+         now foundations of their own; redaction and resilience became DECORATING brokers, wrapped
+         around another broker at composition, which makes "every model call is redacted" true by
+         construction rather than by each service remembering. That left six foundations under
+         Direction, which breaks the 2-3 rule and means the nature was holding two concepts - so
+         each nature splits into two concept-named regions (Retrieval/Recollection,
+         Inference/Guardian, Perimeter/Execution) with a coordination over them, and the loop
+         moved up to RunManagementService. TierDisciplineTests now enforces all of it, so the
+         next erosion fails the build instead of waiting for an audit. The 1-3-9 is untouched:
+         the four new foundations are OPTIONAL capabilities, so drop them and the regions and the
+         coordination tier collapse back to it - the full shape is 1-3-6-13, the same picture at a
+         second magnification. Entirely internal: the client contract, every model and every
+         conformance vector are unchanged, so this is a service/routine change: segment 2
+         advances, 3/4 reset.
          1.1.0.0: two defects found by auditing 1.0 against its own claims, and the documentation
          brought up to what shipped. Identity now reaches the AUTHORIZATION decision and not only
          the record of it: AgentEffect.For was called with principal: null, hardcoded, while the
@@ -115,7 +134,7 @@
          3/4 reset. Still tracks SPEC.md v0.1 (draft): segment 1 goes to 1 when the spec settles.
          (0.8.0.0: memory and knowledge came alive — knowledge retrieval in Recall + a built-in
          'remember' tool.) -->
-    <Version>1.1.0.0</Version>
+    <Version>1.2.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>
@@ -124,8 +143,8 @@
 
     <Description>
       The C# reference implementation of The Standard for Agents.
-      Agent = Orchestration(Data, Decision, Direction) — a four-tier agent framework
-      (Coordination, Orchestration, Foundation, Broker) built to a normative,
+      Agent = Orchestration(Data, Decision, Direction) — a tiered agent framework
+      (Management, Coordination, Orchestration, Foundation, Broker) built to a normative,
       language-neutral specification and certified against its conformance vectors.
       No DI container required; the composition root is hand-wired and readable.
     </Description>
