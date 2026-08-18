@@ -20,6 +20,29 @@
     <!-- The Standard's release format is v1.2.3.4 — model . service/routine . fix/config
          . automated build. Deliberately NOT semver; the segments say what KIND of change
          happened, so a model change can never hide in the service segment.
+         1.4.0.0: the last deviation closed. DirectionCoordinationService held Decision's Gate to
+         screen tool output - a coordination reaching a foundation two tiers below it, and a
+         foundation belonging to a different nature. It satisfied every rule already written:
+         three dependencies, so the 2-3 test passed, and no broker, so the broker test passed.
+         Nothing about the count was wrong. What was wrong was the DIRECTION of the reach, and no
+         test of counts or brokers was ever going to see it - which is the argument for writing
+         adjacency down as a rule of its own rather than treating it as something the count
+         implies. ShouldDependOnlyOnTheTierDirectlyBelowIt was written first and watched failing
+         on exactly [IGateService] before anything moved.
+         Screening is now the loop's: RunManagementService records how many observations exist
+         before Direction acts and screens what Direction added before the next turn can read it,
+         asking Decision for the verdict because Decision owns the guardians. Direction performs
+         the act, Decision judges the text, and neither knows the other exists. It reads better
+         there than it did in Direction - what may enter the context between turns is the loop's
+         question, and the loop is the only place that sees both natures.
+         Behaviour is unchanged: a refusal still replaces the observation rather than appending
+         beside it, and still answers the stranded tool call so no provider sees a call without a
+         matching tool message. The acceptance test covering it was sabotage-verified AFTER the
+         move rather than before - refusal detection disabled, the test watched failing - because
+         a move is exactly when a control can stop working while every test still passes.
+         Internal only: the builder surface, every model and every vector are untouched, and
+         .ScreenToolOutput() means what it always did. A service/routine change, so segment 2
+         advances, 3/4 reset. No deviations remain and the diagram says so without an asterisk.
          1.3.0.0: budgets work on every protocol, and the architecture stopped lying about why.
          TierDisciplineTests enforced that no broker sits above the foundation tier and said
          nothing about counts - so the 2-3 rule, the rule the whole 1.2 realignment was carried
@@ -163,7 +186,7 @@
          3/4 reset. Still tracks SPEC.md v0.1 (draft): segment 1 goes to 1 when the spec settles.
          (0.8.0.0: memory and knowledge came alive — knowledge retrieval in Recall + a built-in
          'remember' tool.) -->
-    <Version>1.3.0.0</Version>
+    <Version>1.4.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>

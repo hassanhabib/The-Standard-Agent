@@ -149,6 +149,54 @@ public class TierDisciplineTests
                 + "fewer and it composes nothing and is a layer for its own sake.");
     }
 
+    // The other half of the same rule: two or three of the tier DIRECTLY below. Management over
+    // coordinations, coordination over orchestrations, orchestration over foundations.
+    //
+    // Reaching further down is not a lesser version of the same mistake, it is a different one.
+    // A count can be satisfied by anything; adjacency is what keeps a nature's foundations
+    // reachable only through that nature. DirectionCoordinationService held Decision's Gate for
+    // .ScreenToolOutput() and satisfied every other rule here while doing it — three
+    // dependencies, no broker — which is why this one had to be written down separately.
+    private static readonly Dictionary<string, string> tierBelow = new()
+    {
+        ["Managements"] = "Coordinations",
+        ["Coordinations"] = "Orchestrations",
+        ["Orchestrations"] = "Foundations"
+    };
+
+    [Theory]
+    [MemberData(nameof(ServicesAboveTheFoundationTier))]
+    public void ShouldDependOnlyOnTheTierDirectlyBelowIt(string serviceName)
+    {
+        // given
+        Type service = ServicesAboveFoundations().Single(type => type.Name == serviceName);
+
+        string tier = tierBelow.Keys.Single(name =>
+            service.Namespace!.Contains($".Services.{name}", StringComparison.Ordinal));
+
+        string permitted = $".Services.{tierBelow[tier]}";
+
+        // when
+        string[] reachedPastIt =
+            [.. service.GetConstructors()
+                .SelectMany(constructor => constructor.GetParameters())
+                .Select(parameter => Nullable.GetUnderlyingType(parameter.ParameterType)
+                    ?? parameter.ParameterType)
+                .Where(IsADependency)
+                .Where(dependency =>
+                    dependency.Namespace!.Contains(permitted, StringComparison.Ordinal) is false)
+                .Select(dependency => dependency.Name)
+                .Distinct()];
+
+        // then
+        reachedPastIt.Should().BeEmpty(
+            because: $"{serviceName} is a {tier[..^1]} service, so it composes "
+                + $"{tierBelow[tier]} and nothing else — it takes "
+                + $"[{string.Join(", ", reachedPastIt)}]. A service that reaches past the tier "
+                + "below it borrows another nature's internals, and no test of counts or brokers "
+                + "will ever see it.");
+    }
+
     // A dependency for counting purposes is another SERVICE — the thing the tier below supplies.
     // Options, delegates and primitives are configuration rather than collaborators, and utility
     // brokers are exempt everywhere.

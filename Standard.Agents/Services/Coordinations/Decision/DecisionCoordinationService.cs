@@ -57,6 +57,12 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
         this.loggingBroker = loggingBroker;
     }
 
+    // The loop screens what a tool returned before it can become an observation. It asks here
+    // because the Gate is Decision's foundation, and an instruction arriving inside data is the
+    // same category of thing as an instruction arriving in a prompt.
+    public ValueTask<string> ScreenAsync(string text) =>
+        this.guardianService.ScreenAsync(text);
+
     public ValueTask<AgentContext> ThinkAsync(AgentContext context) =>
     TryCatch(async () =>
     {

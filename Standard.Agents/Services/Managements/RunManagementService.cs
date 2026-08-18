@@ -31,6 +31,10 @@ public partial class RunManagementService : IRunManagementService
     private readonly ILoggingBroker loggingBroker;
     private readonly ITimeBroker timeBroker;
     private readonly AgentBudget? budget;
+
+    // What may enter the context between turns is the loop's question. Direction used to answer
+    // it by holding Decision's Gate; now the loop asks Decision, which owns it.
+    private readonly bool screenToolOutput;
     private readonly int maxHistoryTurns;
     private readonly int maxTurns;
     private readonly bool compensateOnFailure;
@@ -44,7 +48,8 @@ public partial class RunManagementService : IRunManagementService
         ITimeBroker? timeBroker = null,
         AgentBudget? budget = null,
         int maxHistoryTurns = 20,
-        bool compensateOnFailure = false)
+        bool compensateOnFailure = false,
+        bool screenToolOutput = false)
     {
         this.compensateOnFailure = compensateOnFailure;
         this.dataCoordinationService = dataCoordinationService;
@@ -55,6 +60,7 @@ public partial class RunManagementService : IRunManagementService
         this.timeBroker = timeBroker ?? new TimeBroker();
         this.budget = budget;
         this.maxHistoryTurns = maxHistoryTurns;
+        this.screenToolOutput = screenToolOutput;
     }
 
     public ValueTask<string> ProcessPromptAsync(string prompt) =>
@@ -130,7 +136,11 @@ public partial class RunManagementService : IRunManagementService
                 }
 
                 await this.loggingBroker.LogStepAsync(AgentStep.Direction);
+
+                int observedBefore = context.Observations.Count;
+
                 context = await this.directionCoordinationService.ActAsync(context);
+                context = await ScreenedAsync(context, observedBefore);
 
                 await this.loggingBroker.LogOutcomeAsync($"turn {turn}: {context.Status}");
 

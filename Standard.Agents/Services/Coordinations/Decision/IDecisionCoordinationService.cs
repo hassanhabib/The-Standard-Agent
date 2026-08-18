@@ -14,4 +14,11 @@ public interface IDecisionCoordinationService
     IDecisionStream ThinkStreamAsync(
         AgentContext context,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Screens a piece of untrusted text and returns the Gate's verdict. Decision owns the
+    /// guardians, so anything that needs screening asks Decision for it rather than reaching
+    /// into Decision's foundations — which is what Direction used to do.
+    /// </summary>
+    ValueTask<string> ScreenAsync(string text);
 }
