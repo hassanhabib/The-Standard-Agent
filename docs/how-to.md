@@ -840,8 +840,28 @@ run-once, which is the whole reason the two features have to ship together.
 
 Checked at the turn boundary — the smallest unit the loop can stop between without leaving an
 effect half-recorded. Exhaustion is reported *distinguishably*: a caller who cannot tell "I will
-not" from "I ran out" cannot decide whether to retry. And budgets bound **reported** usage, not an
-estimate; a provider that reports nothing contributes zero rather than a guess.
+not" from "I ran out" cannot decide whether to retry.
+
+**Every protocol is bounded.** The provider's own report is used wherever there is one — it is
+what the invoice is drawn from — and where there is none the tokens are counted locally. That
+fallback covers the text protocol batched, the text protocol streamed, and any V1 endpoint that
+omits its usage object. Before this, a run whose provider reported nothing contributed **zero**
+every turn, so the budget it was given did nothing at all and said nothing about it.
+
+**Counting is always on; blocking is not.** An agent given no budget is wide open — it is measured
+and never stopped. `.Budget(...)` is the only thing that turns a measurement into a limit.
+
+**Choosing the counter, with `.Usage(...)`.** The in-box counter is an estimate and marks itself as
+one, which is enough to enforce a bound and not enough to reconcile against a bill:
+
+```csharp
+.Usage(charactersPerToken: 4.0)        // Local    — the counter in the box; lower it for code
+.UseUsage(new TiktokenUsageBroker())   // External — a provider's own tokenizer, exact
+.OnUsage(async text => await Count(text))  // Custom — your own counter
+```
+
+Whether a number was reported or counted travels with it, so a trace or an audit never presents an
+estimate as a measurement.
 
 **Cancellation.** Pass a token to `ProcessPromptAsync` and the run stops at the next turn boundary.
 A cancelled run is never reported as an answer and never written to the conversation.

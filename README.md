@@ -99,7 +99,7 @@ var agent = new StandardAgent(url, key, "LLooMA2.0")
     .EffectLedger("ledger")                    // run once, even across a crash
     .ScreenToolOutput()                        // tool results are untrusted input
     .Sessions("sessions")                      // conversation that survives the process
-    .Budget(maxCostUsd: 0.25m)                 // bound what one prompt may spend
+    .Budget(maxCostUsd: 0.25m)                 // bound what one prompt may spend — any protocol
     .Resilience(retries: 3)                    // survive a blip without paying twice
     .CompensateOnFailure();                    // unwind a run that died halfway
 ```
@@ -122,7 +122,7 @@ Every capability answers **Local**, **External** and **Custom**, and the verbs s
 .OnKnowledge(async query => await MyStore(query)) // Custom — your own code, inline
 ```
 
-Fifteen capabilities, the same three verbs each. A capability offered fewer ways than that fails the
+Sixteen capabilities, the same three verbs each. A capability offered fewer ways than that fails the
 build — it is a test, not a convention, because the erosion is otherwise invisible until there are
 six of them.
 
@@ -190,65 +190,76 @@ promise of the broker seam.
 
 ## The 1·3·9
 
-![The Standard for Agents — architecture: StandardAgent → RunManagement → the three nature Coordinations (Data, Decision, Direction) → six Orchestration regions → thirteen Foundation services → their twelve nature Brokers, with three utility and two decorating brokers beneath](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-architecture.png)
+![The Standard for Agents — architecture: StandardAgent → RunManagement → the three nature Coordinations (Data, Decision, Direction) → six Orchestration regions → fourteen Foundation services → their thirteen nature Brokers, with three utility and two decorating brokers beneath](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-architecture.png)
 
 *The diagram is generated from
 [`assets/the-standard-agent-architecture.svg`](https://github.com/hassanhabib/The-Standard-Agent/blob/main/assets/the-standard-agent-architecture.svg)
 — edit the SVG, re-render the PNG.*
 
-**The 1·3·9 is the agent.** One loop, three natures, nine foundations — and it is all you need to
-build one:
+**The 1·3·9 is the shape of an agent.** One loop, three natures, and beneath them the foundations —
+the nine that have been there since the beginning:
+
+| | |
+|---|---|
+| **Data** | Skill, Knowledge, Memory |
+| **Decision** | Brain, Gate, Judge |
+| **Direction** | InternalTool, ExternalTool, Return |
+
+`ReturnService` has no broker. It is the dead end — the terminal Direction hands the result back
+and touches nothing.
+
+### The 1·3·6·14
+
+Fourteen is what actually ships. Five foundations joined the nine, and the reason each one had to
+be a foundation is the same: it is a distinct resource with its own failures, and **a resource
+reached without a foundation has no validation, no exception mapping, and its failures get blamed
+on the caller.**
 
 | Tier | Count | Members |
 |---|---|---|
 | **Management** | 1 | `RunManagementService` — the only loop: Recall → Think → Act |
 | **Coordination** | 3 | Data · Decision · Direction — the three natures |
-| **Foundation** | 9 | Skill, Knowledge, Memory / Brain, Gate, Judge / InternalTool, ExternalTool, Return |
-| **Broker** | 8 | one liaison per resource |
-
-Nine foundations, eight nature brokers: `ReturnService` has no broker. It is the dead end — the
-terminal Direction hands the result back and touches nothing.
-
-### The 1·3·6·13
-
-Turn on the enterprise capabilities and four more foundations appear — `Session`, `Policy`,
-`Approval`, `EffectLedger` — because each is a distinct resource with its own failures, and a
-resource reached without a foundation has no validation, no exception mapping, and its failures get
-blamed on the caller. That put six foundations under Direction alone, which breaks the 2–3 rule and
-says the nature is holding two concepts, not one. So each nature splits into two **regions**, and
-the natures become coordinations over them:
-
-| Tier | Count | Members |
-|---|---|---|
-| **Management** | 1 | `RunManagementService` |
-| **Coordination** | 3 | Data · Decision · Direction |
 | **Orchestration** | 6 | Retrieval, Recollection / Inference, Guardian / Perimeter, Execution |
-| **Foundation** | 13 | the nine, plus Session, Policy, Approval, EffectLedger |
-| **Broker** | 12 + 5 | twelve nature brokers, three utility, two decorating |
+| **Foundation** | 14 | the nine, plus **Usage**, and Session, Policy, Approval, EffectLedger |
+| **Broker** | 13 + 5 | thirteen nature brokers, three utility, two decorating |
 
-The regions are named for concepts, not for what they contain: **Retrieval** is what was authored
-and ranked, **Recollection** is what accumulated; **Perimeter** asks *may this happen*, **Execution**
-does it. Drop the four optional foundations and every nature is back to three — the regions and the
-coordination tier collapse, and you are looking at the 1·3·9 again. The full shape is the same
-picture at a second magnification, which is the only reason it is allowed to exist.
+**Ten of the fourteen are always there** — the agent proper, the nine plus `Usage`. The other four
+arrive with the enterprise capabilities; leave them off and it is the same shape with less in it.
 
-**Placement, stated as a rule** (and enforced by
-[`TierDisciplineTests`](https://github.com/hassanhabib/The-Standard-Agent/blob/main/Standard.Agents.Tests.Unit/Architecture/TierDisciplineTests.cs),
-not by convention):
+Six foundations under Direction alone breaks the 2–3 rule, and a nature holding six is a nature
+holding two concepts. So each nature splits into two **regions**, named for concepts rather than
+contents: **Retrieval** is what was authored and ranked, **Recollection** is what accumulated;
+**Inference** asks the model and reads its answer, **Guardian** is the conscience on either side of
+it; **Perimeter** asks *may this happen*, **Execution** does it.
+
+`Usage` is why Decision has two regions rather than one. Measuring what a model call cost is the
+same concept as making it — and without it, `.Budget()` could only bound a run whose provider
+volunteered its own numbers, which is to say not the text protocol at all.
+
+**Every tier holds two or three of the tier directly below it.** Management over coordinations,
+coordination over orchestrations, orchestration over foundations, foundation over exactly one
+broker. Both bounds cost something when broken: more than three means the service is doing too
+much; **fewer than two means it composes nothing and is a layer for its own sake.**
+
+The rest of the placement rule, all of it enforced by
+[`TierDisciplineTests`](https://github.com/hassanhabib/The-Standard-Agent/blob/main/Standard.Agents.Tests.Unit/Architecture/TierDisciplineTests.cs)
+rather than by convention:
 
 - A **foundation wraps exactly one nature broker.** The role may be versioned —
   `IGeneratorBrokerV1` is the same seam as `IGeneratorBroker` under a newer contract — but it is
   one role. A second broker in a foundation is a capability that wants its own foundation.
 - **Nothing above the foundation tier takes a broker at all**, beyond the three utilities.
 - **Utility brokers** — logging, time, audit — are held by any tier. None of them can change what
-  the agent decides, which is exactly why they are exempt.
+  the agent decides *or does*, which is exactly why they are exempt from the count. Usage is not
+  one of them: a budget stops a run.
 - **Decorating brokers** — redaction, resilience — are wrapped around another broker at
-  composition. No service holds them, so "every model call is redacted" is true by construction
-  rather than by nine services each remembering to do it.
-- Support brokers are **not counted against the 1·3·9.** They serve a foundation without backing
-  one.
+  composition, so no service holds them.
 
 Flow is forward only. A tier never calls the tier above it, and no foundation calls a sibling.
+**One known deviation:** `DirectionCoordinationService` still holds the Gate for
+`.ScreenToolOutput()`, reaching a foundation that belongs to Decision. It is named here rather than
+quietly permitted, and tracked in
+[`docs/architecture-alignment.md`](https://github.com/hassanhabib/The-Standard-Agent/blob/main/docs/architecture-alignment.md).
 
 ## Governance
 
@@ -296,7 +307,7 @@ docs/generator-contracts.md       text protocol vs native tool calls
 Agent behavior involves an LLM and is non-deterministic, so it cannot be asserted directly.
 [`conformance/`](https://github.com/hassanhabib/The-Standard-Agent/blob/main/conformance/CONFORMANCE.md) instead pins the **deterministic** contracts — the
 loop, reply interpretation, tool routing, and the feed-back of results into Data — by scripting
-the Brain. Every double replaces a **broker**, never a service: the whole 1·3·9 under test is the
+the Brain. Every double replaces a **broker**, never a service: the whole 1·3·6·14 under test is the
 real library.
 
 ```bash
