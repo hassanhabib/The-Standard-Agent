@@ -6,7 +6,7 @@
 using Standard.Agents.Models.Brokers.Generators.V1;
 using Standard.Agents.Models.Orchestrations.Agents;
 
-namespace Standard.Agents.Services.Orchestrations.Decision;
+namespace Standard.Agents.Services.Orchestrations.Decision.Inferences;
 
 // Native tool calling (SPEC.md §6, "via a provider-native tool-call mechanism"). When a V1 brain
 // is configured, the model's choice arrives as structured data rather than as the first line of
@@ -16,7 +16,7 @@ namespace Standard.Agents.Services.Orchestrations.Decision;
 //
 // Which is the point of putting the seam here: adopting native calls changes how a choice is
 // read, not what the agent is.
-public partial class DecisionOrchestrationService
+public partial class InferenceOrchestrationService
 {
     private async ValueTask<AgentContext> ThinkNativelyAsync(AgentContext context)
     {

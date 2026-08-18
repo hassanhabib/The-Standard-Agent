@@ -7,12 +7,14 @@ using FluentAssertions;
 using Moq;
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Orchestrations.Agents;
-using Standard.Agents.Services.Orchestrations.Decision;
+using Standard.Agents.Services.Coordinations.Decision;
+using Standard.Agents.Services.Orchestrations.Decision.Guardians;
+using Standard.Agents.Services.Orchestrations.Decision.Inferences;
 using Xunit;
 
-namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Decision;
+namespace Standard.Agents.Tests.Unit.Services.Coordinations.DecisionNature;
 
-public partial class DecisionOrchestrationServiceTests
+public partial class DecisionCoordinationServiceTests
 {
     [Fact]
     public async Task ShouldStreamAnswerDraftAsThinkingOnThinkStreamAsync()
@@ -29,7 +31,7 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         IDecisionStream decisionStream =
-            this.decisionOrchestrationService.ThinkStreamAsync(inputContext);
+            this.decisionCoordinationService.ThinkStreamAsync(inputContext);
 
         List<AgentStreamEvent> actualEvents = await DrainAsync(decisionStream);
 
@@ -61,7 +63,7 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         IDecisionStream decisionStream =
-            this.decisionOrchestrationService.ThinkStreamAsync(inputContext);
+            this.decisionCoordinationService.ThinkStreamAsync(inputContext);
 
         List<AgentStreamEvent> actualEvents = await DrainAsync(decisionStream);
 
@@ -95,7 +97,7 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         IDecisionStream decisionStream =
-            this.decisionOrchestrationService.ThinkStreamAsync(inputContext);
+            this.decisionCoordinationService.ThinkStreamAsync(inputContext);
 
         List<AgentStreamEvent> actualEvents = await DrainAsync(decisionStream);
 
@@ -121,7 +123,7 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         IDecisionStream decisionStream =
-            this.decisionOrchestrationService.ThinkStreamAsync(inputContext);
+            this.decisionCoordinationService.ThinkStreamAsync(inputContext);
 
         List<AgentStreamEvent> actualEvents = await DrainAsync(decisionStream);
 

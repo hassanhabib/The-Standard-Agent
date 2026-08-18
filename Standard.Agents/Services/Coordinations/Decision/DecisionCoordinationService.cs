@@ -4,26 +4,31 @@
 // ---------------------------------------------------------------
 
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Text.Json;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models.Clients.Agents;
-using Standard.Agents.Models.Brokers.Generators.V1;
-using Standard.Agents.Models.Brokers.Sessions;
 using Standard.Agents.Models.Foundations.Gates;
 using Standard.Agents.Models.Foundations.Judges;
 using Standard.Agents.Models.Orchestrations.Agents;
-using Standard.Agents.Services.Foundations.Brains;
-using Standard.Agents.Services.Foundations.Gates;
-using Standard.Agents.Services.Foundations.Judges;
+using Standard.Agents.Services.Orchestrations.Decision.Guardians;
+using Standard.Agents.Services.Orchestrations.Decision.Inferences;
 
-namespace Standard.Agents.Services.Orchestrations.Decision;
+namespace Standard.Agents.Services.Coordinations.Decision;
 
-public partial class DecisionOrchestrationService : IDecisionOrchestrationService
+// The Decision nature: two regions, and the judgment between them.
+//
+// Inference asks the model and reads its answer; Guardian screens what goes in and scores what
+// comes out. The loop that runs them — screen, resolve a skill conflict, decide, judge, revise —
+// belongs to neither, because every step of it depends on the other region's result.
+public partial class DecisionCoordinationService : IDecisionCoordinationService
 {
+    // A guardian that emits one of these is trying to ANSWER rather than classify. Invariant 6
+    // holds structurally either way - a verdict is only ever read as a classification - but the
+    // attempt is recorded, because it is exactly the event a security review needs to see.
     private const string ActionPrefix = "ACTION:";
     private const string ToolPrefix = "TOOL:";
     private const string FinalPrefix = "FINAL:";
+
     private const string RefuseVerdict = "refuse";
     private const string RouteVerdict = "route";
     private const string RefuseDirection = "Refuse";
@@ -38,24 +43,18 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
 
     private const double MinimumAcceptableScore = 0.3;
 
-    private readonly IGateService gateService;
-    private readonly IBrainService brainService;
-    private readonly IJudgeService judgeService;
+    private readonly IInferenceOrchestrationService inferenceService;
+    private readonly IGuardianOrchestrationService guardianService;
     private readonly ILoggingBroker loggingBroker;
-    private readonly IReadOnlyList<ToolDefinition> toolDefinitions;
 
-    public DecisionOrchestrationService(
-        IGateService gateService,
-        IBrainService brainService,
-        IJudgeService judgeService,
-        ILoggingBroker loggingBroker,
-        IReadOnlyList<ToolDefinition>? toolDefinitions = null)
+    public DecisionCoordinationService(
+        IInferenceOrchestrationService inferenceService,
+        IGuardianOrchestrationService guardianService,
+        ILoggingBroker loggingBroker)
     {
-        this.gateService = gateService;
-        this.brainService = brainService;
-        this.judgeService = judgeService;
+        this.inferenceService = inferenceService;
+        this.guardianService = guardianService;
         this.loggingBroker = loggingBroker;
-        this.toolDefinitions = toolDefinitions ?? [];
     }
 
     public ValueTask<AgentContext> ThinkAsync(AgentContext context) =>
@@ -63,7 +62,7 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
     {
         ValidateContext(context);
 
-        string verdict = await ScreenOncePerPromptAsync(context.Prompt);
+        string verdict = await this.guardianService.ScreenAsync(context.Prompt);
 
         if (IsRefusal(verdict))
         {
@@ -96,13 +95,7 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
 
         context = resolvedContext;
 
-        AgentContext decided = this.brainService.SpeaksNatively
-            ? await ThinkNativelyAsync(context)
-            : Interpret(
-                context,
-                (await this.brainService.GenerateAsync(
-                    systemPrompt: context.SystemPrompt,
-                    userPrompt: BuildUserMessage(context))).Trim());
+        AgentContext decided = await this.inferenceService.DecideAsync(context);
 
         bool isFinalAnswer =
             decided.DirectionType.Equals(
@@ -122,7 +115,7 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
         }
 
         Judgement judgement =
-            await this.judgeService.EvaluateAsync(task: context.Prompt, candidate: decided.Payload);
+            await this.guardianService.EvaluateAsync(task: context.Prompt, candidate: decided.Payload);
 
         if (judgement.Score < MinimumAcceptableScore)
         {
@@ -158,7 +151,7 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
         Action<AgentContext> setResult,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        string verdict = await ScreenOncePerPromptAsync(context.Prompt);
+        string verdict = await this.guardianService.ScreenAsync(context.Prompt);
 
         if (IsRefusal(verdict))
         {
@@ -213,45 +206,18 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
 
         context = resolvedContext;
 
-        var classifier = new ReplyStreamClassifier();
-        var reply = new StringBuilder();
-        string userMessage = BuildUserMessage(context);
+        AgentContext decided = context;
 
-        IAsyncEnumerable<string> tokens = this.brainService.GenerateStreamAsync(
-            systemPrompt: context.SystemPrompt,
-            userPrompt: userMessage,
-            cancellationToken: cancellationToken);
+        IAsyncEnumerable<AgentStreamEvent> drafting =
+            this.inferenceService.DecideStreamAsync(
+                context,
+                setDecided: interpreted => decided = interpreted,
+                cancellationToken: cancellationToken);
 
-        await foreach (string delta in tokens.WithCancellation(cancellationToken))
+        await foreach (AgentStreamEvent segment in drafting.WithCancellation(cancellationToken))
         {
-            reply.Append(delta);
-
-            foreach (AgentStreamEvent segment in classifier.Classify(delta))
-            {
-                yield return AsUnsettledDraft(segment);
-            }
+            yield return segment;
         }
-
-        foreach (AgentStreamEvent segment in classifier.Flush())
-        {
-            yield return AsUnsettledDraft(segment);
-        }
-
-        AgentContext decided = Interpret(context, reply.ToString().Trim());
-
-        await this.loggingBroker.LogProcessAsync(
-            "Decision", $"Brain replied →{Environment.NewLine}{reply.ToString().Trim()}", detail: true);
-
-        int estimatedTokens =
-            (context.SystemPrompt.Length + userMessage.Length + reply.Length) / 4;
-
-        await this.loggingBroker.LogProcessAsync(
-            "Decision",
-            $"Brain → ~{estimatedTokens} tokens (prompt + reply, estimated)",
-            detail: true);
-
-        await this.loggingBroker.LogProcessAsync(
-            "Decision", $"Interpreted → {decided.DirectionType}");
 
         bool isFinalAnswer = decided.DirectionType.Equals(
             ReturnResponseDirection, StringComparison.OrdinalIgnoreCase);
@@ -273,7 +239,7 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
             yield break;
         }
 
-        Judgement judgement = await this.judgeService.EvaluateAsync(task: context.Prompt, candidate: decided.Payload);
+        Judgement judgement = await this.guardianService.EvaluateAsync(task: context.Prompt, candidate: decided.Payload);
 
         string judgeOutcome = judgement.Score < MinimumAcceptableScore
             ? $"REJECT: {judgement.Reason}".TrimEnd(':', ' ')
@@ -317,7 +283,7 @@ public partial class DecisionOrchestrationService : IDecisionOrchestrationServic
             return (context, false);
         }
 
-        string verdict = await this.gateService.DetectConflictAsync(context.SystemPrompt);
+        string verdict = await this.guardianService.DetectConflictAsync(context.SystemPrompt);
         SkillConflict? conflict = ParseConflict(verdict);
 
         if (conflict is null)
@@ -452,137 +418,4 @@ verdict.TrimStart().StartsWith(RefuseVerdict, StringComparison.OrdinalIgnoreCase
         return label.TrimStart(':', ' ').ReplaceLineEndings(" ").Trim();
     }
 
-    private static string BuildUserMessage(AgentContext context)
-    {
-        StringBuilder userMessage = new();
-
-        // What was said before, oldest first, so a follow-up resolves against it rather than
-        // starting from nothing (SPEC.md §4.11). Absent a session this is empty and the message
-        // is exactly what it always was.
-        if (context.History.Count > 0)
-        {
-            userMessage.AppendLine("Conversation so far:").AppendLine();
-
-            foreach (AgentTurn turn in context.History)
-            {
-                userMessage.Append("User: ").AppendLine(turn.Prompt);
-                userMessage.Append("You: ").AppendLine(turn.Answer);
-            }
-
-            userMessage.AppendLine();
-        }
-
-        userMessage.Append("Task: ").Append(context.Prompt);
-
-        if (context.Observations.Count > 0)
-        {
-            userMessage.AppendLine().AppendLine().AppendLine("Observations so far:");
-
-            foreach (string observation in context.Observations)
-            {
-                userMessage.Append("- ").AppendLine(observation);
-            }
-        }
-
-        return userMessage.ToString();
-    }
-
-    private static AgentContext Interpret(AgentContext context, string reply)
-    {
-        string firstLine = reply.Split('\n')[0].Trim();
-
-        if (firstLine.StartsWith(ToolPrefix, StringComparison.OrdinalIgnoreCase)
-            && TryParseToolCall(firstLine[ToolPrefix.Length..], out string calledTool, out string arguments))
-        {
-            return context with
-            {
-                Intent = calledTool,
-                DirectionType = calledTool,
-                Payload = arguments,
-                RawReply = reply
-            };
-        }
-
-        bool modelChoseToAct =
-            firstLine.StartsWith(ActionPrefix, StringComparison.OrdinalIgnoreCase);
-
-        if (modelChoseToAct)
-        {
-            string[] toolCall =
-                firstLine[ActionPrefix.Length..]
-                .Split(':', 2, StringSplitOptions.TrimEntries);
-
-            string toolName = toolCall[0];
-            string toolInput = toolCall.Length > 1 ? toolCall[1] : string.Empty;
-
-            // A model can emit the "ACTION:" prefix with no tool name behind it (small
-            // models parrot the protocol template). That is not a tool call — fall
-            // through and treat the reply as the answer rather than routing an empty
-            // tool name into Direction, where it would fault.
-            if (string.IsNullOrWhiteSpace(toolName) is false)
-            {
-                return context with
-                {
-                    Intent = toolName,
-                    DirectionType = toolName,
-                    Payload = toolInput,
-                    RawReply = reply
-                };
-            }
-        }
-
-        string answer = reply.StartsWith(FinalPrefix, StringComparison.OrdinalIgnoreCase)
-            ? reply[FinalPrefix.Length..].Trim()
-            : reply;
-
-        return context with
-        {
-            Intent = RespondIntent,
-            DirectionType = ReturnResponseDirection,
-            Payload = answer,
-            RawReply = reply
-        };
-    }
-
-    private static bool TryParseToolCall(string json, out string toolName, out string arguments)
-    {
-        toolName = string.Empty;
-        arguments = string.Empty;
-
-        try
-        {
-            using JsonDocument document = JsonDocument.Parse(json);
-            JsonElement root = document.RootElement;
-
-            if (root.ValueKind is not JsonValueKind.Object)
-            {
-                return false;
-            }
-
-            if (root.TryGetProperty("tool", out JsonElement toolElement) is false
-                || toolElement.ValueKind is not JsonValueKind.String)
-            {
-                return false;
-            }
-
-            string parsedTool = toolElement.GetString() ?? string.Empty;
-
-            if (string.IsNullOrWhiteSpace(parsedTool))
-            {
-                return false;
-            }
-
-            toolName = parsedTool;
-
-            arguments = root.TryGetProperty("arguments", out JsonElement argumentsElement)
-                ? argumentsElement.GetRawText()
-                : "{}";
-
-            return true;
-        }
-        catch (JsonException)
-        {
-            return false;
-        }
-    }
 }

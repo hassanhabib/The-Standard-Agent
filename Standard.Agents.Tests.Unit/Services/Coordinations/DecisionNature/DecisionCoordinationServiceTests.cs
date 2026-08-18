@@ -11,32 +11,39 @@ using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Services.Foundations.Brains;
 using Standard.Agents.Services.Foundations.Gates;
 using Standard.Agents.Services.Foundations.Judges;
-using Standard.Agents.Services.Orchestrations.Decision;
+using Standard.Agents.Services.Coordinations.Decision;
+using Standard.Agents.Services.Orchestrations.Decision.Guardians;
+using Standard.Agents.Services.Orchestrations.Decision.Inferences;
 using Tynamix.ObjectFiller;
 using Xeptions;
 using Xunit;
 
-namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Decision;
+namespace Standard.Agents.Tests.Unit.Services.Coordinations.DecisionNature;
 
-public partial class DecisionOrchestrationServiceTests
+public partial class DecisionCoordinationServiceTests
 {
     private readonly Mock<IGateService> gateServiceMock;
     private readonly Mock<IBrainService> brainServiceMock;
     private readonly Mock<IJudgeService> judgeServiceMock;
     private readonly Mock<ILoggingBroker> loggingBrokerMock;
-    private readonly IDecisionOrchestrationService decisionOrchestrationService;
+    private readonly IDecisionCoordinationService decisionCoordinationService;
 
-    public DecisionOrchestrationServiceTests()
+    public DecisionCoordinationServiceTests()
     {
         this.gateServiceMock = new Mock<IGateService>();
         this.brainServiceMock = new Mock<IBrainService>();
         this.judgeServiceMock = new Mock<IJudgeService>();
         this.loggingBrokerMock = new Mock<ILoggingBroker>();
 
-        this.decisionOrchestrationService = new DecisionOrchestrationService(
-            gateService: this.gateServiceMock.Object,
-            brainService: this.brainServiceMock.Object,
-            judgeService: this.judgeServiceMock.Object,
+        // Real regions over mocked FOUNDATIONS - the mocks sit where they sat before
+        // regionalization, so every assertion below is unchanged.
+        this.decisionCoordinationService = new DecisionCoordinationService(
+            inferenceService: new InferenceOrchestrationService(
+                this.brainServiceMock.Object, this.loggingBrokerMock.Object),
+            guardianService: new GuardianOrchestrationService(
+                this.gateServiceMock.Object,
+                this.judgeServiceMock.Object,
+                this.loggingBrokerMock.Object),
             loggingBroker: this.loggingBrokerMock.Object);
     }
 

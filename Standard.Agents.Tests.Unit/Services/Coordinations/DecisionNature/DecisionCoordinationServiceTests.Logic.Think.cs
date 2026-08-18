@@ -8,9 +8,9 @@ using Moq;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Xunit;
 
-namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Decision;
+namespace Standard.Agents.Tests.Unit.Services.Coordinations.DecisionNature;
 
-public partial class DecisionOrchestrationServiceTests
+public partial class DecisionCoordinationServiceTests
 {
     [Fact]
     public async Task ShouldThinkAsync()
@@ -26,7 +26,7 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.decisionOrchestrationService.ThinkAsync(inputContext);
+            await this.decisionCoordinationService.ThinkAsync(inputContext);
 
         // then
         actualContext.DirectionType.Should().Be("ReturnResponse");
@@ -47,7 +47,7 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.decisionOrchestrationService.ThinkAsync(inputContext);
+            await this.decisionCoordinationService.ThinkAsync(inputContext);
 
         // then
         actualContext.DirectionType.Should().Be("calculator");
@@ -70,7 +70,7 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.decisionOrchestrationService.ThinkAsync(inputContext);
+            await this.decisionCoordinationService.ThinkAsync(inputContext);
 
         // then
         actualContext.DirectionType.Should().Be("ReturnResponse");
@@ -90,7 +90,7 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.decisionOrchestrationService.ThinkAsync(inputContext);
+            await this.decisionCoordinationService.ThinkAsync(inputContext);
 
         // then
         actualContext.DirectionType.Should().Be("fetch");
@@ -110,7 +110,7 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.decisionOrchestrationService.ThinkAsync(inputContext);
+            await this.decisionCoordinationService.ThinkAsync(inputContext);
 
         // then
         actualContext.Intent.Should().Be("calculator");
@@ -130,7 +130,7 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.decisionOrchestrationService.ThinkAsync(inputContext);
+            await this.decisionCoordinationService.ThinkAsync(inputContext);
 
         // then
         actualContext.Intent.Should().Be("Respond");
@@ -150,7 +150,7 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.decisionOrchestrationService.ThinkAsync(inputContext);
+            await this.decisionCoordinationService.ThinkAsync(inputContext);
 
         // then
         actualContext.DirectionType.Should().Be("ReturnResponse");
@@ -174,7 +174,7 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.decisionOrchestrationService.ThinkAsync(inputContext);
+            await this.decisionCoordinationService.ThinkAsync(inputContext);
 
         // then
         actualContext.DirectionType.Should().Be("ReturnResponse");
@@ -202,7 +202,7 @@ public partial class DecisionOrchestrationServiceTests
                 .ReturnsAsync("FINAL: done");
 
         // when
-        await this.decisionOrchestrationService.ThinkAsync(inputContext);
+        await this.decisionCoordinationService.ThinkAsync(inputContext);
 
         // then
         this.brainServiceMock.Verify(service =>
@@ -226,7 +226,7 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.decisionOrchestrationService.ThinkAsync(inputContext);
+            await this.decisionCoordinationService.ThinkAsync(inputContext);
 
         // then
         actualContext.DirectionType.Should().Be("calculator");
@@ -248,7 +248,7 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.decisionOrchestrationService.ThinkAsync(inputContext);
+            await this.decisionCoordinationService.ThinkAsync(inputContext);
 
         // then
         actualContext.DirectionType.Should().Be("ReturnResponse");
@@ -267,7 +267,7 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         AgentContext actualContext =
-            await this.decisionOrchestrationService.ThinkAsync(inputContext);
+            await this.decisionCoordinationService.ThinkAsync(inputContext);
 
         // then
         actualContext.DirectionType.Should().Be("ReturnResponse");

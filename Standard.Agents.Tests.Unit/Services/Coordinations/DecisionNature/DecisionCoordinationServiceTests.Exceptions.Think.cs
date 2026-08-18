@@ -10,9 +10,9 @@ using Standard.Agents.Models.Orchestrations.Agents.Exceptions;
 using Xeptions;
 using Xunit;
 
-namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Decision;
+namespace Standard.Agents.Tests.Unit.Services.Coordinations.DecisionNature;
 
-public partial class DecisionOrchestrationServiceTests
+public partial class DecisionCoordinationServiceTests
 {
     [Fact]
     public async Task ShouldThrowValidationExceptionOnThinkIfContextIsNullAndLogItAsync()
@@ -31,7 +31,7 @@ public partial class DecisionOrchestrationServiceTests
 
         // when
         ValueTask<AgentContext> thinkTask =
-            this.decisionOrchestrationService.ThinkAsync(nullContext!);
+            this.decisionCoordinationService.ThinkAsync(nullContext!);
 
         AgentOrchestrationValidationException actualException =
             await Assert.ThrowsAsync<AgentOrchestrationValidationException>(
@@ -75,7 +75,7 @@ Xeption foundationException)
 
         // when
         ValueTask<AgentContext> thinkTask =
-            this.decisionOrchestrationService.ThinkAsync(inputContext);
+            this.decisionCoordinationService.ThinkAsync(inputContext);
 
         AgentOrchestrationDependencyValidationException actualException =
             await Assert.ThrowsAsync<AgentOrchestrationDependencyValidationException>(
@@ -110,7 +110,7 @@ Xeption foundationException)
 
         // when
         ValueTask<AgentContext> thinkTask =
-            this.decisionOrchestrationService.ThinkAsync(inputContext);
+            this.decisionCoordinationService.ThinkAsync(inputContext);
 
         AgentOrchestrationDependencyException actualException =
             await Assert.ThrowsAsync<AgentOrchestrationDependencyException>(
@@ -149,7 +149,7 @@ Xeption foundationException)
 
         // when
         ValueTask<AgentContext> thinkTask =
-            this.decisionOrchestrationService.ThinkAsync(inputContext);
+            this.decisionCoordinationService.ThinkAsync(inputContext);
 
         AgentOrchestrationServiceException actualException =
             await Assert.ThrowsAsync<AgentOrchestrationServiceException>(

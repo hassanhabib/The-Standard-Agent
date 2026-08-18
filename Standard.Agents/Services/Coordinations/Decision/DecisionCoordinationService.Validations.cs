@@ -6,9 +6,9 @@
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Models.Orchestrations.Agents.Exceptions;
 
-namespace Standard.Agents.Services.Orchestrations.Decision;
+namespace Standard.Agents.Services.Coordinations.Decision;
 
-public partial class DecisionOrchestrationService
+public partial class DecisionCoordinationService
 {
     private static void ValidateContext(AgentContext context)
     {

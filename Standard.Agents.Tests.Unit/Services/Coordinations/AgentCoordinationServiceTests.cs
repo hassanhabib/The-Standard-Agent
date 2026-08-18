@@ -9,7 +9,7 @@ using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Services.Coordinations;
 using Standard.Agents.Services.Coordinations.Data;
-using Standard.Agents.Services.Orchestrations.Decision;
+using Standard.Agents.Services.Coordinations.Decision;
 using Standard.Agents.Services.Coordinations.Direction;
 using Tynamix.ObjectFiller;
 using Xeptions;
@@ -20,7 +20,7 @@ namespace Standard.Agents.Tests.Unit.Services.Coordinations;
 public partial class AgentCoordinationServiceTests
 {
     private readonly Mock<IDataCoordinationService> dataCoordinationServiceMock;
-    private readonly Mock<IDecisionOrchestrationService> decisionOrchestrationServiceMock;
+    private readonly Mock<IDecisionCoordinationService> decisionCoordinationServiceMock;
     private readonly Mock<IDirectionCoordinationService> directionCoordinationServiceMock;
     private readonly Mock<ILoggingBroker> loggingBrokerMock;
     private readonly IAgentCoordinationService agentCoordinationService;
@@ -28,13 +28,13 @@ public partial class AgentCoordinationServiceTests
     public AgentCoordinationServiceTests()
     {
         this.dataCoordinationServiceMock = new Mock<IDataCoordinationService>();
-        this.decisionOrchestrationServiceMock = new Mock<IDecisionOrchestrationService>();
+        this.decisionCoordinationServiceMock = new Mock<IDecisionCoordinationService>();
         this.directionCoordinationServiceMock = new Mock<IDirectionCoordinationService>();
         this.loggingBrokerMock = new Mock<ILoggingBroker>();
 
         this.agentCoordinationService = new AgentCoordinationService(
             dataCoordinationService: this.dataCoordinationServiceMock.Object,
-            decisionOrchestrationService: this.decisionOrchestrationServiceMock.Object,
+            decisionCoordinationService: this.decisionCoordinationServiceMock.Object,
             directionCoordinationService: this.directionCoordinationServiceMock.Object,
             loggingBroker: this.loggingBrokerMock.Object);
     }
@@ -48,7 +48,7 @@ public partial class AgentCoordinationServiceTests
             service.RecallAsync(It.IsAny<AgentContext>()))
                 .ReturnsAsync((AgentContext context) => context);
 
-        this.decisionOrchestrationServiceMock.Setup(service =>
+        this.decisionCoordinationServiceMock.Setup(service =>
             service.ThinkAsync(It.IsAny<AgentContext>()))
                 .ReturnsAsync((AgentContext context) => context);
     }

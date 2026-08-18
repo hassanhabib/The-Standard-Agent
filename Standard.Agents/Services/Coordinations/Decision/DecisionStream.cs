@@ -6,7 +6,7 @@
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Orchestrations.Agents;
 
-namespace Standard.Agents.Services.Orchestrations.Decision;
+namespace Standard.Agents.Services.Coordinations.Decision;
 
 internal sealed class DecisionStream : IDecisionStream
 {

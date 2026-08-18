@@ -5,15 +5,17 @@
 
 using Moq;
 using Standard.Agents.Models.Orchestrations.Agents;
-using Standard.Agents.Services.Orchestrations.Decision;
+using Standard.Agents.Services.Coordinations.Decision;
+using Standard.Agents.Services.Orchestrations.Decision.Guardians;
+using Standard.Agents.Services.Orchestrations.Decision.Inferences;
 using Xunit;
 
-namespace Standard.Agents.Tests.Unit.Services.Orchestrations.Decision;
+namespace Standard.Agents.Tests.Unit.Services.Coordinations.DecisionNature;
 
-public partial class DecisionOrchestrationServiceTests
+public partial class DecisionCoordinationServiceTests
 {
     [Fact]
-    public async Task ShouldNarrateProcessesToLoggingBrokerOnThinkStreamAsync()
+    public async Task ShouldNarrateBrainReplyContentOnThinkStreamAsync()
     {
         // given
         AgentContext inputContext = CreateRandomAgentContext();
@@ -23,11 +25,11 @@ public partial class DecisionOrchestrationServiceTests
         this.brainServiceMock.Setup(service =>
             service.GenerateStreamAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                    .Returns(ToAsyncStream("FINAL: 42"));
+                    .Returns(ToAsyncStream("FINAL: my-secret-answer"));
 
         // when
         IDecisionStream decisionStream =
-            this.decisionOrchestrationService.ThinkStreamAsync(inputContext);
+            this.decisionCoordinationService.ThinkStreamAsync(inputContext);
 
         await DrainAsync(decisionStream);
 
@@ -35,14 +37,8 @@ public partial class DecisionOrchestrationServiceTests
         this.loggingBrokerMock.Verify(broker =>
             broker.LogProcessAsync(
                 "Decision",
-                It.Is<string>(message => message.Contains("Gate")),
-                It.IsAny<bool>()),
-                    Times.Once);
-
-        this.loggingBrokerMock.Verify(broker =>
-            broker.LogProcessAsync(
-                "Decision",
-                It.Is<string>(message => message.Contains("Judge")),
+                It.Is<string>(message =>
+                    message.Contains("Brain") && message.Contains("my-secret-answer")),
                 It.IsAny<bool>()),
                     Times.Once);
     }
