@@ -255,11 +255,15 @@ rather than by convention:
 - **Decorating brokers** — redaction, resilience — are wrapped around another broker at
   composition, so no service holds them.
 
-Flow is forward only. A tier never calls the tier above it, and no foundation calls a sibling.
-**One known deviation:** `DirectionCoordinationService` still holds the Gate for
-`.ScreenToolOutput()`, reaching a foundation that belongs to Decision. It is named here rather than
-quietly permitted, and tracked in
-[`docs/architecture-alignment.md`](https://github.com/hassanhabib/The-Standard-Agent/blob/main/docs/architecture-alignment.md).
+- **Every tier composes the tier directly below it** — management over coordinations, coordination
+  over orchestrations, orchestration over foundations. Adjacency is a rule of its own, not a
+  by-product of the count: a service reaching *past* the tier below it borrows another nature's
+  internals, and no test of counts or brokers will ever see that.
+
+Flow is forward only. A tier never calls the tier above it, no foundation calls a sibling, and
+there are no exceptions. Screening a tool result — `.ScreenToolOutput()` — is the **loop** asking
+Decision for a verdict, because what may re-enter the context between turns is the loop's question
+and the loop is the only place that sees both natures.
 
 ## Governance
 

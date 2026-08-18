@@ -169,5 +169,5 @@
 
   <text x="30" y="958" fill="#8b949e" font-size="12.5"><tspan fill="#e6edf3" font-weight="700">1 · 3 · 6 · 14.</tspan> Ten foundations are always there — the agent proper. Four arrive with the enterprise capabilities and are marked <tspan fill="#a371f7">FULL</tspan>; leave them off and it is the same shape with less in it.</text>
   <text x="30" y="980" fill="#8b949e" font-size="12.5"><tspan fill="#e6edf3" font-weight="700">Usage is why Decision has two regions.</tspan> Inference asks the model and reads its answer — measuring what that call cost is the same concept, and no budget can be enforced without it.</text>
-  <text x="30" y="1000" fill="#565f6d" font-size="11.5">No service reaches past the tier directly to its right, and no foundation calls a sibling. <tspan fill="#a371f7">One known deviation:</tspan> DirectionCoordinationService still holds the Gate for <tspan fill="#8b949e">.ScreenToolOutput()</tspan> — tracked in docs/architecture-alignment.md.</text>
+  <text x="30" y="1000" fill="#565f6d" font-size="11.5">No service reaches past the tier directly to its right, and no foundation calls a sibling — with no exceptions. Screening a tool result is the loop asking Decision, because what may re-enter the context between turns is the loop's question.</text>
 </svg>

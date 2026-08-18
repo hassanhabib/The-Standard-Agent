@@ -27,7 +27,6 @@ public partial class DirectionCoordinationService : IDirectionCoordinationServic
     private readonly IPerimeterOrchestrationService perimeterService;
     private readonly IExecutionOrchestrationService executionService;
     private readonly ILoggingBroker loggingBroker;
-    private readonly IGateService? screeningService;
     private readonly HashSet<string> irreversibleToolNames;
 
     // Asked once per act rather than captured once at composition, because who is acting can
@@ -40,13 +39,11 @@ public partial class DirectionCoordinationService : IDirectionCoordinationServic
         IExecutionOrchestrationService executionService,
         ILoggingBroker loggingBroker,
         IEnumerable<string>? irreversibleTools = null,
-        IGateService? screeningService = null,
         Func<AgentPrincipal?>? identityResolver = null)
     {
         this.perimeterService = perimeterService;
         this.executionService = executionService;
         this.loggingBroker = loggingBroker;
-        this.screeningService = screeningService;
         this.identityResolver = identityResolver;
 
         this.irreversibleToolNames =

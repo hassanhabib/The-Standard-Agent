@@ -202,15 +202,30 @@ and wrong because the growth had been hidden in a broker.
 Also encoded: `ShouldHoldTwoOrThreeDependencies`, sabotage-verified against a throwaway
 orchestration holding one foundation.
 
-### Still open
+### Closed in 1.4.0.0 — screening is a loop concern
 
-`DirectionCoordinationService` holds `IGateService` for `.ScreenToolOutput()`. It passes the count
-(Perimeter, Execution, Gate = 3) and it passes the broker rule, but it is a coordination reaching a
-**foundation two tiers down that belongs to another nature.** The fix is that screening moves to
-`RunManagementService`, which already holds Decision — *what may re-enter the loop* is a loop
-concern. Named here rather than quietly permitted, and stated on the diagram, because the thing
-that makes a rule survive is that its exceptions are written down where the next reader trips
-over them.
+`DirectionCoordinationService` held `IGateService` for `.ScreenToolOutput()`. It passed the count
+(Perimeter, Execution, Gate = 3) and it passed the broker rule, and it was still wrong: a
+coordination reaching a **foundation two tiers down that belongs to another nature.**
+
+That is the case for writing adjacency down as a rule of its own rather than treating it as
+something the count implies. Nothing about the number was off. What was off was the direction of
+the reach, and no test of counts or brokers was ever going to see it —
+`ShouldDependOnlyOnTheTierDirectlyBelowIt` was written first, watched failing on exactly
+`[IGateService]`, and only then was the code moved.
+
+Screening now happens in `RunManagementService`: it records how many observations exist before
+Direction acts, and screens what Direction added before the next turn can read it. Decision
+exposes `ScreenAsync` because Decision owns the guardians. Direction performs the act, Decision
+judges the text, and neither has to know the other exists — **what may enter the context between
+turns is the loop's question, and the loop is the only place that sees both natures.**
+
+A refusal replaces the observation rather than appending beside it, and answers the stranded tool
+call, both of which the old code got right and which moving it had to preserve. The acceptance
+test that covers it was sabotage-verified after the move, not before: refusal detection was
+disabled and `ShouldWithholdAnInjectedToolResultFromTheBrainAsync` was watched failing.
+
+**No deviations remain.** The diagram says so without an asterisk.
 
 **No public API change.** `docs/support.md` already states that service classes and their
 constructors are not a public contract, and the builder surface is untouched. This is `1.2.0.0` —

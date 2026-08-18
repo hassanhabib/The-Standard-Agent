@@ -1298,12 +1298,12 @@ public sealed partial class StandardAgent : IAgent
                 logging),
             logging,
             this.approvalRequiredTools,
-            this.screenToolOutput ? gate : null,
+
             this.identityResolver);
 
         return new RunManagementService(
             data, decision, direction, logging, this.maxTurns, new TimeBroker(), this.budget,
-            this.maxHistoryTurns, this.compensateOnFailure);
+            this.maxHistoryTurns, this.compensateOnFailure, this.screenToolOutput);
     }
 
     // The catalog a "{{tools}}" marker in the agent's Data expands into. Only tools that
