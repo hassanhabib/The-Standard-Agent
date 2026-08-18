@@ -113,6 +113,50 @@ public class TierDisciplineTests
         return services;
     }
 
+    // The 2-3 rule, which is the one that motivated the whole restructure and the one that was
+    // never encoded. Every tier holds two or three of the tier directly below it: management over
+    // coordinations, coordination over orchestrations, orchestration over foundations.
+    //
+    // Both bounds have a cost. More than three means the service is doing too much and wants
+    // decomposition - that is what put six foundations under Direction. FEWER than two means the
+    // opposite: a service with one dependency composes nothing, so it is a pass-through that adds
+    // a layer and an exception hop for no work. Inference sat at one foundation for a whole
+    // release with a comment in its interface arguing that it was "a region rather than a
+    // pass-through", which is what arguing around a rule looks like from the inside.
+    //
+    // Utility brokers do not count. They are held by every tier and none of them is a dependency
+    // in the sense the rule is about.
+    [Theory]
+    [MemberData(nameof(ServicesAboveTheFoundationTier))]
+    public void ShouldHoldTwoOrThreeDependencies(string serviceName)
+    {
+        // given
+        Type service = ServicesAboveFoundations().Single(type => type.Name == serviceName);
+
+        // when
+        int[] counts =
+            [.. service.GetConstructors()
+                .Select(constructor => constructor.GetParameters()
+                    .Select(parameter => Nullable.GetUnderlyingType(parameter.ParameterType)
+                        ?? parameter.ParameterType)
+                    .Count(IsADependency))];
+
+        // then
+        counts.Should().OnlyContain(
+            count => count >= 2 && count <= 3,
+            because: $"{serviceName} holds [{string.Join(", ", counts)}] dependencies. Two or "
+                + "three is the rule at every tier: more and the service is doing too much, "
+                + "fewer and it composes nothing and is a layer for its own sake.");
+    }
+
+    // A dependency for counting purposes is another SERVICE — the thing the tier below supplies.
+    // Options, delegates and primitives are configuration rather than collaborators, and utility
+    // brokers are exempt everywhere.
+    private static bool IsADependency(Type parameterType) =>
+        parameterType.IsInterface
+            && parameterType.Name.EndsWith("Service", StringComparison.Ordinal)
+            && parameterType.Namespace?.Contains(".Services.", StringComparison.Ordinal) is true;
+
     // A tier that reaches a broker skips the foundation that would have given it validation,
     // exception mapping and attribution. That is how a full disk came to be blamed on Direction.
     [Theory]
