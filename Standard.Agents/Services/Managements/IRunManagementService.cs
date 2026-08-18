@@ -5,9 +5,9 @@
 
 using Standard.Agents.Models.Clients.Agents;
 
-namespace Standard.Agents.Services.Coordinations;
+namespace Standard.Agents.Services.Managements;
 
-public interface IAgentCoordinationService
+public interface IRunManagementService
 {
     ValueTask<string> ProcessPromptAsync(string prompt);
 

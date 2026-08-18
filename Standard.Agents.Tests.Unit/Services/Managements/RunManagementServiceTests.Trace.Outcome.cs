@@ -6,9 +6,9 @@
 using Moq;
 using Xunit;
 
-namespace Standard.Agents.Tests.Unit.Services.Coordinations;
+namespace Standard.Agents.Tests.Unit.Services.Managements;
 
-public partial class AgentCoordinationServiceTests
+public partial class RunManagementServiceTests
 {
     [Fact]
     public async Task ShouldNarrateRunOutcomeOnProcessPromptAsync()

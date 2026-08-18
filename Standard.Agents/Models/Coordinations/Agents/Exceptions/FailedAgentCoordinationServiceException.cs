@@ -7,9 +7,9 @@ using Xeptions;
 
 namespace Standard.Agents.Models.Coordinations.Agents.Exceptions;
 
-public class FailedAgentCoordinationServiceException : Xeption
+public class FailedRunManagementServiceException : Xeption
 {
-    public FailedAgentCoordinationServiceException(string message, Exception innerException)
+    public FailedRunManagementServiceException(string message, Exception innerException)
         : base(message, innerException)
     { }
 }

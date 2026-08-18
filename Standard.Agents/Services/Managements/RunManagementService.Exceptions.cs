@@ -7,9 +7,9 @@ using Standard.Agents.Models.Coordinations.Agents.Exceptions;
 using Standard.Agents.Models.Orchestrations.Agents.Exceptions;
 using Xeptions;
 
-namespace Standard.Agents.Services.Coordinations;
+namespace Standard.Agents.Services.Managements;
 
-public partial class AgentCoordinationService
+public partial class RunManagementService
 {
     private delegate ValueTask<string> ReturningStringFunction();
 
@@ -45,13 +45,13 @@ public partial class AgentCoordinationService
         }
         catch (Exception exception)
         {
-            var failedAgentCoordinationServiceException =
-                new FailedAgentCoordinationServiceException(
+            var failedRunManagementServiceException =
+                new FailedRunManagementServiceException(
                     message: "Failed agent coordination service error occurred, contact support.",
                     innerException: exception);
 
             throw await CreateAndLogServiceExceptionAsync(
-                failedAgentCoordinationServiceException);
+                failedRunManagementServiceException);
         }
     }
 
@@ -95,11 +95,11 @@ public partial class AgentCoordinationService
         return agentCoordinationDependencyException;
     }
 
-    private async ValueTask<AgentCoordinationServiceException> CreateAndLogServiceExceptionAsync(
+    private async ValueTask<RunManagementServiceException> CreateAndLogServiceExceptionAsync(
         Xeption? exception)
     {
         var agentCoordinationServiceException =
-            new AgentCoordinationServiceException(
+            new RunManagementServiceException(
                 message: "Agent coordination service error occurred, contact support.",
                 innerException: exception);
 

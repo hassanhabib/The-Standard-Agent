@@ -7,9 +7,9 @@ using Standard.Agents.Models.Coordinations.Agents;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Models.Orchestrations.Effects;
 
-namespace Standard.Agents.Services.Coordinations;
+namespace Standard.Agents.Services.Managements;
 
-public partial class AgentCoordinationService
+public partial class RunManagementService
 {
     // Exhaustion and cancellation are reported distinguishably from a refusal. SPEC.md §4.10: a
     // caller that cannot tell "I will not" from "I ran out" cannot decide whether to retry, and
