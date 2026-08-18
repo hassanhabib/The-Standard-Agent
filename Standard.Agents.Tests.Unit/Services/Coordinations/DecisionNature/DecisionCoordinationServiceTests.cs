@@ -7,10 +7,12 @@ using System.Linq.Expressions;
 using Moq;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models.Foundations.Judges;
+using Standard.Agents.Models.Foundations.Usages;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Services.Foundations.Brains;
 using Standard.Agents.Services.Foundations.Gates;
 using Standard.Agents.Services.Foundations.Judges;
+using Standard.Agents.Services.Foundations.Usages;
 using Standard.Agents.Services.Coordinations.Decision;
 using Standard.Agents.Services.Orchestrations.Decision.Guardians;
 using Standard.Agents.Services.Orchestrations.Decision.Inferences;
@@ -26,6 +28,7 @@ public partial class DecisionCoordinationServiceTests
     private readonly Mock<IBrainService> brainServiceMock;
     private readonly Mock<IJudgeService> judgeServiceMock;
     private readonly Mock<ILoggingBroker> loggingBrokerMock;
+    private readonly Mock<IUsageService> usageServiceMock;
     private readonly IDecisionCoordinationService decisionCoordinationService;
 
     public DecisionCoordinationServiceTests()
@@ -34,12 +37,22 @@ public partial class DecisionCoordinationServiceTests
         this.brainServiceMock = new Mock<IBrainService>();
         this.judgeServiceMock = new Mock<IJudgeService>();
         this.loggingBrokerMock = new Mock<ILoggingBroker>();
+        this.usageServiceMock = new Mock<IUsageService>();
+
+        // Measurement is not what these tests are about, so it answers "nothing consumed" and
+        // stays out of the way. What it must NOT do is return a default ValueTask, which would
+        // fault every path through Inference for a reason unrelated to the assertion.
+        this.usageServiceMock.Setup(service =>
+            service.MeasureAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(AgentUsage.None);
 
         // Real regions over mocked FOUNDATIONS - the mocks sit where they sat before
         // regionalization, so every assertion below is unchanged.
         this.decisionCoordinationService = new DecisionCoordinationService(
             inferenceService: new InferenceOrchestrationService(
-                this.brainServiceMock.Object, this.loggingBrokerMock.Object),
+                this.brainServiceMock.Object,
+                this.usageServiceMock.Object,
+                this.loggingBrokerMock.Object),
             guardianService: new GuardianOrchestrationService(
                 this.gateServiceMock.Object,
                 this.judgeServiceMock.Object,

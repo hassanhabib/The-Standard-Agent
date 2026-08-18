@@ -159,6 +159,59 @@ certified, zero warnings. `TierDisciplineTests` is the part that outlives the pr
 violations are closed, and the next one fails the build rather than waiting for someone to read
 the constructors.
 
+---
+
+## 6 · What 1.2 got wrong, and 1.3 fixed
+
+`TierDisciplineTests` enforced that no broker sits above the foundation tier — and said nothing
+about **counts**. So the rule the entire program was carried out to honour, the 2–3 rule, was the
+one rule nothing was checking, and `InferenceOrchestrationService` shipped holding a single
+foundation. A service with one dependency composes nothing: it is a layer and an exception hop for
+no work.
+
+It was found by eye, not by the build. Its own interface even carried a comment arguing it was
+"a region rather than a pass-through", which is what arguing around a rule looks like from the
+inside.
+
+**The first attempt was worse than the defect.** The reasoning ran: Decision has three foundations,
+three fits one orchestration, so collapse the regions — and then, because a coordination over one
+orchestration is the same violation a tier up, let `RunManagementService` hold two coordinations and
+one orchestration. That was defended on the grounds that reaching one tier further down *costs
+nothing*. Cost is not the test. Every violation in section 1 cost nothing visible on the day it was
+introduced; that is precisely why they survived. The rule is that **every tier holds two or three of
+the tier directly below it** — management over coordinations, coordination over orchestrations,
+orchestration over foundations — and a shape that cannot satisfy it is the wrong shape.
+
+**What was actually missing was a foundation.** Inference could say what the model *said* and not
+what it *cost*, and that gap was load-bearing: `PromptTokens` and `CompletionTokens` were only ever
+set on the native V1 path, so on the text protocol every run added zero to its spend and
+`.Budget(maxTokens:)` and `.Budget(maxCostUsd:)` never tripped — while the Enterprise profile went
+on claiming budgets. `.Budget`'s own documentation promised *"measured against what providers
+reported, never an estimate"*, which is the defect written down as a guarantee.
+
+So `UsageService` over `IUsageBroker`, and Inference holds Brain and Usage. The count is honest at
+last: **Decision grew in the enterprise program like the other two natures did.** The earlier claim
+that it had gained nothing — the whole basis for thinking it did not deserve regions — was wrong,
+and wrong because the growth had been hidden in a broker.
+
+| | before | after |
+|---|---|---|
+| Foundations | 13 | **14** — ten always present, four optional |
+| Shape | 1·3·6·13 | **1·3·6·14** |
+
+Also encoded: `ShouldHoldTwoOrThreeDependencies`, sabotage-verified against a throwaway
+orchestration holding one foundation.
+
+### Still open
+
+`DirectionCoordinationService` holds `IGateService` for `.ScreenToolOutput()`. It passes the count
+(Perimeter, Execution, Gate = 3) and it passes the broker rule, but it is a coordination reaching a
+**foundation two tiers down that belongs to another nature.** The fix is that screening moves to
+`RunManagementService`, which already holds Decision — *what may re-enter the loop* is a loop
+concern. Named here rather than quietly permitted, and stated on the diagram, because the thing
+that makes a rule survive is that its exceptions are written down where the next reader trips
+over them.
+
 **No public API change.** `docs/support.md` already states that service classes and their
 constructors are not a public contract, and the builder surface is untouched. This is `1.2.0.0` —
 a service change, segment 2.

@@ -102,7 +102,7 @@ A conformant implementation **passes every vector**.
 
 Two rules the reference harness follows, both learned the hard way:
 
-- **Every double replaces a broker, never a service.** The whole 1·3·9 under test is the real
+- **Every double replaces a broker, never a service.** The whole 1·3·6·14 under test is the real
   library. A harness that stubs a service is certifying its own stub.
 - **Observe through the real seams.** The decision log is watched through its own Custom sink, the
   generator is *wrapped* rather than replaced so redaction and streaming still run, and guardians

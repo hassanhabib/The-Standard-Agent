@@ -9,7 +9,9 @@ using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models.Brokers.Generators.V1;
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Orchestrations.Agents;
+using Standard.Agents.Models.Foundations.Usages;
 using Standard.Agents.Services.Foundations.Brains;
+using Standard.Agents.Services.Foundations.Usages;
 
 namespace Standard.Agents.Services.Orchestrations.Decision.Inferences;
 
@@ -22,17 +24,46 @@ public partial class InferenceOrchestrationService : IInferenceOrchestrationServ
     private const string RespondIntent = "Respond";
 
     private readonly IBrainService brainService;
+    private readonly IUsageService usageService;
     private readonly ILoggingBroker loggingBroker;
     private readonly IReadOnlyList<ToolDefinition> toolDefinitions;
 
     public InferenceOrchestrationService(
         IBrainService brainService,
+        IUsageService usageService,
         ILoggingBroker loggingBroker,
         IReadOnlyList<ToolDefinition>? toolDefinitions = null)
     {
         this.brainService = brainService;
+        this.usageService = usageService;
         this.loggingBroker = loggingBroker;
         this.toolDefinitions = toolDefinitions ?? [];
+    }
+
+    // The provider's own report wins whenever there is one — it is what the invoice will be
+    // drawn from. Counting is the fallback, and it says which it was, because a bound enforced
+    // on an estimate and a bound reconciled against a bill are different claims.
+    //
+    // Without this, a text-protocol run reported zero tokens every turn and every budget it was
+    // given silently did nothing.
+    private async ValueTask<AgentContext> MeasuredAsync(
+        AgentContext decided,
+        string sent,
+        string received)
+    {
+        if (decided.PromptTokens > 0 || decided.CompletionTokens > 0)
+        {
+            return decided;
+        }
+
+        AgentUsage usage = await this.usageService.MeasureAsync(sent, received);
+
+        return decided with
+        {
+            PromptTokens = usage.PromptTokens,
+            CompletionTokens = usage.CompletionTokens,
+            UsageIsEstimated = usage.IsEstimated
+        };
     }
 
     public ValueTask<AgentContext> DecideAsync(AgentContext context) =>
@@ -45,11 +76,16 @@ public partial class InferenceOrchestrationService : IInferenceOrchestrationServ
             return await ThinkNativelyAsync(context);
         }
 
+        string userMessage = BuildUserMessage(context);
+
         string reply = await this.brainService.GenerateAsync(
             systemPrompt: context.SystemPrompt,
-            userPrompt: BuildUserMessage(context));
+            userPrompt: userMessage);
 
-        return Interpret(context, reply.Trim());
+        return await MeasuredAsync(
+            Interpret(context, reply.Trim()),
+            sent: context.SystemPrompt + userMessage,
+            received: reply);
     });
 
     public async IAsyncEnumerable<AgentStreamEvent> DecideStreamAsync(
@@ -81,19 +117,22 @@ public partial class InferenceOrchestrationService : IInferenceOrchestrationServ
             yield return AsUnsettledDraft(segment);
         }
 
-        AgentContext decided = Interpret(context, reply.ToString().Trim());
+        AgentContext decided = await MeasuredAsync(
+            Interpret(context, reply.ToString().Trim()),
+            sent: context.SystemPrompt + userMessage,
+            received: reply.ToString());
 
         await this.loggingBroker.LogProcessAsync(
             "Decision",
             $"Brain replied →{Environment.NewLine}{reply.ToString().Trim()}",
             detail: true);
 
-        int estimatedTokens =
-            (context.SystemPrompt.Length + userMessage.Length + reply.Length) / 4;
-
+        // This line used to divide characters by four, log the answer, and throw it away — the
+        // streamed loop enforced every other control and this one it only narrated.
         await this.loggingBroker.LogProcessAsync(
             "Decision",
-            $"Brain → ~{estimatedTokens} tokens (prompt + reply, estimated)",
+            $"Brain → {decided.PromptTokens + decided.CompletionTokens} tokens "
+                + $"({(decided.UsageIsEstimated ? "counted" : "reported")})",
             detail: true);
 
         await this.loggingBroker.LogProcessAsync(
