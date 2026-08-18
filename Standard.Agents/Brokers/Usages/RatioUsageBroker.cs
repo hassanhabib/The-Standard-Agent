@@ -16,9 +16,17 @@ namespace Standard.Agents.Brokers.Usages;
 // A host that needs exactness supplies the provider's own tokenizer through .UseUsage.
 public sealed class RatioUsageBroker : IUsageBroker
 {
-    // Roughly the average characters-per-token for English BPE vocabularies. It is a ratio, not
-    // a rule, which is the whole reason the result is flagged as estimated.
-    private const double CharactersPerToken = 4.0;
+    // Four is roughly the average characters-per-token for English BPE vocabularies. It is a
+    // ratio and not a rule, which is the whole reason the result is flagged as estimated — and
+    // why it is settable, since code and denser-tokenizing languages sit well below it.
+    private readonly double charactersPerToken;
+
+    public RatioUsageBroker(double charactersPerToken = 4.0) =>
+        this.charactersPerToken = charactersPerToken > 0
+            ? charactersPerToken
+            : throw new ArgumentOutOfRangeException(
+                nameof(charactersPerToken),
+                "Characters per token must be greater than zero.");
 
     public ValueTask<int> CountTokensAsync(string text)
     {
@@ -37,7 +45,7 @@ public sealed class RatioUsageBroker : IUsageBroker
         {
             // Every word costs at least one token however short it is, and a longer one splits
             // into subwords rather than scaling smoothly with its length.
-            tokens += Math.Max(1, (int)Math.Ceiling(word.Length / CharactersPerToken));
+            tokens += Math.Max(1, (int)Math.Ceiling(word.Length / this.charactersPerToken));
         }
 
         return ValueTask.FromResult(tokens);

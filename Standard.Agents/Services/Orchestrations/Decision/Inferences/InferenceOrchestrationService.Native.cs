@@ -30,11 +30,18 @@ public partial class InferenceOrchestrationService
                 : "Brain → answered",
             detail: true);
 
-        AgentContext measured = context with
-        {
-            PromptTokens = result.PromptTokens,
-            CompletionTokens = result.CompletionTokens
-        };
+        // A V1 provider usually reports its own usage, and that report wins — it is what the
+        // invoice is drawn from. But "usually" is not "always": a gateway or a self-hosted
+        // endpoint can omit the usage object entirely, and the budget went blind whenever one
+        // did. Falling through to a count keeps the bound working against every endpoint.
+        AgentContext measured = await MeasuredAsync(
+            context with
+            {
+                PromptTokens = result.PromptTokens,
+                CompletionTokens = result.CompletionTokens
+            },
+            sent: context.SystemPrompt + BuildUserMessage(context),
+            received: result.Content);
 
         if (result.HasToolCalls is false)
         {

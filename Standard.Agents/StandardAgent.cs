@@ -19,6 +19,7 @@ using Standard.Agents.Brokers.Memorys;
 using Standard.Agents.Brokers.Redactions;
 using Standard.Agents.Brokers.Resiliences;
 using Standard.Agents.Brokers.Sessions;
+using Standard.Agents.Brokers.Usages;
 using Standard.Agents.Brokers.Skills;
 using Standard.Agents.Brokers.Times;
 using Standard.Agents.Brokers.Tools;
@@ -47,6 +48,7 @@ using Standard.Agents.Services.Foundations.EffectLedgers;
 using Standard.Agents.Services.Foundations.Policys;
 using Standard.Agents.Services.Foundations.Sessions;
 using Standard.Agents.Services.Foundations.Skills;
+using Standard.Agents.Services.Foundations.Usages;
 using Standard.Agents.Services.Coordinations.Data;
 using Standard.Agents.Services.Orchestrations.Data.Recollections;
 using Standard.Agents.Services.Orchestrations.Data.Retrievals;
@@ -109,6 +111,11 @@ public sealed partial class StandardAgent : IAgent
     private IResilienceBroker? resilienceBroker;
     private IGeneratorBrokerV1? generatorBrokerV1;
     private ISessionBroker? sessionBroker;
+
+    // Counting is always on and costs nothing to leave on; BLOCKING is what has to be asked for.
+    // So the default is a counter rather than a no-op: an agent with no budget is wide open and
+    // still measurable, and .Budget() alone is enough to make a bound real on any endpoint.
+    private IUsageBroker usageBroker = new RatioUsageBroker();
     private int maxHistoryTurns = 20;
     private Func<AgentPrincipal?>? identityResolver;
 
@@ -915,7 +922,9 @@ public sealed partial class StandardAgent : IAgent
     /// Bounds what one prompt may consume (SPEC.md §4.10). Checked between turns; exhaustion
     /// stops the loop and says which bound ran out, distinguishably from a refusal — a caller
     /// that cannot tell <i>I will not</i> from <i>I ran out</i> cannot decide whether to retry.
-    /// Token spend is measured against what providers <b>reported</b>, never an estimate.
+    /// Token spend is measured on every protocol: the provider's own report when there is one,
+    /// and the Usage foundation's count when there is not. A bound that only applied where a
+    /// provider volunteered its numbers was not a bound.
     /// </summary>
     /// <param name="maxTokens">Total tokens across the run.</param>
     /// <param name="maxCostUsd">Total cost, priced by <paramref name="costPerThousandTokens"/>.</param>
@@ -934,6 +943,36 @@ public sealed partial class StandardAgent : IAgent
             MaxWallClock = maxWallClock,
             CostPerThousandTokens = costPerThousandTokens
         });
+
+    /// <summary>
+    /// Counts tokens in the box — the <b>Local</b> mode, and the default. Every run is measured
+    /// whether or not it is bounded, because counting costs nothing and a budget added later
+    /// should not need a second decision to start working.
+    /// </summary>
+    /// <param name="charactersPerToken">
+    /// The ratio to estimate with. Four is about right for English; lower it for code or for a
+    /// language that tokenizes denser.
+    /// </param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent Usage(double charactersPerToken = 4.0) =>
+        Set(() => this.usageBroker = new RatioUsageBroker(charactersPerToken));
+
+    /// <summary>
+    /// Counts tokens with a provider's own tokenizer — the <b>External</b> mode. Use this when
+    /// the numbers have to reconcile against an invoice rather than only hold a bound.
+    /// </summary>
+    /// <param name="broker">The usage broker to count with.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent UseUsage(IUsageBroker broker) =>
+        Set(() => this.usageBroker = broker);
+
+    /// <summary>
+    /// Counts tokens with your own code — the <b>Custom</b> mode.
+    /// </summary>
+    /// <param name="count">Given a piece of text, returns how many tokens it occupies.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent OnUsage(Func<string, ValueTask<int>> count) =>
+        Set(() => this.usageBroker = new FunctionUsageBroker(count));
 
     /// <summary>
     /// Retries a failed model call with exponential backoff and jitter (SPEC.md §4.10). What is
@@ -1222,6 +1261,7 @@ public sealed partial class StandardAgent : IAgent
         DecisionCoordinationService decision = new(
             new InferenceOrchestrationService(
                 new BrainService(generatorAtTheWire, logging, nativeAtTheWire),
+                new UsageService(this.usageBroker, logging),
                 logging,
                 RenderToolDefinitions(allTools)),
             new GuardianOrchestrationService(

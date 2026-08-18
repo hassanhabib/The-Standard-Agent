@@ -42,11 +42,16 @@ public sealed record AgentContext
     public string Payload { get; init; } = "";
     public string RawReply { get; init; } = "";
 
-    // What the turn's model calls actually cost, as reported by the provider (SPEC.md §3.4).
-    // Zero when a provider reports nothing, which is why a budget bounds reported usage rather
-    // than an estimate — an implementation must not present an estimate as a measurement.
+    // What the turn's model calls cost. The provider's own report when there is one, counted by
+    // the Usage foundation when there is not — because a provider that reports nothing used to
+    // leave these at zero, and a budget bounding zero is not a budget (SPEC.md §3.4).
     public int PromptTokens { get; init; }
     public int CompletionTokens { get; init; }
+
+    // Which of those two it was. An estimate is enough to ENFORCE a bound and not enough to
+    // RECONCILE one against an invoice, so the distinction travels with the number instead of
+    // being inferred from which brain happened to be configured.
+    public bool UsageIsEstimated { get; init; }
 
     public string Result { get; init; } = "";
     public string Remember { get; init; } = "";
