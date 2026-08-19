@@ -1,0 +1,12 @@
+{
+  "name": "budget-bounds-tokens-on-any-protocol",
+  "description": "SPEC.md 4.10: a token budget bounds a run on EVERY protocol, not only where a provider volunteers its own usage numbers. The text protocol reports no usage, so an implementation that measures only what providers report enforces nothing here - the run adds zero to its spend every turn and the bound never trips, while the Enterprise profile goes on claiming budgets. An implementation MUST count what it cannot be told. The Brain here loops through tool calls forever; only the token bound can stop it.",
+  "generatorReplies": ["ACTION: nonexistent_tool: keep going"],
+  "tools": {},
+  "prompt": "loop forever and spend everything",
+  "maxTurns": 50,
+  "budgetMaxTokens": 40,
+  "expect": {
+    "resultContains": "token budget"
+  }
+}

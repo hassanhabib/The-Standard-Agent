@@ -375,6 +375,16 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
             agent.Budget(maxWallClock: TimeSpan.FromSeconds(seconds));
         }
 
+        // Set together rather than in three branches: .Budget replaces the whole bound, so
+        // calling it twice would silently drop whichever was configured first.
+        if (vector.BudgetMaxTokens is not null || vector.BudgetMaxCostUsd is not null)
+        {
+            agent.Budget(
+                maxTokens: vector.BudgetMaxTokens,
+                maxCostUsd: vector.BudgetMaxCostUsd,
+                costPerThousandTokens: vector.BudgetCostPerThousandTokens);
+        }
+
         // A real session store, in a folder unique to this vector, so conversation is certified
         // against something that actually persists rather than an in-memory stand-in that could
         // never demonstrate resumption.
