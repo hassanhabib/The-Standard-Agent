@@ -150,6 +150,8 @@ the deterministic core of the Standard.
 | `cancellation-stops-the-loop` | A cancelled run stops at a turn boundary and is not an answer |
 | `transient-failure-recovers` | Retry by error category, not by matching a message (§4.10) |
 | `budget-stops-the-loop` | Exhaustion stops the loop and is distinguishable from a refusal |
+| `budget-bounds-tokens-on-any-protocol` | A token bound holds where the provider reports no usage (§4.10) |
+| `budget-bounds-cost-on-any-protocol` | A cost bound holds there too — cost is priced off the count |
 | `knowledge-retrieves-by-relevance` | Retrieval returns the passage that answers, not the first found |
 | `guardian-screens-once-per-prompt` | An unchanged prompt is screened once, not once per turn |
 | `open-circuit-falls-back-to-secondary` | An unhealthy provider degrades rather than fails (§4.10) |
@@ -190,3 +192,11 @@ Two in this suite were vacuous when first written and were caught this way —
 `knowledge-retrieves-by-relevance` passed with the ranking inverted, and
 `redaction-covers-every-model-call` passed while only the Brain's input was being recorded. Both
 were rewritten. If you add a vector, break the thing it covers first.
+
+The sharper lesson is what a **missing** vector costs, because nothing here goes red for one.
+Until `1.4.0` the only budget a vector could express was wall-clock, so the token and cost bounds
+were certified by nothing at all. This implementation reported no usage on the text protocol,
+enforced neither bound, and passed every vector and every profile — Enterprise included, which
+claims budgets by name — for eight releases. Anyone building to these vectors in another language
+would have reproduced that exactly and been entitled to the same badge. A suite that cannot
+express a bound cannot certify it, and silence reads as coverage.

@@ -1,0 +1,13 @@
+{
+  "name": "budget-bounds-cost-on-any-protocol",
+  "description": "SPEC.md 4.10: a cost budget is priced off the token count, so a protocol that contributes no tokens contributes no cost and the bound silently never applies. Separate from the token vector because they fail independently: an implementation can carry a token count and still never price it. The Brain loops through tool calls forever; only the cost bound can stop it.",
+  "generatorReplies": ["ACTION: nonexistent_tool: keep going"],
+  "tools": {},
+  "prompt": "loop forever and spend everything",
+  "maxTurns": 50,
+  "budgetMaxCostUsd": 0.0001,
+  "budgetCostPerThousandTokens": 1.0,
+  "expect": {
+    "resultContains": "cost budget"
+  }
+}

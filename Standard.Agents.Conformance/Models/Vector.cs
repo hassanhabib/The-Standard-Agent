@@ -52,7 +52,15 @@ public sealed record Vector(
     int? MaxTurns = null,
 
     // Budget, retrieval and degradation (SPEC.md §4.2, §4.10).
+    //
+    // Wall-clock was the only bound a vector could express, which meant the TOKEN and COST bounds
+    // were certified by nothing. An implementation could report no usage at all on the text
+    // protocol, enforce neither bound, and still pass every vector and claim the Enterprise
+    // profile — which is exactly what this one did until 1.3.0.
     double? BudgetMaxWallClockSeconds = null,
+    int? BudgetMaxTokens = null,
+    decimal? BudgetMaxCostUsd = null,
+    decimal BudgetCostPerThousandTokens = 0m,
     Dictionary<string, string>? Knowledge = null,
     string? FallbackReply = null,
     int FailuresBeforeOpen = 3,

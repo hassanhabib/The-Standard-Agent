@@ -1314,17 +1314,24 @@ public sealed partial class StandardAgent : IAgent
     // tool to the model. A tool without one stays callable but unadvertised, so declaring tools
     // as data does not quietly widen what the Brain may reach for.
     private static IReadOnlyList<ToolDefinition> RenderToolDefinitions(IEnumerable<ITool> tools) =>
-        [.. tools
-            .Where(tool => string.IsNullOrWhiteSpace(tool.Description) is false)
+        [.. Advertised(tools)
             .Select(tool => new ToolDefinition(tool.Name, tool.Description, tool.Parameters))];
 
     private static string RenderToolCatalog(IEnumerable<ITool> tools)
     {
-        IEnumerable<string> describedTools = tools
-            .Where(tool => string.IsNullOrWhiteSpace(tool.Description) is false)
+        IEnumerable<string> describedTools = Advertised(tools)
             .Select(tool => $"- {tool.Name} — {tool.Description} parameters: {tool.Parameters}");
 
         return string.Join("\n", describedTools);
     }
+
+    // What the model may be told about, in ONE place. The rule (SPEC.md §6.1: a description is
+    // the opt-in, and a tool without one stays callable but unadvertised) was written out twice —
+    // once for the text catalog Data renders into the prompt, once for the definitions Decision
+    // hands the native brain. Two copies of a rule about what the model is allowed to see is two
+    // chances to widen it by half, and a model told about a tool in the prompt but not in the
+    // schema — or the reverse — behaves differently on each protocol for no stated reason.
+    private static IEnumerable<ITool> Advertised(IEnumerable<ITool> tools) =>
+        tools.Where(tool => string.IsNullOrWhiteSpace(tool.Description) is false);
 
 }
