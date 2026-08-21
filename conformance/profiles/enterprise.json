@@ -7,6 +7,7 @@
     "policy-authorizes-on-identity",
     "injected-instruction-in-tool-output-is-refused",
     "duplicate-effect-executes-once",
+    "a-repeat-in-a-session-is-a-new-act",
     "budget-stops-the-loop",
     "budget-bounds-tokens-on-any-protocol",
     "budget-bounds-cost-on-any-protocol",

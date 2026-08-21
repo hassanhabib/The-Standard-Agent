@@ -1,0 +1,19 @@
+{
+  "name": "a-repeat-in-a-session-is-a-new-act",
+  "description": "SPEC.md 4.9: run-once is scoped to a RUN. The same act proposed again in a later, separate run of the same session is a NEW act and performs again - which is required, because an agent must be able to send a second reminder or make a second payment when asked. The boundary matters in the other direction too: an at-least-once trigger that redelivers work already completed starts a new run, derives a new key, and performs the effect a second time. Run-once does not span completed runs, and a caller whose delivery may repeat MUST deduplicate at the trigger boundary. Session resumption extends run-once across an INTERRUPTED run only - see awaiting-approval-resumes-in-a-new-process.",
+  "generatorReplies": [
+    "ACTION: wire_transfer: 10000",
+    "FINAL: paid",
+    "ACTION: wire_transfer: 10000",
+    "FINAL: paid"
+  ],
+  "tools": { "wire_transfer": "transfer complete" },
+  "prompt": "pay invoice 7712",
+  "prompts": ["pay invoice 7712", "pay invoice 7712"],
+  "sessionId": "evt-7712",
+  "durableEffectLedger": true,
+  "expect": {
+    "result": "paid",
+    "toolRunCount": { "wire_transfer": 2 }
+  }
+}
