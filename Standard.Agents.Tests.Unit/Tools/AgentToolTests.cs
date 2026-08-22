@@ -3,7 +3,9 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Foundations.Skills;
+using Standard.Agents.Models.Orchestrations.Agents;
 using FluentAssertions;
 using Moq;
 using Standard.Agents.Tools;
@@ -37,8 +39,8 @@ public partial class AgentToolTests
         var nestedAgentMock = new Mock<IAgent>();
 
         nestedAgentMock.Setup(agent =>
-            agent.ProcessPromptAsync(randomInput))
-                .ReturnsAsync(randomAnswer);
+            agent.RunAsync(randomInput))
+                .ReturnsAsync(new AgentOutcome(randomAnswer, AgentStatus.Responded));
 
         var agentTool = new AgentTool(name: randomName, agent: nestedAgentMock.Object);
 
@@ -50,7 +52,7 @@ public partial class AgentToolTests
         agentTool.Name.Should().Be(randomName);
 
         nestedAgentMock.Verify(agent =>
-    agent.ProcessPromptAsync(randomInput),
+    agent.RunAsync(randomInput),
         Times.Once);
 
         nestedAgentMock.VerifyNoOtherCalls();
@@ -63,8 +65,8 @@ public partial class AgentToolTests
         var innerAgent = new Mock<IAgent>();
 
         innerAgent.Setup(agent =>
-            agent.ProcessPromptAsync(It.IsAny<string>()))
-                .ReturnsAsync("the capital is Paris");
+            agent.RunAsync(It.IsAny<string>()))
+                .ReturnsAsync(new AgentOutcome("the capital is Paris", AgentStatus.Responded));
 
         var researcher = new AgentTool(name: "researcher", agent: innerAgent.Object);
 
@@ -111,7 +113,7 @@ public partial class AgentToolTests
         actualResult.Should().Be("Paris");
 
         innerAgent.Verify(agent =>
-    agent.ProcessPromptAsync(prompt: "capital of France"),
+    agent.RunAsync("capital of France"),
         Times.Once);
     }
 
@@ -123,7 +125,7 @@ public partial class AgentToolTests
         var nestedFailure = new InvalidOperationException(message: "inner agent failed");
 
         nestedAgentMock.Setup(agent =>
-            agent.ProcessPromptAsync(It.IsAny<string>()))
+            agent.RunAsync(It.IsAny<string>()))
                 .ThrowsAsync(nestedFailure);
 
         var agentTool = new AgentTool(name: "nested", agent: nestedAgentMock.Object);
@@ -151,8 +153,8 @@ public partial class AgentToolTests
         var nestedAgentMock = new Mock<IAgent>();
 
         nestedAgentMock.Setup(agent =>
-            agent.ProcessPromptAsync(expectedHandoffPrompt))
-                .ReturnsAsync(randomAnswer);
+            agent.RunAsync(expectedHandoffPrompt))
+                .ReturnsAsync(new AgentOutcome(randomAnswer, AgentStatus.Responded));
 
         var agentTool = new AgentTool(
             name: "researcher",
@@ -166,7 +168,7 @@ public partial class AgentToolTests
         actualOutput.Should().Be(randomAnswer);
 
         nestedAgentMock.Verify(agent =>
-            agent.ProcessPromptAsync(expectedHandoffPrompt),
+            agent.RunAsync(expectedHandoffPrompt),
                 Times.Once);
 
         nestedAgentMock.VerifyNoOtherCalls();

@@ -3,6 +3,9 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using Standard.Agents.Models.Clients.Agents;
+using Standard.Agents.Models.Orchestrations.Agents;
+
 namespace Standard.Agents.Tools;
 
 public sealed class AgentTool : ITool
@@ -40,6 +43,29 @@ public sealed class AgentTool : ITool
     // The nested agent runs its own full loop — its own Recall, Think, Act, its own
     // turn cap, its own guardians. The outer agent sees one tool call and a string
     // back, and cannot tell whether a function or a mind answered it.
-    public async ValueTask<string> ExecuteAsync(string input) =>
-        await this.agent.ProcessPromptAsync(this.handoff.Replace(InputPlaceholder, input));
+    //
+    // What it MUST be able to tell is whether the mind finished. A run that was held on an
+    // authority, refused, or ran out of turns produced prose explaining why, and prose explaining
+    // why reads exactly like prose answering the question. Returned unmarked, an outer agent can
+    // report work as done that a human has not yet permitted — which is the perimeter of Part 4
+    // leaking at the one seam it never covered, because every control there is scoped to a run and
+    // a sub-agent is a different run.
+    public async ValueTask<string> ExecuteAsync(string input)
+    {
+        AgentOutcome outcome =
+            await this.agent.RunAsync(this.handoff.Replace(InputPlaceholder, input));
+
+        // An answer is an answer. Nothing is added to it, because anything added is text the outer
+        // model has to reason past on the path that is working correctly.
+        if (outcome.Status is AgentStatus.Responded)
+        {
+            return outcome.Result;
+        }
+
+        // Marked, categorised, and still carrying the sub-agent's own words. The marker is what
+        // makes it unmistakable, the status is what says WHICH way it ended — held is not refused
+        // and refused is not failed — and the reason is why, which a category alone cannot give.
+        return $"[did not complete] the sub-agent '{Name}' ended {outcome.Status}: "
+            + outcome.Result;
+    }
 }

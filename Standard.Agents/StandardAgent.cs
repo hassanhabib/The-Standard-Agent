@@ -820,6 +820,21 @@ public sealed partial class StandardAgent : IAgent
     }
 
     /// <summary>
+    /// Runs the agent and reports <b>how the run ended</b> as well as what it produced. Only
+    /// <c>AgentStatus.Responded</c> makes the result an answer — a run held on an authority,
+    /// refused, cancelled or out of turns produced prose about why, and the two read alike.
+    /// </summary>
+    /// <remarks>
+    /// This is what nesting uses. <c>AgentTool</c> reads it so an outer agent cannot mistake a
+    /// sub-agent that was held for one that finished, which the string on its own could never tell
+    /// it.
+    /// </remarks>
+    /// <param name="prompt">What to work on.</param>
+    /// <returns>The answer, and how the run ended.</returns>
+    public async ValueTask<AgentOutcome> RunAsync(string prompt) =>
+        await ResolveAgent().RunAsync(prompt, string.Empty, CancellationToken.None);
+
+    /// <summary>
     /// Runs the agent on a prompt and stops when <paramref name="cancellationToken"/> is
     /// cancelled — at the next turn boundary at the latest, so no effect is left half-recorded
     /// (SPEC.md §4.10). A cancelled run returns a message saying so rather than an answer.

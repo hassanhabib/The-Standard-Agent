@@ -71,7 +71,16 @@ public partial class RunManagementService : IRunManagementService
         CancellationToken cancellationToken) =>
         ProcessPromptAsync(prompt, string.Empty, cancellationToken);
 
-    public ValueTask<string> ProcessPromptAsync(
+    public async ValueTask<string> ProcessPromptAsync(
+        string prompt,
+        string sessionId,
+        CancellationToken cancellationToken) =>
+        (await RunAsync(prompt, sessionId, cancellationToken)).Result;
+
+    // The same run, reported with how it ended. ProcessPromptAsync projects the answer out of it,
+    // because a caller who only wants the string should not have to know there was more — and a
+    // caller who nests this agent inside another one cannot do without it (AgentTool).
+    public ValueTask<AgentOutcome> RunAsync(
         string prompt,
         string sessionId,
         CancellationToken cancellationToken) =>
@@ -169,7 +178,7 @@ public partial class RunManagementService : IRunManagementService
             {
                 await this.loggingBroker.LogOutcomeAsync($"done: {context.Status}");
 
-                return $"{context.Result} {unwound}".Trim();
+                return new AgentOutcome($"{context.Result} {unwound}".Trim(), context.Status);
             }
         }
 
@@ -192,7 +201,7 @@ public partial class RunManagementService : IRunManagementService
         // Appended before the call returns, so the next prompt sees it (SPEC.md §4.11).
         await SaveSessionAsync(context, completed: true);
 
-        return context.Result;
+        return new AgentOutcome(context.Result, context.Status);
     });
 
     public IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(

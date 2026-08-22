@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------
 
 using Standard.Agents.Models.Coordinations.Agents;
+using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Models.Orchestrations.Effects;
 
@@ -65,7 +66,10 @@ public partial class RunManagementService
         return false;
     }
 
-    private async ValueTask<string> StopAsync(
+    // The status was taken and never used: a cancelled or budget-exhausted run reported its
+    // message and left how it ended inside this method. Nothing above could tell "I ran out" from
+    // an answer, which is the same flattening that let a held sub-agent read like a result.
+    private async ValueTask<AgentOutcome> StopAsync(
         AgentContext context,
         string message,
         AgentStatus status)
@@ -74,9 +78,11 @@ public partial class RunManagementService
 
         string unwound = await UnwindAsync();
 
-        return string.IsNullOrEmpty(unwound)
+        string result = string.IsNullOrEmpty(unwound)
             ? message
             : $"{message} {unwound}";
+
+        return new AgentOutcome(result, status);
     }
 
     // An async iterator cannot put a catch clause around a yield, so the streamed loop unwinds
