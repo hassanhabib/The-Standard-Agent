@@ -18,6 +18,16 @@ public interface IRunManagementService
         string sessionId,
         CancellationToken cancellationToken);
 
+    /// <summary>
+    /// The same run, reported with <b>how it ended</b>. Every <c>ProcessPromptAsync</c> above is
+    /// this with the answer projected out of it — which is all a caller wants until the agent is
+    /// nested inside another one, where "held" and "answered" have to be told apart.
+    /// </summary>
+    ValueTask<AgentOutcome> RunAsync(
+        string prompt,
+        string sessionId,
+        CancellationToken cancellationToken);
+
     IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
         string prompt,
         CancellationToken cancellationToken = default);
