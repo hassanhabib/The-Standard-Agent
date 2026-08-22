@@ -6,6 +6,8 @@
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models.Foundations.Judges;
 using Standard.Agents.Models.Loggings;
+using Standard.Agents.Models.Foundations.Contracts;
+using Standard.Agents.Services.Foundations.Contracts;
 using Standard.Agents.Services.Foundations.Gates;
 using Standard.Agents.Services.Foundations.Judges;
 
@@ -15,15 +17,18 @@ public partial class GuardianOrchestrationService : IGuardianOrchestrationServic
 {
     private readonly IGateService gateService;
     private readonly IJudgeService judgeService;
+    private readonly IContractService contractService;
     private readonly ILoggingBroker loggingBroker;
 
     public GuardianOrchestrationService(
         IGateService gateService,
         IJudgeService judgeService,
+        IContractService contractService,
         ILoggingBroker loggingBroker)
     {
         this.gateService = gateService;
         this.judgeService = judgeService;
+        this.contractService = contractService;
         this.loggingBroker = loggingBroker;
     }
 
@@ -63,4 +68,10 @@ public partial class GuardianOrchestrationService : IGuardianOrchestrationServic
 
     public ValueTask<Judgement> EvaluateAsync(string task, string candidate) =>
         TryCatch(async () => await this.judgeService.EvaluateAsync(task, candidate));
+
+    // The third guardian. The Gate asks whether a task may be attempted, the Judge whether a draft
+    // is good enough, and this whether it is the right SHAPE — the same kind of verdict at the same
+    // moment, which is why it belongs here rather than becoming a new concept.
+    public ValueTask<ContractVerdict> CheckShapeAsync(string answer, string schema) =>
+        TryCatch(async () => await this.contractService.CheckAsync(answer, schema));
 }

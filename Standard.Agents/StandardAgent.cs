@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Standard.Agents.Brokers.Audits;
 using Standard.Agents.Brokers.Approvals;
 using Standard.Agents.Brokers.Classifiers;
+using Standard.Agents.Brokers.Contracts;
 using Standard.Agents.Brokers.Effects;
 using Standard.Agents.Brokers.Policies;
 using Standard.Agents.Brokers.Files;
@@ -36,6 +37,7 @@ using Standard.Agents.Models.Loggings;
 using Standard.Agents.Prompts;
 using Standard.Agents.Services.Managements;
 using Standard.Agents.Services.Foundations.Brains;
+using Standard.Agents.Services.Foundations.Contracts;
 using Standard.Agents.Services.Foundations.ExternalTools;
 using Standard.Agents.Services.Foundations.Gates;
 using Standard.Agents.Services.Foundations.InternalTools;
@@ -116,6 +118,11 @@ public sealed partial class StandardAgent : IAgent
     // So the default is a counter rather than a no-op: an agent with no budget is wide open and
     // still measurable, and .Budget() alone is enough to make a bound real on any endpoint.
     private IUsageBroker usageBroker = new RatioUsageBroker();
+
+    // Wide open by default: an agent given no contract is not constrained by having become
+    // checkable, the same way counting is always on and blocking is not.
+    private string? contractSchema;
+    private IContractBroker? contractBroker;
     private int maxHistoryTurns = 20;
     private Func<AgentPrincipal?>? identityResolver;
 
@@ -958,6 +965,37 @@ public sealed partial class StandardAgent : IAgent
         Set(() => this.usageBroker = new RatioUsageBroker(charactersPerToken));
 
     /// <summary>
+    /// Requires every answer to satisfy a JSON schema — the <b>Local</b> mode, validated in the
+    /// box. A draft that does not match is re-thought with the validation error as the reason it
+    /// was rejected: never faulted, and never handed back as though it had matched.
+    /// </summary>
+    /// <param name="jsonSchema">The shape every answer must take.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent Contract(string jsonSchema) =>
+        Set(() => this.contractSchema = jsonSchema);
+
+    /// <summary>
+    /// Validates answers with a real JSON Schema library — the <b>External</b> mode. The in-box
+    /// validator covers the subset a model actually gets wrong; use this when you need the whole
+    /// specification.
+    /// </summary>
+    /// <param name="broker">The contract broker to validate with.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent UseContract(IContractBroker broker) =>
+        Set(() => this.contractBroker = broker);
+
+    /// <summary>
+    /// Validates answers with your own code — the <b>Custom</b> mode, for rules a schema cannot
+    /// express: a total that must equal the sum of its lines, an account that must exist. Return
+    /// <c>null</c> when the answer is acceptable, or what is wrong with it in words a model can
+    /// act on.
+    /// </summary>
+    /// <param name="validate">Given the answer and the schema, returns the complaint or null.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent OnContract(Func<string, string, ValueTask<string?>> validate) =>
+        Set(() => this.contractBroker = new FunctionContractBroker(validate));
+
+    /// <summary>
     /// Counts tokens with a provider's own tokenizer — the <b>External</b> mode. Use this when
     /// the numbers have to reconcile against an invoice rather than only hold a bound.
     /// </summary>
@@ -1267,8 +1305,10 @@ public sealed partial class StandardAgent : IAgent
             new GuardianOrchestrationService(
                 gate,
                 new JudgeService(new RedactingVerifierBroker(verifier, redaction), logging),
+                new ContractService(this.contractBroker ?? new RuleContractBroker(), logging),
                 logging),
-            logging);
+            logging,
+            this.contractSchema);
 
         // The allow-list is expressed as a policy, so the simple answer and an external policy
         // engine travel one seam and a denial carries a reason either way (SPEC.md §4.9).

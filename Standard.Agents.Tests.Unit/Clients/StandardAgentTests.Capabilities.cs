@@ -68,7 +68,9 @@ public class StandardAgentCapabilityTests
         new("EffectLedger", Local: "EffectLedger", External: "UseEffectLedger",
             Custom: "OnEffectLedger"),
 
-        new("Usage", Local: "Usage", External: "UseUsage", Custom: "OnUsage")
+        new("Usage", Local: "Usage", External: "UseUsage", Custom: "OnUsage"),
+
+        new("Contract", Local: "Contract", External: "UseContract", Custom: "OnContract")
     ];
 
     private static readonly string[] publicMethodNames =

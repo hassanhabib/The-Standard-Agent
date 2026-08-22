@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using Standard.Agents.Models.Foundations.Contracts;
 using Standard.Agents.Models.Foundations.Judges;
 
 namespace Standard.Agents.Services.Orchestrations.Decision.Guardians;
@@ -26,4 +27,10 @@ public interface IGuardianOrchestrationService
 
     /// <summary>Scores a draft against the task it is meant to answer (SPEC.md §4.2).</summary>
     ValueTask<Judgement> EvaluateAsync(string task, string candidate);
+
+    /// <summary>
+    /// Checks a draft against the shape it was held to. Satisfied when no contract is configured —
+    /// an agent given none is not constrained by having become checkable.
+    /// </summary>
+    ValueTask<ContractVerdict> CheckShapeAsync(string answer, string schema);
 }

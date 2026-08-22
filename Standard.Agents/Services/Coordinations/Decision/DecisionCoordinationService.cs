@@ -8,6 +8,7 @@ using System.Text.Json;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Foundations.Gates;
+using Standard.Agents.Models.Foundations.Contracts;
 using Standard.Agents.Models.Foundations.Judges;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Services.Orchestrations.Decision.Guardians;
@@ -47,14 +48,20 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
     private readonly IGuardianOrchestrationService guardianService;
     private readonly ILoggingBroker loggingBroker;
 
+    // The shape every answer is held to, or empty. Configuration rather than a collaborator — it
+    // is a string the host chose, and the foundation treats an empty one as no check at all.
+    private readonly string contractSchema;
+
     public DecisionCoordinationService(
         IInferenceOrchestrationService inferenceService,
         IGuardianOrchestrationService guardianService,
-        ILoggingBroker loggingBroker)
+        ILoggingBroker loggingBroker,
+        string? contractSchema = null)
     {
         this.inferenceService = inferenceService;
         this.guardianService = guardianService;
         this.loggingBroker = loggingBroker;
+        this.contractSchema = contractSchema ?? string.Empty;
     }
 
     // The loop screens what a tool returned before it can become an observation. It asks here
@@ -137,8 +144,47 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
             };
         }
 
-        return decided;
+        // The shape check runs after the Judge and not before it, deliberately: a draft that is
+        // wrong on the merits should be told that, not told its punctuation is off. Two rejections
+        // in one turn would spend a turn teaching the model the lesser of them.
+        ContractVerdict shape =
+            await this.guardianService.CheckShapeAsync(decided.Payload, this.contractSchema);
+
+        if (shape.Satisfied is false)
+        {
+            // A rejection the trace does not explain is a turn nobody can account for. The Judge's
+            // rejections were already narrated; this one says which guardian refused and why.
+            await this.loggingBroker.LogProcessAsync(
+                "Decision",
+                $"Contract → REJECTED: {shape.Reason}");
+
+            return context with
+            {
+                Observations =
+                [
+                    .. context.Observations,
+                    ShapeFeedback(shape, decided.Payload)
+                ],
+
+                Status = AgentStatus.Revising
+            };
+        }
+
+        // Every guardian has passed, so this draft is an answer — and it must stop carrying the
+        // Revising it inherited from the turn that rejected the last one. Interpret builds the
+        // decided context with `context with { ... }`, which copies Status forward, so without
+        // this a draft accepted on the second pass leaves Decision still marked Revising, the loop
+        // continues, and the run exhausts its turns refusing an answer that had already passed.
+        return decided.Status is AgentStatus.Revising
+            ? decided with { Status = AgentStatus.Working }
+            : decided;
     });
+
+    // Aimed, not scolding. A revision the model cannot act on is a turn spent for nothing, so the
+    // validator's complaint is repeated verbatim rather than summarised into "invalid".
+    private static string ShapeFeedback(ContractVerdict verdict, string draft) =>
+        $"A previous draft was rejected because {verdict.Reason}. Reply with JSON matching the "
+            + $"required shape and nothing else. The draft was: {draft}";
 
     private static string RevisionFeedback(Judgement judgement, string draft) =>
         string.IsNullOrWhiteSpace(judgement.Reason)
