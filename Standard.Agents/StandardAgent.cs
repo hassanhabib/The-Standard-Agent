@@ -116,6 +116,10 @@ public sealed partial class StandardAgent : IAgent
     // So the default is a counter rather than a no-op: an agent with no budget is wide open and
     // still measurable, and .Budget() alone is enough to make a bound real on any endpoint.
     private IUsageBroker usageBroker = new RatioUsageBroker();
+
+    // Wide open by default: an agent given no contract is not constrained by having become
+    // checkable, the same way counting is always on and blocking is not.
+    private string? contractSchema;
     private int maxHistoryTurns = 20;
     private Func<AgentPrincipal?>? identityResolver;
 
@@ -956,6 +960,16 @@ public sealed partial class StandardAgent : IAgent
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent Usage(double charactersPerToken = 4.0) =>
         Set(() => this.usageBroker = new RatioUsageBroker(charactersPerToken));
+
+    /// <summary>
+    /// Requires every answer to satisfy a JSON schema — the <b>Local</b> mode, validated in the
+    /// box. A draft that does not match is re-thought with the validation error as the reason it
+    /// was rejected: never faulted, and never handed back as though it had matched.
+    /// </summary>
+    /// <param name="jsonSchema">The shape every answer must take.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent Contract(string jsonSchema) =>
+        Set(() => this.contractSchema = jsonSchema);
 
     /// <summary>
     /// Counts tokens with a provider's own tokenizer — the <b>External</b> mode. Use this when
