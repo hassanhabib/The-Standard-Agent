@@ -9,7 +9,9 @@ using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models.Foundations.Judges;
 using Standard.Agents.Models.Foundations.Usages;
 using Standard.Agents.Models.Orchestrations.Agents;
+using Standard.Agents.Brokers.Contracts;
 using Standard.Agents.Services.Foundations.Brains;
+using Standard.Agents.Services.Foundations.Contracts;
 using Standard.Agents.Services.Foundations.Gates;
 using Standard.Agents.Services.Foundations.Judges;
 using Standard.Agents.Services.Foundations.Usages;
@@ -56,6 +58,7 @@ public partial class DecisionCoordinationServiceTests
             guardianService: new GuardianOrchestrationService(
                 this.gateServiceMock.Object,
                 this.judgeServiceMock.Object,
+                new ContractService(new RuleContractBroker(), this.loggingBrokerMock.Object),
                 this.loggingBrokerMock.Object),
             loggingBroker: this.loggingBrokerMock.Object);
     }
