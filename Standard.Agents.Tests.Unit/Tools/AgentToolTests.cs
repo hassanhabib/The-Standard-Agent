@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Standard.Agents.Tests.Unit.Tools;
 
-public class AgentToolTests
+public partial class AgentToolTests
 {
     private static string CreateRandomString() =>
         new MnemonicString().GetValue();
