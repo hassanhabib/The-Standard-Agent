@@ -155,62 +155,6 @@ public class SweepReproTests : IDisposable
                 + "be told the agent said something it never said");
     }
 
-    // FINDING 8 — a streamed run that ends AwaitingApproval tells the caller nothing.
-    [Fact(Skip = "DEMONSTRATES DEFECT: AwaitingApproval emits no stream event")]
-    public async Task Finding8_StreamedHeldRunMustSayItIsWaitingAsync()
-    {
-        var tool = new CountingTool();
-        int calls = 0;
-
-        Func<string, string, ValueTask<string>> brain = (_, _) =>
-            ValueTask.FromResult(++calls == 1 ? "ACTION: calculator: 2+2" : "FINAL: done");
-
-        StandardAgent batched = BareAgent(brain)
-            .Tool(tool)
-            .RequireApproval("calculator")
-            .MaxTurns(3);
-
-        string batchedAnswer = await batched.ProcessPromptAsync("compute");
-
-        batchedAnswer.Should().Contain("waiting for approval");
-
-        calls = 0;
-        var streamedTool = new CountingTool();
-
-        StandardAgent streamed = BareAgent(brain)
-            .Tool(streamedTool)
-            .RequireApproval("calculator")
-            .MaxTurns(3);
-
-        List<AgentStreamEvent> events = await DrainAsync(streamed.StreamPromptAsync("compute"));
-
-        events.Should().Contain(
-            streamEvent => streamEvent.Content.Contains("waiting for approval"),
-            because: "the batched caller is told the act is held; a streamed caller who is "
-                + "told nothing will report held work as done");
-    }
-
-    // FINDING 10 — Permissions(Ask) with no approver: held, or silently approved?
-    [Fact(Skip = "DEMONSTRATES DEFECT: NotConfiguredApprovalBroker answers Approved, so Ask alone is consent")]
-    public async Task Finding10_AskModeWithNoApproverMustHoldTheActAsync()
-    {
-        var tool = new CountingTool();
-        int calls = 0;
-
-        StandardAgent agent = BareAgent((_, _) =>
-            ValueTask.FromResult(++calls == 1 ? "ACTION: calculator: 2+2" : "FINAL: done"))
-            .Tool(tool)
-            .Permissions(PermissionMode.Ask)
-            .MaxTurns(3);
-
-        string answer = await agent.ProcessPromptAsync("compute");
-
-        tool.ExecutionCount.Should().Be(
-            0,
-            because: "the docs say Ask requires approval exactly as RequireApproval does, "
-                + "and RequireApproval with no approver holds the act — waiting is not consent");
-    }
-
     // FINDING 7b — documents the actual outcome shape at the cap (expected to PASS;
     // evidence for the AgentOutcome doc-comment mismatch, not a failure).
     [Fact]

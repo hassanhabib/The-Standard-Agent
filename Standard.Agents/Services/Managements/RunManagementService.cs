@@ -297,9 +297,21 @@ public partial class RunManagementService : IRunManagementService
                     $"{context.DirectionType}: {context.Result}");
             }
 
+            // A held act is announced before its message: the Status event says WHAT happened
+            // for a consumer that switches on kinds, and the Response carries the same words the
+            // batched caller receives — filtering a stream to Response equals what
+            // ProcessPromptAsync returns, held runs included. A streamed caller told nothing
+            // would report held work as done, which is the leak AgentOutcome closed batched.
+            if (context.Status is AgentStatus.AwaitingApproval)
+            {
+                yield return new AgentStreamEvent(
+                    AgentStreamEventType.Status, "an act is waiting for approval; the run is held");
+            }
+
             if (context.Status is AgentStatus.Responded
                 or AgentStatus.Refused
                 or AgentStatus.AwaitingInput
+                or AgentStatus.AwaitingApproval
                 && string.IsNullOrEmpty(context.Result) is false)
             {
                 yield return new AgentStreamEvent(
