@@ -351,6 +351,60 @@ public class PermissionTests
         tool.Writes.Should().Be(2);
     }
 
+    // Gap 7, found in the 2026-08-23 sweep. The grant key is the tool AND the scope, exactly —
+    // but ScopeOf defaults to empty, so for any tool that names no scope (every MCP tool among
+    // them) the key collapsed to the tool name alone: approving a $10 transfer silently
+    // approved the $10,000 one later in the same run. An act with no named scope cannot be
+    // matched to a later one "exactly", so nothing may be remembered and each act is asked
+    // about — an identical repeat is already replayed by run-once before approval is reached.
+    [Fact]
+    public async Task ShouldAskAgainWhenTheToolNamesNoScopeAsync()
+    {
+        // given — a tool with no ScopeOf, proposing two very different acts
+        var tool = new WireTransferTool();
+        int asked = 0;
+
+        StandardAgent agent = AgentActing(
+            tool,
+            "ACTION: wire_transfer: 10 to bob",
+            "ACTION: wire_transfer: 10000 to mallory",
+            "FINAL: done")
+                .RequireApproval("wire_transfer")
+                .OnApproval(_ =>
+                {
+                    asked++;
+
+                    return ValueTask.FromResult(ApprovalDecision.Approved);
+                });
+
+        // when
+        await agent.ProcessPromptAsync("settle up");
+
+        // then
+        asked.Should().Be(
+            2,
+            because: "approving ten dollars is not approving ten thousand — with no scope to "
+                + "match exactly, every act of the tool is its own question");
+
+        tool.Transfers.Should().Be(2);
+    }
+
+    private sealed class WireTransferTool : ITool
+    {
+        public string Name => "wire_transfer";
+        public string Description => "Moves money.";
+        public int Transfers { get; private set; }
+
+        // Deliberately no ScopeOf: this is the shape of every tool that does not implement it,
+        // which includes every tool that arrives over MCP.
+        public ValueTask<string> ExecuteAsync(string input)
+        {
+            Transfers++;
+
+            return ValueTask.FromResult("paid");
+        }
+    }
+
     // The other half of gap 4, and the one that makes it safe: a grant is for the scope it was
     // given for. Approving a write to one file is not approving writes to every file.
     [Fact]

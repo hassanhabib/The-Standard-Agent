@@ -1,0 +1,20 @@
+{
+  "name": "a-grant-is-for-what-it-was-granted-for",
+  "description": "SPEC.md 4.9: a remembered grant is scoped to the tool AND the scope, exactly. A tool that names no scope (no ScopeOf - the shape of every MCP tool) leaves nothing to match exactly, so nothing is remembered and every act of it is its own approval question; an identical repeat is already replayed by run-once before approval is reached. Here the authority approves ten dollars and denies ten thousand: exactly one transfer runs, and it is the ten-dollar one - toolInput pins WHICH, so an implementation that granted the second act on the first act's approval fails, and so does one that denied both.",
+  "generatorReplies": [
+    "ACTION: wire_transfer: 10 to bob",
+    "ACTION: wire_transfer: 10000 to mallory",
+    "FINAL: done"
+  ],
+  "tools": { "wire_transfer": "paid" },
+  "requireApproval": ["wire_transfer"],
+  "approvalDecisions": ["approved", "denied"],
+  "prompt": "settle the invoice",
+  "maxTurns": 5,
+  "expect": {
+    "result": "done",
+    "toolRunCount": { "wire_transfer": 1 },
+    "toolInput": { "wire_transfer": "10 to bob" },
+    "brainSees": "approval denied"
+  }
+}
