@@ -129,12 +129,48 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
             return decided;
         }
 
+        (AgentContext Revising, string StatusNote)? rejected =
+            await RejectedByGuardiansAsync(context, decided);
+
+        if (rejected is not null)
+        {
+            return rejected.Value.Revising;
+        }
+
+        // Every guardian has passed, so this draft is an answer. It cannot be carrying a stale
+        // Revising: both doors clear the last turn's verdict on entry, so Revising only ever
+        // leaves this service when a guardian set it THIS turn.
+        return decided;
+    });
+
+    // One verdict sequence for every final draft, whichever door it arrived through (SPEC.md
+    // §7.6): the Judge on the merits, then the Contract on the shape — in that order,
+    // deliberately, because a draft that is wrong on the merits should be told that, not told
+    // its punctuation is off; two rejections in one turn would spend a turn teaching the model
+    // the lesser of them. This method is the ONLY copy: the streamed contract hole existed
+    // precisely because the sequence was written out once per door, so one door got the third
+    // guardian and the other did not. Logging lives here too, so the two doors cannot drift in
+    // what the trace shows.
+    //
+    // Returns the Revising context carrying the rejection feedback and a status note for the
+    // stream to narrate, or null when the draft stands.
+    private async ValueTask<(AgentContext Revising, string StatusNote)?> RejectedByGuardiansAsync(
+        AgentContext context,
+        AgentContext decided)
+    {
         Judgement judgement =
             await this.guardianService.EvaluateAsync(task: context.Prompt, candidate: decided.Payload);
 
+        string judgeOutcome = judgement.Score < MinimumAcceptableScore
+            ? $"REJECT: {judgement.Reason}".TrimEnd(':', ' ')
+            : "ACCEPT";
+
+        await this.loggingBroker.LogProcessAsync(
+            "Decision", $"Judge → scored {judgement.Score:F2} → {judgeOutcome}");
+
         if (judgement.Score < MinimumAcceptableScore)
         {
-            return context with
+            AgentContext revising = context with
             {
                 Observations =
                 [
@@ -144,23 +180,21 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
 
                 Status = AgentStatus.Revising
             };
+
+            return (revising, "judge rejected the draft; revising");
         }
 
-        // The shape check runs after the Judge and not before it, deliberately: a draft that is
-        // wrong on the merits should be told that, not told its punctuation is off. Two rejections
-        // in one turn would spend a turn teaching the model the lesser of them.
         ContractVerdict shape =
             await this.guardianService.CheckShapeAsync(decided.Payload, this.contractSchema);
 
         if (shape.Satisfied is false)
         {
-            // A rejection the trace does not explain is a turn nobody can account for. The Judge's
-            // rejections were already narrated; this one says which guardian refused and why.
+            // A rejection the trace does not explain is a turn nobody can account for.
             await this.loggingBroker.LogProcessAsync(
                 "Decision",
                 $"Contract → REJECTED: {shape.Reason}");
 
-            return context with
+            AgentContext revising = context with
             {
                 Observations =
                 [
@@ -170,13 +204,12 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
 
                 Status = AgentStatus.Revising
             };
+
+            return (revising, "contract rejected the draft; revising");
         }
 
-        // Every guardian has passed, so this draft is an answer. It cannot be carrying a stale
-        // Revising: both doors clear the last turn's verdict on entry, so Revising only ever
-        // leaves this service when a guardian set it THIS turn.
-        return decided;
-    });
+        return null;
+    }
 
     // Aimed, not scolding. A revision the model cannot act on is a turn spent for nothing, so the
     // validator's complaint is repeated verbatim rather than summarised into "invalid".
@@ -291,30 +324,17 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
             yield break;
         }
 
-        Judgement judgement = await this.guardianService.EvaluateAsync(task: context.Prompt, candidate: decided.Payload);
+        // The identical verdict sequence the batched door runs — one copy, so neither door can
+        // hold a guardian the other lacks.
+        (AgentContext Revising, string StatusNote)? rejected =
+            await RejectedByGuardiansAsync(context, decided);
 
-        string judgeOutcome = judgement.Score < MinimumAcceptableScore
-            ? $"REJECT: {judgement.Reason}".TrimEnd(':', ' ')
-            : "ACCEPT";
-
-        await this.loggingBroker.LogProcessAsync(
-            "Decision", $"Judge → scored {judgement.Score:F2} → {judgeOutcome}");
-
-        if (judgement.Score < MinimumAcceptableScore)
+        if (rejected is not null)
         {
-            setResult(context with
-            {
-                Observations =
-                [
-                    .. context.Observations,
-                    RevisionFeedback(judgement, decided.Payload)
-                ],
-
-                Status = AgentStatus.Revising
-            });
+            setResult(rejected.Value.Revising);
 
             yield return new AgentStreamEvent(
-                AgentStreamEventType.Status, "judge rejected the draft; revising");
+                AgentStreamEventType.Status, rejected.Value.StatusNote);
 
             yield break;
         }

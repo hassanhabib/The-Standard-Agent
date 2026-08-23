@@ -88,34 +88,6 @@ public class SweepReproTests : IDisposable
         return drained;
     }
 
-    // FINDING 3 — the Contract guardian on the streamed path.
-    [Fact(Skip = "DEMONSTRATES DEFECT: CheckShapeAsync is never called on the streamed path")]
-    public async Task Finding3_StreamedContractMustBeEnforcedAsync()
-    {
-        const string schema = """{"type":"object","required":["answer"]}""";
-
-        StandardAgent batched = BareAgent((_, _) => ValueTask.FromResult("FINAL: not json"))
-            .Contract(schema)
-            .MaxTurns(3);
-
-        string batchedAnswer = await batched.ProcessPromptAsync("shape it");
-
-        StandardAgent streamed = BareAgent((_, _) => ValueTask.FromResult("FINAL: not json"))
-            .Contract(schema)
-            .MaxTurns(3);
-
-        List<AgentStreamEvent> events = await DrainAsync(streamed.StreamPromptAsync("shape it"));
-
-        string streamedAnswer = string.Concat(events
-            .Where(streamEvent => streamEvent.Type == AgentStreamEventType.Response)
-            .Select(streamEvent => streamEvent.Content));
-
-        streamedAnswer.Should().Be(
-            batchedAnswer,
-            because: "an answer the contract rejects on the batched path must not be "
-                + "delivered by switching to the streamed one");
-    }
-
     // FINDING 6 — on the text protocol only the FIRST turn's model call is ever measured.
     [Fact(Skip = "DEMONSTRATES DEFECT: MeasuredAsync short-circuits on carried-forward counts; turns 2+ unmeasured")]
     public async Task Finding6_EveryTextProtocolTurnMustBeMeasuredAsync()
