@@ -48,6 +48,24 @@ public partial class DirectionCoordinationService
             return Denied(context, decision.Reason);
         }
 
+        // 1b — the mode's answer for an act nothing named, under Deny. It is decided here with
+        // authorization and not at the approval stage, because Deny asks nobody: the act is
+        // refused before its intent is recorded, exactly as a policy denial is — told,
+        // non-terminal, recoverable. An act RequireApproval names was mentioned, so it travels
+        // to its authority below; the mode speaks only for what no permission mentioned.
+        if (DeniedBecauseNothingPermitsIt(effect))
+        {
+            string denial =
+                $"tool '{effect.ToolName}' is not permitted: nothing explicitly permits it "
+                    + "and the permission mode is Deny";
+
+            await this.loggingBroker.LogProcessAsync(
+                "Direction",
+                $"Permissions → DENIED '{effect.ToolName}': nothing explicitly permits it");
+
+            return Denied(context, denial);
+        }
+
         // 2 — record the intent, and learn whether this act already happened
         string? priorOutcome = await this.perimeterService.ClaimAsync(effect);
 
@@ -285,6 +303,14 @@ public partial class DirectionCoordinationService
     // framework cannot tell a considered yes from an incidental one.
     private bool AskBecauseNothingPermittedIt(AgentEffect effect) =>
         this.permissionMode is PermissionMode.Ask
+            && this.explicitlyPermits?.Invoke(effect) is not true;
+
+    // Deny's twin of the predicate above, sharing its reading of "explicitly permitted" so the
+    // two modes cannot drift: an allow-list entry names the act, and a RequireApproval name
+    // routes it to an authority instead. Everything else is refused.
+    private bool DeniedBecauseNothingPermitsIt(AgentEffect effect) =>
+        this.permissionMode is PermissionMode.Deny
+            && effect.ApprovalRequired is false
             && this.explicitlyPermits?.Invoke(effect) is not true;
 
     private bool RequiresApproval(string toolName) =>

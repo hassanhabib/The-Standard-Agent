@@ -88,26 +88,6 @@ public class SweepReproTests : IDisposable
         return drained;
     }
 
-    // FINDING 1 — Permissions(Deny): "Denied. Nothing runs but what was named."
-    [Fact(Skip = "DEMONSTRATES DEFECT: PermissionMode.Deny is never enforced; the tool runs")]
-    public async Task Finding1_DenyMode_UnnamedToolMustNotRunAsync()
-    {
-        var tool = new CountingTool();
-        int calls = 0;
-
-        StandardAgent agent = BareAgent((_, _) =>
-            ValueTask.FromResult(++calls == 1 ? "ACTION: calculator: 2+2" : "FINAL: done"))
-            .Tool(tool)
-            .Permissions(PermissionMode.Deny)
-            .MaxTurns(3);
-
-        await agent.ProcessPromptAsync("compute");
-
-        tool.ExecutionCount.Should().Be(
-            0, because: "PermissionMode.Deny says nothing runs but what was named, "
-                + "and nothing named this tool");
-    }
-
     // FINDING 2 — streamed revision acceptance: the 1.5.0 batched fix, on the streamed path.
     [Fact(Skip = "DEMONSTRATES DEFECT: streamed path still carries Revising past an accepted draft and refuses")]
     public async Task Finding2_StreamedDraftAcceptedOnRevisionMustDeliverAsync()
