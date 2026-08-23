@@ -364,6 +364,24 @@ var agent = new StandardAgent(url, key, "LLooMA2.0")
 No model, no call, and a verdict you can predict. It uses the same `IVerifierBroker` seam as the
 model-backed `.Judge(...)`.
 
+**The third guardian: the Contract, with `.Contract(...)`.** The Judge asks whether an answer is
+good enough; the Contract asks whether it is the right **shape**. Give the agent a JSON schema
+and every final answer must satisfy it — a draft that does not is re-thought with the validation
+error as the reason, exactly like a Judge rejection: never faulted, never handed back as though
+it had matched, and refused gracefully if the shape never comes.
+
+```csharp
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .Contract("""{ "type": "object", "required": ["amount", "currency"] }""");
+```
+
+The in-box validator covers the schema subset a model actually gets wrong. `.UseContract(broker)`
+brings a full JSON Schema library; `.OnContract((answer, schema) => …)` validates with your own
+code — return `null` to accept, or what is wrong in words the model can act on, for rules no
+schema expresses (a total that must equal its lines, an account that must exist). It runs on
+both the batched and streamed door, after the Judge, so a draft wrong on the merits is told that
+first.
+
 **One law above both.** The Gate and Judge each ship with a built-in policy. To bind them to
 your own rules, point the agent at an ethical constitution with `.Constitution(...)`, a markdown
 file whose text is prepended above *both* guardian rubrics, so one law governs what is screened
@@ -450,6 +468,13 @@ Both are optional and default to what they were before — `Safe`, and no scope 
 against an earlier release keeps working. For tools you did not write (an MCP server cannot declare
 anything in C#), classify them yourself with **`.Risk(RiskLevel.Irreversible, "delete_account")`**;
 the host's word wins, because the host is accountable for the deployment.
+
+**Classification is not enforcement, and that boundary is deliberate.** `.Risk(...)` stamps the
+level onto the effect for whatever decides — your policy broker, your approval broker, the audit
+record — and changes nothing by itself: declaring a tool Irreversible does **not** put it behind
+approval. Approval is `.RequireApproval(...)`'s job (which does imply Irreversible when nobody
+says otherwise); a policy that should branch on risk reads `effect.RiskLevel` in `.OnPolicy` /
+`.UsePolicy`. Classify AND require — one names the danger, the other guards it.
 
 Scope matching is a **prefix**, deliberately: no globs, no regular expressions, no path
 canonicalisation. `"/project"` matches `/project-secrets` — say `"/project/"` if that matters. A
@@ -647,7 +672,7 @@ Unlike memory, the agent never writes here; you populate it.
 ```csharp
 var agent = new StandardAgent(url, key, "LLooMA2.0")
     .Knowledge("Knowledge");   // ← new this section — folder of .md docs, top 3 per turn
-    // full form: .Knowledge(path: "Knowledge", pattern: "*.md", maxResults: 3)
+    // full form: .Knowledge(path: "Knowledge", pattern: "*.md", maxResults: 3, minScore: 0.0)
 ```
 
 **Setup.** `.Knowledge(path, pattern, maxResults)` points at a folder, searched **recursively** —
@@ -655,22 +680,22 @@ subfolders count, so one root can hold many files. `pattern` (default `*.md`) pi
 `maxResults` (default 3) caps how many documents are injected per turn. Copy the folder to output
 (see the top), or the agent has nothing to read.
 
-**Retrieval.** On each prompt the agent scans the files in path order and includes a document when
-its text **contains your prompt**, matched as a **case-insensitive substring** — then stops at
-`maxResults` whole documents and adds them to the turn's observations, alongside anything it
-remembers.
-
-That matcher is deliberately simple: literal containment of the *entire* prompt, not keyword or
-semantic search. It fires when the prompt is a short phrase that appears verbatim in a document, and
-misses on long conversational prompts. So keep knowledge files focused and keyed on the phrases
-users actually type — or swap in real retrieval (embeddings, BM25, a vector DB) by implementing
-`IKnowledgeBroker` and passing it to `.UseKnowledge(...)`.
+**Retrieval.** On each prompt the agent splits every document into overlapping ~120-word
+**passages**, scores each passage by how many of the prompt's terms it carries — each term
+weighted by how rare it is across the corpus, with common words ignored and long passages
+penalised — and injects the top `maxResults` **passages** (not whole documents: one long file can
+fill every slot) into the turn's observations. A natural question does not have to appear
+verbatim anywhere; it only has to share its meaningful terms with the passage that answers it.
 
 ```
 Knowledge/pricing.md → "Pro plan pricing: $29/month, billed annually."
-Prompt: "Pro plan pricing"                        → substring match → grounded answer ($29/month)
-Prompt: "so how much does the pro tier cost me?"  → no literal overlap → no match
+Prompt: "so how much does the pro tier cost me?"  → shares "pro", "cost"-adjacent terms → matched
 ```
+
+`minScore` (default 0) is the relevance floor a passage must clear to be injected — raise it when
+weak matches are crowding out good ones. The ranking is still term overlap, not semantics: for
+embeddings, BM25 at scale, or a vector DB, implement `IKnowledgeBroker` and pass it to
+`.UseKnowledge(...)`.
 
 ### Knowledge in a database
 
@@ -720,6 +745,15 @@ genuinely separate source — a second root, a database, an API — implement `I
 `IMemoryBroker`) as a composite that fans out across them and pass it to `.UseKnowledge(...)` /
 `.UseMemory(...)`. Nesting one agent inside another as a tool is the other route: it gives the
 sub-task its own private knowledge and memory.
+
+**Nothing crosses the nesting seam, and that is the design.** A nested agent is a different run
+of a different composition: the outer agent's budget, principal, policy, approvals, effect
+ledger, sessions, and remembered grants do not reach it — the inner agent brings its own or runs
+without. Its run-once keys and compensation are scoped to its own run. The outer cancellation
+token does not reach a nested agent mid-run either; it stops the *outer* loop at the next turn
+boundary. What does cross back is honesty: a sub-agent that answered returns its answer plainly,
+and one that was held, refused, or ran out of turns comes back marked `[did not complete]` with
+its status and its own words, so an outer agent cannot report held work as done.
 
 ---
 
@@ -864,6 +898,12 @@ replays its outcome instead of repeating it.
 ```csharp
 .EffectLedger("ledger")            // survives the process; the built-in one lives in memory
 ```
+
+**The boundary, stated:** run-once is scoped to a **run**. A repeat of the same act in a later,
+completed conversation is a new act and performs again — and a delivery mechanism that may
+redeliver (an at-least-once queue, a retried webhook) starts a new run each time, so a caller
+whose triggers can repeat MUST deduplicate at the trigger boundary. Run-once protects a run from
+itself, not your queue from its own redeliveries.
 
 The key is *derived* from the run, the tool and a canonical form of the arguments — never supplied
 by you and never by the model, because a key the model can choose is a key the model can vary.
@@ -1103,6 +1143,9 @@ enforces it.
 | Resilience | `Resilience` | `UseResilience` | `Fallback` |
 | Sessions | `Sessions(path)` | `UseSessions` | `OnSessions` |
 | Effect ledger | `EffectLedger(path)` | `UseEffectLedger` | `OnEffectLedger` |
+| Usage | `Usage(ratio)` | `UseUsage` | `OnUsage` |
+| Contract | `Contract(schema)` | `UseContract` | `OnContract` |
+| Redaction | `Redact(rules)` | `UseRedaction` | `OnRedaction` |
 
 The two dashes are the only gaps, and they are documented impossibilities rather than debt: Local
 means "in the box, no dependency", and running a model in-process needs an inference runtime. Use
