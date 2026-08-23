@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using Standard.Agents.Models.Orchestrations.Effects;
 using Standard.Agents.Tools;
 
 namespace Standard.Agents.Conformance;
@@ -13,6 +14,8 @@ public sealed class StubTool : ITool
     private readonly List<string> receivedInputs = [];
     private readonly bool reversible;
     private readonly List<string>? compensationOrder;
+    private readonly RiskLevel risk;
+    private readonly bool scopeIsFirstWord;
 
     public string Name { get; }
 
@@ -26,13 +29,27 @@ public sealed class StubTool : ITool
         string name,
         string output,
         bool reversible = false,
-        List<string>? compensationOrder = null)
+        List<string>? compensationOrder = null,
+        RiskLevel risk = RiskLevel.Safe,
+        bool scopeIsFirstWord = false)
     {
         this.Name = name;
         this.output = output;
         this.reversible = reversible;
         this.compensationOrder = compensationOrder;
+        this.risk = risk;
+        this.scopeIsFirstWord = scopeIsFirstWord;
     }
+
+    // Declared, because permission is what AND where and only the tool knows either.
+    public RiskLevel Risk => this.risk;
+
+    // One named strategy, so a runner in any language implements the same thing: the scope is
+    // the first whitespace-separated word of the input - enough to express a path.
+    public string ScopeOf(string input) =>
+        this.scopeIsFirstWord
+            ? input.Split(' ')[0]
+            : string.Empty;
 
     public async ValueTask<string> ExecuteAsync(string input)
     {

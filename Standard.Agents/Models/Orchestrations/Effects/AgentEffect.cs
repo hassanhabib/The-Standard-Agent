@@ -32,6 +32,13 @@ public sealed record AgentEffect
     public string ToolName { get; init; } = "";
     public string Arguments { get; init; } = "";
 
+    /// <summary>
+    /// What the act is about to touch — a path, a host, an account — as the tool named it
+    /// (ITool.ScopeOf). Empty when the tool touches nothing addressable. Permission is not only
+    /// what but where, and a policy that can only see a tool name cannot express the difference.
+    /// </summary>
+    public string Scope { get; init; } = "";
+
     public RiskLevel RiskLevel { get; init; }
     public bool ApprovalRequired { get; init; }
 
@@ -57,10 +64,12 @@ public sealed record AgentEffect
         string arguments,
         RiskLevel riskLevel = RiskLevel.Safe,
         bool approvalRequired = false,
-        AgentPrincipal? principal = null) =>
+        AgentPrincipal? principal = null,
+        string scope = "") =>
         new()
         {
             RunId = runId,
+            Scope = scope,
 
             // Both views of one identity, kept in step here so they cannot disagree. The
             // identifier stays for the callers that only ever needed "who".

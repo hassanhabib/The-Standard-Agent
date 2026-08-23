@@ -28,6 +28,11 @@ public partial class DirectionCoordinationService : IDirectionCoordinationServic
     private readonly IExecutionOrchestrationService executionService;
     private readonly ILoggingBroker loggingBroker;
     private readonly HashSet<string> irreversibleToolNames;
+    private readonly PermissionMode permissionMode;
+    private readonly IReadOnlyDictionary<string, RiskLevel> declaredRisk;
+    private readonly IReadOnlyDictionary<string, RiskLevel> toolRisk;
+    private readonly IReadOnlyDictionary<string, Func<string, string>> toolScope;
+    private readonly Func<AgentEffect, bool>? explicitlyPermits;
 
     // Asked once per act rather than captured once at composition, because who is acting can
     // change between prompts on the same agent — a singleton serving many callers is the shape
@@ -39,8 +44,26 @@ public partial class DirectionCoordinationService : IDirectionCoordinationServic
         IExecutionOrchestrationService executionService,
         ILoggingBroker loggingBroker,
         IEnumerable<string>? irreversibleTools = null,
-        Func<AgentPrincipal?>? identityResolver = null)
+        Func<AgentPrincipal?>? identityResolver = null,
+        PermissionMode permissionMode = PermissionMode.Open,
+        IReadOnlyDictionary<string, RiskLevel>? declaredRisk = null,
+        IReadOnlyDictionary<string, RiskLevel>? toolRisk = null,
+        IReadOnlyDictionary<string, Func<string, string>>? toolScope = null,
+        Func<AgentEffect, bool>? explicitlyPermits = null)
     {
+        this.permissionMode = permissionMode;
+
+        this.declaredRisk = declaredRisk
+            ?? new Dictionary<string, RiskLevel>(StringComparer.OrdinalIgnoreCase);
+
+        this.toolRisk = toolRisk
+            ?? new Dictionary<string, RiskLevel>(StringComparer.OrdinalIgnoreCase);
+
+        this.toolScope = toolScope
+            ?? new Dictionary<string, Func<string, string>>(StringComparer.OrdinalIgnoreCase);
+
+        this.explicitlyPermits = explicitlyPermits;
+
         this.perimeterService = perimeterService;
         this.executionService = executionService;
         this.loggingBroker = loggingBroker;

@@ -28,6 +28,7 @@ public partial class DirectionCoordinationService
             arguments: context.Payload,
             riskLevel: RiskLevelFor(context.DirectionType),
             approvalRequired: RequiresApproval(context.DirectionType),
+            scope: ScopeFor(context.DirectionType, context.Payload),
 
             // Who is acting, asked at the moment the act is described — so the policy broker
             // deciding whether it may happen is told, not merely the record written afterwards
@@ -60,17 +61,37 @@ public partial class DirectionCoordinationService
         }
 
         // 3 — approve, if required
-        if (effect.ApprovalRequired)
+        //
+        // Required by name, or by the mode: Ask is the disposition toward everything nobody
+        // mentioned, which is the only workable posture for an agent whose targets cannot be
+        // enumerated at composition.
+        if (effect.ApprovalRequired || AskBecauseNothingPermittedIt(effect))
         {
-            ApprovalDecision approval = await this.perimeterService.RequestApprovalAsync(effect);
-
-            if (approval is not ApprovalDecision.Approved)
+            // An authority asked the identical question twice stops reading it. A grant is
+            // remembered for the tool AND the scope it was given for, exactly — approving a write
+            // to one file is not approving writes to every file, and a broader grant is a
+            // judgement only the authority can make.
+            if (AgentRun.Current?.WasGranted(effect.ToolName, effect.Scope) is true)
             {
-                return await HandleUnapprovedAsync(context, effect, approval);
+                await this.loggingBroker.LogProcessAsync(
+                    "Direction",
+                    $"Approval → already granted '{effect.ToolName}' at '{effect.Scope}'");
             }
+            else
+            {
+                ApprovalDecision approval =
+                    await this.perimeterService.RequestApprovalAsync(effect);
 
-            await this.loggingBroker.LogProcessAsync(
-                "Direction", $"Approval → APPROVED '{effect.ToolName}'");
+                if (approval is not ApprovalDecision.Approved)
+                {
+                    return await HandleUnapprovedAsync(context, effect, approval);
+                }
+
+                AgentRun.Current?.RememberGrant(effect.ToolName, effect.Scope);
+
+                await this.loggingBroker.LogProcessAsync(
+                    "Direction", $"Approval → APPROVED '{effect.ToolName}'");
+            }
         }
 
         // 4 — execute
@@ -224,10 +245,47 @@ public partial class DirectionCoordinationService
             Status = AgentStatus.Working
         };
 
-    private RiskLevel RiskLevelFor(string toolName) =>
-        this.irreversibleToolNames.Contains(toolName)
+    // The host classifies first, because it is accountable for the deployment and can speak for
+    // tools it did not write. Then the tool, which is the only thing that knows what it does.
+    // Requiring approval still implies Irreversible when nobody said otherwise — that is what it
+    // meant before, and a list written against an earlier release keeps its meaning.
+    //
+    // What is gone is the coupling that made RiskLevel.Sensitive unreachable: risk and approval
+    // were one predicate over one collection, so a tool was Irreversible if it needed approval and
+    // Safe if it did not, and the middle level named a state the framework could not produce.
+    private RiskLevel RiskLevelFor(string toolName)
+    {
+        if (this.declaredRisk.TryGetValue(toolName, out RiskLevel hostDeclared))
+        {
+            return hostDeclared;
+        }
+
+        if (this.toolRisk.TryGetValue(toolName, out RiskLevel toolDeclared)
+            && toolDeclared is not RiskLevel.Safe)
+        {
+            return toolDeclared;
+        }
+
+        return this.irreversibleToolNames.Contains(toolName)
             ? RiskLevel.Irreversible
             : RiskLevel.Safe;
+    }
+
+    // What the act is about to touch, as the tool named it. The framework never parses arguments:
+    // only the tool knows what its own arguments mean, and a host reinventing that parsing inside
+    // a policy delegate is how every deployment ends up with a different, unchecked answer.
+    private string ScopeFor(string toolName, string arguments) =>
+        this.toolScope.TryGetValue(toolName, out Func<string, string>? scopeOf)
+            ? scopeOf(arguments)
+            : string.Empty;
+
+    // The mode speaks only for what the explicit permissions did not mention. An allow-list that
+    // names the tool has already answered the question — asking anyway would make the list
+    // meaningless — and a host policy broker is assumed to have said what it meant, because the
+    // framework cannot tell a considered yes from an incidental one.
+    private bool AskBecauseNothingPermittedIt(AgentEffect effect) =>
+        this.permissionMode is PermissionMode.Ask
+            && this.explicitlyPermits?.Invoke(effect) is not true;
 
     private bool RequiresApproval(string toolName) =>
         this.irreversibleToolNames.Contains(toolName);

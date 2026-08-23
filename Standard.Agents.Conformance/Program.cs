@@ -191,7 +191,16 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
                 name: pair.Key,
                 output: pair.Value,
                 reversible: vector.CompensatingTools?.Contains(pair.Key) is true,
-                compensationOrder: compensationOrder));
+                compensationOrder: compensationOrder,
+
+                // Declared by the tool, because the tool is the only thing that knows — which is
+                // the whole reason RiskLevel.Sensitive was unreachable before.
+                risk: vector.ToolRisk is not null
+                    && vector.ToolRisk.TryGetValue(pair.Key, out string? level)
+                        ? Enum.Parse<RiskLevel>(level, ignoreCase: true)
+                        : RiskLevel.Safe,
+
+                scopeIsFirstWord: vector.ToolScopeFirstWord?.Contains(pair.Key) is true));
 
     // The guardians run through the real composition (OnGate / OnJudge), so each is handed
     // the rubric the framework composed — constitution, then policy (or the consumption skill),
@@ -301,6 +310,20 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         if (vector.RequireApproval is { Count: > 0 })
         {
             agent.RequireApproval([.. vector.RequireApproval]);
+        }
+
+        // The allow-list, which can now say WHERE as well as WHAT: an entry is "tool" or
+        // "tool:scopePrefix".
+        if (vector.AllowTools is { Count: > 0 })
+        {
+            agent.AllowTools([.. vector.AllowTools]);
+        }
+
+        // The disposition toward an act nothing explicitly permitted.
+        if (string.IsNullOrWhiteSpace(vector.PermissionMode) is false)
+        {
+            agent.Permissions(
+                Enum.Parse<PermissionMode>(vector.PermissionMode, ignoreCase: true));
         }
 
         // A scripted authority, so a vector can hold an act on one run and permit it on the next
