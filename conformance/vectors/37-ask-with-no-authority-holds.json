@@ -1,0 +1,14 @@
+{
+  "name": "ask-with-no-authority-holds",
+  "description": "SPEC.md 4.9: under Ask, an act nothing permitted requires an authority - and with no authority wired in at all, the honest answer is held, because waiting is not consent and an absent authority is nothing but waiting. This is vector 35 with the approver removed: same mode, same unlisted act, and the act must be held rather than silently approved by the broker that stands in when nobody is configured.",
+  "generatorReplies": ["ACTION: write_file: /project/a.txt hello"],
+  "tools": { "write_file": "written" },
+  "toolScopeFirstWord": ["write_file"],
+  "permissionMode": "Ask",
+  "prompt": "write a file",
+  "maxTurns": 4,
+  "expect": {
+    "resultContains": "waiting for approval",
+    "toolNeverRan": ["write_file"]
+  }
+}

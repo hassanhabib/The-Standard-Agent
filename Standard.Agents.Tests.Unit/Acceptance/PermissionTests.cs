@@ -267,6 +267,56 @@ public class PermissionTests
         tool.Writes.Should().Be(1);
     }
 
+    // Gap 6, found in the 2026-08-23 sweep. Ask promises "held, not failed, exactly as
+    // RequireApproval does" — and RequireApproval with no approver holds, because waiting is
+    // not consent. But Ask alone routed to NotConfiguredApprovalBroker, which answered
+    // Approved unconditionally: the perimeter asked, heard yes from nobody, and ran the act.
+    [Fact]
+    public async Task ShouldHoldAnUnpermittedActWhenAskHasNoAuthorityAsync()
+    {
+        // given — Ask, and nobody wired to answer
+        var tool = new WriteFileTool();
+
+        StandardAgent agent = AgentActing(tool, "ACTION: write_file: /project/a.txt hello", "FINAL: done")
+            .Permissions(PermissionMode.Ask);
+
+        // when
+        string actualAnswer = await agent.ProcessPromptAsync("write it");
+
+        // then — held, not performed: an authority that does not exist cannot have said yes
+        tool.Writes.Should().Be(
+            0,
+            because: "Ask with no approval authority must hold the act — waiting is not consent, "
+                + "and an absent authority is nothing but waiting");
+
+        actualAnswer.Should().Contain("waiting for approval");
+    }
+
+    // The same silent consent through the second door: RequireApprovalBroker answered Approved
+    // for any tool NOT on its list — a branch only reachable under Ask, where it meant an act
+    // the authority was never told about ran as if someone had said yes.
+    [Fact]
+    public async Task ShouldHoldAnUnlistedActUnderAskWhenTheAuthorityOnlyKnowsOtherToolsAsync()
+    {
+        // given — the approval list names a different tool entirely
+        var tool = new WriteFileTool();
+
+        StandardAgent agent = AgentActing(tool, "ACTION: write_file: /project/a.txt hello", "FINAL: done")
+            .Permissions(PermissionMode.Ask)
+            .RequireApproval("wire_transfer");
+
+        // when
+        string actualAnswer = await agent.ProcessPromptAsync("write it");
+
+        // then
+        tool.Writes.Should().Be(
+            0,
+            because: "the list names wire_transfer, nobody can answer for write_file, and an "
+                + "unanswerable question is a held act, not a granted one");
+
+        actualAnswer.Should().Contain("waiting for approval");
+    }
+
     // Gap 4. A granted approval was forgotten immediately, so a second act on the same target
     // asked again — and an authority asked the identical question twice stops reading it.
     [Fact]
