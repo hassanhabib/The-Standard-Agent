@@ -16,6 +16,8 @@
     "budget-stops-the-loop",
     "budget-bounds-tokens-on-any-protocol",
     "budget-bounds-cost-on-any-protocol",
+    "a-budget-counts-every-turn",
+    "a-generous-budget-lets-the-run-finish",
     "guardian-screens-once-per-prompt",
     "open-circuit-falls-back-to-secondary",
     "knowledge-retrieves-by-relevance"

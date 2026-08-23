@@ -115,6 +115,75 @@ public class BudgetTests
                 + "reports no cost — and the bound silently never applies");
     }
 
+    // Found in the 2026-08-23 sweep: on the text protocol only the FIRST turn was ever
+    // measured. Interpret carries PromptTokens/CompletionTokens forward with
+    // `context with { ... }` — the same copy that carried Status — and MeasuredAsync reads a
+    // non-zero carried count as "the provider already reported", so turns 2+ skipped the count
+    // and the loop re-billed turn 1's figures every turn. A 7-turn run whose prompt grows every
+    // turn was billed as seven times its smallest turn.
+    [Fact]
+    public async Task ShouldMeasureEveryTurnOnTheTextProtocolAsync()
+    {
+        // given — two model calls, and a counter on the Usage foundation
+        var tool = new CountingTool();
+        int usageCalls = 0;
+        int brainCalls = 0;
+
+        StandardAgent agent = AgentWith(
+            (_, _) => ValueTask.FromResult(
+                ++brainCalls == 1 ? "ACTION: calculator: 1+1" : "FINAL: 2"),
+            tool)
+            .OnUsage(text =>
+            {
+                usageCalls++;
+
+                return ValueTask.FromResult(Math.Max(1, text.Length / 4));
+            })
+            .MaxTurns(4);
+
+        // when
+        await agent.ProcessPromptAsync("what is one plus one");
+
+        // then — each model call is measured once: its prompt and its completion
+        brainCalls.Should().Be(2);
+
+        usageCalls.Should().Be(
+            4,
+            because: "a turn whose spend is never measured is a budget bounding zero, and "
+                + "the second turn is where every real run spends most");
+    }
+
+    // The rejected half of the same defect: a draft the Judge sends back for revision cost a
+    // model call, and that call must reach the budget — the revision loop is exactly where a
+    // run burns tokens fastest.
+    [Fact]
+    public async Task ShouldMeasureARejectedDraftOnTheTextProtocolAsync()
+    {
+        // given
+        var tool = new CountingTool();
+        int usageCalls = 0;
+        int judged = 0;
+
+        StandardAgent agent = AgentWith(
+            (_, _) => ValueTask.FromResult("FINAL: forty two"),
+            tool)
+            .OnJudge((_, _) => ValueTask.FromResult(++judged == 1 ? "0.0" : "1.0"))
+            .OnUsage(text =>
+            {
+                usageCalls++;
+
+                return ValueTask.FromResult(Math.Max(1, text.Length / 4));
+            })
+            .MaxTurns(4);
+
+        // when
+        await agent.ProcessPromptAsync("what is the answer");
+
+        // then — the rejected draft and the accepted one were both measured
+        judged.Should().Be(2);
+        usageCalls.Should().Be(4);
+    }
+
     // The default is wide open: counting always happens, blocking does not. An agent given no
     // budget must not acquire one by having become measurable.
     [Fact]

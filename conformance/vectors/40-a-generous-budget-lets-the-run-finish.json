@@ -1,0 +1,20 @@
+{
+  "name": "a-generous-budget-lets-the-run-finish",
+  "description": "The other direction, asserted on purpose: a budget is a bound, not a switch. A two-turn run under a bound far above its real spend must complete and deliver its answer - an implementation that reports exhaustion whenever a bound is configured, without counting anything, fails here as surely as one that never trips fails the exhaustion vectors.",
+  "generatorReplies": [
+    "ACTION: calculator: 47*89",
+    "FINAL: done"
+  ],
+  "tools": {
+    "calculator": "4183"
+  },
+  "prompt": "what is 47*89",
+  "maxTurns": 4,
+  "budgetMaxTokens": 100000,
+  "expect": {
+    "result": "done",
+    "toolRunCount": {
+      "calculator": 1
+    }
+  }
+}
