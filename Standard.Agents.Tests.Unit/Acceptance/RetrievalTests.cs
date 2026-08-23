@@ -40,6 +40,45 @@ public class RetrievalTests : IDisposable
             loggingBroker: new Mock<ILoggingBroker>().Object);
     }
 
+    // Found in the 2026-08-23 docs pass, sweep shape 3 — a parameter taken and never used:
+    // .Knowledge(minScore:) stored the floor in the builder and composition never passed it on,
+    // so a host raising the relevance floor changed nothing and was never told. The foundation
+    // honoured a floor all along; only the seam dropped it.
+    [Fact]
+    public async Task ShouldHoldKnowledgeToTheConfiguredRelevanceFloorAsync()
+    {
+        // given — one weakly-relevant document, and a floor set far above any real score
+        Directory.CreateDirectory(this.knowledgePath);
+
+        File.WriteAllText(
+            Path.Combine(this.knowledgePath, "pricing.md"),
+            "The pro plan pricing is $29 per month, billed annually.");
+
+        string seenByBrain = string.Empty;
+
+        StandardAgent agent = new StandardAgent()
+            .OnBrain((_, userPrompt) =>
+            {
+                seenByBrain = userPrompt;
+
+                return ValueTask.FromResult("FINAL: ok");
+            })
+            .OnSkills(() => ValueTask.FromResult<IReadOnlyList<Models.Foundations.Skills.Skill>>([]))
+            .OnMemory(
+                recall: () => ValueTask.FromResult<IReadOnlyList<string>>([]),
+                remember: _ => ValueTask.CompletedTask)
+            .Knowledge(this.knowledgePath, minScore: 1_000.0);
+
+        // when
+        await agent.ProcessPromptAsync("pro plan pricing");
+
+        // then — nothing clears a floor of a thousand; injecting anyway means the floor is dead
+        seenByBrain.Should().NotContain(
+            "$29",
+            because: "the host raised the relevance floor and the composition must carry it "
+                + "to the foundation that enforces it");
+    }
+
     [Fact]
     public async Task ShouldRetrieveThePassageThatAnswersANaturalQuestionAsync()
     {
