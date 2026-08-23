@@ -1337,7 +1337,8 @@ public sealed partial class StandardAgent : IAgent
                 Path.GetFullPath(this.knowledgePath),
                 this.knowledgePattern,
                 this.knowledgeMaxResults,
-                logging)
+                logging,
+                this.knowledgeMinScore)
             : new KnowledgeService(this.knowledgeBroker, logging);
 
         // The Data nature, as two regions and the coordination that composes them. Retrieval is
