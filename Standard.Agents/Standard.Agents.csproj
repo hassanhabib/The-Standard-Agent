@@ -20,6 +20,26 @@
     <!-- The Standard's release format is v1.2.3.4 — model . service/routine . fix/config
          . automated build. Deliberately NOT semver; the segments say what KIND of change
          happened, so a model change can never hide in the service segment.
+         1.6.1.0: the docs said what the code does, and saying it caught a defect. The
+         2026-08-23 sweep's most common finding was the silence — a true statement with an
+         unstated boundary — and this pass states them where a reader decides: run-once is
+         scoped to a run and an at-least-once trigger MUST be deduplicated at the trigger
+         boundary (previously said only inside vector 33's JSON); nothing crosses the nesting
+         seam — budget, principal, policy, approvals, ledger, sessions, grants, and the outer
+         cancellation token — and what crosses back is the [did not complete] marker; .Risk()
+         classifies and does not enforce; .Budget meters the Brain. False claims corrected:
+         how-to described the retrieval matcher that 1.3 REPLACED, complete with a worked
+         example that now behaves the opposite of what it showed; AgentOutcome's XML claimed a
+         capped run produced prose (it carries the last tool result with Status Working);
+         README said sixteen capabilities where the enforced matrix holds eighteen; and the
+         Contract guardian - shipped and enforced since 1.5.0 - was documented in no
+         consumer-facing doc at all. VERIFYING RATHER THAN TRANSCRIBING caught one more
+         defect, sweep shape 3 at a new site: .Knowledge(minScore:) stored the floor and
+         composition never passed it on, so a host raising the relevance floor changed
+         nothing. One line fixes it; the class was swept (52 builder fields, zero other
+         orphans) and the floor is documented with the ranking it floors. A behaviour fix and
+         a documentation pass, no new public surface, no model change: a fix/config change,
+         so segment 3 advances, 4 resets.
          1.6.0.0: the enforcement pass - the checks that could not fail were made to bite, and
          the one capability the matrix could not see got its missing modes. A vector that
          cannot fail reports coverage: the sweep proved redaction's vector passed with
@@ -352,7 +372,7 @@
          3/4 reset. Still tracks SPEC.md v0.1 (draft): segment 1 goes to 1 when the spec settles.
          (0.8.0.0: memory and knowledge came alive — knowledge retrieval in Recall + a built-in
          'remember' tool.) -->
-    <Version>1.6.0.0</Version>
+    <Version>1.6.1.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>
