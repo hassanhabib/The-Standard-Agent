@@ -3,6 +3,8 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using Standard.Agents.Models.Orchestrations.Effects;
+
 namespace Standard.Agents.Tools;
 
 public interface ITool
@@ -12,6 +14,32 @@ public interface ITool
     string Description => string.Empty;
 
     string Parameters => "{}";
+
+    /// <summary>
+    /// How consequential this tool is. Declared by the tool, because the tool is what knows —
+    /// inferring it from whichever list a host put the name in is how <c>RiskLevel.Sensitive</c>
+    /// became a level the framework could never produce.
+    /// </summary>
+    /// <remarks>
+    /// The default is <see cref="RiskLevel.Safe"/>, which is what an unclassified tool was treated
+    /// as before. A host can raise it for tools it did not write — an MCP server cannot declare
+    /// anything in C# — and the host's word wins, because the host is the one accountable for the
+    /// deployment.
+    /// </remarks>
+    RiskLevel Risk => RiskLevel.Safe;
+
+    /// <summary>
+    /// What this tool is about to touch, given its input — a path, a host, an account. Empty when
+    /// the tool touches nothing addressable.
+    /// </summary>
+    /// <remarks>
+    /// Permission is not only <i>what</i> but <i>where</i>: "may write files" is not "may write
+    /// files under /project". The framework cannot parse arbitrary tool arguments and a host
+    /// should not have to reinvent that parsing inside a policy delegate, so the tool — the one
+    /// thing that knows what its arguments mean — names the target and the framework carries it to
+    /// the policy, the authority and the audit record.
+    /// </remarks>
+    string ScopeOf(string input) => string.Empty;
 
     ValueTask<string> ExecuteAsync(string input);
 

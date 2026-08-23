@@ -123,6 +123,10 @@ public sealed partial class StandardAgent : IAgent
     // checkable, the same way counting is always on and blocking is not.
     private string? contractSchema;
     private IContractBroker? contractBroker;
+    private PermissionMode permissionMode = PermissionMode.Open;
+
+    private readonly Dictionary<string, RiskLevel> declaredRisk =
+        new(StringComparer.OrdinalIgnoreCase);
     private int maxHistoryTurns = 20;
     private Func<AgentPrincipal?>? identityResolver;
 
@@ -978,6 +982,39 @@ public sealed partial class StandardAgent : IAgent
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent Usage(double charactersPerToken = 4.0) =>
         Set(() => this.usageBroker = new RatioUsageBroker(charactersPerToken));
+
+    /// <summary>
+    /// What happens to an act that nothing explicitly permitted. Explicit permissions —
+    /// <see cref="AllowTools"/>, a policy broker, <see cref="RequireApproval"/> — always answer
+    /// first; this is the disposition toward everything they did not mention.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="PermissionMode.Open"/> is the default and is what every release before this one
+    /// did. <see cref="PermissionMode.Ask"/> is the posture an agent with hands should run under,
+    /// because an agent touching files cannot have its targets enumerated at composition and the
+    /// interesting question is what it does about the ones it meets.
+    /// </remarks>
+    /// <param name="mode">The disposition toward an unpermitted act.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent Permissions(PermissionMode mode) =>
+        Set(() => this.permissionMode = mode);
+
+    /// <summary>
+    /// Classifies tools you did not write — an MCP server cannot declare anything in C#. The
+    /// host's word wins over the tool's own <see cref="ITool.Risk"/>, because the host is the one
+    /// accountable for the deployment.
+    /// </summary>
+    /// <param name="level">How consequential these tools are.</param>
+    /// <param name="toolNames">The tools to classify.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent Risk(RiskLevel level, params string[] toolNames) =>
+        Set(() =>
+        {
+            foreach (string toolName in toolNames)
+            {
+                this.declaredRisk[toolName] = level;
+            }
+        });
 
     /// <summary>
     /// Requires every answer to satisfy a JSON schema — the <b>Local</b> mode, validated in the
