@@ -19,39 +19,46 @@ public partial class RunManagementService
         {
             return await returningFunction();
         }
-        catch (InvalidAgentException invalidAgentException)
-        {
-            throw await CreateAndLogValidationExceptionAsync(invalidAgentException);
-        }
-        catch (AgentOrchestrationValidationException agentOrchestrationValidationException)
-        {
-            throw await CreateAndLogDependencyValidationExceptionAsync(
-                agentOrchestrationValidationException.InnerException as Xeption);
-        }
-        catch (AgentOrchestrationDependencyValidationException agentOrchestrationDependencyValidationException)
-        {
-            throw await CreateAndLogDependencyValidationExceptionAsync(
-                agentOrchestrationDependencyValidationException.InnerException as Xeption);
-        }
-        catch (AgentOrchestrationDependencyException agentOrchestrationDependencyException)
-        {
-            throw await CreateAndLogDependencyExceptionAsync(
-                agentOrchestrationDependencyException.InnerException as Xeption);
-        }
-        catch (AgentOrchestrationServiceException agentOrchestrationServiceException)
-        {
-            throw await CreateAndLogDependencyExceptionAsync(
-                agentOrchestrationServiceException.InnerException as Xeption);
-        }
         catch (Exception exception)
         {
-            var failedRunManagementServiceException =
-                new FailedRunManagementServiceException(
-                    message: "Failed agent coordination service error occurred, contact support.",
-                    innerException: exception);
+            throw await MappedAndLoggedAsync(exception);
+        }
+    }
 
-            throw await CreateAndLogServiceExceptionAsync(
-                failedRunManagementServiceException);
+    // The mapping itself, callable without a surrounding try — which is what the streamed door
+    // needs: an async iterator cannot wrap a yield in a catch, so it advances the enumeration
+    // inside one and maps here. One copy, so the two doors cannot grow different families.
+    private async ValueTask<Exception> MappedAndLoggedAsync(Exception exception)
+    {
+        switch (exception)
+        {
+            case InvalidAgentException invalidAgentException:
+                return await CreateAndLogValidationExceptionAsync(invalidAgentException);
+
+            case AgentOrchestrationValidationException agentOrchestrationValidationException:
+                return await CreateAndLogDependencyValidationExceptionAsync(
+                    agentOrchestrationValidationException.InnerException as Xeption);
+
+            case AgentOrchestrationDependencyValidationException agentOrchestrationDependencyValidationException:
+                return await CreateAndLogDependencyValidationExceptionAsync(
+                    agentOrchestrationDependencyValidationException.InnerException as Xeption);
+
+            case AgentOrchestrationDependencyException agentOrchestrationDependencyException:
+                return await CreateAndLogDependencyExceptionAsync(
+                    agentOrchestrationDependencyException.InnerException as Xeption);
+
+            case AgentOrchestrationServiceException agentOrchestrationServiceException:
+                return await CreateAndLogDependencyExceptionAsync(
+                    agentOrchestrationServiceException.InnerException as Xeption);
+
+            default:
+                var failedRunManagementServiceException =
+                    new FailedRunManagementServiceException(
+                        message: "Failed agent coordination service error occurred, contact support.",
+                        innerException: exception);
+
+                return await CreateAndLogServiceExceptionAsync(
+                    failedRunManagementServiceException);
         }
     }
 

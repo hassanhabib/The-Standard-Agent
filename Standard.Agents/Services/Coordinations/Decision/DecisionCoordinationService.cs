@@ -211,11 +211,44 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
             : $"A previous draft was rejected on review — {judgement.Reason}. "
                 + $"The draft was: {draft}";
 
+    // The streamed door, mapped like the batched one: a fault surfaces in the same family
+    // ThinkAsync's TryCatch produces, whichever door the prompt entered by.
     public IDecisionStream ThinkStreamAsync(
         AgentContext context,
         CancellationToken cancellationToken = default) =>
         new DecisionStream(setResult =>
-            StreamThinkAsync(context, setResult, cancellationToken));
+            MappedStreamAsync(
+                StreamThinkAsync(context, setResult, cancellationToken),
+                cancellationToken));
+
+    private async IAsyncEnumerable<AgentStreamEvent> MappedStreamAsync(
+        IAsyncEnumerable<AgentStreamEvent> stream,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        await using IAsyncEnumerator<AgentStreamEvent> segments =
+            stream.GetAsyncEnumerator(cancellationToken);
+
+        while (true)
+        {
+            AgentStreamEvent segment;
+
+            try
+            {
+                if (await segments.MoveNextAsync() is false)
+                {
+                    break;
+                }
+
+                segment = segments.Current;
+            }
+            catch (Exception exception)
+            {
+                throw await MappedAndLoggedAsync(exception);
+            }
+
+            yield return segment;
+        }
+    }
 
     private async IAsyncEnumerable<AgentStreamEvent> StreamThinkAsync(
         AgentContext context,

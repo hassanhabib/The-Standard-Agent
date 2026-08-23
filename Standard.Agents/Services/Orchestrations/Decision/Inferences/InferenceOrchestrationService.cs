@@ -88,7 +88,42 @@ public partial class InferenceOrchestrationService : IInferenceOrchestrationServ
             received: reply);
     });
 
+    // The streamed door, mapped like the batched one: a fault in the model stream surfaces in
+    // the same orchestration family DecideAsync's TryCatch produces. The enumeration advances
+    // inside the catch and yields outside it — an iterator cannot wrap a yield, but the failure
+    // points are the awaits.
     public async IAsyncEnumerable<AgentStreamEvent> DecideStreamAsync(
+        AgentContext context,
+        Action<AgentContext> setDecided,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        await using IAsyncEnumerator<AgentStreamEvent> segments =
+            DecideStreamCoreAsync(context, setDecided, cancellationToken)
+                .GetAsyncEnumerator(cancellationToken);
+
+        while (true)
+        {
+            AgentStreamEvent segment;
+
+            try
+            {
+                if (await segments.MoveNextAsync() is false)
+                {
+                    break;
+                }
+
+                segment = segments.Current;
+            }
+            catch (Exception exception)
+            {
+                throw await MappedAndLoggedAsync(exception);
+            }
+
+            yield return segment;
+        }
+    }
+
+    private async IAsyncEnumerable<AgentStreamEvent> DecideStreamCoreAsync(
         AgentContext context,
         Action<AgentContext> setDecided,
         [EnumeratorCancellation] CancellationToken cancellationToken)
