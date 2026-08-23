@@ -190,56 +190,6 @@ public class SweepReproTests : IDisposable
                 + "told nothing will report held work as done");
     }
 
-    // FINDING 9 — a native brain works batched and faults on the streamed path.
-    [Fact(Skip = "DEMONSTRATES DEFECT: DecideStreamAsync has no SpeaksNatively branch; native brain faults on StreamPromptAsync")]
-    public async Task Finding9_NativeBrainMustStreamAsync()
-    {
-        StandardAgent batched = BareNativeAgent();
-
-        string batchedAnswer = await batched.ProcessPromptAsync("hello");
-
-        batchedAnswer.Should().Be("hi there");
-
-        StandardAgent streamed = BareNativeAgent();
-
-        List<AgentStreamEvent> events = await DrainAsync(streamed.StreamPromptAsync("hello"));
-
-        string streamedAnswer = string.Concat(events
-            .Where(streamEvent => streamEvent.Type == AgentStreamEventType.Response)
-            .Select(streamEvent => streamEvent.Content));
-
-        streamedAnswer.Should().Be(
-            "hi there",
-            because: "adopting native tool calling changes how a choice is read, "
-                + "not what the agent is — on every path a prompt can be processed");
-    }
-
-    private static StandardAgent BareNativeAgent()
-    {
-        var skillBroker = new Mock<ISkillBroker>();
-        skillBroker.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(new List<Skill>());
-
-        var memoryBroker = new Mock<IMemoryBroker>();
-        memoryBroker.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
-
-        var knowledgeBroker = new Mock<IKnowledgeBroker>();
-
-        knowledgeBroker.Setup(broker => broker.SelectKnowledgeAsync(It.IsAny<string>()))
-            .ReturnsAsync([]);
-
-        return new StandardAgent()
-            .UseSkills(skillBroker.Object)
-            .UseMemory(memoryBroker.Object)
-            .UseKnowledge(knowledgeBroker.Object)
-            .OnNativeBrain((messages, tools) =>
-                ValueTask.FromResult(new Models.Brokers.Generators.V1.GenerationResult
-                {
-                    Content = "hi there",
-                    PromptTokens = 10,
-                    CompletionTokens = 5
-                }));
-    }
-
     // FINDING 10 — Permissions(Ask) with no approver: held, or silently approved?
     [Fact(Skip = "DEMONSTRATES DEFECT: NotConfiguredApprovalBroker answers Approved, so Ask alone is consent")]
     public async Task Finding10_AskModeWithNoApproverMustHoldTheActAsync()

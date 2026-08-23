@@ -93,6 +93,32 @@ public partial class InferenceOrchestrationService : IInferenceOrchestrationServ
         Action<AgentContext> setDecided,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        // The same seam DecideAsync keeps: which protocol answers is decided here and nowhere
+        // else (SPEC.md §6). This branch was missing, so a native-brain agent asked to stream
+        // fell through to the V0 text seam — the placeholder that throws. A V1 provider returns
+        // one structured result rather than a token stream, so the draft arrives whole and is
+        // surfaced as Thinking: a draft is not an answer until the guardians settle it, exactly
+        // as the text path's chunks are not.
+        if (this.brainService.SpeaksNatively)
+        {
+            AgentContext nativeDecided = await ThinkNativelyAsync(context);
+
+            bool isDraftAnswer =
+                nativeDecided.DirectionType.Equals(
+                    ReturnResponseDirection, StringComparison.OrdinalIgnoreCase)
+                        && string.IsNullOrWhiteSpace(nativeDecided.Payload) is false;
+
+            if (isDraftAnswer)
+            {
+                yield return new AgentStreamEvent(
+                    AgentStreamEventType.Thinking, nativeDecided.Payload);
+            }
+
+            setDecided(nativeDecided);
+
+            yield break;
+        }
+
         var classifier = new ReplyStreamClassifier();
         var reply = new StringBuilder();
         string userMessage = BuildUserMessage(context);
