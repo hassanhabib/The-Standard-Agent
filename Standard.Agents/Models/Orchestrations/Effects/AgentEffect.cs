@@ -64,10 +64,12 @@ public sealed record AgentEffect
         string arguments,
         RiskLevel riskLevel = RiskLevel.Safe,
         bool approvalRequired = false,
-        AgentPrincipal? principal = null) =>
+        AgentPrincipal? principal = null,
+        string scope = "") =>
         new()
         {
             RunId = runId,
+            Scope = scope,
 
             // Both views of one identity, kept in step here so they cannot disagree. The
             // identifier stays for the callers that only ever needed "who".

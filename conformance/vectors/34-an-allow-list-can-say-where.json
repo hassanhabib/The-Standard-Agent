@@ -1,0 +1,20 @@
+{
+  "name": "an-allow-list-can-say-where",
+  "description": "SPEC.md 4.9: permission is what AND where. 'May write files' is not 'may write files under /project', and an allow-list that can only name a tool leaves an agent with hands permitted everywhere it is permitted anywhere. The scope is named by the TOOL (ITool.ScopeOf), because only the tool knows what its arguments mean. Two acts through one allow-list entry: the first is inside the permitted scope and runs, the second is outside it and is denied. BOTH directions are asserted on purpose - a vector that only checked the denial would pass just as well against an implementation that denied everything, which is how a vector ends up proving nothing.",
+  "generatorReplies": [
+    "ACTION: write_file: /project/a.txt hello",
+    "FINAL: done",
+    "ACTION: write_file: /etc/passwd hello",
+    "FINAL: done"
+  ],
+  "tools": { "write_file": "written" },
+  "toolScopeFirstWord": ["write_file"],
+  "allowTools": ["write_file:/project"],
+  "prompt": "write the files",
+  "prompts": ["write inside the project", "write outside the project"],
+  "maxTurns": 4,
+  "expect": {
+    "resultContains": "done",
+    "toolRunCount": { "write_file": 1 }
+  }
+}

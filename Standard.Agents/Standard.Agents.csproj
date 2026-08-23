@@ -20,6 +20,46 @@
     <!-- The Standard's release format is v1.2.3.4 — model . service/routine . fix/config
          . automated build. Deliberately NOT semver; the segments say what KIND of change
          happened, so a model change can never hide in the service segment.
+         1.5.0.0: what an answer must look like, what a sub-agent actually did, and what
+         permission means.
+         ContractService is a third guardian. The client returned a string and nothing else, so
+         every consumer wiring an agent into a workflow wrote a parser - the thing this framework
+         talked them out of doing everywhere else. A schema check asks whether an answer is the
+         right SHAPE beside the Judge asking whether it is good ENOUGH, so it sits in the Guardian
+         region rather than becoming a new concept, and a mismatch takes the Judge's revision path
+         with the validation error as the reason. .Contract / .UseContract / .OnContract.
+         Two defects surfaced while building it and are fixed here rather than filed.
+         A REVISION THAT PASSED REVIEW NEVER DELIVERED. Interpret carries the incoming context
+         forward and nothing reset Status, so a draft accepted on the second pass left Decision
+         still marked Revising, the loop continued, and the run exhausted its turns handing back
+         "I can't help with that at the moment" for an answer that had passed. Reachable with
+         nothing but a Judge, present since the revision loop shipped in 1.2.0.0, and covered by
+         no test because every test asserted permanent rejection and none asserted rejection then
+         acceptance. The retry existed and could not succeed.
+         A HELD SUB-AGENT READ EXACTLY LIKE AN ANSWER. IAgent returned only a string, so an outer
+         agent could not tell a nested run that answered from one held on an approval - it
+         received "'wire_transfer' is waiting for approval before it can run", took it as the
+         tool's output, and could report work as done that a human had not permitted. IAgent gains
+         RunAsync as a default interface member, reporting result AND status; AgentTool returns an
+         answer plainly and marks everything else. RunManagementService returns an AgentOutcome
+         with ProcessPromptAsync projecting the answer out of it, and StopAsync stops discarding
+         the status it was handed.
+         PERMISSION IS WHAT AND WHERE. The allow-list could name a tool and nothing else, so "may
+         write files" could not be told from "may write files under /project". ITool declares its
+         own Risk and names what it is about to touch through ScopeOf, because only the tool knows
+         what its arguments mean; AgentEffect carries the scope to the policy, the authority and
+         the audit record; and an allow-list entry may say where. RiskLevel.Sensitive was
+         UNREACHABLE - risk and approval were one predicate over one collection, so a tool was
+         Irreversible if it needed approval and Safe if it did not, and the middle level named a
+         state the framework could not produce. .Permissions(PermissionMode.Ask) answers for the
+         acts nothing named, which is the only case that matters when targets cannot be enumerated
+         at composition, and a granted approval is remembered for the tool AND the scope it was
+         granted for, for the life of the run.
+         New public routines, one new model, and two new optional interface members with defaults
+         that preserve existing behaviour. No contract removed and no field repurposed: a
+         service/routine change, so segment 2 advances, 3/4 reset. SPEC.md settles at 1.3 in the
+         same pass, stating that risk MUST NOT be derived from approval and that permission is
+         what and where.
          1.4.0.0: the last deviation closed. DirectionCoordinationService held Decision's Gate to
          screen tool output - a coordination reaching a foundation two tiers below it, and a
          foundation belonging to a different nature. It satisfied every rule already written:
@@ -186,7 +226,7 @@
          3/4 reset. Still tracks SPEC.md v0.1 (draft): segment 1 goes to 1 when the spec settles.
          (0.8.0.0: memory and knowledge came alive — knowledge retrieval in Recall + a built-in
          'remember' tool.) -->
-    <Version>1.4.0.0</Version>
+    <Version>1.5.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>

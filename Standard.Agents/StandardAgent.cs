@@ -1390,8 +1390,26 @@ public sealed partial class StandardAgent : IAgent
                 logging),
             logging,
             this.approvalRequiredTools,
+            this.identityResolver,
+            this.permissionMode,
+            this.declaredRisk,
 
-            this.identityResolver);
+            // What each tool says about itself, read once at composition. The tool is the only
+            // thing that knows what its arguments mean, and the framework never parses them.
+            allTools.ToDictionary(
+                tool => tool.Name,
+                tool => tool.Risk,
+                StringComparer.OrdinalIgnoreCase),
+
+            allTools.ToDictionary(
+                tool => tool.Name,
+                tool => (Func<string, string>)tool.ScopeOf,
+                StringComparer.OrdinalIgnoreCase),
+
+            // Whether the allow-list speaks to an act at all — which the mode needs and a yes/no
+            // authorization decision cannot carry. Null when no allow-list was configured, so Ask
+            // asks about everything, which is what it says on the tin.
+            policy is AllowListPolicyBroker allowList ? allowList.Mentions : null);
 
         return new RunManagementService(
             data, decision, direction, logging, this.maxTurns, new TimeBroker(), this.budget,

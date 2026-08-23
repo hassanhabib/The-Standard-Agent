@@ -59,6 +59,15 @@ public sealed record Vector(
     // profile — which is exactly what this one did until 1.3.0.
     double? BudgetMaxWallClockSeconds = null,
     int? BudgetMaxTokens = null,
+
+    // Permission. toolRisk classifies a stub tool; toolScopeFirstWord names the one scope
+    // strategy a runner in any language can implement identically - the first whitespace-
+    // separated word of the input, which is enough to carry a path. permissionMode is the
+    // disposition toward an act nothing explicitly permitted.
+    Dictionary<string, string>? ToolRisk = null,
+    List<string>? ToolScopeFirstWord = null,
+    string? PermissionMode = null,
+    List<string>? AllowTools = null,
     decimal? BudgetMaxCostUsd = null,
     decimal BudgetCostPerThousandTokens = 0m,
     Dictionary<string, string>? Knowledge = null,

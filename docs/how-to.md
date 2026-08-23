@@ -420,6 +420,65 @@ var agent = new StandardAgent(url, key, "LLooMA2.0")
 
 Matching is case-insensitive. Omit it and every registered tool is runnable, which is the default.
 
+**Permission is what *and where*.** "May write files" is not "may write files under `/project`", and
+a list that can only name a tool leaves an agent permitted everywhere it is permitted anywhere. An
+entry may constrain the target:
+
+```csharp
+    .AllowTools("search", "write_file:/project");   // search anywhere; write only under /project
+```
+
+The target comes from the **tool**, not from the framework parsing arguments — only the tool knows
+what its own arguments mean:
+
+```csharp
+public sealed class WriteFileTool : ITool
+{
+    public string Name => "write_file";
+
+    // How consequential this is. Declared here because the tool is what knows.
+    public RiskLevel Risk => RiskLevel.Sensitive;
+
+    // What this call is about to touch. Empty when the tool touches nothing addressable.
+    public string ScopeOf(string input) => input.Split(' ')[0];
+
+    public ValueTask<string> ExecuteAsync(string input) => /* … */;
+}
+```
+
+Both are optional and default to what they were before — `Safe`, and no scope — so a tool written
+against an earlier release keeps working. For tools you did not write (an MCP server cannot declare
+anything in C#), classify them yourself with **`.Risk(RiskLevel.Irreversible, "delete_account")`**;
+the host's word wins, because the host is accountable for the deployment.
+
+Scope matching is a **prefix**, deliberately: no globs, no regular expressions, no path
+canonicalisation. `"/project"` matches `/project-secrets` — say `"/project/"` if that matters. A
+deployment needing more supplies a real policy engine through `.UsePolicy(...)`, where `Scope`
+arrives on the effect alongside the principal.
+
+**Ask about what nothing permitted, with `.Permissions(...)`.** Everything above is enumerated by
+name, and an agent that touches files cannot have its targets listed in advance — so the acts you
+*can* enumerate are the ones you were not worried about. The mode answers for the rest:
+
+```csharp
+    .Permissions(PermissionMode.Ask)   // anything no permission mentioned needs an authority
+```
+
+- `PermissionMode.Open` — permitted. The default, and what every release before `1.5.0` did.
+- `PermissionMode.Ask` — requires approval, exactly as `.RequireApproval(...)` does: held, not
+  failed, and non-terminal.
+- `PermissionMode.Deny` — denied.
+
+A mode never overrides an explicit permission. An allow-list that names the act has already
+answered, and asking anyway would make the list meaningless.
+
+**A grant is remembered for what it was granted for.** When an authority approves an act, the same
+tool at the same scope is not asked about again for the rest of the run — an authority asked the
+identical question twice stops reading it. It is the tool **and** the scope: approving a write to
+one file is not approving writes to every file. Nothing persists beyond the run; an approval broker
+that wants a longer grant answers the next request without asking anyone, which keeps the decision
+where the accountability is.
+
 **Redaction, with `.Redact()`.** Turns on PII redaction at the brain boundary. Before a prompt
 reaches the brain, emails, SSNs, credit-card numbers and phone numbers are swapped for opaque
 `{{LABEL_N}}` tokens, and the brain's reply is rehydrated so the caller gets the real values back.

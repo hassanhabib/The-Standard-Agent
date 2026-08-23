@@ -3,7 +3,7 @@
 A **language-neutral** set of behavioral test vectors that any Standard-Agents
 implementation runs to self-certify against
 [`SPEC.md`](https://github.com/hassanhabib/The-Standard-Agent-Specs/blob/main/SPEC.md).
-Thirty-three vectors, four readiness profiles, every vector proven able to fail.
+Thirty-five vectors, four readiness profiles, every vector proven able to fail.
 
 The vectors are the executable half of the specification. Prose can be read two ways; a vector
 cannot, which is why "conformant" here means *this suite passes* rather than *we believe we
@@ -65,6 +65,8 @@ capability it configures did not exist, which is why the early vectors still des
 | `compensateOnFailure`, `compensatingTools` | unwind a failed run; tools left out declare no way back |
 | `newInstancePerPrompt`, `durableEffectLedger` | a fresh agent per prompt over shared folders — the harness's stand-in for a different process |
 | `nativeReplies` | the Brain is a native (§6.2) generator returning structured choices |
+| `allowTools`, `permissionMode` | the allow-list (`"tool"` or `"tool:scopePrefix"`) and the disposition toward acts nothing permitted |
+| `toolRisk`, `toolScopeFirstWord` | what a stub tool declares about itself: how consequential it is, and what it is about to touch |
 
 ### Expectations — what must be true afterwards
 
@@ -153,6 +155,8 @@ the deterministic core of the Standard.
 | `budget-bounds-tokens-on-any-protocol` | A token bound holds where the provider reports no usage (§4.10) |
 | `budget-bounds-cost-on-any-protocol` | A cost bound holds there too — cost is priced off the count |
 | `a-repeat-in-a-session-is-a-new-act` | Run-once is scoped to a run; a repeat in a later run performs (§4.9) |
+| `an-allow-list-can-say-where` | Permission is what **and where**; the tool names the scope (§4.9) |
+| `ask-first-covers-what-nothing-permitted` | A mode answers for the acts no permission mentioned (§4.9) |
 | `knowledge-retrieves-by-relevance` | Retrieval returns the passage that answers, not the first found |
 | `guardian-screens-once-per-prompt` | An unchanged prompt is screened once, not once per turn |
 | `open-circuit-falls-back-to-secondary` | An unhealthy provider degrades rather than fails (§4.10) |

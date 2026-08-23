@@ -1,0 +1,15 @@
+{
+  "name": "ask-first-covers-what-nothing-permitted",
+  "description": "SPEC.md 4.9: an implementation MAY offer a disposition toward an act that nothing explicitly permitted. Enumerating every permitted target at composition is impossible for an agent that touches files, so the interesting case is the one nobody listed - and before this, an unlisted tool was silently permitted. Under Ask, an act no permission mentioned requires an authority; here the authority denies, and the tool never runs.",
+  "generatorReplies": ["ACTION: write_file: /project/a.txt hello", "FINAL: done"],
+  "tools": { "write_file": "written" },
+  "toolScopeFirstWord": ["write_file"],
+  "permissionMode": "Ask",
+  "approvalDecisions": ["denied"],
+  "prompt": "write a file",
+  "maxTurns": 4,
+  "expect": {
+    "resultContains": "done",
+    "toolNeverRan": ["write_file"]
+  }
+}
