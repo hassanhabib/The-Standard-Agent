@@ -496,6 +496,14 @@ reaches the brain, emails, SSNs, credit-card numbers and phone numbers are swapp
 `{{LABEL_N}}` tokens, and the brain's reply is rehydrated so the caller gets the real values back.
 The brain, and any remote host serving it, never sees the data in the clear.
 
+Like every other capability, redaction answers all three verbs. `.Redact()` is the Local mode
+with the default rule set; `.Redact(new RedactionRule { Label = "TICKET", Pattern = @"INC-\d{6}" })`
+is the Local mode with your own patterns; `.UseRedaction(broker)` is the External mode for a
+provider package (an entity recognizer, a DLP adapter); and `.OnRedaction(redact, rehydrate)` is
+the Custom mode for rules no pattern can express. Whichever supplies the redactor, it is applied
+by decorating every model broker at composition — Brain, Gate and Judge alike — so a fourth model
+call added tomorrow cannot forget.
+
 ```csharp
 var agent = new StandardAgent(url, key, "LLooMA2.0")
     .Redact();                         // ← new this section

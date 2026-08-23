@@ -3,7 +3,7 @@
 A **language-neutral** set of behavioral test vectors that any Standard-Agents
 implementation runs to self-certify against
 [`SPEC.md`](https://github.com/hassanhabib/The-Standard-Agent-Specs/blob/main/SPEC.md).
-Forty vectors, four readiness profiles, every vector proven able to fail.
+Forty-one vectors, four readiness profiles, every vector proven able to fail.
 
 The vectors are the executable half of the specification. Prose can be read two ways; a vector
 cannot, which is why "conformant" here means *this suite passes* rather than *we believe we
@@ -161,6 +161,7 @@ the deterministic core of the Standard.
 | `ask-first-covers-what-nothing-permitted` | A mode answers for the acts no permission mentioned (§4.9) |
 | `deny-covers-what-nothing-permitted` | Deny refuses the unnamed act and still runs the named one (§4.9) |
 | `ask-with-no-authority-holds` | Ask with nobody wired to answer holds the act; waiting is not consent (§4.9) |
+| `ask-approved-act-runs` | The authority's yes runs the act — the third side of the Ask triangle (§4.9) |
 | `a-grant-is-for-what-it-was-granted-for` | A grant needs a named scope; an unscoped tool is asked each time (§4.9) |
 | `knowledge-retrieves-by-relevance` | Retrieval returns the passage that answers, not the first found |
 | `guardian-screens-once-per-prompt` | An unchanged prompt is screened once, not once per turn |

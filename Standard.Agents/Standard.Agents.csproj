@@ -20,6 +20,34 @@
     <!-- The Standard's release format is v1.2.3.4 — model . service/routine . fix/config
          . automated build. Deliberately NOT semver; the segments say what KIND of change
          happened, so a model change can never hide in the service segment.
+         1.6.0.0: the enforcement pass - the checks that could not fail were made to bite, and
+         the one capability the matrix could not see got its missing modes. A vector that
+         cannot fail reports coverage: the sweep proved redaction's vector passed with
+         rehydration deleted and the scoped allow-list's passed with the scope check inverted,
+         and traced wrong-reason passes through four more. Six vectors strengthened, each
+         proven able to fail by applying the very mutation it exists to catch: 14 requires
+         rehydration to run ({{EMAIL_0}} in the scripted reply), 34 pins WHICH act executed,
+         08 pins that the Brain never saw the refused task, 26 declares a reversible tool that
+         never ran and excludes it from the unwind, 28 asserts each prompt's outcome in order
+         (held, then delivered - deletion of the approval control was previously invisible to
+         it), and the new ask-approved-act-runs closes the Ask triangle with 35 and 37 so
+         "deny everything under Ask, consult nobody" fails six vectors instead of zero. The
+         harness now rejects unknown fields on Vector/Expectation/NativeReply (a typo'd key
+         silently deleted the assertion it carried) and gains ResultsContain, per-prompt and
+         in order. TierDisciplineTests gains the tool seam: Standard.Agents.Tools was scanned
+         by no rule and held a live inversion - RememberTool kept IMemoryService, composed
+         into ToolBroker, so a foundation transitively called a foundation through a broker.
+         RememberTool now holds a Func like any host tool (the IMemoryService constructor
+         stays as a converting [Obsolete] alias), and the new rule scans every framework
+         tool's fields, generics included. Also encoded: every .Services namespace segment
+         must be a checked tier; a capability that skips a mode must waive it with a reason
+         beyond the bare N/A (a null-Local row with no waiver was silently unasserted).
+         REDACTION JOINS THE MATRIX it was missing from entirely: .Redact(params
+         RedactionRule[]) for the host's own patterns, .UseRedaction(IRedactionBroker) for a
+         provider, .OnRedaction(redact, rehydrate) for rules no pattern expresses - wired
+         through the same decorators, pinned behaviourally, sabotage-verified. New public
+         routines and one new broker, no existing contract removed and no model change: a
+         service/routine change, so segment 2 advances, 3/4 reset.
          1.5.3.0: every turn is measured, and a rejected draft still costs. On the text
          protocol only the FIRST turn was ever measured: Interpret carries the token counts
          across turns exactly as it carried Status, MeasuredAsync read the carried copy as
@@ -324,7 +352,7 @@
          3/4 reset. Still tracks SPEC.md v0.1 (draft): segment 1 goes to 1 when the spec settles.
          (0.8.0.0: memory and knowledge came alive — knowledge retrieval in Recall + a built-in
          'remember' tool.) -->
-    <Version>1.5.3.0</Version>
+    <Version>1.6.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>
