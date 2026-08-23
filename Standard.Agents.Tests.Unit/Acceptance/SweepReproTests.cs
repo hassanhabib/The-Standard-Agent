@@ -88,40 +88,6 @@ public class SweepReproTests : IDisposable
         return drained;
     }
 
-    // FINDING 6 — on the text protocol only the FIRST turn's model call is ever measured.
-    [Fact(Skip = "DEMONSTRATES DEFECT: MeasuredAsync short-circuits on carried-forward counts; turns 2+ unmeasured")]
-    public async Task Finding6_EveryTextProtocolTurnMustBeMeasuredAsync()
-    {
-        var tool = new CountingTool();
-        int usageCalls = 0;
-        int calls = 0;
-
-        StandardAgent agent = BareAgent((_, _) =>
-        {
-            calls++;
-
-            return ValueTask.FromResult(
-                calls == 1 ? "ACTION: calculator: 47*89" : "FINAL: 4183");
-        })
-            .Tool(tool)
-            .OnUsage(text =>
-            {
-                usageCalls++;
-
-                return ValueTask.FromResult(Math.Max(1, text.Length / 4));
-            })
-            .MaxTurns(4);
-
-        await agent.ProcessPromptAsync("what is 47*89");
-
-        calls.Should().Be(2);
-
-        usageCalls.Should().Be(
-            4,
-            because: "two model calls were made and MeasureAsync counts prompt and completion "
-                + "for each — a turn whose spend is never measured is a budget bounding zero");
-    }
-
     // FINDING 7 — a turn-capped run records the last tool output in the conversation
     // as though it were the agent's answer.
     [Fact(Skip = "DEMONSTRATES DEFECT: turn-capped run appends the last tool output to session history as an answer")]

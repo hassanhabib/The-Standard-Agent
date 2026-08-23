@@ -75,7 +75,7 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
     {
         ValidateContext(context);
 
-        context = FreshOfLastTurnsVerdict(context);
+        context = FreshOfLastTurn(context);
 
         string verdict = await this.guardianService.ScreenAsync(context.Prompt);
 
@@ -166,7 +166,14 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
                     RevisionFeedback(judgement, decided.Payload)
                 ],
 
-                Status = AgentStatus.Revising
+                Status = AgentStatus.Revising,
+
+                // The rejected draft still cost a model call, and the loop bills the turn from
+                // the context this method hands back — a revision loop the budget cannot see is
+                // exactly where a run burns tokens fastest (SPEC.md §4.10).
+                PromptTokens = decided.PromptTokens,
+                CompletionTokens = decided.CompletionTokens,
+                UsageIsEstimated = decided.UsageIsEstimated
             };
 
             return (revising, "judge rejected the draft; revising");
@@ -190,7 +197,10 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
                     ShapeFeedback(shape, decided.Payload)
                 ],
 
-                Status = AgentStatus.Revising
+                Status = AgentStatus.Revising,
+                PromptTokens = decided.PromptTokens,
+                CompletionTokens = decided.CompletionTokens,
+                UsageIsEstimated = decided.UsageIsEstimated
             };
 
             return (revising, "contract rejected the draft; revising");
@@ -255,7 +265,7 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
         Action<AgentContext> setResult,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        context = FreshOfLastTurnsVerdict(context);
+        context = FreshOfLastTurn(context);
 
         string verdict = await this.guardianService.ScreenAsync(context.Prompt);
 
@@ -389,16 +399,26 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
             : context;
     }
 
-    // Status is Decision's OUTPUT: what THIS turn's guardians concluded about THIS turn's draft.
-    // The incoming context may still carry the previous turn's Revising — Interpret builds every
-    // decided context with `context with { ... }`, which copies Status forward — and a stale
-    // Revising that leaves this service again makes the loop skip Direction and spin: an
-    // accepted draft was refused at the cap, and a tool call proposed after a rejection never
-    // executed. Cleared once, at both doors, so no branch below can leak it.
-    private static AgentContext FreshOfLastTurnsVerdict(AgentContext context) =>
-        context.Status is AgentStatus.Revising
-            ? context with { Status = AgentStatus.Working }
-            : context;
+    // Status and cost are Decision's OUTPUTS: what THIS turn's guardians concluded, and what
+    // THIS turn's model calls consumed. The incoming context may still carry the previous
+    // turn's — Interpret builds every decided context with `context with { ... }`, which copies
+    // both forward — and either one leaking back out is a shipped defect: a stale Revising made
+    // the loop skip Direction and spin (an accepted draft refused at the cap; a tool call
+    // proposed after a rejection swallowed), and a stale token count made MeasuredAsync read
+    // "the provider already reported" on every turn after the first, so the text protocol was
+    // billed turn 1's figure forever. Cleared once, at both doors, so no branch below can leak
+    // either.
+    private static AgentContext FreshOfLastTurn(AgentContext context) =>
+        context with
+        {
+            Status = context.Status is AgentStatus.Revising
+                ? AgentStatus.Working
+                : context.Status,
+
+            PromptTokens = 0,
+            CompletionTokens = 0,
+            UsageIsEstimated = false
+        };
 
     private async ValueTask<(AgentContext Context, bool IsTerminal)> ResolveSkillConflictAsync(
         AgentContext context)
