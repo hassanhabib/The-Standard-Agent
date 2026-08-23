@@ -1240,7 +1240,7 @@ public sealed partial class StandardAgent : IAgent
             ? new MemoryService(file, Path.GetFullPath(this.memoryPath), logging)
             : new MemoryService(this.memoryBroker, logging);
 
-        List<ITool> allTools = [.. this.tools, new RememberTool(memoryService)];
+        List<ITool> allTools = [.. this.tools, new RememberTool(memoryService.RememberAsync)];
 
         string constitution = ReadOptionalFile(file, this.constitutionPath);
         string consumption = ReadOptionalFile(file, this.consumptionPath);

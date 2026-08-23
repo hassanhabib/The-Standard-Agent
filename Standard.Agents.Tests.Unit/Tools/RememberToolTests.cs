@@ -18,33 +18,62 @@ public class RememberToolTests
     {
         // given
         string fact = "Hassan works on PeerLLM";
-        var memoryService = new Mock<IMemoryService>();
-        var rememberTool = new RememberTool(memoryService.Object);
+        List<string> remembered = [];
+
+        var rememberTool = new RememberTool(memory =>
+        {
+            remembered.Add(memory);
+
+            return ValueTask.CompletedTask;
+        });
 
         // when
         string actualResult = await rememberTool.ExecuteAsync(fact);
 
         // then
         actualResult.Should().Contain(fact);
-
-        memoryService.Verify(service =>
-            service.RememberAsync(fact),
-                Times.Once);
+        remembered.Should().ContainSingle().Which.Should().Be(fact);
     }
 
     [Fact]
     public async Task ShouldExtractFactFromStructuredArgumentsOnExecuteAsync()
     {
         // given
-        var memoryService = new Mock<IMemoryService>();
-        var rememberTool = new RememberTool(memoryService.Object);
+        List<string> remembered = [];
+
+        var rememberTool = new RememberTool(memory =>
+        {
+            remembered.Add(memory);
+
+            return ValueTask.CompletedTask;
+        });
 
         // when
         await rememberTool.ExecuteAsync("{\"fact\":\"Paris is the capital of France\"}");
 
         // then
+        remembered.Should().ContainSingle().Which.Should().Be("Paris is the capital of France");
+    }
+
+    // The converting alias keeps working — the same guarantee the LocalBrain → OnBrain aliases
+    // carry — but nothing of the service survives into the tool: it accepts the service and
+    // keeps only its routine.
+    [Fact]
+    public async Task ShouldKeepTheObsoleteServiceConstructorBehavingAsync()
+    {
+        // given
+        var memoryService = new Mock<IMemoryService>();
+
+#pragma warning disable CS0618 // the alias is exactly what is under test
+        var rememberTool = new RememberTool(memoryService.Object);
+#pragma warning restore CS0618
+
+        // when
+        await rememberTool.ExecuteAsync("a fact worth keeping");
+
+        // then
         memoryService.Verify(service =>
-            service.RememberAsync("Paris is the capital of France"),
+            service.RememberAsync("a fact worth keeping"),
                 Times.Once);
     }
 }
