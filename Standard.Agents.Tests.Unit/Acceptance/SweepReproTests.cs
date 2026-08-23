@@ -88,32 +88,6 @@ public class SweepReproTests : IDisposable
         return drained;
     }
 
-    // FINDING 2 — streamed revision acceptance: the 1.5.0 batched fix, on the streamed path.
-    [Fact(Skip = "DEMONSTRATES DEFECT: streamed path still carries Revising past an accepted draft and refuses")]
-    public async Task Finding2_StreamedDraftAcceptedOnRevisionMustDeliverAsync()
-    {
-        int judged = 0;
-
-        StandardAgent agent = BareAgent((_, _) => ValueTask.FromResult("FINAL: forty two"))
-            .OnJudge((_, _) =>
-            {
-                judged++;
-
-                return ValueTask.FromResult(judged == 1 ? "0.0" : "1.0");
-            })
-            .MaxTurns(4);
-
-        List<AgentStreamEvent> events = await DrainAsync(agent.StreamPromptAsync("what is it"));
-
-        string answer = string.Concat(events
-            .Where(streamEvent => streamEvent.Type == AgentStreamEventType.Response)
-            .Select(streamEvent => streamEvent.Content));
-
-        answer.Should().Contain(
-            "forty two",
-            because: "a revision that passes review is an answer on the streamed path too");
-    }
-
     // FINDING 3 — the Contract guardian on the streamed path.
     [Fact(Skip = "DEMONSTRATES DEFECT: CheckShapeAsync is never called on the streamed path")]
     public async Task Finding3_StreamedContractMustBeEnforcedAsync()
@@ -140,42 +114,6 @@ public class SweepReproTests : IDisposable
             batchedAnswer,
             because: "an answer the contract rejects on the batched path must not be "
                 + "delivered by switching to the streamed one");
-    }
-
-    // FINDING 4 — a tool call proposed right after a judge rejection is never executed.
-    [Fact(Skip = "DEMONSTRATES DEFECT: a tool call proposed while Status is Revising is never executed")]
-    public async Task Finding4_ToolCallAfterRejectionMustExecuteAsync()
-    {
-        var tool = new CountingTool();
-        int judged = 0;
-        int calls = 0;
-
-        StandardAgent agent = BareAgent((_, _) =>
-        {
-            calls++;
-
-            return ValueTask.FromResult(calls switch
-            {
-                1 => "FINAL: a guess",
-                2 => "ACTION: calculator: 47*89",
-                _ => "FINAL: the answer is 4183"
-            });
-        })
-            .Tool(tool)
-            .OnJudge((_, _) =>
-            {
-                judged++;
-
-                return ValueTask.FromResult(judged == 1 ? "0.0" : "1.0");
-            })
-            .MaxTurns(5);
-
-        string answer = await agent.ProcessPromptAsync("what is 47*89");
-
-        tool.ExecutionCount.Should().Be(
-            1,
-            because: "after a rejection the model chose to consult a tool, and a denial is "
-                + "supposed to be recoverable — a control that skips the act cannot succeed");
     }
 
     // FINDING 6 — on the text protocol only the FIRST turn's model call is ever measured.

@@ -75,6 +75,8 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
     {
         ValidateContext(context);
 
+        context = FreshOfLastTurnsVerdict(context);
+
         string verdict = await this.guardianService.ScreenAsync(context.Prompt);
 
         if (IsRefusal(verdict))
@@ -170,14 +172,10 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
             };
         }
 
-        // Every guardian has passed, so this draft is an answer — and it must stop carrying the
-        // Revising it inherited from the turn that rejected the last one. Interpret builds the
-        // decided context with `context with { ... }`, which copies Status forward, so without
-        // this a draft accepted on the second pass leaves Decision still marked Revising, the loop
-        // continues, and the run exhausts its turns refusing an answer that had already passed.
-        return decided.Status is AgentStatus.Revising
-            ? decided with { Status = AgentStatus.Working }
-            : decided;
+        // Every guardian has passed, so this draft is an answer. It cannot be carrying a stale
+        // Revising: both doors clear the last turn's verdict on entry, so Revising only ever
+        // leaves this service when a guardian set it THIS turn.
+        return decided;
     });
 
     // Aimed, not scolding. A revision the model cannot act on is a turn spent for nothing, so the
@@ -203,6 +201,8 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
         Action<AgentContext> setResult,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        context = FreshOfLastTurnsVerdict(context);
+
         string verdict = await this.guardianService.ScreenAsync(context.Prompt);
 
         if (IsRefusal(verdict))
@@ -322,10 +322,16 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
         setResult(decided);
     }
 
-    private static AgentStreamEvent AsUnsettledDraft(AgentStreamEvent segment) =>
-        segment.Type is AgentStreamEventType.Response
-            ? segment with { Type = AgentStreamEventType.Thinking }
-            : segment;
+    // Status is Decision's OUTPUT: what THIS turn's guardians concluded about THIS turn's draft.
+    // The incoming context may still carry the previous turn's Revising — Interpret builds every
+    // decided context with `context with { ... }`, which copies Status forward — and a stale
+    // Revising that leaves this service again makes the loop skip Direction and spin: an
+    // accepted draft was refused at the cap, and a tool call proposed after a rejection never
+    // executed. Cleared once, at both doors, so no branch below can leak it.
+    private static AgentContext FreshOfLastTurnsVerdict(AgentContext context) =>
+        context.Status is AgentStatus.Revising
+            ? context with { Status = AgentStatus.Working }
+            : context;
 
     private async ValueTask<(AgentContext Context, bool IsTerminal)> ResolveSkillConflictAsync(
         AgentContext context)
