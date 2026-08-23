@@ -55,6 +55,10 @@ public sealed class ScriptedNativeGeneratorBroker : IGeneratorBrokerV1
 }
 
 /// <summary>One scripted V1 reply, as a vector writes it.</summary>
+// A typo'd field must fail loudly, not silently delete the assertion or the input it
+// carried: a vector that asserts less than it appears to reads as coverage (SPEC.md §1.1).
+[System.Text.Json.Serialization.JsonUnmappedMemberHandling(
+    System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow)]
 public sealed record NativeReply(
     string? Content = null,
     List<NativeToolCall>? ToolCalls = null,

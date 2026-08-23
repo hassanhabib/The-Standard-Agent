@@ -77,14 +77,180 @@ public partial class RunManagementService : IRunManagementService
         CancellationToken cancellationToken) =>
         (await RunAsync(prompt, sessionId, cancellationToken)).Result;
 
-    // The same run, reported with how it ended. ProcessPromptAsync projects the answer out of it,
-    // because a caller who only wants the string should not have to know there was more — and a
-    // caller who nests this agent inside another one cannot do without it (AgentTool).
+    // The batched projection of the one loop: drain the events, keep how it ended.
+    // ProcessPromptAsync projects the answer out of it, because a caller who only wants the
+    // string should not have to know there was more — and a caller who nests this agent inside
+    // another one cannot do without it (AgentTool).
     public ValueTask<AgentOutcome> RunAsync(
         string prompt,
         string sessionId,
         CancellationToken cancellationToken) =>
     TryCatch(async () =>
+    {
+        AgentOutcome outcome = new(string.Empty, AgentStatus.Failed);
+
+        await foreach (AgentStreamEvent _ in RunCoreAsync(
+            prompt,
+            sessionId,
+            streaming: false,
+            setOutcome: ended => outcome = ended,
+            cancellationToken))
+        {
+        }
+
+        return outcome;
+    });
+
+    public IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
+        string prompt,
+        CancellationToken cancellationToken = default) =>
+        ProcessPromptStreamAsync(prompt, string.Empty, cancellationToken);
+
+    // The streamed projection of the same loop, with the same exception mapping the batched
+    // door gets from TryCatch. An async iterator cannot put a catch around a yield — but the
+    // failure points are the awaits, not the yields, so the enumeration advances inside the
+    // catch and yields outside it. Cancellation passes through unmapped: the caller asked the
+    // run to stop and gets the stop, not a service error.
+    public async IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
+        string prompt,
+        string sessionId,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        await using IAsyncEnumerator<AgentStreamEvent> events =
+            RunCoreAsync(
+                prompt,
+                sessionId,
+                streaming: true,
+                setOutcome: _ => { },
+                cancellationToken)
+                    .GetAsyncEnumerator(cancellationToken);
+
+        while (true)
+        {
+            AgentStreamEvent streamed;
+
+            try
+            {
+                if (await events.MoveNextAsync() is false)
+                {
+                    break;
+                }
+
+                streamed = events.Current;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                throw await MappedAndLoggedAsync(exception);
+            }
+
+            yield return streamed;
+        }
+    }
+
+    // The seam between the one loop and its two doors. The loop itself (PumpRunAsync below) is
+    // a plain async method, NOT an iterator, for a reason found the hard way: an async
+    // iterator's execution context does not survive a yield boundary, so an AsyncLocal set
+    // inside one — the ambient AgentRun that run-once keys, approval grants, compensation and
+    // record attribution all hang off — silently reverts to null after the first event. The old
+    // streamed loop had exactly that shape, which means those controls were quietly detached
+    // from the run identity between events; unifying the loops surfaced it instantly, because
+    // the batched tests began exercising the shared code. A plain method's context flows across
+    // its whole body, so the pump owns the run and writes events to a channel; this iterator
+    // only reads and yields.
+    private async IAsyncEnumerable<AgentStreamEvent> RunCoreAsync(
+        string prompt,
+        string sessionId,
+        bool streaming,
+        Action<AgentOutcome> setOutcome,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        var events = System.Threading.Channels.Channel.CreateBounded<AgentStreamEvent>(1);
+
+        // Fired only when the caller abandons the enumeration, so the pump is not left awaiting
+        // a write nobody will read. Deliberately NOT linked to the caller's token: a cancelled
+        // RUN still owes its final Status events — cancellation stops the loop at the turn
+        // boundary, and the reader stays open to deliver the stop.
+        using var abandoned = new CancellationTokenSource();
+
+        Task pump = PumpRunAsync(
+            prompt,
+            sessionId,
+            streaming,
+            events.Writer,
+            setOutcome,
+            cancellationToken,
+            abandoned.Token);
+
+        try
+        {
+            // Never cancelled directly: a cancelled RUN still owes the caller its final Status
+            // events, so the reader stays open until the pump completes the channel.
+            await foreach (AgentStreamEvent streamEvent in
+                events.Reader.ReadAllAsync(CancellationToken.None))
+            {
+                yield return streamEvent;
+            }
+
+            await pump;
+        }
+        finally
+        {
+            abandoned.Cancel();
+
+            try
+            {
+                await pump;
+            }
+            catch
+            {
+                // The pump's fault already surfaced through the channel to the enumeration
+                // above; this await only prevents an abandoned pump from going unobserved.
+            }
+        }
+    }
+
+    // THE loop — deliberately the only copy (SPEC.md §7.6). Six controls were found enforced on
+    // one door and not the other, and every one had been introduced by editing one loop and not
+    // its twin: two loops that must agree is a discipline, one loop is a fact. Exactly two
+    // things differ between the doors, and both are named here — which Brain protocol Decision
+    // drives (a host's generator sees the same calls it always saw on each door), and whether
+    // anybody reads the events (the batched caller drains them).
+    private async Task PumpRunAsync(
+        string prompt,
+        string sessionId,
+        bool streaming,
+        System.Threading.Channels.ChannelWriter<AgentStreamEvent> events,
+        Action<AgentOutcome> setOutcome,
+        CancellationToken cancellationToken,
+        CancellationToken abandoned)
+    {
+        try
+        {
+            await RunTheLoopAsync(
+                prompt, sessionId, streaming, events, setOutcome, cancellationToken, abandoned);
+
+            events.TryComplete();
+        }
+        catch (Exception exception)
+        {
+            events.TryComplete(exception);
+
+            throw;
+        }
+    }
+
+    private async Task RunTheLoopAsync(
+        string prompt,
+        string sessionId,
+        bool streaming,
+        System.Threading.Channels.ChannelWriter<AgentStreamEvent> events,
+        Action<AgentOutcome> setOutcome,
+        CancellationToken cancellationToken,
+        CancellationToken abandoned)
     {
         ValidatePrompt(prompt);
 
@@ -101,134 +267,14 @@ public partial class RunManagementService : IRunManagementService
 
         AgentContext context = new() { Prompt = prompt, SessionId = sessionId };
 
-        // The start-of-run checkpoint, written before any work is done (SPEC.md §4.11).
+        // The start-of-run checkpoint, written before any work is done (SPEC.md §4.11), and the
+        // conversation so far, loaded before Decision runs so the Brain sees it.
         await BeginSessionAsync(context, session);
-
-        // What was said before, loaded before Decision runs so the Brain sees it (SPEC.md §4.11).
         context = await LoadSessionAsync(context, session);
 
         // Budgets and cancellation are both checked at the turn boundary (SPEC.md §4.10): a turn
         // is the smallest unit the loop can stop between without abandoning work mid-flight —
         // in particular without leaving an effect half-recorded.
-        var spend = new AgentSpend();
-        DateTimeOffset startedOn = this.timeBroker.GetCurrentDateTimeOffset();
-
-        try
-        {
-            for (int turn = 0; turn < this.maxTurns; turn++)
-            {
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    return await StopAsync(context, CancelledMessage, AgentStatus.Failed);
-                }
-
-                if (IsBudgetExhausted(spend, startedOn, out string exhaustion))
-                {
-                    return await StopAsync(context, exhaustion, AgentStatus.Failed);
-                }
-
-                await this.loggingBroker.LogTurnAsync(turn);
-
-                await this.loggingBroker.LogStepAsync(AgentStep.Data);
-                context = await this.dataCoordinationService.RecallAsync(context);
-
-                await this.loggingBroker.LogStepAsync(AgentStep.Decision);
-                context = await this.decisionCoordinationService.ThinkAsync(context);
-
-                spend.AddTokens(context.PromptTokens, context.CompletionTokens);
-
-                if (context.Status is AgentStatus.Revising)
-                {
-                    await this.loggingBroker.LogOutcomeAsync($"turn {turn}: revising");
-
-                    continue;
-                }
-
-                await this.loggingBroker.LogStepAsync(AgentStep.Direction);
-
-                int observedBefore = context.Observations.Count;
-
-                context = await this.directionCoordinationService.ActAsync(context);
-                context = await ScreenedAsync(context, observedBefore);
-
-                await this.loggingBroker.LogOutcomeAsync($"turn {turn}: {context.Status}");
-
-                if (context.Status != AgentStatus.Working)
-                {
-                    break;
-                }
-            }
-        }
-        catch (Exception)
-        {
-            // A run that faulted mid-flight is the case compensation exists for: the effects it
-            // already performed are real, and nothing else will unwind them (SPEC.md §4.9).
-            await UnwindAsync();
-
-            throw;
-        }
-
-        // Turns ran out with the loop still Working: effects may have been performed and no answer
-        // was ever delivered, which is a failed run however calmly it ended.
-        if (context.Status is AgentStatus.Working)
-        {
-            string unwound = await UnwindAsync();
-
-            if (string.IsNullOrEmpty(unwound) is false)
-            {
-                await this.loggingBroker.LogOutcomeAsync($"done: {context.Status}");
-
-                return new AgentOutcome($"{context.Result} {unwound}".Trim(), context.Status);
-            }
-        }
-
-        if (context.Status is AgentStatus.Revising)
-        {
-            context = context with
-            {
-                Result = RetriesExhaustedMessage,
-                Status = AgentStatus.Refused
-            };
-        }
-
-        await this.loggingBroker.LogOutcomeAsync($"done: {context.Status}");
-
-        if (string.IsNullOrEmpty(context.Remember) is false)
-        {
-            await this.dataCoordinationService.RememberAsync(context.Remember);
-        }
-
-        // Appended before the call returns, so the next prompt sees it (SPEC.md §4.11).
-        await SaveSessionAsync(context, completed: true);
-
-        return new AgentOutcome(context.Result, context.Status);
-    });
-
-    public IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
-        string prompt,
-        CancellationToken cancellationToken = default) =>
-        ProcessPromptStreamAsync(prompt, string.Empty, cancellationToken);
-
-    public async IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
-        string prompt,
-        string sessionId,
-        [EnumeratorCancellation] CancellationToken cancellationToken)
-    {
-        ValidatePrompt(prompt);
-
-        AgentSession? session = await PeekSessionAsync(sessionId);
-
-        // This prompt's run — see ProcessPromptAsync. A streamed prompt is a run like any other,
-        // which is the whole point: every control below is the one the batched loop enforces.
-        using IDisposable run = AgentRun.Begin(ResumedRunId(session));
-
-        await this.loggingBroker.LogResetAsync();
-
-        AgentContext context = new() { Prompt = prompt, SessionId = sessionId };
-
-        await BeginSessionAsync(context, session);
-        context = await LoadSessionAsync(context, session);
-
         var spend = new AgentSpend();
         DateTimeOffset startedOn = this.timeBroker.GetCurrentDateTimeOffset();
         string? stoppedBecause = null;
@@ -256,16 +302,23 @@ public partial class RunManagementService : IRunManagementService
 
             await this.loggingBroker.LogStepAsync(AgentStep.Decision);
 
-            IDecisionStream decisionStream =
-                this.decisionCoordinationService.ThinkStreamAsync(context, cancellationToken);
-
-            await foreach (AgentStreamEvent decisionEvent in
-                decisionStream.WithCancellation(cancellationToken))
+            if (streaming)
             {
-                yield return decisionEvent;
-            }
+                IDecisionStream decisionStream =
+                    this.decisionCoordinationService.ThinkStreamAsync(context, cancellationToken);
 
-            context = decisionStream.Result;
+                await foreach (AgentStreamEvent decisionEvent in
+                    UnwoundOnFaultAsync(decisionStream, cancellationToken))
+                {
+                    await events.WriteAsync(decisionEvent, abandoned);
+                }
+
+                context = decisionStream.Result;
+            }
+            else
+            {
+                context = await ThoughtOrUnwindAsync(context);
+            }
 
             spend.AddTokens(context.PromptTokens, context.CompletionTokens);
 
@@ -277,26 +330,48 @@ public partial class RunManagementService : IRunManagementService
             }
 
             await this.loggingBroker.LogStepAsync(AgentStep.Direction);
+
+            // Screened before the Tool event below: a caller watching the stream must not
+            // receive the text the Brain was protected from (SPEC.md §4.9).
+            int observedBefore = context.Observations.Count;
+
             context = await ActOrUnwindAsync(context);
+            context = await ScreenedOrUnwindAsync(context, observedBefore);
 
             await this.loggingBroker.LogOutcomeAsync($"turn {turn}: {context.Status}");
 
             if (context.Status is AgentStatus.Working
                 && string.IsNullOrEmpty(context.Result) is false)
             {
-                yield return new AgentStreamEvent(
-                    AgentStreamEventType.Tool,
-                    $"{context.DirectionType}: {context.Result}");
+                await events.WriteAsync(
+                    new AgentStreamEvent(
+                        AgentStreamEventType.Tool,
+                        $"{context.DirectionType}: {context.Result}"),
+                    abandoned);
+            }
+
+            // A held act is announced before its message: the Status event says WHAT happened
+            // for a consumer that switches on kinds, and the Response carries the same words the
+            // batched caller receives — filtering a stream to Response equals what
+            // ProcessPromptAsync returns, held runs included.
+            if (context.Status is AgentStatus.AwaitingApproval)
+            {
+                await events.WriteAsync(
+                    new AgentStreamEvent(
+                        AgentStreamEventType.Status,
+                        "an act is waiting for approval; the run is held"),
+                    abandoned);
             }
 
             if (context.Status is AgentStatus.Responded
                 or AgentStatus.Refused
                 or AgentStatus.AwaitingInput
+                or AgentStatus.AwaitingApproval
                 && string.IsNullOrEmpty(context.Result) is false)
             {
-                yield return new AgentStreamEvent(
-                    AgentStreamEventType.Response,
-                    context.Result);
+                await events.WriteAsync(
+                    new AgentStreamEvent(AgentStreamEventType.Response, context.Result),
+                    abandoned);
             }
 
             if (context.Status is not AgentStatus.Working)
@@ -306,44 +381,76 @@ public partial class RunManagementService : IRunManagementService
         }
 
         // Cancelled or out of budget. Reported as a Status rather than a Response, because it is
-        // not an answer — the same distinction the batched path draws by returning the message
-        // instead of the result (SPEC.md §4.10).
+        // not an answer — and never remembered or written back as one: the next prompt would
+        // otherwise be told the agent said something it never said (SPEC.md §4.10, §4.11).
         if (stoppedBecause is not null)
         {
             await this.loggingBroker.LogOutcomeAsync($"stopped: {stoppedBecause}");
 
-            yield return new AgentStreamEvent(AgentStreamEventType.Status, stoppedBecause);
+            await events.WriteAsync(
+                new AgentStreamEvent(AgentStreamEventType.Status, stoppedBecause), abandoned);
 
             context = context with { Status = AgentStatus.Failed };
+
+            // A run that stopped without delivering an answer may have left effects behind
+            // (SPEC.md §4.9); the caller is told what was unwound and what stood.
+            string stoppedUnwound = await UnwindAsync();
+
+            if (string.IsNullOrEmpty(stoppedUnwound) is false)
+            {
+                await events.WriteAsync(
+                    new AgentStreamEvent(AgentStreamEventType.Status, stoppedUnwound), abandoned);
+            }
+
+            await this.loggingBroker.LogOutcomeAsync($"done: {context.Status}");
+
+            setOutcome(new AgentOutcome(
+                string.IsNullOrEmpty(stoppedUnwound)
+                    ? stoppedBecause
+                    : $"{stoppedBecause} {stoppedUnwound}",
+                AgentStatus.Failed));
+
+            return;
+        }
+
+        // Turns ran out with the loop still Working: effects may have been performed and no
+        // answer was ever delivered, which is a failed run however calmly it ended. When the
+        // unwind has something to report, that report IS the outcome and nothing is recorded.
+        if (context.Status is AgentStatus.Working)
+        {
+            string cappedUnwound = await UnwindAsync();
+
+            if (string.IsNullOrEmpty(cappedUnwound) is false)
+            {
+                await events.WriteAsync(
+                    new AgentStreamEvent(AgentStreamEventType.Status, cappedUnwound), abandoned);
+
+                await this.loggingBroker.LogOutcomeAsync($"done: {context.Status}");
+
+                setOutcome(new AgentOutcome(
+                    $"{context.Result} {cappedUnwound}".Trim(), context.Status));
+
+                return;
+            }
         }
 
         if (context.Status is AgentStatus.Revising)
         {
-            yield return new AgentStreamEvent(
-                AgentStreamEventType.Status,
-                "unable to satisfy review after retries; refusing");
+            await events.WriteAsync(
+                new AgentStreamEvent(
+                    AgentStreamEventType.Status,
+                    "unable to satisfy review after retries; refusing"),
+                abandoned);
 
-            yield return new AgentStreamEvent(
-                AgentStreamEventType.Response,
-                RetriesExhaustedMessage);
+            await events.WriteAsync(
+                new AgentStreamEvent(AgentStreamEventType.Response, RetriesExhaustedMessage),
+                abandoned);
 
             context = context with
             {
                 Result = RetriesExhaustedMessage,
                 Status = AgentStatus.Refused
             };
-        }
-
-        // The streamed loop unwinds on the same terms as the batched one. A control enforced on
-        // one path and not the other is a control a caller can step around by changing method.
-        if (context.Status is AgentStatus.Working or AgentStatus.Failed)
-        {
-            string unwound = await UnwindAsync();
-
-            if (string.IsNullOrEmpty(unwound) is false)
-            {
-                yield return new AgentStreamEvent(AgentStreamEventType.Status, unwound);
-            }
         }
 
         await this.loggingBroker.LogOutcomeAsync($"done: {context.Status}");
@@ -353,9 +460,9 @@ public partial class RunManagementService : IRunManagementService
             await this.dataCoordinationService.RememberAsync(context.Remember);
         }
 
-        // Recorded on the same terms as the batched path: only a run that delivered an answer.
-        // A streamed answer that never joined the conversation would leave the next prompt
-        // blind to it, and a cancelled one recorded would tell it something that never happened.
-        await SaveSessionAsync(context, completed: stoppedBecause is null);
+        // Appended before the run ends, so the next prompt sees it (SPEC.md §4.11).
+        await SaveSessionAsync(context, completed: true);
+
+        setOutcome(new AgentOutcome(context.Result, context.Status));
     }
 }

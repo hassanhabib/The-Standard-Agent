@@ -122,7 +122,7 @@ Every capability answers **Local**, **External** and **Custom**, and the verbs s
 .OnKnowledge(async query => await MyStore(query)) // Custom — your own code, inline
 ```
 
-Sixteen capabilities, the same three verbs each. A capability offered fewer ways than that fails the
+Eighteen capabilities, the same three verbs each. A capability offered fewer ways than that fails the
 build — it is a test, not a convention, because the erosion is otherwise invisible until there are
 six of them.
 

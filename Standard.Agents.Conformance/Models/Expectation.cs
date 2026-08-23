@@ -5,6 +5,10 @@
 
 namespace Standard.Agents.Conformance;
 
+// A typo'd field must fail loudly, not silently delete the assertion or the input it
+// carried: a vector that asserts less than it appears to reads as coverage (SPEC.md §1.1).
+[System.Text.Json.Serialization.JsonUnmappedMemberHandling(
+    System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow)]
 public sealed record Expectation(
     string? Result,
     string? ResultContains,
@@ -69,6 +73,13 @@ public sealed record Expectation(
     //                           protocol cannot express, so it is the one thing worth certifying
     //                           about native tool calling (SPEC.md §6).
     string? ToolResultAnswersCall = null,
+
+    //   ResultsContain — one entry per prompt, in order: what each PROMPT's result must carry.
+    //                     The single Result/ResultContains sees only the last prompt, so a
+    //                     multi-prompt vector could misbehave on every run but its final one and
+    //                     still print PASS — which is how the approval-resume vector was
+    //                     deletion-blind.
+    List<string>? ResultsContain = null,
 
     //   PolicySawPrincipal — the identity the policy broker was actually handed when it decided.
     //                        An audit record naming the caller afterwards is not authorization,

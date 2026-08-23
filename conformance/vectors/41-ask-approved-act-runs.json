@@ -1,0 +1,29 @@
+{
+  "name": "ask-approved-act-runs",
+  "description": "The third side of the Ask triangle, with 35 (the authority denies; held) and 37 (no authority; held): when the authority says yes, the act RUNS - exactly once, with exactly these arguments. An implementation that holds or denies everything under Ask, never consulting anyone, passes 35 and 37 and fails here; one that never consults but runs everything fails 35. Together the three leave no wrong-reason pass.",
+  "generatorReplies": [
+    "ACTION: write_file: /project/a.txt hello",
+    "FINAL: done"
+  ],
+  "tools": {
+    "write_file": "written"
+  },
+  "toolScopeFirstWord": [
+    "write_file"
+  ],
+  "permissionMode": "Ask",
+  "approvalDecisions": [
+    "approved"
+  ],
+  "prompt": "write a file",
+  "maxTurns": 4,
+  "expect": {
+    "result": "done",
+    "toolRunCount": {
+      "write_file": 1
+    },
+    "toolInput": {
+      "write_file": "/project/a.txt hello"
+    }
+  }
+}

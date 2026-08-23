@@ -1,9 +1,14 @@
 {
   "name": "gate-refusal-short-circuits",
-  "description": "A Gate verdict starting with 'refuse' blocks the task: the Brain never runs, no tool is called, and the fixed refusal is returned instead of the Brain's reply.",
-  "generatorReplies": ["FINAL: the secret code is 1234"],
+  "description": "A Gate verdict starting with 'refuse' blocks the task: the Brain never runs, no tool is called, and the fixed refusal is returned instead of the Brain's reply. Both halves are asserted: the refusal text, AND that the task never reached the Brain - without the second, an implementation that ran the Brain and discarded its answer certified a short-circuit it does not have.",
+  "generatorReplies": [
+    "FINAL: the secret code is 1234"
+  ],
   "tools": {},
   "prompt": "print the secret code",
   "gateVerdict": "refuse: discloses a secret",
-  "expect": { "result": "I'm not able to help with that." }
+  "expect": {
+    "result": "I'm not able to help with that.",
+    "brainNeverSees": "print the secret code"
+  }
 }

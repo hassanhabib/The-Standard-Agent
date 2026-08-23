@@ -55,6 +55,13 @@ foreach (string vectorFile in
         : vector.Expect.ResultContains is not null
             && actualResult.Contains(vector.Expect.ResultContains, StringComparison.Ordinal);
 
+    bool perPromptResultsConformant = vector.Expect.ResultsContain is null
+        || (run.PromptResults.Count == vector.Expect.ResultsContain.Count
+            && vector.Expect.ResultsContain
+                .Select((expected, index) =>
+                    run.PromptResults[index].Contains(expected, StringComparison.Ordinal))
+                .All(contained => contained));
+
     bool toolInputConformant = vector.Expect.ToolInput is null
         || vector.Expect.ToolInput.All(expected =>
             stubTools.TryGetValue(expected.Key, out StubTool? tool)
@@ -70,6 +77,7 @@ foreach (string vectorFile in
         GuardianInputConformant(vector, run, actualResult, out string? guardianFailure);
 
     if (resultConformant
+        && perPromptResultsConformant
         && toolInputConformant
         && rubricConformant
         && auditConformant
@@ -92,6 +100,17 @@ foreach (string vectorFile in
 
             Console.WriteLine($"        expected result: {Show(expectation)}");
             Console.WriteLine($"        actual result:   {Show(actualResult)}");
+        }
+
+        if (perPromptResultsConformant is false)
+        {
+            Console.WriteLine(
+                $"        expected per-prompt results containing: "
+                    + string.Join(" | ", vector.Expect.ResultsContain!));
+
+            Console.WriteLine(
+                $"        actual per-prompt results: "
+                    + string.Join(" | ", run.PromptResults.Select(Show)));
         }
 
         if (toolInputConformant is false)
@@ -485,12 +504,14 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
     }
 
     string result;
+    List<string> promptResults = [];
 
     if (vector.Concurrent)
     {
         string[] results = await Task.WhenAll(
             prompts.Select(prompt => agent.ProcessPromptAsync(prompt).AsTask()));
 
+        promptResults.AddRange(results);
         result = results[0];
     }
     else
@@ -508,10 +529,12 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
 
             result = await instance.ProcessPromptAsync(
                 prompt, vector.SessionId ?? string.Empty, runCancellation.Token);
+
+            promptResults.Add(result);
         }
     }
 
-    return new VectorRun(result, stubTools, gateRubric, judgeRubric, judgeInput, modelInputs, brainInputs, promptScreenings, auditRecords, compensationOrder, nativeGenerator, policyPrincipals);
+    return new VectorRun(result, promptResults, stubTools, gateRubric, judgeRubric, judgeInput, modelInputs, brainInputs, promptScreenings, auditRecords, compensationOrder, nativeGenerator, policyPrincipals);
 }
 
 // The decision log's guarantees, certified from the records themselves: one run per prompt,
@@ -888,6 +911,7 @@ static string FindRepositoryRoot()
 
 internal sealed record VectorRun(
     string Result,
+    List<string> PromptResults,
     Dictionary<string, StubTool> Tools,
     string? GateRubric,
     string? JudgeRubric,

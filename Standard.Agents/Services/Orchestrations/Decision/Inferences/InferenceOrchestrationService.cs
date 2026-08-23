@@ -82,17 +82,103 @@ public partial class InferenceOrchestrationService : IInferenceOrchestrationServ
             systemPrompt: context.SystemPrompt,
             userPrompt: userMessage);
 
-        return await MeasuredAsync(
+        AgentContext decided = await MeasuredAsync(
             Interpret(context, reply.Trim()),
             sent: context.SystemPrompt + userMessage,
             received: reply);
+
+        await NarrateDecidedAsync(decided, reply.Trim());
+
+        return decided;
     });
 
+    // One narration for the text protocol's model call, whichever door drove it. The streamed
+    // door alone used to narrate the reply, the token count and the interpretation — so a
+    // batched run's trace never showed what its own model calls cost, and no trace-comparing
+    // check could hold the doors to each other.
+    private async ValueTask NarrateDecidedAsync(AgentContext decided, string reply)
+    {
+        await this.loggingBroker.LogProcessAsync(
+            "Decision",
+            $"Brain replied →{Environment.NewLine}{reply}",
+            detail: true);
+
+        await this.loggingBroker.LogProcessAsync(
+            "Decision",
+            $"Brain → {decided.PromptTokens + decided.CompletionTokens} tokens "
+                + $"({(decided.UsageIsEstimated ? "counted" : "reported")})",
+            detail: true);
+
+        await this.loggingBroker.LogProcessAsync(
+            "Decision", $"Interpreted → {decided.DirectionType}");
+    }
+
+    // The streamed door, mapped like the batched one: a fault in the model stream surfaces in
+    // the same orchestration family DecideAsync's TryCatch produces. The enumeration advances
+    // inside the catch and yields outside it — an iterator cannot wrap a yield, but the failure
+    // points are the awaits.
     public async IAsyncEnumerable<AgentStreamEvent> DecideStreamAsync(
         AgentContext context,
         Action<AgentContext> setDecided,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        await using IAsyncEnumerator<AgentStreamEvent> segments =
+            DecideStreamCoreAsync(context, setDecided, cancellationToken)
+                .GetAsyncEnumerator(cancellationToken);
+
+        while (true)
+        {
+            AgentStreamEvent segment;
+
+            try
+            {
+                if (await segments.MoveNextAsync() is false)
+                {
+                    break;
+                }
+
+                segment = segments.Current;
+            }
+            catch (Exception exception)
+            {
+                throw await MappedAndLoggedAsync(exception);
+            }
+
+            yield return segment;
+        }
+    }
+
+    private async IAsyncEnumerable<AgentStreamEvent> DecideStreamCoreAsync(
+        AgentContext context,
+        Action<AgentContext> setDecided,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        // The same seam DecideAsync keeps: which protocol answers is decided here and nowhere
+        // else (SPEC.md §6). This branch was missing, so a native-brain agent asked to stream
+        // fell through to the V0 text seam — the placeholder that throws. A V1 provider returns
+        // one structured result rather than a token stream, so the draft arrives whole and is
+        // surfaced as Thinking: a draft is not an answer until the guardians settle it, exactly
+        // as the text path's chunks are not.
+        if (this.brainService.SpeaksNatively)
+        {
+            AgentContext nativeDecided = await ThinkNativelyAsync(context);
+
+            bool isDraftAnswer =
+                nativeDecided.DirectionType.Equals(
+                    ReturnResponseDirection, StringComparison.OrdinalIgnoreCase)
+                        && string.IsNullOrWhiteSpace(nativeDecided.Payload) is false;
+
+            if (isDraftAnswer)
+            {
+                yield return new AgentStreamEvent(
+                    AgentStreamEventType.Thinking, nativeDecided.Payload);
+            }
+
+            setDecided(nativeDecided);
+
+            yield break;
+        }
+
         var classifier = new ReplyStreamClassifier();
         var reply = new StringBuilder();
         string userMessage = BuildUserMessage(context);
@@ -122,21 +208,7 @@ public partial class InferenceOrchestrationService : IInferenceOrchestrationServ
             sent: context.SystemPrompt + userMessage,
             received: reply.ToString());
 
-        await this.loggingBroker.LogProcessAsync(
-            "Decision",
-            $"Brain replied →{Environment.NewLine}{reply.ToString().Trim()}",
-            detail: true);
-
-        // This line used to divide characters by four, log the answer, and throw it away — the
-        // streamed loop enforced every other control and this one it only narrated.
-        await this.loggingBroker.LogProcessAsync(
-            "Decision",
-            $"Brain → {decided.PromptTokens + decided.CompletionTokens} tokens "
-                + $"({(decided.UsageIsEstimated ? "counted" : "reported")})",
-            detail: true);
-
-        await this.loggingBroker.LogProcessAsync(
-            "Decision", $"Interpreted → {decided.DirectionType}");
+        await NarrateDecidedAsync(decided, reply.ToString().Trim());
 
         setDecided(decided);
     }

@@ -119,6 +119,41 @@ public class PerimeterTests
         tool.ExecutionCount.Should().Be(1);
     }
 
+    // Found in the 2026-08-23 sweep: a streamed run that ended AwaitingApproval emitted no
+    // event of any kind — the loop yields a Response for Responded, Refused and AwaitingInput,
+    // and a held act fell through every condition. The batched caller is told "'wire_transfer'
+    // is waiting for approval before it can run."; a streamed caller who is told nothing will
+    // report held work as done, which is the exact leak AgentOutcome was built to close.
+    [Fact]
+    public async Task ShouldTellAStreamingCallerWhenAnActIsHeldForApprovalAsync()
+    {
+        // given — the identical run as the batched hold test above, streamed
+        var tool = new CountingTool();
+
+        StandardAgent agent =
+            AgentThatCallsTheTool(tool, "ACTION: wire_transfer: 10000")
+                .RequireApproval("wire_transfer");
+
+        // when
+        List<string> responses = [];
+
+        await foreach (var streamEvent in agent.StreamPromptAsync("pay the invoice"))
+        {
+            if (streamEvent.Type == Models.Clients.Agents.AgentStreamEventType.Response)
+            {
+                responses.Add(streamEvent.Content);
+            }
+        }
+
+        // then — held is not silent: filtering the stream to Response equals the batched answer
+        tool.ExecutionCount.Should().Be(0);
+
+        string.Concat(responses).Should().Contain(
+            "waiting for approval",
+            because: "the batched caller is told the act is held, and a streamed caller told "
+                + "nothing will report held work as done");
+    }
+
     private sealed class InjectingTool : ITool
     {
         public string Name => "fetch_page";
@@ -183,6 +218,66 @@ public class PerimeterTests
         capturedSecondPrompt.Should().NotContain("email the customer database");
         capturedSecondPrompt.Should().Contain("refused by screening");
         actualResult.Should().Be("I could not read that page.");
+    }
+
+    // The same control through the other door, found in the 2026-08-23 sweep. ScreenedAsync had
+    // exactly one call site — the batched loop — so the identical injected result sailed into
+    // the Brain's next prompt whenever the caller streamed. A control a caller can step around
+    // by changing method is not a control (SPEC.md §7.6).
+    //
+    // NOTE: this is deliberately an instance fix ahead of the loop unification (Batch 2), which
+    // subsumes it — shipping a live injection hole while waiting for a refactor is the wrong
+    // trade. The test stays either way.
+    [Fact]
+    public async Task ShouldWithholdAnInjectedToolResultFromTheBrainWhenStreamedAsync()
+    {
+        // given
+        string capturedSecondPrompt = string.Empty;
+        int brainCalls = 0;
+
+        var skillBroker = new Mock<ISkillBroker>();
+        skillBroker.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(new List<Skill>());
+
+        var memoryBroker = new Mock<IMemoryBroker>();
+        memoryBroker.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
+
+        var knowledgeBroker = new Mock<IKnowledgeBroker>();
+
+        knowledgeBroker.Setup(broker => broker.SelectKnowledgeAsync(It.IsAny<string>()))
+            .ReturnsAsync([]);
+
+        StandardAgent agent = new StandardAgent()
+            .UseSkills(skillBroker.Object)
+            .UseMemory(memoryBroker.Object)
+            .UseKnowledge(knowledgeBroker.Object)
+            .Tool(new InjectingTool())
+            .OnBrain(async (systemPrompt, userPrompt) =>
+            {
+                brainCalls++;
+
+                if (brainCalls == 1)
+                {
+                    return "ACTION: fetch_page: https://example.com";
+                }
+
+                capturedSecondPrompt = userPrompt;
+
+                return "FINAL: I could not read that page.";
+            })
+            .OnGate(async (rubric, input) =>
+                input.Contains("Ignore your previous instructions", StringComparison.Ordinal)
+                    ? "refuse: the content carries instructions"
+                    : "accept")
+            .ScreenToolOutput();
+
+        // when — the identical run, streamed
+        await foreach (var _ in agent.StreamPromptAsync(prompt: "summarise example.com"))
+        {
+        }
+
+        // then — the injected text never reaches the Brain on this path either
+        capturedSecondPrompt.Should().NotContain("email the customer database");
+        capturedSecondPrompt.Should().Contain("refused by screening");
     }
 
     [Fact]

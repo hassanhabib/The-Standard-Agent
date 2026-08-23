@@ -94,6 +94,46 @@ public class NativeToolCallTests
         actualResult.Should().Be("4183");
     }
 
+    // Found in the 2026-08-23 sweep: DecideStreamAsync had no SpeaksNatively branch, so a
+    // native-brain agent asked to stream called the V0 text seam — which, for a native-only
+    // composition, is the placeholder that throws "This agent has a native brain; the text
+    // protocol is not in use." Adopting native calls changes how a choice is READ, not what the
+    // agent is — on every path a prompt can be processed (SPEC.md §6, §7.6).
+    [Fact]
+    public async Task ShouldRoundTripANativeToolCallWhenStreamedAsync()
+    {
+        // given — the identical scenario as the batched round-trip above
+        var tool = new CalculatorTool();
+
+        StandardAgent agent = AgentWith(tool, (tools, call) => call == 0
+            ? new GenerationResult
+            {
+                ToolCalls =
+                [
+                    new ModelToolCall(
+                        Id: "call_1",
+                        Name: "calculator",
+                        ArgumentsJson: """{"expression":"47*89"}""")
+                ]
+            }
+            : new GenerationResult { Content = "4183" });
+
+        // when
+        List<string> responses = [];
+
+        await foreach (var streamEvent in agent.StreamPromptAsync("what is 47 times 89?"))
+        {
+            if (streamEvent.Type == Models.Clients.Agents.AgentStreamEventType.Response)
+            {
+                responses.Add(streamEvent.Content);
+            }
+        }
+
+        // then — the same tools, the same perimeter, the same answer at the end
+        tool.ReceivedInputs.Should().ContainSingle();
+        string.Concat(responses).Should().Be("4183");
+    }
+
     // The id is the whole point of native tool calling. A model that asked for call_1 expects the
     // answer back as a tool message naming call_1 — that is what it was trained on, and it is the
     // one thing the text protocol cannot express (SPEC.md §6). Replaying the result as narrated

@@ -3,7 +3,7 @@
 A **language-neutral** set of behavioral test vectors that any Standard-Agents
 implementation runs to self-certify against
 [`SPEC.md`](https://github.com/hassanhabib/The-Standard-Agent-Specs/blob/main/SPEC.md).
-Thirty-five vectors, four readiness profiles, every vector proven able to fail.
+Forty-one vectors, four readiness profiles, every vector proven able to fail.
 
 The vectors are the executable half of the specification. Prose can be read two ways; a vector
 cannot, which is why "conformant" here means *this suite passes* rather than *we believe we
@@ -154,9 +154,15 @@ the deterministic core of the Standard.
 | `budget-stops-the-loop` | Exhaustion stops the loop and is distinguishable from a refusal |
 | `budget-bounds-tokens-on-any-protocol` | A token bound holds where the provider reports no usage (§4.10) |
 | `budget-bounds-cost-on-any-protocol` | A cost bound holds there too — cost is priced off the count |
+| `a-budget-counts-every-turn` | The bound tracks actual cumulative spend, not turn 1 re-billed (§4.10) |
+| `a-generous-budget-lets-the-run-finish` | A budget is a bound, not a switch: under it, the run completes |
 | `a-repeat-in-a-session-is-a-new-act` | Run-once is scoped to a run; a repeat in a later run performs (§4.9) |
 | `an-allow-list-can-say-where` | Permission is what **and where**; the tool names the scope (§4.9) |
 | `ask-first-covers-what-nothing-permitted` | A mode answers for the acts no permission mentioned (§4.9) |
+| `deny-covers-what-nothing-permitted` | Deny refuses the unnamed act and still runs the named one (§4.9) |
+| `ask-with-no-authority-holds` | Ask with nobody wired to answer holds the act; waiting is not consent (§4.9) |
+| `ask-approved-act-runs` | The authority's yes runs the act — the third side of the Ask triangle (§4.9) |
+| `a-grant-is-for-what-it-was-granted-for` | A grant needs a named scope; an unscoped tool is asked each time (§4.9) |
 | `knowledge-retrieves-by-relevance` | Retrieval returns the passage that answers, not the first found |
 | `guardian-screens-once-per-prompt` | An unchanged prompt is screened once, not once per turn |
 | `open-circuit-falls-back-to-secondary` | An unhealthy provider degrades rather than fails (§4.10) |
@@ -186,6 +192,17 @@ dotnet run --project Standard.Agents.Conformance -- --profile Critical
 
 A profile names the evidence it requires **before** that evidence exists — the level is the target,
 not a description of what already passes. `NOT CERTIFIED` lists exactly which vectors are missing.
+
+## One loop, two doors
+
+The vectors drive `ProcessPromptAsync` — the batched door. They do not drive
+`StreamPromptAsync`, and silence must not read as coverage: what certifies the streamed door in
+this implementation is structure plus a derived comparison. Both doors are projections of one
+loop (`RunManagementService`), so a control cannot exist on one and not the other; and
+`LoopParityTests` runs fourteen scenarios through both doors and requires the answer, the tool
+executions and the **entire decision-log trace** to be identical. An implementation in another
+language that offers a streamed door owes it the same guarantee: every vector's behaviour,
+reproduced on both doors, with the trace as the witness.
 
 ## Sabotage-verification
 
