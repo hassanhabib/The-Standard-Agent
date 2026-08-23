@@ -190,6 +190,17 @@ dotnet run --project Standard.Agents.Conformance -- --profile Critical
 A profile names the evidence it requires **before** that evidence exists — the level is the target,
 not a description of what already passes. `NOT CERTIFIED` lists exactly which vectors are missing.
 
+## One loop, two doors
+
+The vectors drive `ProcessPromptAsync` — the batched door. They do not drive
+`StreamPromptAsync`, and silence must not read as coverage: what certifies the streamed door in
+this implementation is structure plus a derived comparison. Both doors are projections of one
+loop (`RunManagementService`), so a control cannot exist on one and not the other; and
+`LoopParityTests` runs fourteen scenarios through both doors and requires the answer, the tool
+executions and the **entire decision-log trace** to be identical. An implementation in another
+language that offers a streamed door owes it the same guarantee: every vector's behaviour,
+reproduced on both doors, with the trace as the witness.
+
 ## Sabotage-verification
 
 A vector that cannot fail proves nothing, and vectors written from a passing implementation are

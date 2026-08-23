@@ -20,6 +20,41 @@
     <!-- The Standard's release format is v1.2.3.4 — model . service/routine . fix/config
          . automated build. Deliberately NOT semver; the segments say what KIND of change
          happened, so a model change can never hide in the service segment.
+         1.5.2.0: one loop, two projections. The 2026-08-23 sweep found six controls enforced
+         on one door and not the other — tool-output screening, the Contract, the revision
+         reset, the approval hold's announcement, the Gate's route label (the mirror image:
+         streamed only), and native tool calling, which THREW on the streamed door — and every
+         one had been introduced by editing one loop and not its twin. Each was closed
+         FAIL-first; then the class was closed: RunManagementService now has exactly ONE loop
+         (a plain async method pumping a bounded channel), with RunAsync draining it and
+         StreamPromptAsync yielding it, and the only named seam between the doors is which
+         Brain protocol Decision drives. Decision's own two doors were likewise reduced to thin
+         projections over shared verdict handling: entry normalization of a carried Revising
+         (which also fixes the tool-call-after-rejection swallow on BOTH doors — the third exit
+         of the 1.5.0 revision bug), gate refusal and routing, the Judge-then-Contract
+         sequence, and the model-call narration, each written once.
+         THE PUMP IS NOT AN ITERATOR, for a reason found the hard way: an async iterator's
+         execution context does not survive a yield boundary, so the ambient AgentRun — the
+         identity run-once keys, approval grants, compensation and record attribution hang off
+         — silently reverted to null after the first streamed event. The OLD streamed loop had
+         exactly that shape: those controls were quietly detached from the run identity between
+         events, and nothing saw it because no streamed test exercised them. Unifying the loops
+         surfaced it as twelve immediate batched-test failures, which is the one-loop argument
+         demonstrated by the refactor that implemented it.
+         Exception mapping is now a control on both doors at every tier that maps —
+         RunManagement, Decision, Inference — via one MappedAndLoggedAsync per tier that
+         rethrows through that tier's own TryCatch, and streamed wrappers that advance the
+         enumeration inside the catch and yield outside it: the answer to "an iterator cannot
+         wrap a yield" is that the failure points are the awaits. Two deliberate streamed
+         alignments to the batched contract: a stopped run no longer writes Remember, and a
+         turn-capped run whose unwind reported something no longer appends the session.
+         LoopParityTests replaces enumerated parity with DERIVED parity: fourteen scenarios
+         through both doors, requiring the answer, the tool executions and the entire
+         decision-log trace to be identical — every control narrates itself, so a control
+         added to one door only diverges without the test naming it. Sabotage-verified at the
+         seam: the streamed door was made to skip screening and the suite went red on the trace.
+         Behaviour fixes and an internal restructure on existing routines, no new public
+         surface, no model change: a fix/config change, so segment 3 advances, 4 resets.
          1.5.1.0: the permission hotfix — four silent grants closed, none of them new rules.
          All four violate SPEC 1.3 §4.9 as it shipped in 1.5.0, which is why this is a fix
          segment and the spec is untouched: when a rule and the code disagree, the code changes.
@@ -266,7 +301,7 @@
          3/4 reset. Still tracks SPEC.md v0.1 (draft): segment 1 goes to 1 when the spec settles.
          (0.8.0.0: memory and knowledge came alive — knowledge retrieval in Recall + a built-in
          'remember' tool.) -->
-    <Version>1.5.1.0</Version>
+    <Version>1.5.2.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>

@@ -779,7 +779,12 @@ Nothing else is required of the caller. There is no separate resume mode and no 
 
 Streaming works the same way: `.StreamPromptAsync(prompt, sessionId, cancellationToken)`. Every
 control below holds on both paths, because a control you can step around by changing method is not
-a control.
+a control — and since `1.5.2` this is structural rather than promised: both calls are projections
+of one loop, faults surface in the same exception family on both, a run held for approval
+announces itself on the stream (a `Status` event naming the hold, then a `Response` carrying the
+same words the batched call returns), and a native brain streams. `LoopParityTests` holds the two
+doors to an identical decision-log trace, so a control added to one door and not the other fails
+the build rather than waiting for an audit.
 
 Swap the store when a folder stops being enough: `.UseSessions(new RedisSessionBroker(...))`, or
 `.OnSessions(select, upsert)` for a store you already run.
