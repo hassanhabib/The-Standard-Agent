@@ -79,26 +79,14 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
 
         string verdict = await this.guardianService.ScreenAsync(context.Prompt);
 
-        if (IsRefusal(verdict))
+        AgentContext? refused = await RefusedByGateAsync(context, verdict);
+
+        if (refused is not null)
         {
-            return context with
-            {
-                Intent = RefuseDirection,
-                DirectionType = RefuseDirection,
-                Payload = RefusalMessage,
-                RawReply = verdict
-            };
+            return refused;
         }
 
-        // Invariant 6 holds structurally on both paths — a verdict is only ever read as a
-        // classification, so a Gate that emits FINAL: or ACTION: falls through to the Brain and
-        // its text never becomes the answer. What the batch path was missing is the record:
-        // §7.6 says overreach SHOULD be recorded, and a guardian trying to answer is exactly
-        // the event a security review needs to see. Streaming already logged it; now both do.
-        if (IsGuardianOverreach(verdict))
-        {
-            await LogGuardianOverreachAsync();
-        }
+        context = await RoutedByGateAsync(context, verdict);
 
         (AgentContext resolvedContext, bool isTerminal) =
             await ResolveSkillConflictAsync(context);
@@ -238,18 +226,11 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
 
         string verdict = await this.guardianService.ScreenAsync(context.Prompt);
 
-        if (IsRefusal(verdict))
-        {
-            await this.loggingBroker.LogProcessAsync(
-                "Decision", $"Gate → REFUSE: {verdict.ReplaceLineEndings(" ").Trim()}");
+        AgentContext? refused = await RefusedByGateAsync(context, verdict);
 
-            setResult(context with
-            {
-                Intent = RefuseDirection,
-                DirectionType = RefuseDirection,
-                Payload = RefusalMessage,
-                RawReply = verdict
-            });
+        if (refused is not null)
+        {
+            setResult(refused);
 
             yield return new AgentStreamEvent(
                 AgentStreamEventType.Status, "gate refused the request");
@@ -257,21 +238,7 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
             yield break;
         }
 
-        if (IsGuardianOverreach(verdict))
-        {
-            await LogGuardianOverreachAsync();
-        }
-
-        await this.loggingBroker.LogProcessAsync(
-            "Decision",
-            IsRoute(verdict)
-                ? $"Gate → ROUTE: {verdict.ReplaceLineEndings(" ").Trim()}"
-                : $"Gate → ACCEPT: {verdict.ReplaceLineEndings(" ").Trim()}");
-
-        if (IsRoute(verdict))
-        {
-            context = context with { Route = ExtractRouteLabel(verdict) };
-        }
+        context = await RoutedByGateAsync(context, verdict);
 
         (AgentContext resolvedContext, bool isTerminal) =
             await ResolveSkillConflictAsync(context);
@@ -340,6 +307,53 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
         }
 
         setResult(decided);
+    }
+
+    // The Gate's refusal, handled once for both doors: the verdict never becomes the answer —
+    // it is recorded as RawReply and the reply is the fixed refusal message. Null when the Gate
+    // did not refuse. Logged here so both doors narrate the same line.
+    private async ValueTask<AgentContext?> RefusedByGateAsync(AgentContext context, string verdict)
+    {
+        if (IsRefusal(verdict) is false)
+        {
+            return null;
+        }
+
+        await this.loggingBroker.LogProcessAsync(
+            "Decision", $"Gate → REFUSE: {verdict.ReplaceLineEndings(" ").Trim()}");
+
+        return context with
+        {
+            Intent = RefuseDirection,
+            DirectionType = RefuseDirection,
+            Payload = RefusalMessage,
+            RawReply = verdict
+        };
+    }
+
+    // Everything else the Gate's verdict carries, handled once for both doors. Invariant 6
+    // holds structurally either way — a verdict is only ever read as a classification, so a
+    // Gate that emits FINAL: or ACTION: falls through to the Brain and its text never becomes
+    // the answer — but the overreach is recorded (§7.6), because a guardian trying to answer is
+    // exactly the event a security review needs to see. A route label rides through as Data;
+    // this used to happen on the streamed door only, so a routing Gate steered skill selection
+    // for streaming callers and was silently ignored for batched ones.
+    private async ValueTask<AgentContext> RoutedByGateAsync(AgentContext context, string verdict)
+    {
+        if (IsGuardianOverreach(verdict))
+        {
+            await LogGuardianOverreachAsync();
+        }
+
+        await this.loggingBroker.LogProcessAsync(
+            "Decision",
+            IsRoute(verdict)
+                ? $"Gate → ROUTE: {verdict.ReplaceLineEndings(" ").Trim()}"
+                : $"Gate → ACCEPT: {verdict.ReplaceLineEndings(" ").Trim()}");
+
+        return IsRoute(verdict)
+            ? context with { Route = ExtractRouteLabel(verdict) }
+            : context;
     }
 
     // Status is Decision's OUTPUT: what THIS turn's guardians concluded about THIS turn's draft.
