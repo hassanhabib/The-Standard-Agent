@@ -116,6 +116,24 @@ public partial class RunManagementService
         }
     }
 
+    // Screening asks Decision for a verdict, and a model call can fail like any other — so the
+    // streamed loop unwinds through this exactly as it does for Recall and Act above.
+    private async ValueTask<AgentContext> ScreenedOrUnwindAsync(
+        AgentContext context,
+        int observedBefore)
+    {
+        try
+        {
+            return await ScreenedAsync(context, observedBefore);
+        }
+        catch (Exception)
+        {
+            await UnwindAsync();
+
+            throw;
+        }
+    }
+
     // A run that stopped without delivering an answer may have left effects behind. Compensation
     // (SPEC.md §4.9) asks Direction to unwind them, and the caller is told what stood — reporting
     // a run cleanly unwound when it was not is worse than never offering compensation at all.

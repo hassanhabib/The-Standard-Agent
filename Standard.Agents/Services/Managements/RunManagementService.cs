@@ -277,7 +277,15 @@ public partial class RunManagementService : IRunManagementService
             }
 
             await this.loggingBroker.LogStepAsync(AgentStep.Direction);
+
+            // Screened on the same terms as the batched loop, and before the Tool event below —
+            // a caller watching the stream must not receive the text the Brain was protected
+            // from. An instance of the parity the loops owe each other; the loop unification
+            // makes it structural.
+            int observedBefore = context.Observations.Count;
+
             context = await ActOrUnwindAsync(context);
+            context = await ScreenedOrUnwindAsync(context, observedBefore);
 
             await this.loggingBroker.LogOutcomeAsync($"turn {turn}: {context.Status}");
 
