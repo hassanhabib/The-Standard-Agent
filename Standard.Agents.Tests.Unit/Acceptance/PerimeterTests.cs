@@ -119,6 +119,41 @@ public class PerimeterTests
         tool.ExecutionCount.Should().Be(1);
     }
 
+    // Found in the 2026-08-23 sweep: a streamed run that ended AwaitingApproval emitted no
+    // event of any kind — the loop yields a Response for Responded, Refused and AwaitingInput,
+    // and a held act fell through every condition. The batched caller is told "'wire_transfer'
+    // is waiting for approval before it can run."; a streamed caller who is told nothing will
+    // report held work as done, which is the exact leak AgentOutcome was built to close.
+    [Fact]
+    public async Task ShouldTellAStreamingCallerWhenAnActIsHeldForApprovalAsync()
+    {
+        // given — the identical run as the batched hold test above, streamed
+        var tool = new CountingTool();
+
+        StandardAgent agent =
+            AgentThatCallsTheTool(tool, "ACTION: wire_transfer: 10000")
+                .RequireApproval("wire_transfer");
+
+        // when
+        List<string> responses = [];
+
+        await foreach (var streamEvent in agent.StreamPromptAsync("pay the invoice"))
+        {
+            if (streamEvent.Type == Models.Clients.Agents.AgentStreamEventType.Response)
+            {
+                responses.Add(streamEvent.Content);
+            }
+        }
+
+        // then — held is not silent: filtering the stream to Response equals the batched answer
+        tool.ExecutionCount.Should().Be(0);
+
+        string.Concat(responses).Should().Contain(
+            "waiting for approval",
+            because: "the batched caller is told the act is held, and a streamed caller told "
+                + "nothing will report held work as done");
+    }
+
     private sealed class InjectingTool : ITool
     {
         public string Name => "fetch_page";
