@@ -75,6 +75,7 @@ public sealed partial class StandardAgent : IAgent
     private string logPath = string.Empty;
     private string auditPath = string.Empty;
     private IEnumerable<RedactionRule>? redactionRules;
+    private IRedactionBroker? redactionBroker;
     private IEnumerable<string>? allowedTools;
     private TraceVerbosity traceVerbosity = TraceVerbosity.Full;
     private string memoryPath = "memory.txt";
@@ -512,6 +513,40 @@ public sealed partial class StandardAgent : IAgent
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent Redact() =>
         Set(() => this.redactionRules = RedactionRules.Default);
+
+    /// <summary>
+    /// Turns on redaction with <b>your own rules</b> — still the Local mode, still in the box:
+    /// each rule is a pattern and a label, and matches are swapped for <c>{{LABEL_N}}</c> tokens
+    /// exactly as the default set's are. Passing no rules keeps the default set.
+    /// </summary>
+    /// <param name="rules">The rules to redact by. See <see cref="RedactionRules.Default"/>.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent Redact(params RedactionRule[] rules) =>
+        Set(() => this.redactionRules = rules.Length == 0 ? RedactionRules.Default : rules);
+
+    /// <summary>
+    /// Redacts with a provider — the <b>External</b> mode (SPEC.md §4.8). Install a redaction
+    /// package (an entity recognizer, a DLP service adapter), pass its broker, and every model
+    /// call the agent drives — Brain, Gate and Judge alike — goes through it at the wire.
+    /// </summary>
+    /// <param name="broker">The redaction broker to tokenize with and restore from.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent UseRedaction(IRedactionBroker broker) =>
+        Set(() => this.redactionBroker = broker);
+
+    /// <summary>
+    /// Redacts with your own code — the <b>Custom</b> mode, for rules a pattern cannot express.
+    /// <paramref name="redact"/> replaces sensitive values with tokens and records each pair in
+    /// the vault; <paramref name="rehydrate"/> restores them in the model's reply. The vault is
+    /// per model call and shared between its prompts, so one value redacts to one token.
+    /// </summary>
+    /// <param name="redact">A <c>(text, vault) =&gt; redactedText</c> delegate.</param>
+    /// <param name="rehydrate">A <c>(text, vault) =&gt; restoredText</c> delegate.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent OnRedaction(
+        Func<string, IDictionary<string, string>, string> redact,
+        Func<string, IReadOnlyDictionary<string, string>, string> rehydrate) =>
+        Set(() => this.redactionBroker = new FunctionRedactionBroker(redact, rehydrate));
 
     /// <summary>
     /// Restricts the agent to a <b>least-privilege</b> set of tools: the brain may still propose any
@@ -1325,9 +1360,10 @@ public sealed partial class StandardAgent : IAgent
         // service. That is what makes "every model call" structural: a foundation holds one
         // broker, knows nothing of redaction, and a fourth model call added tomorrow cannot
         // forget (docs/architecture-alignment.md).
-        IRedactionBroker redaction = this.redactionRules is null
-            ? new NotConfiguredRedactionBroker()
-            : new RuleRedactionBroker(this.redactionRules);
+        IRedactionBroker redaction = this.redactionBroker
+            ?? (this.redactionRules is null
+                ? new NotConfiguredRedactionBroker()
+                : new RuleRedactionBroker(this.redactionRules));
 
         IResilienceBroker resilience =
             this.resilienceBroker ?? new NotConfiguredResilienceBroker();
