@@ -89,7 +89,17 @@ public partial class DirectionCoordinationService
             // remembered for the tool AND the scope it was given for, exactly — approving a write
             // to one file is not approving writes to every file, and a broader grant is a
             // judgement only the authority can make.
-            if (AgentRun.Current?.WasGranted(effect.ToolName, effect.Scope) is true)
+            //
+            // Exactly, which is why an act with no named scope remembers nothing: a tool that
+            // does not say what it touches (ScopeOf unimplemented — every MCP tool among them)
+            // leaves nothing for a later act to match, and remembering the empty scope collapsed
+            // the key to the tool name — approving a $10 transfer silently approved the $10,000
+            // one. Each such act is its own question; an identical repeat is already replayed by
+            // run-once above, before approval is ever reached.
+            bool scopeIsNamed = string.IsNullOrEmpty(effect.Scope) is false;
+
+            if (scopeIsNamed
+                && AgentRun.Current?.WasGranted(effect.ToolName, effect.Scope) is true)
             {
                 await this.loggingBroker.LogProcessAsync(
                     "Direction",
@@ -105,7 +115,10 @@ public partial class DirectionCoordinationService
                     return await HandleUnapprovedAsync(context, effect, approval);
                 }
 
-                AgentRun.Current?.RememberGrant(effect.ToolName, effect.Scope);
+                if (scopeIsNamed)
+                {
+                    AgentRun.Current?.RememberGrant(effect.ToolName, effect.Scope);
+                }
 
                 await this.loggingBroker.LogProcessAsync(
                     "Direction", $"Approval → APPROVED '{effect.ToolName}'");

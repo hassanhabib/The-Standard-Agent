@@ -413,46 +413,6 @@ public class SweepReproTests : IDisposable
                 + "and RequireApproval with no approver holds the act — waiting is not consent");
     }
 
-    // FINDING 11 — with no ScopeOf, one approval covers every later call of the tool.
-    [Fact(Skip = "DEMONSTRATES DEFECT: with no ScopeOf the grant key collapses to the tool name for the whole run")]
-    public async Task Finding11_ApprovalGrantMustNotCoverDifferentArgumentsAsync()
-    {
-        var tool = new CountingTool();
-        int approvalsAsked = 0;
-        int calls = 0;
-
-        StandardAgent agent = BareAgent((_, _) =>
-        {
-            calls++;
-
-            return ValueTask.FromResult(calls switch
-            {
-                1 => "ACTION: calculator: 10",
-                2 => "ACTION: calculator: 10000",
-                _ => "FINAL: done"
-            });
-        })
-            .Tool(tool)
-            .RequireApproval("calculator")
-            .OnApproval(effect =>
-            {
-                approvalsAsked++;
-
-                return ValueTask.FromResult(
-                    Brokers.Approvals.ApprovalDecision.Approved);
-            })
-            .MaxTurns(5);
-
-        await agent.ProcessPromptAsync("compute twice");
-
-        tool.ExecutionCount.Should().Be(2);
-
-        approvalsAsked.Should().Be(
-            2,
-            because: "approving a $10 act is not approving a $10,000 one — a grant is for "
-                + "what it was granted for, and these are different acts of the same tool");
-    }
-
     // FINDING 7b — documents the actual outcome shape at the cap (expected to PASS;
     // evidence for the AgentOutcome doc-comment mismatch, not a failure).
     [Fact]
