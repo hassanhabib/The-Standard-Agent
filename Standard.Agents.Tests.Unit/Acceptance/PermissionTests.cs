@@ -203,6 +203,70 @@ public class PermissionTests
         tool.Writes.Should().Be(1);
     }
 
+    // Gap 5, found in the 2026-08-23 sweep. PermissionMode.Deny was declared, documented
+    // ("Denied. Nothing runs but what was named.") and never consulted: the only read of the
+    // mode compared against Ask, so the strictest disposition behaved exactly like Open and an
+    // unnamed tool ran unasked.
+    [Fact]
+    public async Task ShouldDenyAnActThatWasNeverExplicitlyPermittedAsync()
+    {
+        // given — nothing names the tool: no allow-list, no approval list, no policy
+        var tool = new WriteFileTool();
+        string secondPrompt = string.Empty;
+        int asked = 0;
+
+        StandardAgent agent = new StandardAgent()
+            .Tool(tool)
+            .OnBrain((_, userPrompt) =>
+            {
+                if (asked > 0)
+                {
+                    secondPrompt = userPrompt;
+                }
+
+                string reply = asked == 0 ? "ACTION: write_file: /project/a.txt hello" : "FINAL: done";
+                asked++;
+
+                return ValueTask.FromResult(reply);
+            })
+            .Permissions(PermissionMode.Deny)
+            .MaxTurns(4);
+
+        // when
+        string actualAnswer = await agent.ProcessPromptAsync("write it");
+
+        // then — denied, told, and non-terminal: the agent chooses another path
+        tool.Writes.Should().Be(
+            0,
+            because: "Deny says nothing runs but what was named, and nothing named this tool");
+
+        secondPrompt.Should().Contain(
+            "not permitted",
+            because: "a denial the agent is not told about leaves it to propose the act forever");
+
+        actualAnswer.Should().Be("done");
+    }
+
+    // The positive half, so a mode that denies everything cannot pass: an act that WAS named —
+    // here through RequireApproval — still reaches its authority and still runs when permitted.
+    [Fact]
+    public async Task ShouldStillPermitWhatWasExplicitlyNamedUnderDenyAsync()
+    {
+        // given
+        var tool = new WriteFileTool();
+
+        StandardAgent agent = AgentActing(tool, "ACTION: write_file: /project/a.txt hello", "FINAL: done")
+            .Permissions(PermissionMode.Deny)
+            .RequireApproval("write_file")
+            .OnApproval(_ => ValueTask.FromResult(ApprovalDecision.Approved));
+
+        // when
+        await agent.ProcessPromptAsync("write it");
+
+        // then — the mode speaks only for what the explicit permissions did not mention
+        tool.Writes.Should().Be(1);
+    }
+
     // Gap 4. A granted approval was forgotten immediately, so a second act on the same target
     // asked again — and an authority asked the identical question twice stops reading it.
     [Fact]

@@ -1,0 +1,22 @@
+{
+  "name": "deny-covers-what-nothing-permitted",
+  "description": "SPEC.md 4.9: under the Deny disposition, an act that no permission mentioned is refused with a reason the agent can act on, before its intent is recorded - and an act that WAS named still travels its own path. Both directions are asserted on purpose: the calculator was named by nothing and must never run, while the wire transfer was named by requireApproval, is approved by the authority, and must run exactly once with exactly these arguments - so an implementation that denies everything fails just as surely as one that denies nothing.",
+  "generatorReplies": [
+    "ACTION: calculator: 47*89",
+    "ACTION: wire_transfer: 10 to bob",
+    "FINAL: done"
+  ],
+  "tools": { "calculator": "4183", "wire_transfer": "paid" },
+  "requireApproval": ["wire_transfer"],
+  "approvalDecisions": ["approved"],
+  "permissionMode": "Deny",
+  "prompt": "settle the invoice",
+  "maxTurns": 5,
+  "expect": {
+    "result": "done",
+    "toolNeverRan": ["calculator"],
+    "toolRunCount": { "wire_transfer": 1 },
+    "toolInput": { "wire_transfer": "10 to bob" },
+    "brainSees": "not permitted"
+  }
+}

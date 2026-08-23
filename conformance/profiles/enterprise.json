@@ -10,6 +10,7 @@
     "a-repeat-in-a-session-is-a-new-act",
     "an-allow-list-can-say-where",
     "ask-first-covers-what-nothing-permitted",
+    "deny-covers-what-nothing-permitted",
     "budget-stops-the-loop",
     "budget-bounds-tokens-on-any-protocol",
     "budget-bounds-cost-on-any-protocol",
