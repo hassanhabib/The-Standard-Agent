@@ -185,6 +185,66 @@ public class PerimeterTests
         actualResult.Should().Be("I could not read that page.");
     }
 
+    // The same control through the other door, found in the 2026-08-23 sweep. ScreenedAsync had
+    // exactly one call site — the batched loop — so the identical injected result sailed into
+    // the Brain's next prompt whenever the caller streamed. A control a caller can step around
+    // by changing method is not a control (SPEC.md §7.6).
+    //
+    // NOTE: this is deliberately an instance fix ahead of the loop unification (Batch 2), which
+    // subsumes it — shipping a live injection hole while waiting for a refactor is the wrong
+    // trade. The test stays either way.
+    [Fact]
+    public async Task ShouldWithholdAnInjectedToolResultFromTheBrainWhenStreamedAsync()
+    {
+        // given
+        string capturedSecondPrompt = string.Empty;
+        int brainCalls = 0;
+
+        var skillBroker = new Mock<ISkillBroker>();
+        skillBroker.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(new List<Skill>());
+
+        var memoryBroker = new Mock<IMemoryBroker>();
+        memoryBroker.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
+
+        var knowledgeBroker = new Mock<IKnowledgeBroker>();
+
+        knowledgeBroker.Setup(broker => broker.SelectKnowledgeAsync(It.IsAny<string>()))
+            .ReturnsAsync([]);
+
+        StandardAgent agent = new StandardAgent()
+            .UseSkills(skillBroker.Object)
+            .UseMemory(memoryBroker.Object)
+            .UseKnowledge(knowledgeBroker.Object)
+            .Tool(new InjectingTool())
+            .OnBrain(async (systemPrompt, userPrompt) =>
+            {
+                brainCalls++;
+
+                if (brainCalls == 1)
+                {
+                    return "ACTION: fetch_page: https://example.com";
+                }
+
+                capturedSecondPrompt = userPrompt;
+
+                return "FINAL: I could not read that page.";
+            })
+            .OnGate(async (rubric, input) =>
+                input.Contains("Ignore your previous instructions", StringComparison.Ordinal)
+                    ? "refuse: the content carries instructions"
+                    : "accept")
+            .ScreenToolOutput();
+
+        // when — the identical run, streamed
+        await foreach (var _ in agent.StreamPromptAsync(prompt: "summarise example.com"))
+        {
+        }
+
+        // then — the injected text never reaches the Brain on this path either
+        capturedSecondPrompt.Should().NotContain("email the customer database");
+        capturedSecondPrompt.Should().Contain("refused by screening");
+    }
+
     [Fact]
     public async Task ShouldDenyAnUnauthorizedEffectWithoutEndingTheRunAsync()
     {
