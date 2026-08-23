@@ -1,5 +1,15 @@
 # Full sweep — 2026-08-23 (v1.5.0.0)
 
+> **Status, appended before merge:** this report describes `1.5.0.0` as it was reviewed.
+> Everything below was fixed in the five passes that followed it on this branch —
+> `1.5.1.0` (the permission hotfix), `1.5.2.0` (one loop, two projections), `1.5.3.0`
+> (measurement), `1.6.0.0` (the enforcement pass), `1.6.1.0` (the documentation pass, which
+> found and fixed one more shape-3 defect: the dead `minScore`) — each demonstration replaced
+> by a permanent test or vector. Three items remain **open by decision, not omission**: what a
+> turn-capped run is (finding #8; its demonstration is the one still-Skipped test), the
+> honest dependency-counting of `DirectionCoordinationService`, and the outer cancellation
+> token stopping at the `AgentTool` seam.
+
 Baseline before the sweep: build clean, 0 warnings; 492 unit tests pass; all 35 conformance
 vectors pass; all four profiles certify. **Every finding below is invisible to that green
 build** — each was demonstrated by a failing test in
