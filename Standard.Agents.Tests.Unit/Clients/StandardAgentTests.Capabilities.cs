@@ -70,7 +70,15 @@ public class StandardAgentCapabilityTests
 
         new("Usage", Local: "Usage", External: "UseUsage", Custom: "OnUsage"),
 
-        new("Contract", Local: "Contract", External: "UseContract", Custom: "OnContract")
+        new("Contract", Local: "Contract", External: "UseContract", Custom: "OnContract"),
+
+        // Found missing in the 2026-08-23 sweep: a full capability nature — its own broker
+        // seam, four decorators, a rule-backed default — absent from this matrix entirely, with
+        // one mode on the client (.Redact(), hardcoded to the default rules), no waiver, and no
+        // way for a host to supply its own rules or broker. The matrix could not see it because
+        // nothing ties the matrix to the surface; the null-Local waiver test below closes the
+        // half of that hole that is closeable from inside the matrix.
+        new("Redaction", Local: "Redact", External: "UseRedaction", Custom: "OnRedaction")
     ];
 
     private static readonly string[] publicMethodNames =
@@ -137,7 +145,28 @@ public class StandardAgentCapabilityTests
                     + "other capability must answer Local, External and Custom");
 
         actualWaived.Should().OnlyContain(capability =>
-            capability.Waiver!.Contains("N/A"),
-            because: "a waiver reading 'pending' is debt and must not survive a release");
+            capability.Waiver!.Contains("N/A")
+                && capability.Waiver!.Contains(':')
+                && capability.Waiver!.Split(':').Last().Trim().Length > 10,
+            because: "a waiver reading 'pending' is debt, and a bare 'N/A' is a verdict "
+                + "without a reason — the reason is what makes waiving a reviewed decision");
+    }
+
+    // The sharpest hole the sweep found in this file: a capability declared with Local: null and
+    // Waiver: null was silently unasserted — the Local theory row was skipped and the waiver-set
+    // equivalence still passed, so the omission was exactly the one nobody sees. Derived, not
+    // enumerated: any future row that skips a mode without saying why fails here.
+    [Fact]
+    public void ShouldWaiveEveryModeItSkips()
+    {
+        // given, when
+        Capability[] silentOmissions =
+            [.. capabilities.Where(capability =>
+                capability.Local is null && capability.Waiver is null)];
+
+        // then
+        silentOmissions.Should().BeEmpty(
+            because: "a mode that genuinely does not apply is waived in code with its reason — "
+                + "an unwaived omission is the erosion this matrix exists to prevent");
     }
 }

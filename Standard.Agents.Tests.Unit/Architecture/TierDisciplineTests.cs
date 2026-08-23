@@ -242,6 +242,9 @@ public class TierDisciplineTests
     public void ShouldNotLetAnyBrokerDependOnANatureBroker()
     {
         // given
+        // Derived sets can empty out silently — a renamed namespace and this rule passes
+        // vacuously forever. A derivation that finds nothing is a broken derivation, not a
+        // clean architecture.
         HashSet<string> natureBrokers =
             [.. ServicesUnder("Foundations")
                 .SelectMany(BrokersTakenBy)
@@ -275,6 +278,34 @@ public class TierDisciplineTests
             because: "a broker is a thin liaison to ONE resource (Invariant 3). A broker that "
                 + "reaches another nature's resource has business flow in it, and it is the "
                 + "hardest kind to see because it sits underneath everything else.");
+    }
+
+    // "A tier missing from this list is a tier nobody is checking" was a comment; now it is a
+    // rule. Every namespace segment under Standard.Agents.Services must be one of the four
+    // checked tiers — when the loop moved to Managements, it left every rule in this file for
+    // as long as nobody noticed, and a future tier gets no such window.
+    [Fact]
+    public void ShouldCheckEveryServiceTierThatExists()
+    {
+        // given
+        string[] checkedTiers = ["Foundations", "Orchestrations", "Coordinations", "Managements"];
+
+        // when
+        string[] actualTiers =
+            [.. agentAssembly.GetTypes()
+                .Where(type => type.Namespace is not null)
+                .Select(type => type.Namespace!)
+                .Where(space => space.Contains(".Services.", StringComparison.Ordinal))
+                .Select(space => space
+                    .Split(".Services.", 2)[1]
+                    .Split('.')[0])
+                .Distinct()];
+
+        // then
+        actualTiers.Should().BeSubsetOf(
+            checkedTiers,
+            because: "a tier absent from the checked list is a tier nobody is checking, which "
+                + "is how the loop's move to Managements went unwatched");
     }
 
     // The tool seam, found unscanned in the 2026-08-23 sweep. Tools are host-space: Direction
