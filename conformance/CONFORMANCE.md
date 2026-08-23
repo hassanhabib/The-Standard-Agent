@@ -3,7 +3,7 @@
 A **language-neutral** set of behavioral test vectors that any Standard-Agents
 implementation runs to self-certify against
 [`SPEC.md`](https://github.com/hassanhabib/The-Standard-Agent-Specs/blob/main/SPEC.md).
-Thirty-eight vectors, four readiness profiles, every vector proven able to fail.
+Forty vectors, four readiness profiles, every vector proven able to fail.
 
 The vectors are the executable half of the specification. Prose can be read two ways; a vector
 cannot, which is why "conformant" here means *this suite passes* rather than *we believe we
@@ -154,6 +154,8 @@ the deterministic core of the Standard.
 | `budget-stops-the-loop` | Exhaustion stops the loop and is distinguishable from a refusal |
 | `budget-bounds-tokens-on-any-protocol` | A token bound holds where the provider reports no usage (§4.10) |
 | `budget-bounds-cost-on-any-protocol` | A cost bound holds there too — cost is priced off the count |
+| `a-budget-counts-every-turn` | The bound tracks actual cumulative spend, not turn 1 re-billed (§4.10) |
+| `a-generous-budget-lets-the-run-finish` | A budget is a bound, not a switch: under it, the run completes |
 | `a-repeat-in-a-session-is-a-new-act` | Run-once is scoped to a run; a repeat in a later run performs (§4.9) |
 | `an-allow-list-can-say-where` | Permission is what **and where**; the tool names the scope (§4.9) |
 | `ask-first-covers-what-nothing-permitted` | A mode answers for the acts no permission mentioned (§4.9) |

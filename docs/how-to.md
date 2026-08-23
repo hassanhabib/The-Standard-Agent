@@ -923,7 +923,17 @@ not" from "I ran out" cannot decide whether to retry.
 what the invoice is drawn from — and where there is none the tokens are counted locally. That
 fallback covers the text protocol batched, the text protocol streamed, and any V1 endpoint that
 omits its usage object. Before this, a run whose provider reported nothing contributed **zero**
-every turn, so the budget it was given did nothing at all and said nothing about it.
+every turn, so the budget it was given did nothing at all and said nothing about it. **Every
+turn is measured**, including a turn whose draft the Judge or the Contract rejected — the
+rejected draft still cost a model call, and a revision loop the budget cannot see is exactly
+where a run burns tokens fastest.
+
+**The bound meters the Brain.** Gate, Judge, contract-validation and screening calls are not
+counted against `.Budget(maxTokens:)` — a stated boundary, not an accident: the guardians run
+small, fixed-size verdicts by default, and the Brain is where a run's spend actually lives. If
+your guardians share the Brain's endpoint and their cost matters to you, meter it at the
+endpoint. Turn count is the budget that does cover everything: `.MaxTurns(...)` bounds the whole
+loop, guardians included.
 
 **Counting is always on; blocking is not.** An agent given no budget is wide open — it is measured
 and never stopped. `.Budget(...)` is the only thing that turns a measurement into a limit.

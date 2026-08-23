@@ -20,6 +20,29 @@
     <!-- The Standard's release format is v1.2.3.4 — model . service/routine . fix/config
          . automated build. Deliberately NOT semver; the segments say what KIND of change
          happened, so a model change can never hide in the service segment.
+         1.5.3.0: every turn is measured, and a rejected draft still costs. On the text
+         protocol only the FIRST turn was ever measured: Interpret carries the token counts
+         across turns exactly as it carried Status, MeasuredAsync read the carried copy as
+         "the provider already reported", and the loop re-billed turn 1's figure every turn —
+         a 7-turn run whose prompt grows every turn was billed as seven times its smallest
+         turn. The same shape as the eight-release hole 1.3.0 closed, introduced by the fix
+         that closed it. FreshOfLastTurn now clears Status AND cost at both of Decision's
+         doors — one clear for the whole "per-turn signal carried by the context copy" class,
+         whose two members (0.12.0's Revising, 1.3.0's counts) were introduced by two
+         different fixes and hid in the same copy. The guardian rejection paths carry the
+         rejected draft's measured cost onto the Revising context, because a revision loop
+         the budget cannot see is where a run burns tokens fastest.
+         Two vectors close the certification hole that let this ship: every budget vector
+         used a deliberately impossible bound, so an implementation that counted nothing and
+         stopped immediately - or re-billed turn 1 forever - was certifiable.
+         a-budget-counts-every-turn grows the prompt each turn and requires the bound to trip
+         on real cumulative spend; a-generous-budget-lets-the-run-finish requires a run under
+         a generous bound to complete, and was proven able to fail by mutating the check to
+         "exhausted whenever bounded". Stated rather than silent: .Budget meters the Brain's
+         calls only - guardians run small fixed verdicts, and .MaxTurns is the bound that
+         covers everything - written into how-to 13 as a boundary instead of left to be
+         discovered. Behaviour fixes on existing routines, no new public surface, no model
+         change: a fix/config change, so segment 3 advances, 4 resets.
          1.5.2.0: one loop, two projections. The 2026-08-23 sweep found six controls enforced
          on one door and not the other — tool-output screening, the Contract, the revision
          reset, the approval hold's announcement, the Gate's route label (the mirror image:
@@ -301,7 +324,7 @@
          3/4 reset. Still tracks SPEC.md v0.1 (draft): segment 1 goes to 1 when the spec settles.
          (0.8.0.0: memory and knowledge came alive — knowledge retrieval in Recall + a built-in
          'remember' tool.) -->
-    <Version>1.5.2.0</Version>
+    <Version>1.5.3.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>
