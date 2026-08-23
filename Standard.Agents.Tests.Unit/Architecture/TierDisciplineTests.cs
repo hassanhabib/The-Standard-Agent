@@ -276,4 +276,70 @@ public class TierDisciplineTests
                 + "reaches another nature's resource has business flow in it, and it is the "
                 + "hardest kind to see because it sits underneath everything else.");
     }
+
+    // The tool seam, found unscanned in the 2026-08-23 sweep. Tools are host-space: Direction
+    // reaches them through ToolBroker, underneath the foundation tier — so a framework tool that
+    // KEEPS a service or a broker re-enters the tier stack from below it. RememberTool held
+    // IMemoryService, making the live chain InternalToolService → ToolBroker → RememberTool →
+    // IMemoryService: a foundation transitively calling a foundation through a broker, and no
+    // rule in this file could see it because nothing here scanned Standard.Agents.Tools at all.
+    //
+    // The rule is about what a tool HOLDS, which is why it scans fields rather than
+    // constructors: a converting [Obsolete] constructor may still ACCEPT a service for
+    // compatibility, but nothing of the tier stack may live in the tool. The client seam
+    // (IAgent, in the root namespace) passes by construction — nesting a whole agent is
+    // composition, not tier reach-through.
+    [Fact]
+    public void ShouldKeepFrameworkToolsOutOfTheTierStack()
+    {
+        // given
+        IEnumerable<Type> frameworkTools = agentAssembly.GetTypes()
+            .Where(type => type.IsClass && type.IsAbstract is false)
+            .Where(type => type.Namespace is "Standard.Agents.Tools");
+
+        // when
+        List<string> offenders = [];
+
+        foreach (Type tool in frameworkTools)
+        {
+            string[] held =
+                [.. tool
+                    .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                    .SelectMany(field => TypesReferencedBy(field.FieldType))
+                    .Where(fieldType =>
+                        fieldType.Namespace?.Contains(".Services.", StringComparison.Ordinal) is true
+                            || fieldType.Namespace?.Contains(".Brokers.", StringComparison.Ordinal) is true)
+                    .Select(fieldType => fieldType.Name)
+                    .Distinct()];
+
+            if (held.Length > 0)
+            {
+                offenders.Add($"{tool.Name} holds [{string.Join(", ", held)}]");
+            }
+        }
+
+        // then
+        offenders.Should().BeEmpty(
+            because: "a tool is reached through a broker, underneath the foundations — a tool "
+                + "holding a service or a broker re-enters the tier stack from below it, and "
+                + "no adjacency rule can see the reach because it travels through data");
+    }
+
+    // Generic arguments count: IReadOnlyList<IMemoryService> holds the service as surely as the
+    // bare field does.
+    private static IEnumerable<Type> TypesReferencedBy(Type type)
+    {
+        yield return type;
+
+        if (type.IsGenericType)
+        {
+            foreach (Type argument in type.GetGenericArguments())
+            {
+                foreach (Type referenced in TypesReferencedBy(argument))
+                {
+                    yield return referenced;
+                }
+            }
+        }
+    }
 }
