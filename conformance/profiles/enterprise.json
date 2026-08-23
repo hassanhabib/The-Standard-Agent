@@ -12,6 +12,7 @@
     "ask-first-covers-what-nothing-permitted",
     "deny-covers-what-nothing-permitted",
     "ask-with-no-authority-holds",
+    "ask-approved-act-runs",
     "a-grant-is-for-what-it-was-granted-for",
     "budget-stops-the-loop",
     "budget-bounds-tokens-on-any-protocol",

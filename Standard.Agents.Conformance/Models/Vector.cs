@@ -5,6 +5,10 @@
 
 namespace Standard.Agents.Conformance;
 
+// A typo'd field must fail loudly, not silently delete the assertion or the input it
+// carried: a vector that asserts less than it appears to reads as coverage (SPEC.md §1.1).
+[System.Text.Json.Serialization.JsonUnmappedMemberHandling(
+    System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow)]
 public sealed record Vector(
     string Name,
     string? Description,

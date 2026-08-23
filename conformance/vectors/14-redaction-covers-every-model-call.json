@@ -1,7 +1,9 @@
 {
   "name": "redaction-covers-every-model-call",
-  "description": "SPEC.md 4.6: redaction covers every model the agent drives, not only the Brain. The Gate screens the raw task and the Judge reads the task and the drafted answer, so both see exactly the values redaction exists to hide - and a guardian may run on a different host than the Brain, which makes an unredacted guardian a wider exposure, not a narrower one. The prompt carries an email address; no model call may contain it in the clear, and the caller must still get it back.",
-  "generatorReplies": ["FINAL: I have emailed ada@example.com the report"],
+  "description": "SPEC.md 4.6: redaction covers every model the agent drives, not only the Brain. The Gate screens the raw task and the Judge reads the task and the drafted answer, so both see exactly the values redaction exists to hide - and a guardian may run on a different host than the Brain, which makes an unredacted guardian a wider exposure, not a narrower one. The prompt carries an email address; no model call may contain it in the clear, and the caller must still get it back. The scripted reply carries the placeholder, not the literal - so the caller getting the address back requires rehydration to actually run; a reply scripted with the literal certified rehydration that could be deleted outright, and was, in the 2026-08-23 sweep's mutation test.",
+  "generatorReplies": [
+    "FINAL: I have emailed {{EMAIL_0}} the report"
+  ],
   "tools": {},
   "prompt": "email the report to ada@example.com",
   "redact": true,
