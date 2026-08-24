@@ -12,7 +12,7 @@ jobs:
 
     steps:
     - name: Pulling Code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     # global.json pins the SDK, so CI and a developer's machine compile with the same one.
     # A version named in two places drifts in one of them. The 8.0 line below is a runtime,
@@ -55,7 +55,7 @@ jobs:
     # clone has no parent to diff against — it fails to scan rather than finding nothing, which
     # is the failure mode a security check must never have.
     - name: Pulling Code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         fetch-depth: 0
 

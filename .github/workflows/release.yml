@@ -23,7 +23,7 @@ jobs:
 
     steps:
     - name: Pulling Code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     # The SDK comes from global.json, so the package is built with the same compiler a
     # developer used. Reproducibility starts with agreeing on the toolchain.
