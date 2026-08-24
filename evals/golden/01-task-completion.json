@@ -1,0 +1,18 @@
+{
+  "name": "task-completion-carries-the-facts",
+  "description": "The answer to a computational task carries the fact the task existed to produce, via the tool that produces it.",
+  "skill": "You are a billing assistant. Use the calculator for arithmetic.",
+  "tools": { "calculator": "4183" },
+  "generatorReplies": [
+    "ACTION: calculator: 47*89",
+    "FINAL: The total owed on the account is $4,183, from 47 units at $89."
+  ],
+  "prompts": [
+    {
+      "prompt": "how much is owed on account 4471",
+      "answerMustContain": ["4,183"],
+      "expectedTools": ["calculator"]
+    }
+  ],
+  "thresholds": { "taskCompletion": 1.0, "toolSelection": 1.0 }
+}

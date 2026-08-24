@@ -1,0 +1,21 @@
+{
+  "name": "tool-selection-uses-what-the-task-needs",
+  "description": "With two tools available, exactly the one the task needs runs - an agent that also calls the irrelevant one fails.",
+  "skill": "You are a precise assistant. Use only the tool a task requires.",
+  "tools": {
+    "calculator": "144",
+    "weather": "sunny, 21C"
+  },
+  "generatorReplies": [
+    "ACTION: calculator: 12*12",
+    "FINAL: A twelve-by-twelve grid holds 144 units."
+  ],
+  "prompts": [
+    {
+      "prompt": "how many units fit in a twelve by twelve grid",
+      "answerMustContain": ["144"],
+      "expectedTools": ["calculator"]
+    }
+  ],
+  "thresholds": { "taskCompletion": 1.0, "toolSelection": 1.0 }
+}

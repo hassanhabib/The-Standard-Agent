@@ -1,0 +1,17 @@
+{
+  "name": "revision-turns-a-rejected-draft-into-a-passing-answer",
+  "description": "The Judge rejects the vague first draft; the revision loop produces a precise second draft that passes and carries the fact.",
+  "skill": "You are a precise assistant. State amounts exactly.",
+  "judgeScores": ["0.0", "1.0"],
+  "generatorReplies": [
+    "FINAL: it costs about a hundred or so",
+    "FINAL: The service costs exactly $100.00 per month."
+  ],
+  "prompts": [
+    {
+      "prompt": "what does the service cost per month",
+      "answerMustContain": ["$100.00"]
+    }
+  ],
+  "thresholds": { "revisionEffectiveness": 1.0, "taskCompletion": 1.0 }
+}
