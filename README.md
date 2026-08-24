@@ -291,8 +291,7 @@ before any code is written. Build to it.
 
 ```
 Standard.Agents/                  the library
-  |-- Brokers/{Data,Decision,Direction,Loggings}
-  |-- Brokers/{Audits,Policies,Approvals,Effects,Sessions,Resiliences,Redactions}
+  |-- Brokers/{Skills,Generators,Tools,...}   one flat folder per seam — twenty in all
   |-- Models/Foundations/{Entity}/Exceptions
   |-- Models/Orchestrations/Agents          AgentContext, AgentStatus, ToolExchange
   |-- Models/Orchestrations/Effects         AgentEffect, AgentPrincipal, CompensationOutcome

@@ -2,8 +2,8 @@
 
 This guide starts with the smallest possible agent and adds one capability at a time — each section
 **building on the agent from the one before**, so the `// ← new this section` line is exactly what
-that step adds. Every snippet is real and runs against `Standard.Agents` (1.0.0+). Copy a section,
-run it, then move to the next.
+that step adds. Every snippet is real and runs against the current `Standard.Agents` release. Copy
+a section, run it, then move to the next.
 
 Sections **0–10** build a working agent and swap the simple file/HTTP defaults for real backends —
 a local GGUF model, Redis, PostgreSQL, SQL Server — one line at a time. Sections **11–15** are what
@@ -52,7 +52,8 @@ agent is already talking.
 
 `Brain(...)` also accepts optional `temperature` (default `0.7`), `maxTokens` (`1024`) and
 `timeoutSeconds` (`120`) when you need to tune sampling or limits; `Gate(...)` and `Judge(...)`
-take the same three (defaulting to `0.0` temperature and `16` tokens, since a verdict is short).
+take the same three, defaulting to `0.0` temperature, `16` tokens and a `30`-second timeout,
+since a verdict is short and quick.
 
 Want the answer as it's generated? Stream it:
 
