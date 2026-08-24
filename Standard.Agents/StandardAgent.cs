@@ -76,7 +76,11 @@ public sealed partial class StandardAgent : IAgent
     private readonly List<ITool> tools = [];
     private readonly Lock compositionLock = new();
 
-    private string skillsPath = "Skills";
+    // Integrations accumulate, never replace: a second skill source or MCP server adds to the
+    // agent the way a second .Tool() always has.
+    private readonly List<ISkillBroker> skillSources = [];
+    private readonly List<IMcpBroker> mcpSources = [];
+
     private string constitutionPath = string.Empty;
     private string consumptionPath = string.Empty;
     private string logPath = string.Empty;
@@ -96,11 +100,6 @@ public sealed partial class StandardAgent : IAgent
     private InferenceSettings? gateSettings;
     private InferenceSettings? judgeSettings;
 
-    private string mcpEndpointUrl = string.Empty;
-    private string mcpRelativeUrl = string.Empty;
-    private int mcpTimeoutSeconds = 30;
-
-    private ISkillBroker? skillBroker;
     private IGeneratorBroker? generatorBroker;
     private IMemoryBroker? memoryBroker;
     private IKnowledgeBroker? knowledgeBroker;
@@ -108,7 +107,6 @@ public sealed partial class StandardAgent : IAgent
     private IVerifierBroker? verifierBroker;
     private Func<string, string, ValueTask<string>>? localGateScreen;
     private Func<string, string, ValueTask<string>>? localJudgeEvaluate;
-    private IMcpBroker? mcpBroker;
     private ILoggingBroker? loggingBroker;
     private IAuditBroker? auditBroker;
     private ITelemetryBroker? telemetryBroker;
@@ -168,8 +166,11 @@ public sealed partial class StandardAgent : IAgent
     /// </summary>
     /// <param name="path">Folder holding the <c>.md</c> skill files.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
+    /// <remarks>Sources accumulate: a second call adds another folder rather than replacing the
+    /// first, and skills read in registration order across sources.</remarks>
     public StandardAgent Skills(string path) =>
-        Set(() => this.skillsPath = path);
+        Set(() => this.skillSources.Add(
+            new FileSkillBroker(Path.Combine(AppContext.BaseDirectory, path))));
 
     /// <summary>
     /// Points the agent at the ethical constitution: a markdown file whose text is prepended
@@ -404,14 +405,37 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="endpointUrl">Base URL of the MCP server.</param>
     /// <param name="relativeUrl">Relative path appended to the base URL. Defaults to empty.</param>
     /// <param name="timeoutSeconds">Per-call timeout in seconds. Defaults to 30.</param>
+    /// <param name="bearerToken">
+    /// Optional <c>Authorization: Bearer</c> credential — an OAuth access token or PAT, for a
+    /// server that wants one. A server with no auth needs none of these parameters.
+    /// </param>
+    /// <param name="apiKey">Optional API key, sent as <paramref name="apiKeyHeader"/>.</param>
+    /// <param name="apiKeyHeader">Header the API key travels in. Defaults to <c>X-Api-Key</c>.</param>
+    /// <param name="bearerTokenProvider">
+    /// Optional per-call token source for OAuth refresh flows: every request asks it, so the
+    /// token is always the current one. Your OAuth client runs the flow; the agent carries the
+    /// result. Wins over <paramref name="bearerToken"/> when both are given.
+    /// </param>
     /// <returns>The same agent, so calls can be chained.</returns>
-    public StandardAgent Mcp(string endpointUrl, string relativeUrl = "", int timeoutSeconds = 30) =>
-    Set(() =>
-    {
-        this.mcpEndpointUrl = endpointUrl;
-        this.mcpRelativeUrl = relativeUrl;
-        this.mcpTimeoutSeconds = timeoutSeconds;
-    });
+    /// <remarks>Servers accumulate: each call adds another server, a tool call routes to the
+    /// server whose catalog owns the name, and the first-registered server wins a name both
+    /// claim.</remarks>
+    public StandardAgent Mcp(
+        string endpointUrl,
+        string relativeUrl = "",
+        int timeoutSeconds = 30,
+        string? bearerToken = null,
+        string? apiKey = null,
+        string apiKeyHeader = "X-Api-Key",
+        Func<ValueTask<string>>? bearerTokenProvider = null) =>
+        Set(() => this.mcpSources.Add(new McpBroker(
+            endpointUrl,
+            relativeUrl,
+            timeoutSeconds,
+            bearerToken,
+            apiKey,
+            apiKeyHeader,
+            bearerTokenProvider)));
 
     /// <summary>
     /// Registers one tool the agent may call. It is only advertised to the brain when it carries a
@@ -746,7 +770,7 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="broker">The skill broker to use.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent UseSkills(ISkillBroker broker) =>
-        Set(() => this.skillBroker = broker);
+        Set(() => this.skillSources.Add(broker));
 
     /// <summary>
     /// Supplies skills from your own code — the <b>Custom</b> mode (SPEC.md §4.8), for when they
@@ -755,7 +779,7 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="select">A <c>() =&gt; skills</c> delegate, called each turn.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent OnSkills(Func<ValueTask<IReadOnlyList<Skill>>> select) =>
-        Set(() => this.skillBroker = new FunctionSkillBroker(select));
+        Set(() => this.skillSources.Add(new FunctionSkillBroker(select)));
 
     /// <summary>
     /// Swaps in a custom generator (brain) broker — the extension point for a runtime that streams
@@ -884,12 +908,13 @@ public sealed partial class StandardAgent : IAgent
         Set(() => this.verifierBroker = broker);
 
     /// <summary>
-    /// Swaps in a custom MCP broker, replacing the HTTP-backed one set up by <see cref="Mcp"/>.
+    /// Adds a custom MCP broker alongside any servers registered with <see cref="Mcp"/> — the
+    /// door for a transport or auth scheme the built-in HTTP broker does not speak.
     /// </summary>
-    /// <param name="broker">The MCP broker to use.</param>
+    /// <param name="broker">The MCP broker to add.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent UseMcp(IMcpBroker broker) =>
-        Set(() => this.mcpBroker = broker);
+        Set(() => this.mcpSources.Add(broker));
 
     /// <summary>
     /// Swaps in a custom logging broker for the agent's internal diagnostic logging.
@@ -1389,18 +1414,23 @@ public sealed partial class StandardAgent : IAgent
 
         IToolBroker toolBroker = new ToolBroker(allTools);
 
-        IMcpBroker mcp =
-            this.mcpBroker ?? (string.IsNullOrWhiteSpace(this.mcpEndpointUrl)
-                ? new NotConfiguredMcpBroker()
-                : new McpBroker(
-                    this.mcpEndpointUrl, this.mcpRelativeUrl, this.mcpTimeoutSeconds));
+        // One source composes as itself; several compose behind the same seam the service
+        // already speaks — the tier above never learns how many integrations answered.
+        IMcpBroker mcp = this.mcpSources.Count switch
+        {
+            0 => new NotConfiguredMcpBroker(),
+            1 => this.mcpSources[0],
+            _ => new CompositeMcpBroker(this.mcpSources)
+        };
 
+        ISkillBroker skills = this.skillSources.Count switch
+        {
+            0 => new FileSkillBroker(Path.Combine(AppContext.BaseDirectory, "Skills")),
+            1 => this.skillSources[0],
+            _ => new CompositeSkillBroker(this.skillSources)
+        };
 
-        ISkillService skillService = this.skillBroker is null
-            ? new SkillService(
-                new FileSkillBroker(Path.Combine(AppContext.BaseDirectory, this.skillsPath)),
-                logging)
-            : new SkillService(this.skillBroker, logging);
+        ISkillService skillService = new SkillService(skills, logging);
 
         IKnowledgeService knowledgeService = this.knowledgeBroker is null
             ? new KnowledgeService(
