@@ -6,6 +6,7 @@
 using System.Runtime.CompilerServices;
 using Standard.Agents.Brokers.Loggings;
 
+using Standard.Agents.Brokers.Telemetries;
 using Standard.Agents.Brokers.Times;
 using Standard.Agents.Models.Brokers.Sessions;
 using Standard.Agents.Models.Coordinations.Agents;
@@ -33,6 +34,7 @@ public partial class RunManagementService : IRunManagementService
     private readonly IDirectionCoordinationService directionCoordinationService;
     private readonly ILoggingBroker loggingBroker;
     private readonly ITimeBroker timeBroker;
+    private readonly ITelemetryBroker telemetryBroker;
     private readonly AgentBudget? budget;
 
     // What may enter the context between turns is the loop's question. Direction used to answer
@@ -52,7 +54,8 @@ public partial class RunManagementService : IRunManagementService
         AgentBudget? budget = null,
         int maxHistoryTurns = 20,
         bool compensateOnFailure = false,
-        bool screenToolOutput = false)
+        bool screenToolOutput = false,
+        ITelemetryBroker? telemetryBroker = null)
     {
         this.compensateOnFailure = compensateOnFailure;
         this.dataCoordinationService = dataCoordinationService;
@@ -61,6 +64,7 @@ public partial class RunManagementService : IRunManagementService
         this.loggingBroker = loggingBroker;
         this.maxTurns = maxTurns;
         this.timeBroker = timeBroker ?? new TimeBroker();
+        this.telemetryBroker = telemetryBroker ?? new NotConfiguredTelemetryBroker();
         this.budget = budget;
         this.maxHistoryTurns = maxHistoryTurns;
         this.screenToolOutput = screenToolOutput;
