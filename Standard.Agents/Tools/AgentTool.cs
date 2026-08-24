@@ -52,8 +52,14 @@ public sealed class AgentTool : ITool
     // a sub-agent is a different run.
     public async ValueTask<string> ExecuteAsync(string input)
     {
+        // The outer run's token rides the ambient run the way its identity does, so the nested
+        // run observes the same stop the outer loop observes — cancelling the outer run stops
+        // the whole tree at the next turn boundary (SPEC.md §4.10). Outside any run, default.
+        CancellationToken outerRun =
+            Models.Loggings.AgentRun.Current?.CancellationToken ?? CancellationToken.None;
+
         AgentOutcome outcome =
-            await this.agent.RunAsync(this.handoff.Replace(InputPlaceholder, input));
+            await this.agent.RunAsync(this.handoff.Replace(InputPlaceholder, input), outerRun);
 
         // An answer is an answer. Nothing is added to it, because anything added is text the outer
         // model has to reason past on the path that is working correctly.
