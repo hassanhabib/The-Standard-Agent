@@ -142,13 +142,20 @@ Standard.Agents.Brokers.Loggings.LoggingBroker.LogTraceAsync(string! message) ->
 Standard.Agents.Brokers.Loggings.LoggingBroker.LogTurnAsync(int turn) -> System.Threading.Tasks.ValueTask
 Standard.Agents.Brokers.Loggings.LoggingBroker.LogWarningAsync(string! message) -> System.Threading.Tasks.ValueTask
 Standard.Agents.Brokers.Loggings.LoggingBroker.LoggingBroker(Microsoft.Extensions.Logging.ILogger<Standard.Agents.Brokers.Loggings.LoggingBroker!>! logger, Standard.Agents.Brokers.Times.ITimeBroker! timeBroker, Standard.Agents.Models.Loggings.TraceVerbosity verbosity = Standard.Agents.Models.Loggings.TraceVerbosity.Full, string? logPath = null, Standard.Agents.Brokers.Audits.IAuditBroker? auditBroker = null, System.Func<string?>? principal = null) -> void
+Standard.Agents.Brokers.Mcps.CompositeMcpBroker
+Standard.Agents.Brokers.Mcps.CompositeMcpBroker.CallAsync(string! name, string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Mcps.CompositeMcpBroker.CompositeMcpBroker(System.Collections.Generic.IEnumerable<Standard.Agents.Brokers.Mcps.IMcpBroker!>! brokers) -> void
+Standard.Agents.Brokers.Mcps.CompositeMcpBroker.ListToolsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Mcps.McpTool!>!>
 Standard.Agents.Brokers.Mcps.IMcpBroker
 Standard.Agents.Brokers.Mcps.IMcpBroker.CallAsync(string! name, string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Mcps.IMcpBroker.ListToolsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Mcps.McpTool!>!>
 Standard.Agents.Brokers.Mcps.McpBroker
 Standard.Agents.Brokers.Mcps.McpBroker.CallAsync(string! name, string! input) -> System.Threading.Tasks.ValueTask<string!>
-Standard.Agents.Brokers.Mcps.McpBroker.McpBroker(string! endpointUrl, string! relativeUrl, int timeoutSeconds) -> void
+Standard.Agents.Brokers.Mcps.McpBroker.ListToolsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Mcps.McpTool!>!>
+Standard.Agents.Brokers.Mcps.McpBroker.McpBroker(string! endpointUrl, string! relativeUrl, int timeoutSeconds, string? bearerToken = null, string? apiKey = null, string! apiKeyHeader = "X-Api-Key", System.Func<System.Threading.Tasks.ValueTask<string!>>? bearerTokenProvider = null) -> void
 Standard.Agents.Brokers.Mcps.NotConfiguredMcpBroker
 Standard.Agents.Brokers.Mcps.NotConfiguredMcpBroker.CallAsync(string! name, string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Mcps.NotConfiguredMcpBroker.ListToolsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Mcps.McpTool!>!>
 Standard.Agents.Brokers.Mcps.NotConfiguredMcpBroker.NotConfiguredMcpBroker() -> void
 Standard.Agents.Brokers.Memorys.FunctionMemoryBroker
 Standard.Agents.Brokers.Memorys.FunctionMemoryBroker.FunctionMemoryBroker(System.Func<System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>>! recall, System.Func<string!, System.Threading.Tasks.ValueTask>! remember) -> void
@@ -232,6 +239,9 @@ Standard.Agents.Brokers.Sessions.NotConfiguredSessionBroker
 Standard.Agents.Brokers.Sessions.NotConfiguredSessionBroker.NotConfiguredSessionBroker() -> void
 Standard.Agents.Brokers.Sessions.NotConfiguredSessionBroker.SelectSessionAsync(string! sessionId) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Sessions.AgentSession?>
 Standard.Agents.Brokers.Sessions.NotConfiguredSessionBroker.UpsertSessionAsync(Standard.Agents.Models.Brokers.Sessions.AgentSession! session) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Skills.CompositeSkillBroker
+Standard.Agents.Brokers.Skills.CompositeSkillBroker.CompositeSkillBroker(System.Collections.Generic.IEnumerable<Standard.Agents.Brokers.Skills.ISkillBroker!>! brokers) -> void
+Standard.Agents.Brokers.Skills.CompositeSkillBroker.SelectSkillsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Skills.Skill!>!>
 Standard.Agents.Brokers.Skills.FileSkillBroker
 Standard.Agents.Brokers.Skills.FileSkillBroker.FileSkillBroker(string! skillsPath, string! searchPattern = "*.md") -> void
 Standard.Agents.Brokers.Skills.FileSkillBroker.SelectSkillsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Skills.Skill!>!>
@@ -385,6 +395,15 @@ Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition.Name.init -> void
 Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition.ParametersJson.get -> string!
 Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition.ParametersJson.init -> void
 Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition.ToolDefinition(string! Name, string! Description, string! ParametersJson) -> void
+Standard.Agents.Models.Brokers.Mcps.McpTool
+Standard.Agents.Models.Brokers.Mcps.McpTool.<Clone>$() -> Standard.Agents.Models.Brokers.Mcps.McpTool!
+Standard.Agents.Models.Brokers.Mcps.McpTool.Deconstruct(out string! Name, out string! Description) -> void
+Standard.Agents.Models.Brokers.Mcps.McpTool.Description.get -> string!
+Standard.Agents.Models.Brokers.Mcps.McpTool.Description.init -> void
+Standard.Agents.Models.Brokers.Mcps.McpTool.Equals(Standard.Agents.Models.Brokers.Mcps.McpTool? other) -> bool
+Standard.Agents.Models.Brokers.Mcps.McpTool.McpTool(string! Name, string! Description) -> void
+Standard.Agents.Models.Brokers.Mcps.McpTool.Name.get -> string!
+Standard.Agents.Models.Brokers.Mcps.McpTool.Name.init -> void
 Standard.Agents.Models.Brokers.Sessions.AgentSession
 Standard.Agents.Models.Brokers.Sessions.AgentSession.<Clone>$() -> Standard.Agents.Models.Brokers.Sessions.AgentSession!
 Standard.Agents.Models.Brokers.Sessions.AgentSession.AgentSession() -> void
@@ -1119,7 +1138,7 @@ Standard.Agents.StandardAgent.LocalGate(System.Func<string!, string!, System.Thr
 Standard.Agents.StandardAgent.LocalJudge(System.Func<string!, string!, System.Threading.Tasks.ValueTask<string!>>! evaluate) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.LogTo(string! path, Standard.Agents.Models.Loggings.TraceVerbosity verbosity = Standard.Agents.Models.Loggings.TraceVerbosity.Full) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.MaxTurns(int turns) -> Standard.Agents.StandardAgent!
-Standard.Agents.StandardAgent.Mcp(string! endpointUrl, string! relativeUrl = "", int timeoutSeconds = 30) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.Mcp(string! endpointUrl, string! relativeUrl = "", int timeoutSeconds = 30, string? bearerToken = null, string? apiKey = null, string! apiKeyHeader = "X-Api-Key", System.Func<System.Threading.Tasks.ValueTask<string!>>? bearerTokenProvider = null) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Memory(string! path) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.NativeBrain(string! apiUrl, string! apiKey, string! model, double temperature = 0.7, int maxTokens = 1024) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.NativeBrainAnthropic(string! apiKey, string! model, double temperature = 0.7, int maxTokens = 1024) -> Standard.Agents.StandardAgent!
@@ -1222,6 +1241,9 @@ override Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall.ToString() -
 override Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition.Equals(object? obj) -> bool
 override Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition.GetHashCode() -> int
 override Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition.ToString() -> string!
+override Standard.Agents.Models.Brokers.Mcps.McpTool.Equals(object? obj) -> bool
+override Standard.Agents.Models.Brokers.Mcps.McpTool.GetHashCode() -> int
+override Standard.Agents.Models.Brokers.Mcps.McpTool.ToString() -> string!
 override Standard.Agents.Models.Brokers.Sessions.AgentSession.Equals(object? obj) -> bool
 override Standard.Agents.Models.Brokers.Sessions.AgentSession.GetHashCode() -> int
 override Standard.Agents.Models.Brokers.Sessions.AgentSession.ToString() -> string!
@@ -1293,6 +1315,8 @@ static Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall.operator !=(St
 static Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall.operator ==(Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall? left, Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall? right) -> bool
 static Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition.operator !=(Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition? left, Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition? right) -> bool
 static Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition.operator ==(Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition? left, Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition? right) -> bool
+static Standard.Agents.Models.Brokers.Mcps.McpTool.operator !=(Standard.Agents.Models.Brokers.Mcps.McpTool? left, Standard.Agents.Models.Brokers.Mcps.McpTool? right) -> bool
+static Standard.Agents.Models.Brokers.Mcps.McpTool.operator ==(Standard.Agents.Models.Brokers.Mcps.McpTool? left, Standard.Agents.Models.Brokers.Mcps.McpTool? right) -> bool
 static Standard.Agents.Models.Brokers.Sessions.AgentSession.operator !=(Standard.Agents.Models.Brokers.Sessions.AgentSession? left, Standard.Agents.Models.Brokers.Sessions.AgentSession? right) -> bool
 static Standard.Agents.Models.Brokers.Sessions.AgentSession.operator ==(Standard.Agents.Models.Brokers.Sessions.AgentSession? left, Standard.Agents.Models.Brokers.Sessions.AgentSession? right) -> bool
 static Standard.Agents.Models.Brokers.Sessions.AgentTurn.operator !=(Standard.Agents.Models.Brokers.Sessions.AgentTurn? left, Standard.Agents.Models.Brokers.Sessions.AgentTurn? right) -> bool

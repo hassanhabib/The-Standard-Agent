@@ -410,7 +410,13 @@
          the Anthropic Messages API as a second in-box native wire shape (NativeBrainAnthropic).
          New public routines on the client and a new broker seam; the core models are unchanged,
          so segment 2 advances and 3/4 reset. Tracks SPEC.md v1.4, which names both additions. -->
-    <Version>1.8.0.0</Version>
+    <!-- 1.9.0.0 "Plural Integrations": what the agent connects to accumulates, never replaces -
+         many MCP servers behind one seam (tools/list discovery, name-owned routing,
+         first-registered wins, per-server auth: none, API key, OAuth bearer, refresh delegate)
+         and many skill sources concatenating in registration order, with "skills" and "mcp"
+         arrays in the JSON document. New routines and a widened broker contract, core models
+         unchanged: segment 2 advances, 3/4 reset. Tracks SPEC.md v1.5. -->
+    <Version>1.9.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>
