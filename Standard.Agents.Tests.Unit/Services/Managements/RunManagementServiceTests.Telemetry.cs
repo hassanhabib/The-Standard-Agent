@@ -57,4 +57,38 @@ public partial class RunManagementServiceTests
 
         telemetryBrokerMock.VerifyNoOtherCalls();
     }
+
+    [Fact]
+    public async Task ShouldRecordTheOutcomeWhenTurnsRunOutAsync()
+    {
+        // given
+        var telemetryBrokerMock = new Mock<ITelemetryBroker>();
+        SetupOrchestrationsPassThrough();
+        SetupDirectionNeverTerminates(CreateRandomString());
+
+        var telemeteredService = new RunManagementService(
+            dataCoordinationService: this.dataCoordinationServiceMock.Object,
+            decisionCoordinationService: this.decisionCoordinationServiceMock.Object,
+            directionCoordinationService: this.directionCoordinationServiceMock.Object,
+            loggingBroker: this.loggingBrokerMock.Object,
+            maxTurns: 2,
+            telemetryBroker: telemetryBrokerMock.Object);
+
+        // when
+        await telemeteredService.ProcessPromptAsync(CreateRandomString());
+
+        // then
+        telemetryBrokerMock.Verify(broker =>
+            broker.StartTurn(It.IsAny<int>()),
+                Times.Exactly(2));
+
+        // A capped run stopped mid-work and says so: the status recorded is Working, the same
+        // truth the loop reports to the caller — never a Responded it did not earn.
+        telemetryBrokerMock.Verify(broker =>
+            broker.RecordRunOutcome(
+                nameof(AgentStatus.Working),
+                It.IsAny<int>(),
+                It.IsAny<int>()),
+                    Times.Once);
+    }
 }
