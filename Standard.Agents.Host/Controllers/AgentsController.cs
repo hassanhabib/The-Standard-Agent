@@ -37,4 +37,10 @@ public class AgentsController : ControllerBase
             Result: outcome.Result,
             Status: outcome.Status.ToString()));
     }
+
+    [HttpPost("streams")]
+    public async ValueTask PostStreamAsync(AgentRunRequest request)
+    {
+        throw new NotImplementedException();
+    }
 }
