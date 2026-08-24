@@ -1,6 +1,31 @@
 #nullable enable
+*REMOVED*Standard.Agents.Services.Coordinations.Direction.DirectionCoordinationService.DirectionCoordinationService(Standard.Agents.Services.Orchestrations.Direction.Perimeters.IPerimeterOrchestrationService! perimeterService, Standard.Agents.Services.Orchestrations.Direction.Executions.IExecutionOrchestrationService! executionService, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, System.Collections.Generic.IEnumerable<string!>? irreversibleTools = null, System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal?>? identityResolver = null, Standard.Agents.Models.Orchestrations.Effects.PermissionMode permissionMode = Standard.Agents.Models.Orchestrations.Effects.PermissionMode.Open, System.Collections.Generic.IReadOnlyDictionary<string!, Standard.Agents.Models.Orchestrations.Effects.RiskLevel>? declaredRisk = null, System.Collections.Generic.IReadOnlyDictionary<string!, Standard.Agents.Models.Orchestrations.Effects.RiskLevel>? toolRisk = null, System.Collections.Generic.IReadOnlyDictionary<string!, System.Func<string!, string!>!>? toolScope = null, System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentEffect!, bool>? explicitlyPermits = null) -> void
 *REMOVED*static Standard.Agents.Models.Loggings.AgentRun.Begin(string? resumedId = null) -> System.IDisposable!
 Standard.Agents.IAgent.RunAsync(string! prompt, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.<Clone>$() -> Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy!
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.DeclaredRisk.get -> System.Collections.Generic.IReadOnlyDictionary<string!, Standard.Agents.Models.Orchestrations.Effects.RiskLevel>!
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.DeclaredRisk.init -> void
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.Equals(Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy? other) -> bool
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.ExplicitlyPermits.get -> System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentEffect!, bool>?
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.ExplicitlyPermits.init -> void
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.IdentityResolver.get -> System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal?>?
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.IdentityResolver.init -> void
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.IrreversibleTools.get -> System.Collections.Generic.IReadOnlyCollection<string!>!
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.IrreversibleTools.init -> void
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.Mode.get -> Standard.Agents.Models.Orchestrations.Effects.PermissionMode
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.Mode.init -> void
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.PerimeterPolicy() -> void
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.ToolRisk.get -> System.Collections.Generic.IReadOnlyDictionary<string!, Standard.Agents.Models.Orchestrations.Effects.RiskLevel>!
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.ToolRisk.init -> void
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.ToolScope.get -> System.Collections.Generic.IReadOnlyDictionary<string!, System.Func<string!, string!>!>!
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.ToolScope.init -> void
 Standard.Agents.Models.Loggings.AgentRun.CancellationToken.get -> System.Threading.CancellationToken
+Standard.Agents.Services.Coordinations.Direction.DirectionCoordinationService.DirectionCoordinationService(Standard.Agents.Services.Orchestrations.Direction.Perimeters.IPerimeterOrchestrationService! perimeterService, Standard.Agents.Services.Orchestrations.Direction.Executions.IExecutionOrchestrationService! executionService, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy? policy = null) -> void
 Standard.Agents.StandardAgent.RunAsync(string! prompt, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
+override Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.Equals(object? obj) -> bool
+override Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.GetHashCode() -> int
+override Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.ToString() -> string!
+static Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.operator !=(Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy? left, Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy? right) -> bool
+static Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.operator ==(Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy? left, Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy? right) -> bool
 static Standard.Agents.Models.Loggings.AgentRun.Begin(string? resumedId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.IDisposable!

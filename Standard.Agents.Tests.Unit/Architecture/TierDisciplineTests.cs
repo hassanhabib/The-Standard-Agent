@@ -205,6 +205,61 @@ public class TierDisciplineTests
             && parameterType.Name.EndsWith("Service", StringComparison.Ordinal)
             && parameterType.Namespace?.Contains(".Services.", StringComparison.Ordinal) is true;
 
+    // The counting escape the sweep demonstrated: replace any IXService with a delegate and the
+    // dependency vanishes from every count above. A delegate that participates in a service's
+    // decisions is a collaborator, and a collaborator the count cannot see belongs inside a
+    // named model under Models/ — policy is Data — where its arrival is a reviewed diff.
+    public static TheoryData<string> AllTierServices()
+    {
+        var services = new TheoryData<string>();
+
+        foreach (Type service in ServicesUnder("Foundations").Concat(ServicesAboveFoundations()))
+        {
+            services.Add(service.Name);
+        }
+
+        return services;
+    }
+
+    [Theory]
+    [MemberData(nameof(AllTierServices))]
+    public void ShouldHoldNoNakedDelegateInAnyServiceConstructor(string serviceName)
+    {
+        // given
+        Type service = ServicesUnder("Foundations")
+            .Concat(ServicesAboveFoundations())
+            .Single(type => type.Name == serviceName);
+
+        // when
+        string[] nakedDelegates =
+            [.. service.GetConstructors()
+                .SelectMany(constructor => constructor.GetParameters())
+                .Where(parameter => CarriesADelegate(parameter.ParameterType))
+                .Select(parameter => parameter.Name ?? parameter.ParameterType.Name)
+                .Distinct()];
+
+        // then
+        nakedDelegates.Should().BeEmpty(
+            because: $"{serviceName} takes [{string.Join(", ", nakedDelegates)}] — a delegate "
+                + "that participates in a service's decisions is a collaborator the dependency "
+                + "count cannot see. Policy is Data: carry it inside a named model under "
+                + "Models/, where its arrival is a reviewed diff rather than constructor "
+                + "sprawl");
+    }
+
+    private static bool CarriesADelegate(Type parameterType)
+    {
+        Type unwrapped = Nullable.GetUnderlyingType(parameterType) ?? parameterType;
+
+        if (typeof(Delegate).IsAssignableFrom(unwrapped))
+        {
+            return true;
+        }
+
+        return unwrapped.IsGenericType
+            && unwrapped.GetGenericArguments().Any(CarriesADelegate);
+    }
+
     // A tier that reaches a broker skips the foundation that would have given it validation,
     // exception mapping and attribution. That is how a full disk came to be blamed on Direction.
     [Theory]
