@@ -188,7 +188,7 @@ var agent = new StandardAgent(url, key, "LLooMA2.0")
 Pick each nature's home independently; the code above doesn't change when you do — that's the whole
 promise of the broker seam.
 
-## The 1·3·9
+## From the 1·3·9 to the 1·3·6·15
 
 ![The Standard for Agents — architecture: StandardAgent → RunManagement → the three nature Coordinations (Data, Decision, Direction) → six Orchestration regions → fifteen Foundation services → their fourteen nature Brokers, with three utility and two decorating brokers beneath](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-architecture.png)
 
@@ -196,8 +196,8 @@ promise of the broker seam.
 [`assets/the-standard-agent-architecture.svg`](https://github.com/hassanhabib/The-Standard-Agent/blob/main/assets/the-standard-agent-architecture.svg)
 — edit the SVG, re-render the PNG.*
 
-**The 1·3·9 is the shape of an agent.** One loop, three natures, and beneath them the foundations —
-the nine that have been there since the beginning:
+**The 1·3·9 is the core shape of an agent.** One loop, three natures, and beneath them the
+foundations — the nine that have been there since the beginning:
 
 | | |
 |---|---|
