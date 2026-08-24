@@ -3,6 +3,12 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+#if !NET9_0_OR_GREATER
+// System.Threading.Lock arrived in .NET 9. On the net8.0 target a plain object under the
+// same lock statements is the identical semantic; the alias keeps one body for both.
+using Lock = System.Object;
+#endif
+
 namespace Standard.Agents.Brokers.Resiliences;
 
 // Degradation before failure (SPEC.md §4.10). After enough consecutive failures the primary is
