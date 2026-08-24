@@ -1,0 +1,26 @@
+# The per-build vulnerability audit in dotnet.yml catches a known-bad dependency when a
+# build happens to run; this watches between builds and opens the upgrade PR itself. Every
+# Dependabot PR still walks through the same gates as any other change - zero warnings,
+# the full suite, certification.
+version: 2
+
+updates:
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:23"
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:41"
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
