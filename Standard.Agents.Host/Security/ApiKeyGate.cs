@@ -3,6 +3,9 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Security.Cryptography;
+using System.Text;
+
 namespace Standard.Agents.Host.Security;
 
 /// <summary>
@@ -14,5 +17,15 @@ namespace Standard.Agents.Host.Security;
 public static class ApiKeyGate
 {
     public static bool Allows(string? configuredKey, string? presentedKey, string path) =>
-        throw new NotImplementedException();
+        string.IsNullOrEmpty(configuredKey)
+            || path is "/"
+            || KeysMatch(configuredKey, presentedKey);
+
+    // Fixed-time on the bytes, because a comparison that returns at the first wrong character
+    // hands an attacker the key one character at a time.
+    private static bool KeysMatch(string configuredKey, string? presentedKey) =>
+        presentedKey is not null
+            && CryptographicOperations.FixedTimeEquals(
+                Encoding.UTF8.GetBytes(configuredKey),
+                Encoding.UTF8.GetBytes(presentedKey));
 }
