@@ -15,5 +15,5 @@ public class HomeController : ControllerBase
 {
     [HttpGet]
     public ActionResult<string> Get() =>
-        throw new NotImplementedException();
+        Ok("The Standard Agent is alive.");
 }
