@@ -879,6 +879,20 @@ public sealed partial class StandardAgent : IAgent
         await ResolveAgent().RunAsync(prompt, string.Empty, CancellationToken.None);
 
     /// <summary>
+    /// The same run, stoppable: cancellation stops it at the next turn boundary, so no effect
+    /// is left half-recorded (SPEC.md §4.10). This is the overload nesting calls —
+    /// <c>AgentTool</c> forwards the outer run's token here, so cancelling an outer run stops
+    /// the whole tree.
+    /// </summary>
+    /// <param name="prompt">What to work on.</param>
+    /// <param name="cancellationToken">Token to stop the run.</param>
+    /// <returns>The answer, and how the run ended.</returns>
+    public async ValueTask<AgentOutcome> RunAsync(
+        string prompt,
+        CancellationToken cancellationToken) =>
+        await ResolveAgent().RunAsync(prompt, string.Empty, cancellationToken);
+
+    /// <summary>
     /// Runs the agent on a prompt and stops when <paramref name="cancellationToken"/> is
     /// cancelled — at the next turn boundary at the latest, so no effect is left half-recorded
     /// (SPEC.md §4.10). A cancelled run returns a message saying so rather than an answer.

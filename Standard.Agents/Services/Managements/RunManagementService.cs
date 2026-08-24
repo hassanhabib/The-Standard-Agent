@@ -264,7 +264,7 @@ public partial class RunManagementService : IRunManagementService
         // This prompt's run. SPEC.md §4.4: one instance serves prompts concurrently, and each
         // invocation establishes its own identity, so everything recorded below is credited to
         // this run and to no other.
-        using IDisposable run = AgentRun.Begin(ResumedRunId(session));
+        using IDisposable run = AgentRun.Begin(ResumedRunId(session), cancellationToken);
 
         await this.loggingBroker.LogResetAsync();
 

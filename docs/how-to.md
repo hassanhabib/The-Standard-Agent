@@ -746,12 +746,14 @@ genuinely separate source — a second root, a database, an API — implement `I
 `.UseMemory(...)`. Nesting one agent inside another as a tool is the other route: it gives the
 sub-task its own private knowledge and memory.
 
-**Nothing crosses the nesting seam, and that is the design.** A nested agent is a different run
-of a different composition: the outer agent's budget, principal, policy, approvals, effect
-ledger, sessions, and remembered grants do not reach it — the inner agent brings its own or runs
-without. Its run-once keys and compensation are scoped to its own run. The outer cancellation
-token does not reach a nested agent mid-run either; it stops the *outer* loop at the next turn
-boundary. What does cross back is honesty: a sub-agent that answered returns its answer plainly,
+**Almost nothing crosses the nesting seam, and that is the design.** A nested agent is a
+different run of a different composition: the outer agent's budget, principal, policy,
+approvals, effect ledger, sessions, and remembered grants do not reach it — the inner agent
+brings its own or runs without. Its run-once keys and compensation are scoped to its own run.
+The one thing that does cross **in** is the stop: cancelling the outer run reaches the nested
+agent too, which stops at its own next turn boundary — work nobody wants anymore does not keep
+running just because it is a level down. What crosses **back** is honesty: a sub-agent that
+answered returns its answer plainly,
 and one that was held, refused, or ran out of turns comes back marked `[did not complete]` with
 its status and its own words, so an outer agent cannot report held work as done.
 

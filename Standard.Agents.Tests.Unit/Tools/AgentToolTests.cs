@@ -39,7 +39,7 @@ public partial class AgentToolTests
         var nestedAgentMock = new Mock<IAgent>();
 
         nestedAgentMock.Setup(agent =>
-            agent.RunAsync(randomInput))
+            agent.RunAsync(randomInput, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new AgentOutcome(randomAnswer, AgentStatus.Responded));
 
         var agentTool = new AgentTool(name: randomName, agent: nestedAgentMock.Object);
@@ -52,7 +52,7 @@ public partial class AgentToolTests
         agentTool.Name.Should().Be(randomName);
 
         nestedAgentMock.Verify(agent =>
-    agent.RunAsync(randomInput),
+    agent.RunAsync(randomInput, It.IsAny<CancellationToken>()),
         Times.Once);
 
         nestedAgentMock.VerifyNoOtherCalls();
@@ -65,7 +65,7 @@ public partial class AgentToolTests
         var innerAgent = new Mock<IAgent>();
 
         innerAgent.Setup(agent =>
-            agent.RunAsync(It.IsAny<string>()))
+            agent.RunAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new AgentOutcome("the capital is Paris", AgentStatus.Responded));
 
         var researcher = new AgentTool(name: "researcher", agent: innerAgent.Object);
@@ -113,7 +113,7 @@ public partial class AgentToolTests
         actualResult.Should().Be("Paris");
 
         innerAgent.Verify(agent =>
-    agent.RunAsync("capital of France"),
+    agent.RunAsync("capital of France", It.IsAny<CancellationToken>()),
         Times.Once);
     }
 
@@ -125,7 +125,7 @@ public partial class AgentToolTests
         var nestedFailure = new InvalidOperationException(message: "inner agent failed");
 
         nestedAgentMock.Setup(agent =>
-            agent.RunAsync(It.IsAny<string>()))
+            agent.RunAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(nestedFailure);
 
         var agentTool = new AgentTool(name: "nested", agent: nestedAgentMock.Object);
@@ -153,7 +153,7 @@ public partial class AgentToolTests
         var nestedAgentMock = new Mock<IAgent>();
 
         nestedAgentMock.Setup(agent =>
-            agent.RunAsync(expectedHandoffPrompt))
+            agent.RunAsync(expectedHandoffPrompt, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new AgentOutcome(randomAnswer, AgentStatus.Responded));
 
         var agentTool = new AgentTool(
@@ -168,7 +168,7 @@ public partial class AgentToolTests
         actualOutput.Should().Be(randomAnswer);
 
         nestedAgentMock.Verify(agent =>
-            agent.RunAsync(expectedHandoffPrompt),
+            agent.RunAsync(expectedHandoffPrompt, It.IsAny<CancellationToken>()),
                 Times.Once);
 
         nestedAgentMock.VerifyNoOtherCalls();

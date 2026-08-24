@@ -1,1 +1,6 @@
 #nullable enable
+*REMOVED*static Standard.Agents.Models.Loggings.AgentRun.Begin(string? resumedId = null) -> System.IDisposable!
+Standard.Agents.IAgent.RunAsync(string! prompt, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
+Standard.Agents.Models.Loggings.AgentRun.CancellationToken.get -> System.Threading.CancellationToken
+Standard.Agents.StandardAgent.RunAsync(string! prompt, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
+static Standard.Agents.Models.Loggings.AgentRun.Begin(string? resumedId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.IDisposable!

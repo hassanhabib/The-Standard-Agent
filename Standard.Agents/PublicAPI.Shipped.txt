@@ -1263,7 +1263,6 @@ static Standard.Agents.Models.Foundations.Skills.Skill.operator ==(Standard.Agen
 static Standard.Agents.Models.Foundations.Usages.AgentUsage.None.get -> Standard.Agents.Models.Foundations.Usages.AgentUsage!
 static Standard.Agents.Models.Foundations.Usages.AgentUsage.operator !=(Standard.Agents.Models.Foundations.Usages.AgentUsage? left, Standard.Agents.Models.Foundations.Usages.AgentUsage? right) -> bool
 static Standard.Agents.Models.Foundations.Usages.AgentUsage.operator ==(Standard.Agents.Models.Foundations.Usages.AgentUsage? left, Standard.Agents.Models.Foundations.Usages.AgentUsage? right) -> bool
-static Standard.Agents.Models.Loggings.AgentRun.Begin(string? resumedId = null) -> System.IDisposable!
 static Standard.Agents.Models.Loggings.AgentRun.Current.get -> Standard.Agents.Models.Loggings.AgentRun?
 static Standard.Agents.Models.Loggings.AgentRun.Detached() -> Standard.Agents.Models.Loggings.AgentRun!
 static Standard.Agents.Models.Loggings.PerformedEffect.operator !=(Standard.Agents.Models.Loggings.PerformedEffect? left, Standard.Agents.Models.Loggings.PerformedEffect? right) -> bool
