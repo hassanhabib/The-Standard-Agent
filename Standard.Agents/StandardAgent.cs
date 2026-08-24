@@ -27,6 +27,7 @@ using Standard.Agents.Brokers.Resiliences;
 using Standard.Agents.Brokers.Sessions;
 using Standard.Agents.Brokers.Usages;
 using Standard.Agents.Brokers.Skills;
+using Standard.Agents.Brokers.Telemetries;
 using Standard.Agents.Brokers.Times;
 using Standard.Agents.Brokers.Tools;
 using Standard.Agents.Brokers.Verifiers;
@@ -110,6 +111,7 @@ public sealed partial class StandardAgent : IAgent
     private IMcpBroker? mcpBroker;
     private ILoggingBroker? loggingBroker;
     private IAuditBroker? auditBroker;
+    private ITelemetryBroker? telemetryBroker;
     private IPolicyBroker? policyBroker;
     private IApprovalBroker? approvalBroker;
     private IEffectLedgerBroker? effectLedgerBroker;
@@ -478,6 +480,36 @@ public sealed partial class StandardAgent : IAgent
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent OnAudit(Func<AuditRecord, ValueTask> write) =>
         Set(() => this.auditBroker = new FunctionAuditBroker(write));
+
+    /// <summary>
+    /// Turns on OpenTelemetry-compatible spans and metrics — the <b>Local</b> mode (SPEC.md §4.8),
+    /// in the box through the BCL's <c>ActivitySource</c> and <c>Meter</c>, no packages and no
+    /// exporter. A host that wires an OpenTelemetry SDK against the <c>Standard.Agents</c> source
+    /// sees a span per run and per turn, token usage and outcomes, named by the GenAI semantic
+    /// conventions; a host that wires nothing pays nothing.
+    /// </summary>
+    /// <param name="agentName">How the run spans name this agent (<c>gen_ai.agent.name</c>).</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent Telemetry(string agentName = "standard-agent") =>
+        Set(() => this.telemetryBroker = new ActivityTelemetryBroker(agentName));
+
+    /// <summary>
+    /// Sends telemetry to a provider — the <b>External</b> mode (SPEC.md §4.8). Pass a broker
+    /// from a metrics or tracing package and nothing else about the agent changes.
+    /// </summary>
+    /// <param name="broker">The telemetry broker to emit through.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent UseTelemetry(ITelemetryBroker broker) =>
+        Set(() => this.telemetryBroker = broker);
+
+    /// <summary>
+    /// Sends every loop boundary to your own delegate — the <b>Custom</b> mode (SPEC.md §4.8),
+    /// each as a named event with its attributes, for a pipeline no ActivityListener reaches.
+    /// </summary>
+    /// <param name="record">A <c>(eventName, attributes) =&gt; ...</c> delegate.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent OnTelemetry(Action<string, IReadOnlyDictionary<string, object?>> record) =>
+        Set(() => this.telemetryBroker = new FunctionTelemetryBroker(record));
 
     /// <summary>
     /// Records <b>on whose behalf</b> each run executes. The value is resolved per record, so a
