@@ -22,10 +22,11 @@ namespace Standard.Agents.Tests.Unit.Architecture;
 public class TierDisciplineTests
 {
     // Observability, plus the clock. None backs a nature; none can change what the agent decides.
-    // Resilience is deliberately NOT here: it changes control flow, so it does not get logging's
-    // exemption — it is applied by decorating a broker at composition.
+    // Telemetry earns the same exemption the same way: spans and metrics observe the loop and
+    // steer nothing. Resilience is deliberately NOT here: it changes control flow, so it does not
+    // get logging's exemption — it is applied by decorating a broker at composition.
     private static readonly string[] utilityBrokers =
-        ["ILoggingBroker", "ITimeBroker", "IAuditBroker"];
+        ["ILoggingBroker", "ITimeBroker", "IAuditBroker", "ITelemetryBroker"];
 
     private static readonly Assembly agentAssembly = typeof(StandardAgent).Assembly;
 

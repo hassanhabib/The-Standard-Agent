@@ -6,6 +6,7 @@
 using System.Runtime.CompilerServices;
 using Standard.Agents.Brokers.Loggings;
 
+using Standard.Agents.Brokers.Telemetries;
 using Standard.Agents.Brokers.Times;
 using Standard.Agents.Models.Brokers.Sessions;
 using Standard.Agents.Models.Coordinations.Agents;
@@ -33,6 +34,7 @@ public partial class RunManagementService : IRunManagementService
     private readonly IDirectionCoordinationService directionCoordinationService;
     private readonly ILoggingBroker loggingBroker;
     private readonly ITimeBroker timeBroker;
+    private readonly ITelemetryBroker telemetryBroker;
     private readonly AgentBudget? budget;
 
     // What may enter the context between turns is the loop's question. Direction used to answer
@@ -52,7 +54,8 @@ public partial class RunManagementService : IRunManagementService
         AgentBudget? budget = null,
         int maxHistoryTurns = 20,
         bool compensateOnFailure = false,
-        bool screenToolOutput = false)
+        bool screenToolOutput = false,
+        ITelemetryBroker? telemetryBroker = null)
     {
         this.compensateOnFailure = compensateOnFailure;
         this.dataCoordinationService = dataCoordinationService;
@@ -61,6 +64,7 @@ public partial class RunManagementService : IRunManagementService
         this.loggingBroker = loggingBroker;
         this.maxTurns = maxTurns;
         this.timeBroker = timeBroker ?? new TimeBroker();
+        this.telemetryBroker = telemetryBroker ?? new NotConfiguredTelemetryBroker();
         this.budget = budget;
         this.maxHistoryTurns = maxHistoryTurns;
         this.screenToolOutput = screenToolOutput;
@@ -266,6 +270,10 @@ public partial class RunManagementService : IRunManagementService
         // this run and to no other.
         using IDisposable run = AgentRun.Begin(ResumedRunId(session), cancellationToken);
 
+        // The run scope opens beside the run identity and closes with it, so every turn span
+        // lands inside it. Null when nothing is listening — a scope nobody observes costs nothing.
+        using IDisposable? telemetryRun = this.telemetryBroker.StartRun(sessionId);
+
         await this.loggingBroker.LogResetAsync();
 
         AgentContext context = new() { Prompt = prompt, SessionId = sessionId };
@@ -282,6 +290,11 @@ public partial class RunManagementService : IRunManagementService
         DateTimeOffset startedOn = this.timeBroker.GetCurrentDateTimeOffset();
         string? stoppedBecause = null;
 
+        // AgentSpend keeps one number because the budget bounds one number; telemetry reports
+        // input and output apart because that is how a collector prices and reasons about them.
+        int runPromptTokens = 0;
+        int runCompletionTokens = 0;
+
         for (int turn = 0; turn < this.maxTurns; turn++)
         {
             if (cancellationToken.IsCancellationRequested)
@@ -297,6 +310,9 @@ public partial class RunManagementService : IRunManagementService
 
                 break;
             }
+
+            // Scoped to the iteration: `continue` and `break` both close the turn span.
+            using IDisposable? telemetryTurn = this.telemetryBroker.StartTurn(turn);
 
             await this.loggingBroker.LogTurnAsync(turn);
 
@@ -324,6 +340,11 @@ public partial class RunManagementService : IRunManagementService
             }
 
             spend.AddTokens(context.PromptTokens, context.CompletionTokens);
+            runPromptTokens += context.PromptTokens;
+            runCompletionTokens += context.CompletionTokens;
+
+            this.telemetryBroker.RecordTurnUsage(
+                context.PromptTokens, context.CompletionTokens, context.UsageIsEstimated);
 
             if (context.Status is AgentStatus.Revising)
             {
@@ -407,6 +428,9 @@ public partial class RunManagementService : IRunManagementService
 
             await this.loggingBroker.LogOutcomeAsync($"done: {context.Status}");
 
+            this.telemetryBroker.RecordRunOutcome(
+                context.Status.ToString(), runPromptTokens, runCompletionTokens);
+
             setOutcome(new AgentOutcome(
                 string.IsNullOrEmpty(stoppedUnwound)
                     ? stoppedBecause
@@ -438,6 +462,11 @@ public partial class RunManagementService : IRunManagementService
             }
 
             await this.loggingBroker.LogOutcomeAsync($"done: {context.Status}");
+
+            // Working, not Responded: the run stopped mid-work, and the span says so the same
+            // way the caller is told.
+            this.telemetryBroker.RecordRunOutcome(
+                context.Status.ToString(), runPromptTokens, runCompletionTokens);
 
             setOutcome(new AgentOutcome(
                 string.IsNullOrEmpty(cappedUnwound)
@@ -476,6 +505,9 @@ public partial class RunManagementService : IRunManagementService
 
         // Appended before the run ends, so the next prompt sees it (SPEC.md §4.11).
         await SaveSessionAsync(context, completed: true);
+
+        this.telemetryBroker.RecordRunOutcome(
+            context.Status.ToString(), runPromptTokens, runCompletionTokens);
 
         setOutcome(new AgentOutcome(context.Result, context.Status));
     }
