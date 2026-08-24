@@ -414,9 +414,23 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The public surface, written down. PublicAPI.Shipped.txt is the contract Standard
+         Versioning's segments describe; a routine added without declaring it, or removed
+         while still declared, fails the zero-warning build. Segment 1 and 2 changes become
+         visible in the diff of this file instead of resting on discipline. Analyzer only -
+         nothing ships to consumers. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="4.14.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
     <PackageReference Include="RESTFulSense" Version="3.2.0" />
     <PackageReference Include="Xeption" Version="2.9.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="PublicAPI.Shipped.txt" />
+    <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
   </ItemGroup>
 
   <ItemGroup>
