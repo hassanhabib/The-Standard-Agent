@@ -89,8 +89,9 @@ public class SweepReproTests : IDisposable
     }
 
     // FINDING 7 — a turn-capped run records the last tool output in the conversation
-    // as though it were the agent's answer.
-    [Fact(Skip = "DEMONSTRATES DEFECT: turn-capped run appends the last tool output to session history as an answer")]
+    // as though it were the agent's answer. Skipped through 1.6.1 as the open demonstration;
+    // resolved by decision: a capped run stops without delivering an answer, like a budget stop.
+    [Fact]
     public async Task Finding7_TurnCappedRunMustNotRecordAnAnswerItNeverGaveAsync()
     {
         var tool = new CountingTool();
