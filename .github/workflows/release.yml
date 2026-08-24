@@ -28,7 +28,7 @@ jobs:
     # The SDK comes from global.json, so the package is built with the same compiler a
     # developer used. Reproducibility starts with agreeing on the toolchain.
     - name: Installing .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         global-json-file: global.json
 

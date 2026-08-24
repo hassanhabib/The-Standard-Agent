@@ -19,7 +19,7 @@ jobs:
     # not a second compiler: the package multi-targets net8.0, and the unit suite runs on
     # both targets, so the runner needs somewhere to run the net8.0 half.
     - name: Installing .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         global-json-file: global.json
         dotnet-version: 8.0.x
@@ -60,7 +60,7 @@ jobs:
         fetch-depth: 0
 
     - name: Installing .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         global-json-file: global.json
 

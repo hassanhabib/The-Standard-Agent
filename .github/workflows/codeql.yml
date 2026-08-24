@@ -26,7 +26,7 @@ jobs:
     # Same rule as dotnet.yml: global.json pins the SDK, so analysis compiles with the
     # same compiler as the build it analyzes.
     - name: Installing .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         global-json-file: global.json
 
