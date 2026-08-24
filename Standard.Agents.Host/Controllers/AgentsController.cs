@@ -38,9 +38,28 @@ public class AgentsController : ControllerBase
             Status: outcome.Status.ToString()));
     }
 
+    // The streamed door, as server-sent events: the kind as the event name so a consumer can
+    // switch on it, the content as data. Filtering the stream to Response events equals what
+    // the batched door returns - the parity the loop guarantees, carried out to the protocol.
     [HttpPost("streams")]
     public async ValueTask PostStreamAsync(AgentRunRequest request)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrWhiteSpace(request.Prompt))
+        {
+            Response.StatusCode = StatusCodes.Status400BadRequest;
+
+            return;
+        }
+
+        Response.ContentType = "text/event-stream";
+
+        await foreach (AgentStreamEvent streamEvent in
+            this.agent.StreamPromptAsync(request.Prompt, HttpContext.RequestAborted))
+        {
+            string message = $"event: {streamEvent.Type}\ndata: {streamEvent.Content}\n\n";
+
+            await Response.WriteAsync(message, HttpContext.RequestAborted);
+            await Response.Body.FlushAsync(HttpContext.RequestAborted);
+        }
     }
 }
