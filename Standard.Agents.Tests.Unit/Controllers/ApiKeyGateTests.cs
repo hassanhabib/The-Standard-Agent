@@ -57,7 +57,7 @@ public class ApiKeyGateTests
         bool actualDecision = ApiKeyGate.Allows(
             configuredKey: "psk-live-7",
             presentedKey: null,
-            path: "/");
+            path: "/api/home");
 
         // then
         actualDecision.Should().BeTrue();
