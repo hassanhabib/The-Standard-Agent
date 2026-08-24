@@ -25,6 +25,9 @@ public partial class RunManagementService : IRunManagementService
     private const string RetriesExhaustedMessage =
         "I can't help with that at the moment.";
 
+    private const string TurnsExhaustedMessage =
+        "I ran out of turns before an answer was ready; nothing was delivered.";
+
     private readonly IDataCoordinationService dataCoordinationService;
     private readonly IDecisionCoordinationService decisionCoordinationService;
     private readonly IDirectionCoordinationService directionCoordinationService;
@@ -413,25 +416,36 @@ public partial class RunManagementService : IRunManagementService
             return;
         }
 
-        // Turns ran out with the loop still Working: effects may have been performed and no
-        // answer was ever delivered, which is a failed run however calmly it ended. When the
-        // unwind has something to report, that report IS the outcome and nothing is recorded.
+        // Turns ran out with the loop still Working: no answer was ever delivered, and the last
+        // tool output is not one. The same truth the budget stop tells, told the same way — a
+        // Status, prose about why for the string-typed caller, and no session write, so the next
+        // prompt resumes the interrupted run instead of being told the agent said something it
+        // never said (SPEC.md §4.10, §4.11). Status stays Working: the run stopped mid-work.
         if (context.Status is AgentStatus.Working)
         {
+            await this.loggingBroker.LogOutcomeAsync($"stopped: {TurnsExhaustedMessage}");
+
+            await events.WriteAsync(
+                new AgentStreamEvent(AgentStreamEventType.Status, TurnsExhaustedMessage),
+                abandoned);
+
             string cappedUnwound = await UnwindAsync();
 
             if (string.IsNullOrEmpty(cappedUnwound) is false)
             {
                 await events.WriteAsync(
                     new AgentStreamEvent(AgentStreamEventType.Status, cappedUnwound), abandoned);
-
-                await this.loggingBroker.LogOutcomeAsync($"done: {context.Status}");
-
-                setOutcome(new AgentOutcome(
-                    $"{context.Result} {cappedUnwound}".Trim(), context.Status));
-
-                return;
             }
+
+            await this.loggingBroker.LogOutcomeAsync($"done: {context.Status}");
+
+            setOutcome(new AgentOutcome(
+                string.IsNullOrEmpty(cappedUnwound)
+                    ? TurnsExhaustedMessage
+                    : $"{TurnsExhaustedMessage} {cappedUnwound}",
+                context.Status));
+
+            return;
         }
 
         if (context.Status is AgentStatus.Revising)

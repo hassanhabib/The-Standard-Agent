@@ -120,12 +120,14 @@ AgentStatus terminalStatus)
         string actualResult =
             await this.agentCoordinationService.ProcessPromptAsync(randomPrompt);
 
-        // then
-        actualResult.Should().Be("again");
+        // then — the capped run delivered no answer, and says so rather than handing back
+        // the last tool output as though it were one.
+        actualResult.Should().Contain("out of turns");
+        actualResult.Should().NotContain("again");
 
         this.dataCoordinationServiceMock.Verify(service =>
-service.RecallAsync(It.IsAny<AgentContext>()),
-Times.Exactly(7));
+            service.RecallAsync(It.IsAny<AgentContext>()),
+                Times.Exactly(7));
 
         this.decisionCoordinationServiceMock.Verify(service =>
             service.ThinkAsync(It.IsAny<AgentContext>()),
@@ -153,8 +155,8 @@ Times.Exactly(7));
         string actualResult =
             await boundedCoordinationService.ProcessPromptAsync(randomPrompt);
 
-        // then
-        actualResult.Should().Be("again");
+        // then — capped at the configured bound, and no answer was delivered.
+        actualResult.Should().Contain("out of turns");
 
         this.dataCoordinationServiceMock.Verify(service =>
             service.RecallAsync(It.IsAny<AgentContext>()),
