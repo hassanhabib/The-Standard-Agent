@@ -12,14 +12,14 @@ jobs:
 
     steps:
     - name: Pulling Code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     # global.json pins the SDK, so CI and a developer's machine compile with the same one.
     # A version named in two places drifts in one of them. The 8.0 line below is a runtime,
     # not a second compiler: the package multi-targets net8.0, and the unit suite runs on
     # both targets, so the runner needs somewhere to run the net8.0 half.
     - name: Installing .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         global-json-file: global.json
         dotnet-version: 8.0.x
@@ -62,12 +62,12 @@ jobs:
     # clone has no parent to diff against — it fails to scan rather than finding nothing, which
     # is the failure mode a security check must never have.
     - name: Pulling Code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         fetch-depth: 0
 
     - name: Installing .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         global-json-file: global.json
 
@@ -90,6 +90,6 @@ jobs:
     # Secrets that reach a public repository are already leaked; the value of this check is
     # catching the commit that would have done it.
     - name: Scanning For Secrets
-      uses: gitleaks/gitleaks-action@v2
+      uses: gitleaks/gitleaks-action@v3
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

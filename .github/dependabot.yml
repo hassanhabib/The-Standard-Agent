@@ -14,6 +14,11 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - dependencies
+    ignore:
+      # FluentAssertions moved to a commercial license from v8; 7.x is the last
+      # freely-licensed line and this repository stays on it deliberately.
+      - dependency-name: FluentAssertions
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
