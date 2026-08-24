@@ -127,6 +127,34 @@ Nineteen capabilities, the same three verbs each. A capability offered fewer way
 build — it is a test, not a convention, because the erosion is otherwise invisible until there are
 six of them.
 
+### Agent as data — the whole thing as JSON
+
+There is a fourth door, and no mainstream framework has it: the **entire configurable surface as
+one JSON document**, one key per capability, the same names as the builder verbs. Any platform
+that can push a form into a JSON body can define an agent — guardians, budgets, perimeter,
+approvals, redaction, telemetry and all:
+
+```csharp
+var agent = StandardAgent.FromJson(formBody);   // data
+    // .Tool(new CalculatorTool())              // code still chains — tools ARE code
+```
+
+```json
+{
+  "brain": { "apiUrl": "https://api.peerllm.com/v1/", "apiKey": "k", "model": "LLooMA2.0" },
+  "ruleGate": ["password"], "redact": true, "maxTurns": 5,
+  "requireApproval": ["wire_transfer"], "budget": { "maxCostUsd": 0.25 },
+  "telemetry": "form-built-agent"
+}
+```
+
+A key the agent does not know **refuses to compose, with the key named** — a typo'd `"buget"`
+must never produce an unbounded agent that looks configured. Tools stay code because they are
+code — except MCP, where a tool is a URL, which is data. And the deployment half is one file:
+drop an `agent.json` beside `Standard.Agents.Host` and the hosted agent composes entirely from
+it — no C# anywhere
+([docs/how-to.md §16](https://github.com/hassanhabib/The-Standard-Agent/blob/main/docs/how-to.md)).
+
 ## Streaming, and no DI
 
 Stream the agent thinking and answering — each event is tagged, and the answer arrives live:
