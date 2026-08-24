@@ -23,12 +23,12 @@ jobs:
 
     steps:
     - name: Pulling Code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     # The SDK comes from global.json, so the package is built with the same compiler a
     # developer used. Reproducibility starts with agreeing on the toolchain.
     - name: Installing .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         global-json-file: global.json
 
@@ -66,7 +66,7 @@ jobs:
     # these bytes. It is not a code-signing certificate — see docs/support.md — but it is the
     # part a consumer can check without trusting us.
     - name: Attesting Build Provenance
-      uses: actions/attest-build-provenance@v1
+      uses: actions/attest-build-provenance@v4
       with:
         subject-path: ${{ github.workspace }}/artifacts/*.nupkg
 

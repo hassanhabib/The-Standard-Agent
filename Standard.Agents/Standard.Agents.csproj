@@ -447,7 +447,7 @@
          while still declared, fails the zero-warning build. Segment 1 and 2 changes become
          visible in the diff of this file instead of resting on discipline. Analyzer only -
          nothing ships to consumers. -->
-    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="4.14.0">
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
