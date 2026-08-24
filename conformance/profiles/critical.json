@@ -1,6 +1,6 @@
 {
   "name": "Critical",
-  "description": "Enterprise, plus conversation that survives a process, effects that can be unwound, and adversarial evaluation. The level a wire transfer needs.",
+  "description": "Enterprise, plus conversation that survives a process, effects that can be unwound, and an approval that resumes across processes. The level a wire transfer needs.",
   "inherits": "Enterprise",
   "requires": [
     "conversation-carries-history",
