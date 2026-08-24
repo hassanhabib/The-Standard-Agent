@@ -75,9 +75,17 @@ public sealed class FileSessionBroker : ISessionBroker
     // trying to sanitize a name that could escape the folder.
     private string FileFor(string sessionId)
     {
+        // Convert.ToHexStringLower is .NET 9+. Both forms emit identical lowercase hex, which
+        // is load-bearing: a session written on one target must be found on the other.
+#if NET9_0_OR_GREATER
         string safeName = Convert.ToHexStringLower(
             System.Security.Cryptography.SHA256.HashData(
                 System.Text.Encoding.UTF8.GetBytes(sessionId)))[..32];
+#else
+        string safeName = Convert.ToHexString(
+            System.Security.Cryptography.SHA256.HashData(
+                System.Text.Encoding.UTF8.GetBytes(sessionId))).ToLowerInvariant()[..32];
+#endif
 
         return Path.Combine(this.sessionsPath, $"{safeName}.json");
     }

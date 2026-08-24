@@ -14,12 +14,15 @@ jobs:
     - name: Pulling Code
       uses: actions/checkout@v4
 
-    # No dotnet-version here on purpose: global.json pins the SDK, so CI and a developer's
-    # machine compile with the same one. A version named in two places drifts in one of them.
+    # global.json pins the SDK, so CI and a developer's machine compile with the same one.
+    # A version named in two places drifts in one of them. The 8.0 line below is a runtime,
+    # not a second compiler: the package multi-targets net8.0, and the unit suite runs on
+    # both targets, so the runner needs somewhere to run the net8.0 half.
     - name: Installing .NET
       uses: actions/setup-dotnet@v4
       with:
         global-json-file: global.json
+        dotnet-version: 8.0.x
 
     - name: Restoring Packages
       run: dotnet restore

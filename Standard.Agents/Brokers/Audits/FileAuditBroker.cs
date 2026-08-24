@@ -125,6 +125,13 @@ public sealed class FileAuditBroker : IAuditBroker
         this.previousHash = lastLine is null ? null : Hash(lastLine);
     }
 
+    // Convert.ToHexStringLower is .NET 9+. Both forms emit identical lowercase hex, which is
+    // load-bearing: the chain a net8.0 process wrote must verify on a net10.0 one.
+#if NET9_0_OR_GREATER
     private static string Hash(string line) =>
         Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(line)));
+#else
+    private static string Hash(string line) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(line))).ToLowerInvariant();
+#endif
 }

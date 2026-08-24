@@ -4,6 +4,11 @@
 // ---------------------------------------------------------------
 
 using System.Runtime.CompilerServices;
+#if !NET9_0_OR_GREATER
+// System.Threading.Lock arrived in .NET 9. On the net8.0 target a plain object under the
+// same lock statements is the identical semantic; the alias keeps one body for both.
+using Lock = System.Object;
+#endif
 using Microsoft.Extensions.Logging.Abstractions;
 using Standard.Agents.Brokers.Audits;
 using Standard.Agents.Brokers.Approvals;
