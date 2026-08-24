@@ -18,7 +18,7 @@ public static class ApiKeyGate
 {
     public static bool Allows(string? configuredKey, string? presentedKey, string path) =>
         string.IsNullOrEmpty(configuredKey)
-            || path is "/"
+            || string.Equals(path, "/api/home", StringComparison.OrdinalIgnoreCase)
             || KeysMatch(configuredKey, presentedKey);
 
     // Fixed-time on the bytes, because a comparison that returns at the first wrong character
