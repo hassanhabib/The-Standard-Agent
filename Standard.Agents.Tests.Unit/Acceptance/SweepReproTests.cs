@@ -89,8 +89,9 @@ public class SweepReproTests : IDisposable
     }
 
     // FINDING 7 — a turn-capped run records the last tool output in the conversation
-    // as though it were the agent's answer.
-    [Fact(Skip = "DEMONSTRATES DEFECT: turn-capped run appends the last tool output to session history as an answer")]
+    // as though it were the agent's answer. Skipped through 1.6.1 as the open demonstration;
+    // resolved by decision: a capped run stops without delivering an answer, like a budget stop.
+    [Fact]
     public async Task Finding7_TurnCappedRunMustNotRecordAnAnswerItNeverGaveAsync()
     {
         var tool = new CountingTool();
@@ -121,10 +122,11 @@ public class SweepReproTests : IDisposable
                 + "be told the agent said something it never said");
     }
 
-    // FINDING 7b — documents the actual outcome shape at the cap (expected to PASS;
-    // evidence for the AgentOutcome doc-comment mismatch, not a failure).
+    // FINDING 7b — the outcome shape at the cap, as decided: the caller gets prose about why
+    // (what AgentOutcome's contract always promised), never the last tool output dressed as an
+    // answer, and Status stays Working because the run stopped mid-work rather than failing.
     [Fact]
-    public async Task Finding7b_TurnCapReturnsLastToolResultWithStatusWorkingAsync()
+    public async Task Finding7b_TurnCapDeliversProseAboutWhyWithStatusWorkingAsync()
     {
         var tool = new CountingTool();
 
@@ -135,7 +137,12 @@ public class SweepReproTests : IDisposable
 
         AgentOutcome outcome = await capped.RunAsync("loop");
 
-        outcome.Result.Should().Be("4183");
+        outcome.Result.Should().Contain(
+            "out of turns",
+            because: "a run that never delivered an answer owes the caller prose about why, "
+                + "not the last tool's raw output");
+
+        outcome.Result.Should().NotContain("4183");
         outcome.Status.Should().Be(AgentStatus.Working);
     }
 }
