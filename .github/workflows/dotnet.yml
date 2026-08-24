@@ -47,6 +47,13 @@ jobs:
         dotnet run --project Standard.Agents.Conformance --no-build --configuration Release
         -- --profile Enterprise
 
+    # Quality certification beside contract certification: the golden evals measure task
+    # completion, groundedness, retrieval precision and recall, tool selection, refusal
+    # correctness and revision effectiveness, and fail the build under threshold.
+    # Deterministic - scripted brains, no keys, no network.
+    - name: Evaluating Quality
+      run: dotnet run --project Standard.Agents.Evals --no-build --configuration Release
+
   supply-chain:
     runs-on: ubuntu-latest
 

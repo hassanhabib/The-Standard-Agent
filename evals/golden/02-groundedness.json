@@ -1,0 +1,22 @@
+{
+  "name": "groundedness-cites-what-it-read",
+  "description": "What the answer cites must be among what the Brain was actually shown, and the known fabrication never appears.",
+  "skill": "You answer strictly from the provided knowledge.",
+  "knowledge": {
+    "refunds": "Refund policy REF-POLICY-30D: refunds are honored within 30 days of purchase.",
+    "shipping": "Orders leave the warehouse in two business days via ground carrier."
+  },
+  "knowledgeMinScore": 0.01,
+  "generatorReplies": [
+    "FINAL: Per policy REF-POLICY-30D, refunds are honored within 30 days of purchase."
+  ],
+  "prompts": [
+    {
+      "prompt": "what is the refund policy",
+      "mustCite": ["REF-POLICY-30D"],
+      "mustNotClaim": ["60 days"],
+      "relevantKnowledge": ["refunds"]
+    }
+  ],
+  "thresholds": { "groundedness": 1.0, "retrievalRecall": 1.0 }
+}

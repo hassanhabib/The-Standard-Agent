@@ -1,0 +1,21 @@
+{
+  "name": "retrieval-brings-the-relevant-and-only-the-relevant",
+  "description": "Ranked lexical retrieval over three passages brings the one the prompt is about and neither of the others.",
+  "skill": "You answer strictly from the provided knowledge.",
+  "knowledge": {
+    "refunds": "Refund policy for enterprise customers: refunds are honored within 30 days.",
+    "onboarding": "New hires attend orientation on their first Monday.",
+    "colors": "The brand palette uses cobalt and cream."
+  },
+  "knowledgeMinScore": 0.05,
+  "generatorReplies": [
+    "FINAL: Enterprise refunds are honored within 30 days."
+  ],
+  "prompts": [
+    {
+      "prompt": "what is the refund policy for enterprise customers",
+      "relevantKnowledge": ["refunds"]
+    }
+  ],
+  "thresholds": { "retrievalPrecision": 1.0, "retrievalRecall": 1.0 }
+}
