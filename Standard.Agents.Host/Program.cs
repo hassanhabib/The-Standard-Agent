@@ -7,11 +7,35 @@
 // behind HTTP: composition here is configuration, never new concepts - the appliance
 // guarantee holds at the exposure layer too.
 
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Standard.Agents;
+using Standard.Agents.Brokers.Telemetries;
+using Standard.Agents.Host.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+
+// Exporting is opt-in by the standard OTel switch: set OTEL_EXPORTER_OTLP_ENDPOINT and the
+// agent's spans and metrics (plus the HTTP server's) leave for your collector; leave it unset
+// and nothing is wired, so the default host stays exactly what it was. The library side needs
+// no flag at all - an unobserved ActivitySource already costs nothing.
+if (string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]) is false)
+{
+    builder.Services.AddOpenTelemetry()
+        .ConfigureResource(resource => resource.AddService(
+            builder.Configuration["Agent:Name"] ?? "standard-agents-host"))
+        .WithTracing(tracing => tracing
+            .AddAspNetCoreInstrumentation()
+            .AddSource(ActivityTelemetryBroker.SourceName)
+            .AddOtlpExporter())
+        .WithMetrics(metrics => metrics
+            .AddAspNetCoreInstrumentation()
+            .AddMeter(ActivityTelemetryBroker.SourceName)
+            .AddOtlpExporter());
+}
 
 // One agent, one singleton - one instance serving prompts concurrently is the intended
 // shape (docs/support.md), and run state is per invocation by SPEC.md 4.4. Zero config
@@ -38,10 +62,35 @@ builder.Services.AddSingleton<IAgent>(provider =>
         agent.Skills(skillsPath);
     }
 
+    // Always on: the spans exist only when something listens, so this line is free on a
+    // laptop and load-bearing behind a collector.
+    agent.Telemetry(configuration["Agent:Name"] ?? "standard-agent");
+
     return agent;
 });
 
 var app = builder.Build();
+
+// The front door, before the routes: no configured Host:ApiKey means open (a laptop), one
+// configuration line means every agent route wants X-Api-Key (a deployment). The heartbeat
+// stays open either way - a probe cannot present a key and learns nothing.
+app.Use(async (context, next) =>
+{
+    bool allowed = ApiKeyGate.Allows(
+        configuredKey: app.Configuration["Host:ApiKey"],
+        presentedKey: context.Request.Headers["X-Api-Key"],
+        path: context.Request.Path);
+
+    if (allowed)
+    {
+        await next();
+
+        return;
+    }
+
+    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+    await context.Response.WriteAsync("missing or invalid X-Api-Key");
+});
 
 app.MapControllers();
 
