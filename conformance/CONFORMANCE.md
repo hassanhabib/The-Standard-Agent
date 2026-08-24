@@ -61,6 +61,7 @@ capability it configures did not exist, which is why the early vectors still des
 | `cancelBeforeStart`, `transientFailures`, `retries`, `budgetMaxWallClockSeconds` | resilience and budget |
 | `fallbackReply`, `failuresBeforeOpen` | the circuit breaker's alternative |
 | `knowledge`, `knowledgeMaxResults` | real files in a real folder, so ranking is exercised |
+| `memories` | what the run recalls — also the seam a poisoned memory rides in on |
 | `sessionId` | run every prompt in one conversation |
 | `compensateOnFailure`, `compensatingTools` | unwind a failed run; tools left out declare no way back |
 | `newInstancePerPrompt`, `durableEffectLedger` | a fresh agent per prompt over shared folders — the harness's stand-in for a different process |
@@ -172,6 +173,9 @@ the deterministic core of the Standard.
 | `awaiting-approval-resumes-in-a-new-process` | A held act runs once the authority says yes, elsewhere |
 | `native-tool-call-round-trips` | A result returns as a tool message naming its call (§6.2) |
 | `policy-authorizes-on-identity` | The principal reaches the decision, not only the log (§3.3, §4.9) |
+| `injected-knowledge-cannot-widen-the-perimeter` | A poisoned passage fools the Brain; the fooled Brain still cannot act (§4.9) |
+| `poisoned-memory-cannot-widen-the-perimeter` | Data can never grant what policy did not, whichever seam it rode in on (§4.9) |
+| `a-fooled-brain-cannot-cross-tenants` | The permitted scope executes, the other tenant's is denied, the run recovers (§4.9) |
 
 ## Readiness profiles
 
