@@ -434,6 +434,8 @@ Standard.Agents.Models.Clients.Agents.AgentStreamEventType.Thinking = 1 -> Stand
 Standard.Agents.Models.Clients.Agents.AgentStreamEventType.Tool = 2 -> Standard.Agents.Models.Clients.Agents.AgentStreamEventType
 Standard.Agents.Models.Clients.Agents.Exceptions.InvalidAgentCompositionException
 Standard.Agents.Models.Clients.Agents.Exceptions.InvalidAgentCompositionException.InvalidAgentCompositionException(string! message) -> void
+Standard.Agents.Models.Clients.Agents.Exceptions.InvalidAgentConfigurationException
+Standard.Agents.Models.Clients.Agents.Exceptions.InvalidAgentConfigurationException.InvalidAgentConfigurationException(string! message) -> void
 Standard.Agents.Models.Coordinations.Agents.AgentBudget
 Standard.Agents.Models.Coordinations.Agents.AgentBudget.<Clone>$() -> Standard.Agents.Models.Coordinations.Agents.AgentBudget!
 Standard.Agents.Models.Coordinations.Agents.AgentBudget.AgentBudget() -> void
@@ -1340,6 +1342,8 @@ static Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision.opera
 static Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision.operator ==(Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision? left, Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision? right) -> bool
 static Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome.operator !=(Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome? left, Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome? right) -> bool
 static Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome.operator ==(Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome? left, Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome? right) -> bool
+static Standard.Agents.StandardAgent.FromJson(string! json) -> Standard.Agents.StandardAgent!
+static Standard.Agents.StandardAgent.FromJsonFile(string! path) -> Standard.Agents.StandardAgent!
 virtual Standard.Agents.Models.Clients.Agents.AgentOutcome.<Clone>$() -> Standard.Agents.Models.Clients.Agents.AgentOutcome!
 virtual Standard.Agents.Models.Clients.Agents.AgentOutcome.EqualityContract.get -> System.Type!
 virtual Standard.Agents.Models.Clients.Agents.AgentOutcome.Equals(Standard.Agents.Models.Clients.Agents.AgentOutcome? other) -> bool

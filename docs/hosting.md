@@ -44,6 +44,28 @@ invocation by SPEC.md §4.4. Enterprise controls — perimeter, budgets, session
 approval — are composition like everything else; add the builder calls where the singleton is
 built.
 
+## The agent as a document
+
+The host also composes its agent from a single JSON document — the whole configurable surface
+as data ([how-to.md §16](how-to.md)). Point `Agent:Config` at the file, or just drop an
+`agent.json` beside the executable:
+
+```json
+{
+  "brain": { "apiUrl": "https://api.peerllm.com/v1/", "apiKey": "k", "model": "LLooMA2.0" },
+  "skills": "Skills",
+  "ruleGate": ["password"],
+  "budget": { "maxCostUsd": 0.25 },
+  "telemetry": "form-built-agent"
+}
+```
+
+When the document is present it is the whole truth — skills, guardians, budgets and telemetry
+come from its keys, never from a second config source that could quietly disagree. A document
+with no brain key still stands and heartbeats, and answers every run with exactly what to add,
+rather than failing at startup or at the first prompt. No document means the classic
+`Agent:Url` configuration above, unchanged.
+
 ## Locking the door
 
 An agent endpoint carries approval and budget semantics, so the front door is worth a thought.

@@ -44,12 +44,47 @@ if (string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT
 builder.Services.AddSingleton<IAgent>(provider =>
 {
     IConfiguration configuration = provider.GetRequiredService<IConfiguration>();
+
+    // The agent as data: Agent:Config names a JSON document, or an agent.json beside the
+    // executable is picked up on its own — a low-code platform writes a file and has an agent,
+    // no C# anywhere. When the document is the source, the document is the whole truth: skills,
+    // telemetry, guardians and budgets all come from its keys, not from a second config source
+    // that could quietly disagree with it.
+    string configuredPath = configuration["Agent:Config"] ?? string.Empty;
+
+    string agentJsonPath = string.IsNullOrWhiteSpace(configuredPath)
+        ? Path.Combine(AppContext.BaseDirectory, "agent.json")
+        : configuredPath;
+
+    if (string.IsNullOrWhiteSpace(configuredPath) is false || File.Exists(agentJsonPath))
+    {
+        string agentJson = File.ReadAllText(agentJsonPath);
+        StandardAgent configured = StandardAgent.FromJson(agentJson);
+
+        // The same zero-config grace the classic path has: a document with no brain still
+        // stands, heartbeats, and answers with what to add — never a 500 at the first prompt.
+        bool hasBrain =
+            System.Text.Json.Nodes.JsonNode.Parse(agentJson) is System.Text.Json.Nodes.JsonObject document
+                && (document.ContainsKey("brain")
+                    || document.ContainsKey("nativeBrain")
+                    || document.ContainsKey("nativeBrainAnthropic"));
+
+        if (hasBrain is false)
+        {
+            configured.OnBrain(async (_, _) =>
+                "FINAL: No Brain is configured. Add \"brain\", \"nativeBrain\" or "
+                    + "\"nativeBrainAnthropic\" to agent.json, then restart the host.");
+        }
+
+        return configured;
+    }
+
     string? url = configuration["Agent:Url"];
 
     StandardAgent agent = string.IsNullOrWhiteSpace(url)
         ? new StandardAgent().OnBrain(async (_, _) =>
-            "FINAL: No Brain is configured. Set Agent:Url, Agent:ApiKey and Agent:Model, "
-                + "then restart the host.")
+            "FINAL: No Brain is configured. Provide an agent.json (or set Agent:Config), or "
+                + "set Agent:Url, Agent:ApiKey and Agent:Model, then restart the host.")
         : new StandardAgent(
             url,
             configuration["Agent:ApiKey"] ?? string.Empty,
