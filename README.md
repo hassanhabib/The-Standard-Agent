@@ -29,9 +29,17 @@ Built for everyone who ships agents: the individual who wants the simplest thing
 small team that needs it reliable, and the enterprise that needs it accountable — **the same agent
 grows all the way up, never a rewrite.**
 
-## Watch
+## Watch — the YouTube sessions
 
 [![Create Your First AI Agent from Scratch — The Standard for Agents](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-video-thumbnail.jpg)](https://www.youtube.com/watch?v=UE6QcvQsOyU)
+
+The sessions are live and ongoing on
+[Hassan Habib's YouTube channel](https://www.youtube.com/c/hassanhabib): start with
+[**Create Your First AI Agent from Scratch**](https://www.youtube.com/watch?v=UE6QcvQsOyU)
+above, then the
+[**The-Standard sessions playlist**](https://www.youtube.com/playlist?list=PLG2w4duP-rS2adJjAs4QvYIuKriacLQBU)
+for the engineering discipline every line of this framework is built on — subscribe there for
+the sessions on each new capability as it ships.
 
 ## Install
 
