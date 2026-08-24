@@ -98,6 +98,14 @@ public partial class StandardAgent
 
                 break;
 
+            case "skills" when value is JsonArray sources:
+                foreach (JsonNode? source in sources)
+                {
+                    agent.Skills(Text(source, key));
+                }
+
+                break;
+
             case "skills":
                 agent.Skills(Text(value, key));
 
@@ -122,16 +130,16 @@ public partial class StandardAgent
 
                 break;
 
-            case "mcp" when value is JsonObject:
-                agent.Mcp(
-                    Text(value, key, "endpointUrl"),
-                    Text(value, key, "relativeUrl", fallback: string.Empty),
-                    Whole(value, "timeoutSeconds", fallback: 30));
+            case "mcp" when value is JsonArray servers:
+                foreach (JsonNode? server in servers)
+                {
+                    ApplyMcpServer(agent, server, key);
+                }
 
                 break;
 
             case "mcp":
-                agent.Mcp(Text(value, key));
+                ApplyMcpServer(agent, value, key);
 
                 break;
 
@@ -325,6 +333,31 @@ public partial class StandardAgent
                         + "The keys are the builder verbs, camelCased — see docs/how-to.md.");
         }
     }
+
+    // A server is a URL when it needs nothing else, an object when it carries auth — an API key
+    // in a named header, or a bearer token (an OAuth access token or PAT). A server with no
+    // auth carries none of those keys; a refresh-flow token is code (a delegate) and arrives
+    // through UseMcp, never through the document.
+    private static void ApplyMcpServer(StandardAgent agent, JsonNode? server, string key)
+    {
+        if (server is JsonObject)
+        {
+            agent.Mcp(
+                Text(server, key, "endpointUrl"),
+                Text(server, key, "relativeUrl", fallback: string.Empty),
+                Whole(server, "timeoutSeconds", fallback: 30),
+                OptionalText(server, "bearerToken"),
+                OptionalText(server, "apiKey"),
+                Text(server, key, "apiKeyHeader", fallback: "X-Api-Key"));
+
+            return;
+        }
+
+        agent.Mcp(Text(server, key));
+    }
+
+    private static string? OptionalText(JsonNode? node, string property) =>
+        (node as JsonObject)?[property]?.GetValue<string>();
 
     private static string Text(JsonNode? node, string key) =>
         node?.GetValueKind() is JsonValueKind.String
