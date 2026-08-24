@@ -110,4 +110,9 @@ public sealed record Vector(
 
     // Tools this principal may not act with, refused by policy on the identity alone. This is a
     // scripted policy engine, not the allow-list: the allow-list cannot express "not for them".
-    List<string>? DeniedForPrincipal = null);
+    List<string>? DeniedForPrincipal = null,
+
+    // Memories the run recalls (SPEC.md §4.2) — which is also how a POISONED memory is
+    // certified: an injected instruction rides the same seam a remembered preference would,
+    // and the perimeter must hold whether or not the Brain is fooled by it.
+    List<string>? Memories = null);

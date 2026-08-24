@@ -270,7 +270,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         StandardAgent agent = new StandardAgent()
             .UseSkills(new StubSkillBroker())
             .UseGenerator(recordingGenerator)
-            .UseMemory(new StubMemoryBroker())
+            .UseMemory(new StubMemoryBroker(vector.Memories))
             .UseMcp(new NotConfiguredMcpBroker())
             .Tools(stubTools.Values)
             .OnGate((rubric, prompt) =>
