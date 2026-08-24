@@ -428,6 +428,9 @@ public partial class RunManagementService : IRunManagementService
 
             await this.loggingBroker.LogOutcomeAsync($"done: {context.Status}");
 
+            this.telemetryBroker.RecordRunOutcome(
+                context.Status.ToString(), runPromptTokens, runCompletionTokens);
+
             setOutcome(new AgentOutcome(
                 string.IsNullOrEmpty(stoppedUnwound)
                     ? stoppedBecause
@@ -459,6 +462,11 @@ public partial class RunManagementService : IRunManagementService
             }
 
             await this.loggingBroker.LogOutcomeAsync($"done: {context.Status}");
+
+            // Working, not Responded: the run stopped mid-work, and the span says so the same
+            // way the caller is told.
+            this.telemetryBroker.RecordRunOutcome(
+                context.Status.ToString(), runPromptTokens, runCompletionTokens);
 
             setOutcome(new AgentOutcome(
                 string.IsNullOrEmpty(cappedUnwound)
