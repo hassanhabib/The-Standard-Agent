@@ -1,1 +1,25 @@
 #nullable enable
+Standard.Agents.Brokers.Telemetries.ActivityTelemetryBroker
+Standard.Agents.Brokers.Telemetries.ActivityTelemetryBroker.ActivityTelemetryBroker(string! agentName = "standard-agent") -> void
+Standard.Agents.Brokers.Telemetries.ActivityTelemetryBroker.RecordRunOutcome(string! status, int promptTokens, int completionTokens) -> void
+Standard.Agents.Brokers.Telemetries.ActivityTelemetryBroker.RecordTurnUsage(int promptTokens, int completionTokens, bool estimated) -> void
+Standard.Agents.Brokers.Telemetries.ActivityTelemetryBroker.StartRun(string! sessionId) -> System.IDisposable?
+Standard.Agents.Brokers.Telemetries.ActivityTelemetryBroker.StartTurn(int turn) -> System.IDisposable?
+Standard.Agents.Brokers.Telemetries.FunctionTelemetryBroker
+Standard.Agents.Brokers.Telemetries.FunctionTelemetryBroker.FunctionTelemetryBroker(System.Action<string!, System.Collections.Generic.IReadOnlyDictionary<string!, object?>!>! record) -> void
+Standard.Agents.Brokers.Telemetries.FunctionTelemetryBroker.RecordRunOutcome(string! status, int promptTokens, int completionTokens) -> void
+Standard.Agents.Brokers.Telemetries.FunctionTelemetryBroker.RecordTurnUsage(int promptTokens, int completionTokens, bool estimated) -> void
+Standard.Agents.Brokers.Telemetries.FunctionTelemetryBroker.StartRun(string! sessionId) -> System.IDisposable?
+Standard.Agents.Brokers.Telemetries.FunctionTelemetryBroker.StartTurn(int turn) -> System.IDisposable?
+Standard.Agents.Brokers.Telemetries.ITelemetryBroker
+Standard.Agents.Brokers.Telemetries.ITelemetryBroker.RecordRunOutcome(string! status, int promptTokens, int completionTokens) -> void
+Standard.Agents.Brokers.Telemetries.ITelemetryBroker.RecordTurnUsage(int promptTokens, int completionTokens, bool estimated) -> void
+Standard.Agents.Brokers.Telemetries.ITelemetryBroker.StartRun(string! sessionId) -> System.IDisposable?
+Standard.Agents.Brokers.Telemetries.ITelemetryBroker.StartTurn(int turn) -> System.IDisposable?
+Standard.Agents.Brokers.Telemetries.NotConfiguredTelemetryBroker
+Standard.Agents.Brokers.Telemetries.NotConfiguredTelemetryBroker.NotConfiguredTelemetryBroker() -> void
+Standard.Agents.Brokers.Telemetries.NotConfiguredTelemetryBroker.RecordRunOutcome(string! status, int promptTokens, int completionTokens) -> void
+Standard.Agents.Brokers.Telemetries.NotConfiguredTelemetryBroker.RecordTurnUsage(int promptTokens, int completionTokens, bool estimated) -> void
+Standard.Agents.Brokers.Telemetries.NotConfiguredTelemetryBroker.StartRun(string! sessionId) -> System.IDisposable?
+Standard.Agents.Brokers.Telemetries.NotConfiguredTelemetryBroker.StartTurn(int turn) -> System.IDisposable?
+const Standard.Agents.Brokers.Telemetries.ActivityTelemetryBroker.SourceName = "Standard.Agents" -> string!
