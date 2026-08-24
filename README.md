@@ -298,10 +298,15 @@ Standard.Agents/                  the library
   |-- Tools/                                ITool, AgentTool — the fractal bridge
 Standard.Agents.Tests.Unit/       unit tests, mirroring the service tree
 Standard.Agents.Conformance/      the vector runner
+Standard.Agents.Evals/            the quality runner - golden cases, thresholded metrics
+Standard.Agents.Host/             the same agent definition as a web service
 Standard.Agents.Demo/             a console agent you can run
 conformance/vectors/              language-neutral behavioral vectors
 conformance/profiles/             what each readiness level requires
+evals/golden/                     golden quality cases the build certifies against
 docs/how-to.md                    one capability per step, every snippet runnable
+docs/evals.md                     the quality metrics and how to golden-set your own agent
+docs/hosting.md                   the agent behind HTTP - runs, streams, heartbeat
 docs/support.md                   stability, deprecation, supply chain
 docs/generator-contracts.md       text protocol vs native tool calls
 ```
@@ -330,9 +335,18 @@ dotnet run --project Standard.Agents.Conformance -- --profile Critical
 | **Core** | conversation, skills, knowledge, memory, simple tools |
 | **Reliable** | guardians that see what they guard, durable decision log, run isolation, cancellation, timeouts |
 | **Enterprise** | identity-aware authorization, approval before irreversible acts, run-once effects, budgets, ranked retrieval |
-| **Critical** | conversation and effects that survive a process, compensation, native tool calls that round-trip |
+| **Critical** | conversation and effects that survive a process, compensation, native tool calls that round-trip, adversarial evaluation — a fooled Brain still cannot act outside the perimeter |
 
 All four certify. Exit `0` means certified; the runner is the authority, not this table.
+
+Beside contract certification sits **quality certification**: golden eval cases measuring task
+completion, groundedness, retrieval precision and recall, tool selection, refusal correctness
+and revision effectiveness — thresholded, deterministic, and run on every build
+([docs/evals.md](https://github.com/hassanhabib/The-Standard-Agent/blob/main/docs/evals.md)):
+
+```bash
+dotnet run --project Standard.Agents.Evals
+```
 
 ## The fractal
 

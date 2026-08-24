@@ -24,6 +24,34 @@
     <!-- The Standard's release format is v1.2.3.4 — model . service/routine . fix/config
          . automated build. Deliberately NOT semver; the segments say what KIND of change
          happened, so a model change can never hide in the service segment.
+         1.7.0.0: Evals and Hosting - the release the enterprise plan owed since 1.1,
+         displaced five times by audits that outranked it - plus the three decisions the
+         sweep left open, all ruled and closed. Standard.Agents.Evals pins QUALITY the way
+         conformance pins contracts: task completion, groundedness, retrieval precision and
+         recall, tool selection, refusal correctness and revision effectiveness, measured
+         deterministically against golden cases through the real composition, thresholded,
+         CI-gated, every metric proven able to fail, every report stamped with the framework
+         version and the golden-set hash. Three ADVERSARIAL vectors certify what no suite
+         did: a poisoned knowledge passage and a poisoned memory that FOOL the scripted
+         Brain still cannot act outside the allow-list, and a fooled Brain cannot cross
+         tenant scopes - each asserts the poison REACHED the Brain, so a pass means the
+         attack was survived, not dodged. The Critical profile now REQUIRES all three and
+         says "adversarial evaluation" again - words it lost when nothing verified them.
+         Standard.Agents.Host is the exposure layer as The Standard defines one: controllers
+         that are pure mapping over one IAgent dependency, a heartbeat, SSE streaming whose
+         Response events equal the batched answer, and zero-config startup that stands and
+         says what to configure. NOTHING was added to the builder for any of it. The three
+         sweep decisions closed: a turn-capped run delivers prose about why and never
+         records an answer it never gave (the one Skipped test now runs); Direction's
+         standing orders travel as one PerimeterPolicy datum and a new tier rule bans naked
+         delegates in every service constructor; and cancellation crosses the nesting seam -
+         AgentRun carries the run's token and AgentTool hands it to the nested agent through
+         the new stoppable IAgent.RunAsync(prompt, token). Also: the package multi-targets
+         net8.0 and net10.0 with the suite green on both, the public API is declared in
+         PublicAPI.Shipped.txt and guarded by the build, and the supply chain is watched
+         between builds (Dependabot, CodeQL). New public routines and one new model, no
+         contract removed, no field repurposed: a service/routine change, so segment 2
+         advances, 3/4 reset.
          1.6.1.0: the docs said what the code does, and saying it caught a defect. The
          2026-08-23 sweep's most common finding was the silence — a true statement with an
          unstated boundary — and this pass states them where a reader decides: run-once is
@@ -376,7 +404,7 @@
          3/4 reset. Still tracks SPEC.md v0.1 (draft): segment 1 goes to 1 when the spec settles.
          (0.8.0.0: memory and knowledge came alive — knowledge retrieval in Recall + a built-in
          'remember' tool.) -->
-    <Version>1.6.1.0</Version>
+    <Version>1.7.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>
