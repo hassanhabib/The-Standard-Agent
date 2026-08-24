@@ -8,6 +8,9 @@ Standard.Agents.Brokers.Mcps.IMcpBroker.ListToolsAsync() -> System.Threading.Tas
 Standard.Agents.Brokers.Mcps.McpBroker.ListToolsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Mcps.McpTool!>!>
 Standard.Agents.Brokers.Mcps.McpBroker.McpBroker(string! endpointUrl, string! relativeUrl, int timeoutSeconds, string? bearerToken = null, string? apiKey = null, string! apiKeyHeader = "X-Api-Key", System.Func<System.Threading.Tasks.ValueTask<string!>>? bearerTokenProvider = null) -> void
 Standard.Agents.Brokers.Mcps.NotConfiguredMcpBroker.ListToolsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Mcps.McpTool!>!>
+Standard.Agents.Brokers.Skills.CompositeSkillBroker
+Standard.Agents.Brokers.Skills.CompositeSkillBroker.CompositeSkillBroker(System.Collections.Generic.IEnumerable<Standard.Agents.Brokers.Skills.ISkillBroker!>! brokers) -> void
+Standard.Agents.Brokers.Skills.CompositeSkillBroker.SelectSkillsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Skills.Skill!>!>
 Standard.Agents.Models.Brokers.Mcps.McpTool
 Standard.Agents.Models.Brokers.Mcps.McpTool.<Clone>$() -> Standard.Agents.Models.Brokers.Mcps.McpTool!
 Standard.Agents.Models.Brokers.Mcps.McpTool.Deconstruct(out string! Name, out string! Description) -> void
