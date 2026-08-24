@@ -788,6 +788,25 @@ public sealed partial class StandardAgent : IAgent
             new GeneratorBrokerV1(apiUrl, apiKey, model, temperature, maxTokens));
 
     /// <summary>
+    /// Gives the agent a native tool-calling brain on the <b>Anthropic Messages API</b> — the
+    /// same V1 seam as <see cref="NativeBrain"/> under Anthropic's wire shape (top-level system,
+    /// <c>tool_use</c> / <c>tool_result</c> blocks, reported usage), in the box with no
+    /// packages. One line: an API key and a model.
+    /// </summary>
+    /// <param name="apiKey">Anthropic API key.</param>
+    /// <param name="model">Model name to request (e.g. a claude-* model id).</param>
+    /// <param name="temperature">Sampling temperature. Defaults to 0.7.</param>
+    /// <param name="maxTokens">Maximum tokens per turn. Defaults to 1024.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent NativeBrainAnthropic(
+        string apiKey,
+        string model,
+        double temperature = 0.7,
+        int maxTokens = 1024) =>
+        Set(() => this.generatorBrokerV1 =
+            new AnthropicGeneratorBrokerV1(apiKey, model, temperature, maxTokens));
+
+    /// <summary>
     /// Swaps in a custom native-brain broker — the <b>External</b> seam for a provider package
     /// that speaks tool calls.
     /// </summary>
