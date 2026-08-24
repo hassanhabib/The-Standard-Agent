@@ -1,8 +1,7 @@
 # Housekeeping: deletes every branch whose tip is already an ancestor of
-# main. Lives on its own housekeeping branch and is dispatched there (the
-# API dispatches a workflow from any ref that carries the file); it sweeps
-# the merged branches, keeps anything holding commits main does not have,
-# and removes its own branch last.
+# main. Dispatched manually from main (workflows register from the default
+# branch only). Main and the default HEAD are never candidates; anything
+# holding commits main does not have is kept and named in the log.
 name: Delete Merged Branches
 
 on:
@@ -23,11 +22,10 @@ jobs:
         run: |
           git fetch origin main
           for branch in $(git for-each-ref --format='%(refname:strip=3)' refs/remotes/origin); do
-            case "$branch" in main|HEAD|"$GITHUB_REF_NAME") continue ;; esac
+            case "$branch" in main|HEAD) continue ;; esac
             if git merge-base --is-ancestor "refs/remotes/origin/$branch" origin/main; then
               git push origin --delete "$branch" && echo "deleted: $branch"
             else
               echo "kept (commits not on main): $branch"
             fi
           done
-          git push origin --delete "$GITHUB_REF_NAME"
