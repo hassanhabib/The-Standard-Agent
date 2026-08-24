@@ -5,6 +5,7 @@
 
 using Microsoft.AspNetCore.Mvc;
 using Standard.Agents.Host.Models;
+using Standard.Agents.Models.Clients.Agents;
 
 namespace Standard.Agents.Host.Controllers;
 
@@ -22,6 +23,13 @@ public class AgentsController : ControllerBase
     [HttpPost("runs")]
     public async ValueTask<ActionResult<AgentRunResponse>> PostRunAsync(AgentRunRequest request)
     {
-        throw new NotImplementedException();
+        // The caller closing the connection cancels the run at its next turn boundary - and,
+        // through the nesting seam, any sub-agents the run started.
+        AgentOutcome outcome =
+            await this.agent.RunAsync(request.Prompt, HttpContext.RequestAborted);
+
+        return Ok(new AgentRunResponse(
+            Result: outcome.Result,
+            Status: outcome.Status.ToString()));
     }
 }
