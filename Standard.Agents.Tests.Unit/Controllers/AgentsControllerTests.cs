@@ -55,4 +55,24 @@ public partial class AgentsControllerTests
         okResult.Value.Should().BeEquivalentTo(
             new AgentRunResponse(Result: "the answer", Status: "Responded"));
     }
+
+    [Fact]
+    public async Task ShouldReturnBadRequestOnPostRunIfPromptIsEmptyAsync()
+    {
+        // given
+        var request = new AgentRunRequest(Prompt: "   ");
+
+        // when
+        ActionResult<AgentRunResponse> actualResult =
+            await this.agentsController.PostRunAsync(request);
+
+        // then — a prompt of nothing is the caller's mistake, told as 400 before any run starts
+        actualResult.Result.Should().BeOfType<BadRequestObjectResult>();
+
+        this.agentMock.Verify(agent =>
+            agent.RunAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+
+        this.agentMock.VerifyNoOtherCalls();
+    }
 }
