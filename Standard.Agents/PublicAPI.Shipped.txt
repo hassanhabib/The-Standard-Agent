@@ -90,6 +90,9 @@ Standard.Agents.Brokers.Files.IFileBroker.ReadAllLinesAsync(string! path) -> Sys
 Standard.Agents.Brokers.Files.IFileBroker.ReadFile(string! path) -> string!
 Standard.Agents.Brokers.Files.IFileBroker.ReadFileAsync(string! path) -> System.Threading.Tasks.ValueTask<string!>
 Standard.Agents.Brokers.Files.IFileBroker.SelectFiles(string! path, string! searchPattern, System.IO.SearchOption searchOption) -> System.Collections.Generic.IReadOnlyList<string!>!
+Standard.Agents.Brokers.Generators.AnthropicGeneratorBrokerV1
+Standard.Agents.Brokers.Generators.AnthropicGeneratorBrokerV1.AnthropicGeneratorBrokerV1(string! apiKey, string! model, double temperature = 0.7, int maxTokens = 1024, int timeoutSeconds = 120, string! apiUrl = "https://api.anthropic.com/") -> void
+Standard.Agents.Brokers.Generators.AnthropicGeneratorBrokerV1.GenerateAsync(System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage!>! messages, System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition!>! tools) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Generators.V1.GenerationResult!>
 Standard.Agents.Brokers.Generators.FunctionGeneratorBroker
 Standard.Agents.Brokers.Generators.FunctionGeneratorBroker.FunctionGeneratorBroker(System.Func<string!, string!, System.Threading.Tasks.ValueTask<string!>>! generate) -> void
 Standard.Agents.Brokers.Generators.FunctionGeneratorBroker.GenerateAsync(string! systemPrompt, string! userPrompt) -> System.Threading.Tasks.ValueTask<string!>
@@ -237,6 +240,29 @@ Standard.Agents.Brokers.Skills.FunctionSkillBroker.FunctionSkillBroker(System.Fu
 Standard.Agents.Brokers.Skills.FunctionSkillBroker.SelectSkillsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Skills.Skill!>!>
 Standard.Agents.Brokers.Skills.ISkillBroker
 Standard.Agents.Brokers.Skills.ISkillBroker.SelectSkillsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Skills.Skill!>!>
+Standard.Agents.Brokers.Telemetries.ActivityTelemetryBroker
+Standard.Agents.Brokers.Telemetries.ActivityTelemetryBroker.ActivityTelemetryBroker(string! agentName = "standard-agent") -> void
+Standard.Agents.Brokers.Telemetries.ActivityTelemetryBroker.RecordRunOutcome(string! status, int promptTokens, int completionTokens) -> void
+Standard.Agents.Brokers.Telemetries.ActivityTelemetryBroker.RecordTurnUsage(int promptTokens, int completionTokens, bool estimated) -> void
+Standard.Agents.Brokers.Telemetries.ActivityTelemetryBroker.StartRun(string! sessionId) -> System.IDisposable?
+Standard.Agents.Brokers.Telemetries.ActivityTelemetryBroker.StartTurn(int turn) -> System.IDisposable?
+Standard.Agents.Brokers.Telemetries.FunctionTelemetryBroker
+Standard.Agents.Brokers.Telemetries.FunctionTelemetryBroker.FunctionTelemetryBroker(System.Action<string!, System.Collections.Generic.IReadOnlyDictionary<string!, object?>!>! record) -> void
+Standard.Agents.Brokers.Telemetries.FunctionTelemetryBroker.RecordRunOutcome(string! status, int promptTokens, int completionTokens) -> void
+Standard.Agents.Brokers.Telemetries.FunctionTelemetryBroker.RecordTurnUsage(int promptTokens, int completionTokens, bool estimated) -> void
+Standard.Agents.Brokers.Telemetries.FunctionTelemetryBroker.StartRun(string! sessionId) -> System.IDisposable?
+Standard.Agents.Brokers.Telemetries.FunctionTelemetryBroker.StartTurn(int turn) -> System.IDisposable?
+Standard.Agents.Brokers.Telemetries.ITelemetryBroker
+Standard.Agents.Brokers.Telemetries.ITelemetryBroker.RecordRunOutcome(string! status, int promptTokens, int completionTokens) -> void
+Standard.Agents.Brokers.Telemetries.ITelemetryBroker.RecordTurnUsage(int promptTokens, int completionTokens, bool estimated) -> void
+Standard.Agents.Brokers.Telemetries.ITelemetryBroker.StartRun(string! sessionId) -> System.IDisposable?
+Standard.Agents.Brokers.Telemetries.ITelemetryBroker.StartTurn(int turn) -> System.IDisposable?
+Standard.Agents.Brokers.Telemetries.NotConfiguredTelemetryBroker
+Standard.Agents.Brokers.Telemetries.NotConfiguredTelemetryBroker.NotConfiguredTelemetryBroker() -> void
+Standard.Agents.Brokers.Telemetries.NotConfiguredTelemetryBroker.RecordRunOutcome(string! status, int promptTokens, int completionTokens) -> void
+Standard.Agents.Brokers.Telemetries.NotConfiguredTelemetryBroker.RecordTurnUsage(int promptTokens, int completionTokens, bool estimated) -> void
+Standard.Agents.Brokers.Telemetries.NotConfiguredTelemetryBroker.StartRun(string! sessionId) -> System.IDisposable?
+Standard.Agents.Brokers.Telemetries.NotConfiguredTelemetryBroker.StartTurn(int turn) -> System.IDisposable?
 Standard.Agents.Brokers.Times.ITimeBroker
 Standard.Agents.Brokers.Times.ITimeBroker.GetCurrentDateTimeOffset() -> System.DateTimeOffset
 Standard.Agents.Brokers.Times.TimeBroker
@@ -1011,7 +1037,7 @@ Standard.Agents.Services.Managements.RunManagementService.ProcessPromptAsync(str
 Standard.Agents.Services.Managements.RunManagementService.ProcessPromptStreamAsync(string! prompt, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<Standard.Agents.Models.Clients.Agents.AgentStreamEvent!>!
 Standard.Agents.Services.Managements.RunManagementService.ProcessPromptStreamAsync(string! prompt, string! sessionId, System.Threading.CancellationToken cancellationToken) -> System.Collections.Generic.IAsyncEnumerable<Standard.Agents.Models.Clients.Agents.AgentStreamEvent!>!
 Standard.Agents.Services.Managements.RunManagementService.RunAsync(string! prompt, string! sessionId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
-Standard.Agents.Services.Managements.RunManagementService.RunManagementService(Standard.Agents.Services.Coordinations.Data.IDataCoordinationService! dataCoordinationService, Standard.Agents.Services.Coordinations.Decision.IDecisionCoordinationService! decisionCoordinationService, Standard.Agents.Services.Coordinations.Direction.IDirectionCoordinationService! directionCoordinationService, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, int maxTurns = 7, Standard.Agents.Brokers.Times.ITimeBroker? timeBroker = null, Standard.Agents.Models.Coordinations.Agents.AgentBudget? budget = null, int maxHistoryTurns = 20, bool compensateOnFailure = false, bool screenToolOutput = false) -> void
+Standard.Agents.Services.Managements.RunManagementService.RunManagementService(Standard.Agents.Services.Coordinations.Data.IDataCoordinationService! dataCoordinationService, Standard.Agents.Services.Coordinations.Decision.IDecisionCoordinationService! decisionCoordinationService, Standard.Agents.Services.Coordinations.Direction.IDirectionCoordinationService! directionCoordinationService, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, int maxTurns = 7, Standard.Agents.Brokers.Times.ITimeBroker? timeBroker = null, Standard.Agents.Models.Coordinations.Agents.AgentBudget? budget = null, int maxHistoryTurns = 20, bool compensateOnFailure = false, bool screenToolOutput = false, Standard.Agents.Brokers.Telemetries.ITelemetryBroker? telemetryBroker = null) -> void
 Standard.Agents.Services.Orchestrations.Data.Recollections.IRecollectionOrchestrationService
 Standard.Agents.Services.Orchestrations.Data.Recollections.IRecollectionOrchestrationService.RecallMemoriesAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
 Standard.Agents.Services.Orchestrations.Data.Recollections.IRecollectionOrchestrationService.RecallSessionAsync(string! sessionId) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Sessions.AgentSession?>
@@ -1094,6 +1120,7 @@ Standard.Agents.StandardAgent.MaxTurns(int turns) -> Standard.Agents.StandardAge
 Standard.Agents.StandardAgent.Mcp(string! endpointUrl, string! relativeUrl = "", int timeoutSeconds = 30) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Memory(string! path) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.NativeBrain(string! apiUrl, string! apiKey, string! model, double temperature = 0.7, int maxTokens = 1024) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.NativeBrainAnthropic(string! apiKey, string! model, double temperature = 0.7, int maxTokens = 1024) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.OnApproval(System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentEffect!, System.Threading.Tasks.ValueTask<Standard.Agents.Brokers.Approvals.ApprovalDecision>>! request) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.OnAudit(System.Func<Standard.Agents.Models.Brokers.Audits.AuditRecord!, System.Threading.Tasks.ValueTask>! write) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.OnBrain(System.Func<string!, string!, System.Threading.Tasks.ValueTask<string!>>! generate) -> Standard.Agents.StandardAgent!
@@ -1108,6 +1135,7 @@ Standard.Agents.StandardAgent.OnPolicy(System.Func<Standard.Agents.Models.Orches
 Standard.Agents.StandardAgent.OnRedaction(System.Func<string!, System.Collections.Generic.IDictionary<string!, string!>!, string!>! redact, System.Func<string!, System.Collections.Generic.IReadOnlyDictionary<string!, string!>!, string!>! rehydrate) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.OnSessions(System.Func<string!, System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Sessions.AgentSession?>>! select, System.Func<Standard.Agents.Models.Brokers.Sessions.AgentSession!, System.Threading.Tasks.ValueTask>! upsert) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.OnSkills(System.Func<System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Skills.Skill!>!>>! select) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.OnTelemetry(System.Action<string!, System.Collections.Generic.IReadOnlyDictionary<string!, object?>!>! record) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.OnUsage(System.Func<string!, System.Threading.Tasks.ValueTask<int>>! count) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Permissions(Standard.Agents.Models.Orchestrations.Effects.PermissionMode mode) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Principal(System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal?>! principal) -> Standard.Agents.StandardAgent!
@@ -1132,6 +1160,7 @@ Standard.Agents.StandardAgent.StandardAgent() -> void
 Standard.Agents.StandardAgent.StandardAgent(string! apiUrl, string! apiKey, string! model) -> void
 Standard.Agents.StandardAgent.StreamPromptAsync(string! prompt, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<Standard.Agents.Models.Clients.Agents.AgentStreamEvent!>!
 Standard.Agents.StandardAgent.StreamPromptAsync(string! prompt, string! sessionId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<Standard.Agents.Models.Clients.Agents.AgentStreamEvent!>!
+Standard.Agents.StandardAgent.Telemetry(string! agentName = "standard-agent") -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Tool(Standard.Agents.Tools.ITool! tool) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Tools(System.Collections.Generic.IEnumerable<Standard.Agents.Tools.ITool!>! tools) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Usage(double charactersPerToken = 4) -> Standard.Agents.StandardAgent!
@@ -1152,6 +1181,7 @@ Standard.Agents.StandardAgent.UseRedaction(Standard.Agents.Brokers.Redactions.IR
 Standard.Agents.StandardAgent.UseResilience(Standard.Agents.Brokers.Resiliences.IResilienceBroker! broker) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.UseSessions(Standard.Agents.Brokers.Sessions.ISessionBroker! broker) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.UseSkills(Standard.Agents.Brokers.Skills.ISkillBroker! broker) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.UseTelemetry(Standard.Agents.Brokers.Telemetries.ITelemetryBroker! broker) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.UseUsage(Standard.Agents.Brokers.Usages.IUsageBroker! broker) -> Standard.Agents.StandardAgent!
 Standard.Agents.Tools.AgentTool
 Standard.Agents.Tools.AgentTool.AgentTool(string! name, Standard.Agents.IAgent! agent, string! handoff = "{input}", string! description = "", string! parameters = "{}") -> void
@@ -1174,6 +1204,7 @@ Standard.Agents.Tools.RememberTool.Name.get -> string!
 Standard.Agents.Tools.RememberTool.Parameters.get -> string!
 Standard.Agents.Tools.RememberTool.RememberTool(Standard.Agents.Services.Foundations.Memorys.IMemoryService! memoryService) -> void
 Standard.Agents.Tools.RememberTool.RememberTool(System.Func<string!, System.Threading.Tasks.ValueTask>! remember) -> void
+const Standard.Agents.Brokers.Telemetries.ActivityTelemetryBroker.SourceName = "Standard.Agents" -> string!
 override Standard.Agents.Models.Brokers.Audits.AuditRecord.Equals(object? obj) -> bool
 override Standard.Agents.Models.Brokers.Audits.AuditRecord.GetHashCode() -> int
 override Standard.Agents.Models.Brokers.Audits.AuditRecord.ToString() -> string!

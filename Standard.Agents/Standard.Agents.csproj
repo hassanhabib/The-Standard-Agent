@@ -404,7 +404,13 @@
          3/4 reset. Still tracks SPEC.md v0.1 (draft): segment 1 goes to 1 when the spec settles.
          (0.8.0.0: memory and knowledge came alive — knowledge retrieval in Recall + a built-in
          'remember' tool.) -->
-    <Version>1.7.0.0</Version>
+    <!-- 1.8.0.0 "Agent As Data": the whole configurable surface as one JSON document
+         (FromJson / FromJsonFile, unknown keys refuse with the key named), telemetry as the
+         fourth utility broker (BCL ActivitySource/Meter, GenAI semconv, all three verbs), and
+         the Anthropic Messages API as a second in-box native wire shape (NativeBrainAnthropic).
+         New public routines on the client and a new broker seam; the core models are unchanged,
+         so segment 2 advances and 3/4 reset. Tracks SPEC.md v1.4, which names both additions. -->
+    <Version>1.8.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>
