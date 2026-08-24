@@ -8,7 +8,8 @@ a section, run it, then move to the next.
 Sections **0–10** build a working agent and swap the simple file/HTTP defaults for real backends —
 a local GGUF model, Redis, PostgreSQL, SQL Server — one line at a time. Sections **11–15** are what
 a regulated deployment adds on top: conversation, the perimeter, resilience, compensation and
-native tool calls. Nothing in the second half changes anything in the first.
+native tool calls. Nothing in the second half changes anything in the first. Section **16** is
+the whole surface again, as a single JSON document — the agent as data.
 
 ```bash
 dotnet add package Standard.Agents
@@ -1119,6 +1120,74 @@ is *read*, not what the agent is.
 often does better with the text one.
 
 ---
+
+## 16 · The whole agent as JSON
+
+Everything above composes through code. It also composes through **data**: one JSON document,
+one key per capability, the same names as the builder verbs, camelCased. Any platform that can
+push a form into a JSON body can define an agent — low code, no code, a database row, a config
+service.
+
+```csharp
+var agent = StandardAgent.FromJson(json);        // or StandardAgent.FromJsonFile("agent.json")
+```
+
+```json
+{
+  "brain": { "apiUrl": "https://api.peerllm.com/v1/", "apiKey": "k", "model": "LLooMA2.0" },
+  "skills": "Skills",
+  "knowledge": "Knowledge",
+  "memory": "memory.txt",
+  "mcp": "https://my-mcp-server/",
+  "ruleGate": ["password", "ssn"],
+  "ruleJudge": ["Sources:"],
+  "contract": { "type": "object", "required": ["amount", "currency"] },
+  "redact": true,
+  "maxTurns": 5,
+  "allowTools": ["calculator", "write_file:/project/"],
+  "permissions": "Ask",
+  "risk": { "irreversible": ["wire_transfer"] },
+  "requireApproval": ["wire_transfer"],
+  "logTo": "log.txt",
+  "audit": "audit.jsonl",
+  "telemetry": "form-built-agent",
+  "sessions": "sessions",
+  "effectLedger": "ledger",
+  "screenToolOutput": true,
+  "budget": { "maxTokens": 50000, "maxCostUsd": 0.25 },
+  "resilience": 3,
+  "compensateOnFailure": true
+}
+```
+
+The rules, and each is deliberate:
+
+- **An unknown key refuses to compose**, with the key named. A form that typos `"buget"` must
+  not get an unbounded agent that looks configured — a control you believe is on and is not is
+  worse than an error at composition. Wrong-shaped values refuse the same way, and enum-valued
+  keys name what they accept (`permissions` accepts Open, Ask, Deny).
+- **Tools stay code, because they are code** — except `mcp`, where a tool is a URL, which is
+  data. Delegates (`On*`) and broker instances (`Use*`) stay code for the same reason.
+- **Data and code compose.** `FromJson` returns the same `StandardAgent`, so keep chaining:
+
+```csharp
+var agent = StandardAgent.FromJson(formBody)     // everything that is data
+    .Tool(new CalculatorTool())                  // everything that is code
+    .OnApproval(effect => AskTheDutyOfficerAsync(effect));
+```
+
+- **Short forms for form-builders**: where the long form is an object, a bare value works —
+  `"knowledge": "Knowledge"`, `"mcp": "url"`, `"redact": true`, `"telemetry": true`,
+  `"sessions": "path"`, `"logTo": "path"`, `"resilience": 3`. The long forms carry the same
+  optional fields as the builder verbs (`"knowledge": { "path", "pattern", "maxResults",
+  "minScore" }`, `"sessions": { "path", "maxHistoryTurns" }`, and so on).
+- **The `contract` schema rides embedded** — real JSON inside the JSON, never an escaped string
+  a form author would have to hand-quote.
+
+And the deployment half: drop an `agent.json` beside `Standard.Agents.Host` (or point
+`Agent:Config` at one) and the hosted agent composes entirely from it — form → JSON → file →
+a running, gated, budgeted agent behind an authenticated endpoint, no C# anywhere
+([docs/hosting.md](hosting.md)).
 
 ## Putting it together
 
