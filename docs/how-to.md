@@ -556,7 +556,7 @@ run-once — which you need the moment the agent can do something you cannot tak
 
 ---
 
-## 7 · Observability — trace and audit
+## 7 · Observability — trace, audit and telemetry
 
 You have seen `.LogTo("log.txt")` in the examples above. Here is what it writes, and the
 machine-readable companion that rides alongside it.
@@ -585,6 +585,29 @@ var agent = new StandardAgent(url, key, "LLooMA2.0")
     .LogTo("log.txt")        // human-readable transcript
     .Audit("audit.jsonl");   // {"kind":"turn",...} {"kind":"process",...} {"kind":"outcome",...}
 ```
+
+**Spans and metrics, with `.Telemetry()`.** The third observability voice, beside the trace's
+prose and the audit's records: OpenTelemetry-compatible telemetry through the BCL's
+`ActivitySource` and `Meter` — in the box, no packages, no exporter. A span per run
+(`invoke_agent <name>`) with a child span per turn, token usage and outcomes as metrics, all
+named by the [OTel GenAI semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/)
+(`gen_ai.operation.name`, `gen_ai.usage.input_tokens`, `gen_ai.client.token.usage`, …), so any
+collector that understands agents understands yours.
+
+```csharp
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .Telemetry("support-bot");   // ← the name run spans carry (gen_ai.agent.name)
+```
+
+The line is free until something listens: an unobserved `ActivitySource` hands back nothing, so
+an agent on a laptop pays nothing. In a process that wires an OpenTelemetry SDK, subscribe to
+the `Standard.Agents` source and meter and the spans flow to your collector —
+`Standard.Agents.Host` does exactly this when `OTEL_EXPORTER_OTLP_ENDPOINT` is set
+([docs/hosting.md](hosting.md)). Like every capability it answers all three verbs:
+`.UseTelemetry(broker)` takes a provider's `ITelemetryBroker`, and
+`.OnTelemetry((eventName, attributes) => …)` hands every loop boundary — `run.start`,
+`turn.start`, `turn.usage`, `run.outcome`, `run.end` — to your own delegate, for a StatsD
+pipeline or a metrics API no ActivityListener reaches.
 
 ---
 
@@ -1078,6 +1101,16 @@ What you get is attribution. The model asks for `call_7`; the result comes back 
 naming `call_7`, alongside the request it answers — instead of being narrated as `- calculator:
 4183` and leaving the model to match answers to questions by reading.
 
+Both major native wire shapes are in the box. `.NativeBrain(apiUrl, apiKey, model)` speaks the
+OpenAI-compatible `tools[]` / `tool_calls` shape against any such endpoint, and
+`.NativeBrainAnthropic(apiKey, model)` speaks the **Anthropic Messages API** — top-level
+`system`, `tool_use` and `tool_result` content blocks, reported usage — each one line, no
+packages:
+
+```csharp
+.NativeBrainAnthropic(apiKey: anthropicKey, model: "claude-sonnet-4-5");
+```
+
 Everything else is unchanged: the same tools, the same catalog rule (a description is the opt-in),
 the same perimeter, the same guardians, the same budget. Adopting native calls changes how a choice
 is *read*, not what the agent is.
@@ -1147,6 +1180,7 @@ enforces it.
 | Sessions | `Sessions(path)` | `UseSessions` | `OnSessions` |
 | Effect ledger | `EffectLedger(path)` | `UseEffectLedger` | `OnEffectLedger` |
 | Usage | `Usage(ratio)` | `UseUsage` | `OnUsage` |
+| Telemetry | `Telemetry(name)` | `UseTelemetry` | `OnTelemetry` |
 | Contract | `Contract(schema)` | `UseContract` | `OnContract` |
 | Redaction | `Redact(rules)` | `UseRedaction` | `OnRedaction` |
 

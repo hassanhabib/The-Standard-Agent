@@ -160,11 +160,12 @@
   </g>
 
   <rect x="30" y="904" width="1390" height="68" rx="11" fill="#10141d" stroke="#2b3444" stroke-dasharray="6 5"/>
-  <text x="52" y="930" fill="#e6edf3" font-size="13" font-weight="700">3 utility</text>
+  <text x="52" y="930" fill="#e6edf3" font-size="13" font-weight="700">4 utility</text>
   <rect x="130" y="915" width="110" height="24" rx="6" fill="#161b26" stroke="#2b3444"/><text x="185" y="931" text-anchor="middle" fill="#c9d1d9" font-size="11">LoggingBroker</text>
   <rect x="248" y="915" width="92" height="24" rx="6" fill="#161b26" stroke="#2b3444"/><text x="294" y="931" text-anchor="middle" fill="#c9d1d9" font-size="11">TimeBroker</text>
   <rect x="348" y="915" width="96" height="24" rx="6" fill="#161b26" stroke="#2b3444"/><text x="396" y="931" text-anchor="middle" fill="#c9d1d9" font-size="11">AuditBroker</text>
-  <text x="456" y="931" fill="#8b949e" font-size="11.5">— observability, held by any tier. None of them can change what the agent decides or does, which is exactly why they are exempt from the count.</text>
+  <rect x="452" y="915" width="122" height="24" rx="6" fill="#161b26" stroke="#2b3444"/><text x="513" y="931" text-anchor="middle" fill="#c9d1d9" font-size="11">TelemetryBroker</text>
+  <text x="586" y="931" fill="#8b949e" font-size="11.5">— observability, held by any tier. None can change what the agent decides or does, so they are exempt from the count.</text>
 
   <text x="52" y="958" fill="#e6edf3" font-size="13" font-weight="700">2 decorating</text>
   <rect x="150" y="943" width="116" height="24" rx="6" fill="#161b26" stroke="#2b3444"/><text x="208" y="959" text-anchor="middle" fill="#c9d1d9" font-size="11">RedactionBroker</text>

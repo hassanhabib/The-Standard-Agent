@@ -92,6 +92,7 @@ var agent = new StandardAgent(url, key, "LLooMA2.0")
     .Redact()                                  // PII tokenized before the brain, restored after
     .LogTo("log.txt", TraceVerbosity.Full)     // full turn-by-turn decision trace
     .Audit("audit.jsonl")                      // structured decision log → your SIEM
+    .Telemetry("teller-agent")                 // OTel spans + metrics — GenAI semconv, no packages
 
     .Principal(() => currentUser.Id)           // authorization has a subject
     .OnPolicy(Authorize)                       // your rules decide, per act and per identity
@@ -122,7 +123,7 @@ Every capability answers **Local**, **External** and **Custom**, and the verbs s
 .OnKnowledge(async query => await MyStore(query)) // Custom — your own code, inline
 ```
 
-Eighteen capabilities, the same three verbs each. A capability offered fewer ways than that fails the
+Nineteen capabilities, the same three verbs each. A capability offered fewer ways than that fails the
 build — it is a test, not a convention, because the erosion is otherwise invisible until there are
 six of them.
 
@@ -190,7 +191,7 @@ promise of the broker seam.
 
 ## From the 1·3·9 to the 1·3·6·15
 
-![The Standard for Agents — architecture: StandardAgent → RunManagement → the three nature Coordinations (Data, Decision, Direction) → six Orchestration regions → fifteen Foundation services → their fourteen nature Brokers, with three utility and two decorating brokers beneath](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-architecture.png)
+![The Standard for Agents — architecture: StandardAgent → RunManagement → the three nature Coordinations (Data, Decision, Direction) → six Orchestration regions → fifteen Foundation services → their fourteen nature Brokers, with four utility and two decorating brokers beneath](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-architecture.png)
 
 *The diagram is generated from
 [`assets/the-standard-agent-architecture.svg`](https://github.com/hassanhabib/The-Standard-Agent/blob/main/assets/the-standard-agent-architecture.svg)
@@ -221,7 +222,7 @@ on the caller.**
 | **Coordination** | 3 | Data · Decision · Direction — the three natures |
 | **Orchestration** | 6 | Retrieval, Recollection / Inference, Guardian / Perimeter, Execution |
 | **Foundation** | 15 | the nine, plus **Usage** and **Contract**, and Session, Policy, Approval, EffectLedger |
-| **Broker** | 14 + 5 | fourteen nature brokers, three utility, two decorating |
+| **Broker** | 14 + 6 | fourteen nature brokers, four utility, two decorating |
 
 **Eleven of the fifteen are always there** — the agent proper, the nine plus `Usage` and
 `Contract`. The other four
@@ -255,9 +256,9 @@ rather than by convention:
   `IGeneratorBrokerV1` is the same seam as `IGeneratorBroker` under a newer contract — but it is
   one role. A second broker in a foundation is a capability that wants its own foundation.
 - **Nothing above the foundation tier takes a broker at all**, beyond the three utilities.
-- **Utility brokers** — logging, time, audit — are held by any tier. None of them can change what
-  the agent decides *or does*, which is exactly why they are exempt from the count. Usage is not
-  one of them: a budget stops a run.
+- **Utility brokers** — logging, time, audit, telemetry — are held by any tier. None of them can
+  change what the agent decides *or does*, which is exactly why they are exempt from the count.
+  Usage is not one of them: a budget stops a run.
 - **Decorating brokers** — redaction, resilience — are wrapped around another broker at
   composition, so no service holds them.
 
