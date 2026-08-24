@@ -1,1 +1,24 @@
 #nullable enable
+*REMOVED*Standard.Agents.Brokers.Mcps.McpBroker.McpBroker(string! endpointUrl, string! relativeUrl, int timeoutSeconds) -> void
+Standard.Agents.Brokers.Mcps.CompositeMcpBroker
+Standard.Agents.Brokers.Mcps.CompositeMcpBroker.CallAsync(string! name, string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Mcps.CompositeMcpBroker.CompositeMcpBroker(System.Collections.Generic.IEnumerable<Standard.Agents.Brokers.Mcps.IMcpBroker!>! brokers) -> void
+Standard.Agents.Brokers.Mcps.CompositeMcpBroker.ListToolsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Mcps.McpTool!>!>
+Standard.Agents.Brokers.Mcps.IMcpBroker.ListToolsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Mcps.McpTool!>!>
+Standard.Agents.Brokers.Mcps.McpBroker.ListToolsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Mcps.McpTool!>!>
+Standard.Agents.Brokers.Mcps.McpBroker.McpBroker(string! endpointUrl, string! relativeUrl, int timeoutSeconds, string? bearerToken = null, string? apiKey = null, string! apiKeyHeader = "X-Api-Key", System.Func<System.Threading.Tasks.ValueTask<string!>>? bearerTokenProvider = null) -> void
+Standard.Agents.Brokers.Mcps.NotConfiguredMcpBroker.ListToolsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Mcps.McpTool!>!>
+Standard.Agents.Models.Brokers.Mcps.McpTool
+Standard.Agents.Models.Brokers.Mcps.McpTool.<Clone>$() -> Standard.Agents.Models.Brokers.Mcps.McpTool!
+Standard.Agents.Models.Brokers.Mcps.McpTool.Deconstruct(out string! Name, out string! Description) -> void
+Standard.Agents.Models.Brokers.Mcps.McpTool.Description.get -> string!
+Standard.Agents.Models.Brokers.Mcps.McpTool.Description.init -> void
+Standard.Agents.Models.Brokers.Mcps.McpTool.Equals(Standard.Agents.Models.Brokers.Mcps.McpTool? other) -> bool
+Standard.Agents.Models.Brokers.Mcps.McpTool.McpTool(string! Name, string! Description) -> void
+Standard.Agents.Models.Brokers.Mcps.McpTool.Name.get -> string!
+Standard.Agents.Models.Brokers.Mcps.McpTool.Name.init -> void
+override Standard.Agents.Models.Brokers.Mcps.McpTool.Equals(object? obj) -> bool
+override Standard.Agents.Models.Brokers.Mcps.McpTool.GetHashCode() -> int
+override Standard.Agents.Models.Brokers.Mcps.McpTool.ToString() -> string!
+static Standard.Agents.Models.Brokers.Mcps.McpTool.operator !=(Standard.Agents.Models.Brokers.Mcps.McpTool? left, Standard.Agents.Models.Brokers.Mcps.McpTool? right) -> bool
+static Standard.Agents.Models.Brokers.Mcps.McpTool.operator ==(Standard.Agents.Models.Brokers.Mcps.McpTool? left, Standard.Agents.Models.Brokers.Mcps.McpTool? right) -> bool

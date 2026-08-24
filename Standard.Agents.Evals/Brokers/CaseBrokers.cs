@@ -42,4 +42,7 @@ public sealed class NotConfiguredMcpBroker : IMcpBroker
 {
     public async ValueTask<string> CallAsync(string name, string input) =>
         $"[external '{name}' not configured]";
+
+    public async ValueTask<IReadOnlyList<Standard.Agents.Models.Brokers.Mcps.McpTool>>
+        ListToolsAsync() => [];
 }
