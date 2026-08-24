@@ -1,5 +1,6 @@
 #nullable enable
 *REMOVED*Standard.Agents.Brokers.Mcps.McpBroker.McpBroker(string! endpointUrl, string! relativeUrl, int timeoutSeconds) -> void
+*REMOVED*Standard.Agents.StandardAgent.Mcp(string! endpointUrl, string! relativeUrl = "", int timeoutSeconds = 30) -> Standard.Agents.StandardAgent!
 Standard.Agents.Brokers.Mcps.CompositeMcpBroker
 Standard.Agents.Brokers.Mcps.CompositeMcpBroker.CallAsync(string! name, string! input) -> System.Threading.Tasks.ValueTask<string!>
 Standard.Agents.Brokers.Mcps.CompositeMcpBroker.CompositeMcpBroker(System.Collections.Generic.IEnumerable<Standard.Agents.Brokers.Mcps.IMcpBroker!>! brokers) -> void
@@ -20,6 +21,7 @@ Standard.Agents.Models.Brokers.Mcps.McpTool.Equals(Standard.Agents.Models.Broker
 Standard.Agents.Models.Brokers.Mcps.McpTool.McpTool(string! Name, string! Description) -> void
 Standard.Agents.Models.Brokers.Mcps.McpTool.Name.get -> string!
 Standard.Agents.Models.Brokers.Mcps.McpTool.Name.init -> void
+Standard.Agents.StandardAgent.Mcp(string! endpointUrl, string! relativeUrl = "", int timeoutSeconds = 30, string? bearerToken = null, string? apiKey = null, string! apiKeyHeader = "X-Api-Key", System.Func<System.Threading.Tasks.ValueTask<string!>>? bearerTokenProvider = null) -> Standard.Agents.StandardAgent!
 override Standard.Agents.Models.Brokers.Mcps.McpTool.Equals(object? obj) -> bool
 override Standard.Agents.Models.Brokers.Mcps.McpTool.GetHashCode() -> int
 override Standard.Agents.Models.Brokers.Mcps.McpTool.ToString() -> string!
