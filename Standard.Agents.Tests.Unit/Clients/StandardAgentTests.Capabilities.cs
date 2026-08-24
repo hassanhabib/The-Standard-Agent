@@ -70,6 +70,11 @@ public class StandardAgentCapabilityTests
 
         new("Usage", Local: "Usage", External: "UseUsage", Custom: "OnUsage"),
 
+        // Observability the collector's way: spans and metrics beside the trace's prose and the
+        // audit's records. Local is the in-box ActivitySource; Custom is a delegate for
+        // pipelines no ActivityListener reaches.
+        new("Telemetry", Local: "Telemetry", External: "UseTelemetry", Custom: "OnTelemetry"),
+
         new("Contract", Local: "Contract", External: "UseContract", Custom: "OnContract"),
 
         // Found missing in the 2026-08-23 sweep: a full capability nature — its own broker
