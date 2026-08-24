@@ -23,6 +23,11 @@ public class AgentsController : ControllerBase
     [HttpPost("runs")]
     public async ValueTask<ActionResult<AgentRunResponse>> PostRunAsync(AgentRunRequest request)
     {
+        if (string.IsNullOrWhiteSpace(request.Prompt))
+        {
+            return BadRequest("prompt is required");
+        }
+
         // The caller closing the connection cancels the run at its next turn boundary - and,
         // through the nesting seam, any sub-agents the run started.
         AgentOutcome outcome =
