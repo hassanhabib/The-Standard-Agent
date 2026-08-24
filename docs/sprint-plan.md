@@ -1,5 +1,13 @@
 # The Standard Agent — Reach Plan
 
+> **Status, appended at `1.6.1`:** Sprint 1's step 1 shipped — structured output landed in
+> `1.5.0` exactly as §4 designs it (`ContractService` as the third guardian; `.Contract` /
+> `.UseContract` / `.OnContract`; a mismatch takes the revision path). Step 2's boundary loss
+> also closed in `1.5.0`: `IAgent.RunAsync` reports result **and** status, so a held sub-agent
+> no longer reads as an answer. Steps 3–4 (response caching, model escalation) and the package
+> items remain open; item 7, the evaluation harness, is the Evals & Hosting release the
+> enterprise plan still owes — targeting `1.7.0.0`.
+
 > The enterprise program ([enterprise-roadmap.md](enterprise-roadmap.md) /
 > [enterprise-plan.md](enterprise-plan.md)) asked *what must be true for an enterprise to trust
 > this agent*, and finished at `1.1.0.0`. The architecture program
