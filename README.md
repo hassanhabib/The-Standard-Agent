@@ -190,7 +190,7 @@ promise of the broker seam.
 
 ## The 1·3·9
 
-![The Standard for Agents — architecture: StandardAgent → RunManagement → the three nature Coordinations (Data, Decision, Direction) → six Orchestration regions → fourteen Foundation services → their thirteen nature Brokers, with three utility and two decorating brokers beneath](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-architecture.png)
+![The Standard for Agents — architecture: StandardAgent → RunManagement → the three nature Coordinations (Data, Decision, Direction) → six Orchestration regions → fifteen Foundation services → their fourteen nature Brokers, with three utility and two decorating brokers beneath](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-architecture.png)
 
 *The diagram is generated from
 [`assets/the-standard-agent-architecture.svg`](https://github.com/hassanhabib/The-Standard-Agent/blob/main/assets/the-standard-agent-architecture.svg)
@@ -208,9 +208,9 @@ the nine that have been there since the beginning:
 `ReturnService` has no broker. It is the dead end — the terminal Direction hands the result back
 and touches nothing.
 
-### The 1·3·6·14
+### The 1·3·6·15
 
-Fourteen is what actually ships. Five foundations joined the nine, and the reason each one had to
+Fifteen is what actually ships. Six foundations joined the nine, and the reason each one had to
 be a foundation is the same: it is a distinct resource with its own failures, and **a resource
 reached without a foundation has no validation, no exception mapping, and its failures get blamed
 on the caller.**
@@ -220,10 +220,11 @@ on the caller.**
 | **Management** | 1 | `RunManagementService` — the only loop: Recall → Think → Act |
 | **Coordination** | 3 | Data · Decision · Direction — the three natures |
 | **Orchestration** | 6 | Retrieval, Recollection / Inference, Guardian / Perimeter, Execution |
-| **Foundation** | 14 | the nine, plus **Usage**, and Session, Policy, Approval, EffectLedger |
-| **Broker** | 13 + 5 | thirteen nature brokers, three utility, two decorating |
+| **Foundation** | 15 | the nine, plus **Usage** and **Contract**, and Session, Policy, Approval, EffectLedger |
+| **Broker** | 14 + 5 | fourteen nature brokers, three utility, two decorating |
 
-**Ten of the fourteen are always there** — the agent proper, the nine plus `Usage`. The other four
+**Eleven of the fifteen are always there** — the agent proper, the nine plus `Usage` and
+`Contract`. The other four
 arrive with the enterprise capabilities; leave them off and it is the same shape with less in it.
 
 Six foundations under Direction alone breaks the 2–3 rule, and a nature holding six is a nature
@@ -235,6 +236,11 @@ it; **Perimeter** asks *may this happen*, **Execution** does it.
 `Usage` is why Decision has two regions rather than one. Measuring what a model call cost is the
 same concept as making it — and without it, `.Budget()` could only bound a run whose provider
 volunteered its own numbers, which is to say not the text protocol at all.
+
+`Contract` is the third guardian, beside the Gate and the Judge. The Judge asks whether an answer
+is good *enough*; the Contract asks whether it is the right *shape* — and a draft that fails its
+declared contract is revised the same way one the Judge rejects is, with the validator's complaint
+handed back verbatim.
 
 **Every tier holds two or three of the tier directly below it.** Management over coordinations,
 coordination over orchestrations, orchestration over foundations, foundation over exactly one
@@ -291,7 +297,7 @@ Standard.Agents/                  the library
   |-- Models/Orchestrations/Agents          AgentContext, AgentStatus, ToolExchange
   |-- Models/Orchestrations/Effects         AgentEffect, AgentPrincipal, CompensationOutcome
   |-- Models/Brokers/Generators/V1          the native tool-calling contract
-  |-- Services/Foundations/{Entity}s          thirteen, one broker each
+  |-- Services/Foundations/{Entity}s          fifteen; one broker each, Return none
   |-- Services/Orchestrations/{Nature}/...    six regions, grouped by nature
   |-- Services/Coordinations/{Nature}         Data, Decision, Direction
   |-- Services/Managements                    RunManagementService — the loop
@@ -316,7 +322,7 @@ docs/generator-contracts.md       text protocol vs native tool calls
 Agent behavior involves an LLM and is non-deterministic, so it cannot be asserted directly.
 [`conformance/`](https://github.com/hassanhabib/The-Standard-Agent/blob/main/conformance/CONFORMANCE.md) instead pins the **deterministic** contracts — the
 loop, reply interpretation, tool routing, and the feed-back of results into Data — by scripting
-the Brain. Every double replaces a **broker**, never a service: the whole 1·3·6·14 under test is the
+the Brain. Every double replaces a **broker**, never a service: the whole 1·3·6·15 under test is the
 real library.
 
 ```bash
