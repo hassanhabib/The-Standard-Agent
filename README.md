@@ -135,6 +135,11 @@ Nineteen capabilities, the same three verbs each. A capability offered fewer way
 build — it is a test, not a convention, because the erosion is otherwise invisible until there are
 six of them.
 
+And what the agent integrates *with* is always plural: tools, MCP servers, and skill sources all
+**accumulate** — a second `.Mcp(...)` adds a server (each with its own optional auth: none, an
+API key, or an OAuth bearer token), a second `.Skills(...)` adds a folder, and calls route to
+whichever server's catalog owns the tool's name.
+
 ### Agent as data — the whole thing as JSON
 
 There is a fourth door, and no mainstream framework has it: the **entire configurable surface as

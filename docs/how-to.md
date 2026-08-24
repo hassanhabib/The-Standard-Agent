@@ -184,7 +184,18 @@ var agent = new StandardAgent(url, key, "LLooMA2.0")
 ```
 
 Each skillset member arrives as a `Skill { Name, Description, Content }` — the same shape the file
-broker produces, so routing and the `{{skills}}` index work identically. Three sync modes trade
+broker produces, so routing and the `{{skills}}` index work identically.
+
+**Sources accumulate.** `.Skills(...)`, `.UseSkills(...)` and `.OnSkills(...)` each *add* a
+source — a second folder, the registry beside your local files, a delegate beside both — and the
+skills concatenate in registration order, exactly as files concatenate in path order within one
+folder:
+
+```csharp
+.Skills("Skills")                                             // the local persona
+.Skills("Compliance/Skills")                                  // a second folder
+.UseSkills(new PeerLLMSkillBroker("hassanhabib/my-skills"))   // plus the registry
+``` Three sync modes trade
 freshness for chattiness: `Live` (fetch every turn), `Local` (pull once to a cache), `Hybrid` (cache,
 re-pull only when a newer version ships). Public skills need no key; pass a `psk_…` key for your own.
 
@@ -261,6 +272,27 @@ var agent = new StandardAgent(url, key, "LLooMA2.0")
 When the brain names a tool that isn't registered locally, the agent routes the call to MCP. If
 no MCP is configured, an unknown tool returns a graceful "not configured" note and the agent
 recovers on the next turn instead of crashing.
+
+**Servers accumulate.** Like `.Tool(...)`, each `.Mcp(...)` call *adds* a server — the agent asks
+each server what it offers (`tools/list`) and routes every call to the server whose catalog owns
+the name. When two servers claim the same name, the **first registered wins** — deterministic,
+and the same precedence local tools already have over external ones. A server that is down at
+discovery keeps only its own tools unavailable, and is asked again on the next call.
+
+```csharp
+.Mcp("https://tools.example/")                 // public, no auth — nothing else needed
+.Mcp("https://internal.example/", apiKey: key) // an API key, in X-Api-Key by default
+.Mcp("https://locked.example/",
+    bearerToken: accessToken)                  // OAuth access token / PAT, as Bearer
+.Mcp("https://sso.example/",
+    bearerTokenProvider: RefreshTokenAsync)    // OAuth refresh — asked before every call
+```
+
+Auth is per server and entirely optional — a server that wants none takes one argument. An API
+key travels in a header you can rename (`apiKeyHeader:`); a bearer token covers OAuth access
+tokens and PATs; and for refresh flows, hand over a delegate — your OAuth client runs the flow,
+the agent carries the current token. Anything stranger (a transport the HTTP broker does not
+speak) implements `IMcpBroker` and joins through `.UseMcp(...)`, which also accumulates.
 
 ---
 
@@ -763,6 +795,12 @@ the file default's substring match wouldn't.
 
 ### Multiple knowledge or memory sources
 
+The integration rule elsewhere in this guide is *plural*: tools, MCP servers (§3) and skill
+sources (§2) all accumulate — a second registration adds, never replaces. Knowledge and memory
+are the deliberate exceptions, because plural there raises questions a framework must not answer
+for you: relevance scores from a file matcher and a database ranker are not comparable, and a
+`remember` against two stores has to pick one.
+
 `.Knowledge(...)` and `.Memory(...)` each hold **one** location — calling either again replaces the
 previous path, it doesn't add a second. For knowledge that's rarely a limit: the folder is searched
 recursively, so many files and subfolders under one root already behave as many documents. For a
@@ -1135,10 +1173,13 @@ var agent = StandardAgent.FromJson(json);        // or StandardAgent.FromJsonFil
 ```json
 {
   "brain": { "apiUrl": "https://api.peerllm.com/v1/", "apiKey": "k", "model": "LLooMA2.0" },
-  "skills": "Skills",
+  "skills": ["Skills", "Compliance/Skills"],
   "knowledge": "Knowledge",
   "memory": "memory.txt",
-  "mcp": "https://my-mcp-server/",
+  "mcp": [
+    "https://tools.example/",
+    { "endpointUrl": "https://internal.example/", "apiKey": "psk-1" }
+  ],
   "ruleGate": ["password", "ssn"],
   "ruleJudge": ["Sources:"],
   "contract": { "type": "object", "required": ["amount", "currency"] },
@@ -1181,6 +1222,12 @@ var agent = StandardAgent.FromJson(formBody)     // everything that is data
   `"sessions": "path"`, `"logTo": "path"`, `"resilience": 3`. The long forms carry the same
   optional fields as the builder verbs (`"knowledge": { "path", "pattern", "maxResults",
   "minScore" }`, `"sessions": { "path", "maxHistoryTurns" }`, and so on).
+- **Integrations are plural in the document too**: `"skills"` and `"mcp"` accept a single value
+  or an array, and each MCP entry may be a bare URL (no auth) or an object carrying its own
+  credentials — `{ "endpointUrl", "relativeUrl", "timeoutSeconds", "bearerToken", "apiKey",
+  "apiKeyHeader" }`. A refresh-flow token is code, not data: it arrives as a delegate through
+  `.UseMcp(...)`/`.Mcp(bearerTokenProvider: …)`, never through the document — and remember the
+  document now holds secrets when you put keys in it; store it accordingly.
 - **The `contract` schema rides embedded** — real JSON inside the JSON, never an escaped string
   a form author would have to hand-quote.
 
