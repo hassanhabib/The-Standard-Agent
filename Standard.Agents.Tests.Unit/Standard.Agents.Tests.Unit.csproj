@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Standard.Agents\Standard.Agents.csproj" />
+    <ProjectReference Include="..\Standard.Agents.Host\Standard.Agents.Host.csproj" />
   </ItemGroup>
 
   <ItemGroup>
