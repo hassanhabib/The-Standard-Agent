@@ -86,10 +86,14 @@ public class StandardAgentFromJsonTests
                      "temperature": 0.2, "maxTokens": 512, "timeoutSeconds": 60 },
           "nativeBrain": { "apiUrl": "https://api.peerllm.com/v1/", "apiKey": "k", "model": "m" },
           "nativeBrainAnthropic": { "apiKey": "k", "model": "claude-sonnet-4-5" },
-          "skills": "Skills",
+          "skills": ["Skills", "MoreSkills"],
           "knowledge": { "path": "Knowledge", "pattern": "*.md", "maxResults": 3, "minScore": 0.1 },
           "memory": "memory.txt",
-          "mcp": { "endpointUrl": "https://mcp.example/", "timeoutSeconds": 20 },
+          "mcp": [
+            "https://mcp.example/",
+            { "endpointUrl": "https://locked.example/", "timeoutSeconds": 20,
+              "bearerToken": "token", "apiKey": "key", "apiKeyHeader": "X-Api-Key" }
+          ],
           "gate": { "apiUrl": "https://api.peerllm.com/v1/", "apiKey": "k", "model": "m" },
           "ruleGate": ["password", "ssn"],
           "judge": { "apiUrl": "https://api.peerllm.com/v1/", "apiKey": "k", "model": "m" },
@@ -119,6 +123,28 @@ public class StandardAgentFromJsonTests
 
         // when
         StandardAgent agent = StandardAgent.FromJson(everything);
+
+        // then
+        agent.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void ShouldComposeMultipleIntegrationsFromJson()
+    {
+        // given — integrations are plural in the document the same way they are in code: a
+        // form adds a row, the agent gains a source.
+        const string integrations = """
+        {
+          "skills": ["Skills", "Compliance/Skills"],
+          "mcp": [
+            "https://tools.example/",
+            { "endpointUrl": "https://internal.example/", "apiKey": "psk-1" }
+          ]
+        }
+        """;
+
+        // when
+        StandardAgent agent = StandardAgent.FromJson(integrations);
 
         // then
         agent.Should().NotBeNull();
