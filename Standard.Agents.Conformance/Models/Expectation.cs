@@ -84,4 +84,17 @@ public sealed record Expectation(
     //   PolicySawPrincipal — the identity the policy broker was actually handed when it decided.
     //                        An audit record naming the caller afterwards is not authorization,
     //                        so this reads the decision's input rather than the log (SPEC.md §4.9).
-    string? PolicySawPrincipal = null);
+    string? PolicySawPrincipal = null,
+
+    //   McpServerCalls — exactly how many calls each scripted server received, in registration
+    //                    order. Routing across servers is certified by the owner being called
+    //                    and the bystander not (SPEC.md §4.8 v1.5).
+    //   BrainSeesEvery — every entry must have reached the Brain, which is how accumulation is
+    //                    certified: a source silently replaced is a source whose text is absent.
+    List<int>? McpServerCalls = null,
+    List<string>? BrainSeesEvery = null,
+
+    //   ConfigurationRefusalNames — the composition refusal must carry this text: a refusal
+    //                               that does not name the offending entry leaves the host
+    //                               searching the document by hand (SPEC.md §4.8 v1.4).
+    string? ConfigurationRefusalNames = null);
