@@ -1,0 +1,19 @@
+{
+  "name": "many-servers-one-owner",
+  "description": "Two remote tool servers both claim 'alpha'. Routing is by declared ownership with first-registered precedence (SPEC.md 4.8 v1.5): the call lands on the first server, the second is never consulted, and the Brain sees the first server's answer - a second registration must never silently unplug or shadow the first.",
+  "mcpServers": [
+    { "alpha": "42, says the first server" },
+    { "alpha": "42, says the SECOND server", "beta": "unused" }
+  ],
+  "generatorReplies": [
+    "ACTION: alpha: ping",
+    "FINAL: alpha answered."
+  ],
+  "prompt": "use alpha",
+  "expect": {
+    "resultContains": "alpha answered",
+    "brainSees": "42, says the first server",
+    "brainNeverSees": "SECOND",
+    "mcpServerCalls": [1, 0]
+  }
+}

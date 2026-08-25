@@ -1,0 +1,16 @@
+{
+  "name": "many-skill-sources-one-stream",
+  "description": "Skills arrive from more than one source and concatenate in registration order (SPEC.md 4.8 v1.5). Accumulation is certified by every source's text reaching the Brain: under replace semantics the first source's text is simply absent, which is exactly how a host would have discovered the loss.",
+  "extraSkills": [
+    "ALPHA-RULE: answer tersely.",
+    "BETA-RULE: cite your sources."
+  ],
+  "generatorReplies": [
+    "FINAL: done."
+  ],
+  "prompt": "hello",
+  "expect": {
+    "resultContains": "done",
+    "brainSeesEvery": ["ALPHA-RULE", "BETA-RULE"]
+  }
+}

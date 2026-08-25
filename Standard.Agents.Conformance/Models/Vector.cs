@@ -115,4 +115,17 @@ public sealed record Vector(
     // Memories the run recalls (SPEC.md §4.2) — which is also how a POISONED memory is
     // certified: an injected instruction rides the same seam a remembered preference would,
     // and the perimeter must hold whether or not the Brain is fooled by it.
-    List<string>? Memories = null);
+    List<string>? Memories = null,
+
+    // Plural integrations (SPEC.md §4.8 v1.5). McpServers scripts remote tool servers in
+    // REGISTRATION ORDER — each entry is that server's catalog, {toolName: reply} — because
+    // order is the contract: routing is by declared ownership, first registered wins a
+    // contested name. ExtraSkills adds skill sources after the harness's stub, in order,
+    // because accumulation is only observable with more than one source.
+    List<Dictionary<string, string>>? McpServers = null,
+    List<string>? ExtraSkills = null,
+
+    // Composition from data (SPEC.md §4.8 v1.4). When set, the vector certifies composition
+    // alone — the document must refuse with the named text and no run ever happens, so
+    // GeneratorReplies and Prompt are carried empty.
+    string? ConfigurationJson = null);

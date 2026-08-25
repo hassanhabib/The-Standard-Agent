@@ -1,0 +1,10 @@
+{
+  "name": "a-typoed-key-refuses-to-compose",
+  "description": "Composition from data (SPEC.md 4.8 v1.4): a document carrying a key the surface does not know MUST refuse to compose, and the refusal MUST name the key - a misspelled budget silently ignored is a bound the host believes is holding and is not. No run happens; the refusal is the certification.",
+  "configurationJson": "{ \"buget\": { \"maxTokens\": 50000 } }",
+  "generatorReplies": [],
+  "prompt": "",
+  "expect": {
+    "configurationRefusalNames": "buget"
+  }
+}
