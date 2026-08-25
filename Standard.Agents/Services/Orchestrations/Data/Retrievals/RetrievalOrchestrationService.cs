@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------
 
 using Standard.Agents.Brokers.Loggings;
+using Standard.Agents.Models.Orchestrations.Retrievals;
 using Standard.Agents.Services.Foundations.Knowledges;
 using Standard.Agents.Services.Foundations.Skills;
 
@@ -19,16 +20,23 @@ public partial class RetrievalOrchestrationService : IRetrievalOrchestrationServ
     private readonly string toolCatalog;
     private readonly ILoggingBroker loggingBroker;
 
+    // A model carrying a delegate rather than a broker, because remote tools are Direction's
+    // resource and this is Data's tier — configuration crosses natures where a dependency may
+    // not. Null when there is nothing remote to advertise.
+    private readonly ExternalToolCatalog? externalToolCatalog;
+
     public RetrievalOrchestrationService(
         ISkillService skillService,
         IKnowledgeService knowledgeService,
         string toolCatalog,
-        ILoggingBroker loggingBroker)
+        ILoggingBroker loggingBroker,
+        ExternalToolCatalog? externalToolCatalog = null)
     {
         this.skillService = skillService;
         this.knowledgeService = knowledgeService;
         this.toolCatalog = toolCatalog;
         this.loggingBroker = loggingBroker;
+        this.externalToolCatalog = externalToolCatalog;
     }
 
     // The catalogs are expanded here rather than in a skill file, because which tools a Brain may
@@ -37,7 +45,7 @@ public partial class RetrievalOrchestrationService : IRetrievalOrchestrationServ
     TryCatch(async () =>
     {
         string skills = await this.skillService.RetrieveSkillsAsync(route);
-        string instructions = skills.Replace(ToolsMarker, this.toolCatalog);
+        string instructions = skills.Replace(ToolsMarker, await RenderToolCatalogAsync(skills));
 
         if (instructions.Contains(SkillsMarker))
         {
@@ -47,6 +55,27 @@ public partial class RetrievalOrchestrationService : IRetrievalOrchestrationServ
 
         return instructions;
     });
+
+    // Remote tools join the catalog under the same opt-in as local ones — and only when the
+    // marker is present, so an agent that never advertises never pays a discovery call.
+    private async ValueTask<string> RenderToolCatalogAsync(string skills)
+    {
+        if (this.externalToolCatalog is null || skills.Contains(ToolsMarker) is false)
+        {
+            return this.toolCatalog;
+        }
+
+        string externalCatalog = await this.externalToolCatalog.DiscoverAsync();
+
+        if (string.IsNullOrEmpty(externalCatalog))
+        {
+            return this.toolCatalog;
+        }
+
+        return string.IsNullOrEmpty(this.toolCatalog)
+            ? externalCatalog
+            : $"{this.toolCatalog}\n{externalCatalog}";
+    }
 
     public ValueTask<IReadOnlyList<string>> RetrieveGroundingAsync(string query) =>
     TryCatch(async () =>
