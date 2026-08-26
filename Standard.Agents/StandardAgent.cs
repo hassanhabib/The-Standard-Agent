@@ -878,6 +878,23 @@ public sealed partial class StandardAgent : IAgent
     }
 
     /// <summary>
+    /// Runs the agent on a caller's <b>request</b> — a prompt carrying its own inference options
+    /// (docs/per-request-inference.md). What is established and hard-configured takes precedence,
+    /// always: a request can shape a run only where the deployment expressed no opinion, and it
+    /// can never widen the boundary the deployment set.
+    /// </summary>
+    /// <param name="request">The caller's prompt and per-request inference options.</param>
+    /// <param name="cancellationToken">Token to stop the run.</param>
+    /// <returns>The agent's final answer.</returns>
+    public async ValueTask<string> ProcessPromptAsync(
+        PromptRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await ResolveAgent().ProcessPromptAsync(
+            request.Prompt, request.SessionId, cancellationToken);
+    }
+
+    /// <summary>
     /// Continues a session that stopped in the middle of something — waiting on a person, waiting
     /// on an authority, or killed outright (SPEC.md §4.9, §4.11).
     /// </summary>
