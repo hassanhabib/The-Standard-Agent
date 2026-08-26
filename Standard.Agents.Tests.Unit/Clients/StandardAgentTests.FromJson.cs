@@ -124,6 +124,10 @@ public class StandardAgentFromJsonTests
             { "endpointUrl": "https://locked.example/", "timeoutSeconds": 20,
               "bearerToken": "token", "apiKey": "key", "apiKeyHeader": "X-Api-Key" }
           ],
+          "agents": [
+            "Fleet",
+            { "name": "billing", "description": "Handles refunds and invoices.", "maxTurns": 2 }
+          ],
           "gate": { "apiUrl": "https://api.peerllm.com/v1/", "apiKey": "k", "model": "m" },
           "ruleGate": ["password", "ssn"],
           "judge": { "apiUrl": "https://api.peerllm.com/v1/", "apiKey": "k", "model": "m" },

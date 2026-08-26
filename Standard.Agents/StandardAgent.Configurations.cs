@@ -5,6 +5,7 @@
 
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Standard.Agents.Models.Brokers.Agents;
 using Standard.Agents.Models.Clients.Agents.Exceptions;
 using Standard.Agents.Models.Foundations.Brains;
 using Standard.Agents.Models.Loggings;
@@ -153,6 +154,19 @@ public partial class StandardAgent
 
             case "mcp":
                 ApplyMcpServer(agent, value, key);
+
+                break;
+
+            case "agents" when value is JsonArray fleet:
+                foreach (JsonNode? member in fleet)
+                {
+                    ApplyFleetMember(agent, member, key);
+                }
+
+                break;
+
+            case "agents":
+                agent.Agents(Text(value, key));
 
                 break;
 
@@ -345,6 +359,33 @@ public partial class StandardAgent
                         + "control you believe is on and is not, so it refuses to compose. "
                         + "The keys are the builder verbs, camelCased — see docs/how-to.md.");
         }
+    }
+
+    // A fleet member is a path when the agents live beside the process (a folder of agent
+    // documents), an object when the agent rides inline — the same document FromJson composes,
+    // identity included, because the document IS the agent. An inline member must be named: a
+    // handoff calls agents by name, and a nameless agent is one the brain could never call.
+    private static void ApplyFleetMember(StandardAgent agent, JsonNode? member, string key)
+    {
+        if (member is JsonObject)
+        {
+            StandardAgent composed = FromJson(member.ToJsonString());
+
+            if (string.IsNullOrWhiteSpace(composed.Name))
+            {
+                throw new InvalidAgentConfigurationException(
+                    $"An inline '{key}' entry needs a 'name' — a handoff calls agents by name.");
+            }
+
+            IReadOnlyList<RegisteredAgent> one =
+                [new RegisteredAgent(composed.Name, composed.Description, composed)];
+
+            agent.OnAgents(() => new ValueTask<IReadOnlyList<RegisteredAgent>>(one));
+
+            return;
+        }
+
+        agent.Agents(Text(member, key));
     }
 
     // A server is a URL when it needs nothing else, an object when it carries auth — an API key
