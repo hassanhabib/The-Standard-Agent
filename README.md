@@ -131,14 +131,16 @@ Every capability answers **Local**, **External** and **Custom**, and the verbs s
 .OnKnowledge(async query => await MyStore(query)) // Custom — your own code, inline
 ```
 
-Nineteen capabilities, the same three verbs each. A capability offered fewer ways than that fails the
-build — it is a test, not a convention, because the erosion is otherwise invisible until there are
-six of them.
+Twenty capabilities, the same three verbs each — **other agents among them**: `.Agents("Fleet")`
+reads a folder of agent documents, `.UseAgents(...)` takes a provider's registry, and
+`.OnAgents(...)` lets your code decide the fleet. A capability offered fewer ways than that fails
+the build — it is a test, not a convention, because the erosion is otherwise invisible until
+there are six of them.
 
-And what the agent integrates *with* is always plural: tools, MCP servers, and skill sources all
-**accumulate** — a second `.Mcp(...)` adds a server (each with its own optional auth: none, an
-API key, or an OAuth bearer token), a second `.Skills(...)` adds a folder, and calls route to
-whichever server's catalog owns the tool's name.
+And what the agent integrates *with* is always plural: tools, MCP servers, skill sources, and
+registered agents all **accumulate** — a second `.Mcp(...)` adds a server (each with its own
+optional auth: none, an API key, or an OAuth bearer token), a second `.Skills(...)` adds a
+folder, and calls route to whichever source's catalog owns the name, first registered winning.
 
 ### Agent as data — the whole thing as JSON
 
@@ -395,17 +397,34 @@ and revision effectiveness — thresholded, deterministic, and run on every buil
 dotnet run --project Standard.Agents.Evals
 ```
 
-## The fractal
+## The fractal — and the fleet
 
 An agent satisfies `ITool`, so an agent can be a tool of another agent. Theory Ch.4 — *turtles up*:
 
 ```csharp
-var researcher = new AgentTool("researcher", innerAgent);
-var outerAgent = new StandardAgent().Brain(...).Tool(researcher);
+var outerAgent = new StandardAgent().Brain(...)
+    .OnAgents(() => new ValueTask<IReadOnlyList<RegisteredAgent>>(
+        [new RegisteredAgent("billing", "Handles refunds and invoices.", billingAgent)]));
 ```
 
-Nesting needs no new machinery because the shapes already agree. It is also how a guardian scales:
-a compliance sub-agent is a distinct conscience, rather than the same brain grading itself.
+A registered agent **materializes as a tool**, so a handoff is an act and the perimeter that
+governs acts governs handoffs — allow-lists can forbid one, approvals can put a human before
+one. Three flavors of multi-agent flow, all configured, none requiring new machinery:
+
+- **Sub-agent** — `ACTION: billing: <task>`: the answer comes back for the outer brain to
+  synthesize, and the handoff is grounded by default (*"The user asked: {prompt} — Your task:
+  {input}"*), with the template deciding exactly what crosses.
+- **Transfer** — `TRANSFER: billing`: the specialist's answer **is** the run's answer, verbatim.
+  A transfer that does not deliver comes back marked `[did not complete]` and the outer brain
+  keeps working — a refusal is never presented as the user's answer.
+- **Chain** — a deterministic sequence is your code calling agents in order; every link keeps
+  its own guardians, budget and perimeter.
+
+The fleet is data too: an `"agents"` key registers a folder of agent documents or inline agent
+documents — the file *is* the agent, name and advertisement included
+([docs/how-to.md §17](https://github.com/hassanhabib/The-Standard-Agent/blob/main/docs/how-to.md)).
+It is also how a guardian scales: a compliance sub-agent is a distinct conscience, rather than
+the same brain grading itself.
 
 ## Contributing
 

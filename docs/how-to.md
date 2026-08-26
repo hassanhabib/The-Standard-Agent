@@ -211,6 +211,8 @@ ACTION: calculator: 47 * 89
 TOOL: {"tool":"calculator","arguments":{"expression":"47 * 89"}}
 ```
 
+(A third first-line verb, `TRANSFER:`, hands the whole run to a registered agent — §17.)
+
 ### Internal tools — code you own
 
 Implement `ITool`:
@@ -1172,6 +1174,8 @@ var agent = StandardAgent.FromJson(json);        // or StandardAgent.FromJsonFil
 
 ```json
 {
+  "name": "concierge",
+  "description": "Answers anything, hands off what it should not answer.",
   "brain": { "apiUrl": "https://api.peerllm.com/v1/", "apiKey": "k", "model": "LLooMA2.0" },
   "skills": ["Skills", "Compliance/Skills"],
   "knowledge": "Knowledge",
@@ -1230,11 +1234,105 @@ var agent = StandardAgent.FromJson(formBody)     // everything that is data
   document now holds secrets when you put keys in it; store it accordingly.
 - **The `contract` schema rides embedded** — real JSON inside the JSON, never an escaped string
   a form author would have to hand-quote.
+- **Identity rides in the document** — `"name"` is what a registry offers the agent under (and
+  what a handoff calls), `"description"` is its advertisement, and `"agents"` declares a whole
+  fleet as data (§17). The document is the agent, so a registry needs nothing beside it.
 
 And the deployment half: drop an `agent.json` beside `Standard.Agents.Host` (or point
 `Agent:Config` at one) and the hosted agent composes entirely from it — form → JSON → file →
 a running, gated, budgeted agent behind an authenticated endpoint, no C# anywhere
 ([docs/hosting.md](hosting.md)).
+
+## 17 · The fleet — sub-agents, chains, and transfers
+
+One agent is rarely the whole system. The fleet is how agents reach *other agents* — and like
+everything else, it answers Local, External and Custom:
+
+```csharp
+.Agents("Fleet")                                  // Local  — a folder of agent documents
+.UseAgents(new DirectoryRegistryBroker(...))      // External — a provider's registry
+.OnAgents(() => new ValueTask<IReadOnlyList<RegisteredAgent>>(
+    [new RegisteredAgent("billing", "Handles refunds and invoices.", billingAgent)]))
+                                                  // Custom — your code decides the fleet
+```
+
+`.Agents("Fleet")` points at a folder where **every `.json` file is an agent** — the same
+documents `FromJson` composes (§16), so the file *is* the agent. Its `"name"` is what a handoff
+calls (the file's own name when absent) and its `"description"` advertises it in `{{tools}}` —
+no description, no advertisement, exactly like a tool. Registries accumulate, and the first
+source to claim a name keeps it — the same rule MCP servers live by.
+
+**A registered agent materializes as a tool.** That one decision is the whole design: a handoff
+is an act, so the perimeter that governs acts governs handoffs — `AllowTools` can forbid one,
+`RequireApproval` can put a human before one, `Deny` mode refuses one nothing mentioned — and
+the audit, telemetry, and cancellation all apply because they already applied to tools.
+
+### The three flavors
+
+**Sub-agent** — the outer brain delegates a *task* and synthesizes the answer:
+
+```
+ACTION: billing: refund order 7741
+```
+
+The specialist's answer comes back as an observation; the outer brain writes the final answer.
+The handoff is **grounded by default**: the registry's template is
+`"The user asked: {prompt}\n\nYour task: {input}"` — the task, plus just enough context to do
+it. A custom `AgentTool` template decides exactly what crosses, which is the whole
+configurability of a handoff: `{input}` is what the outer model wrote, `{prompt}` is what the
+user originally asked, and a template with neither shares nothing at all.
+
+**Transfer** — the outer brain recognizes the *whole prompt* belongs to a specialist:
+
+```
+TRANSFER: billing
+```
+
+The specialist's answer **is** the run's answer, verbatim — no synthesis turn, no rewriting.
+Optionally `TRANSFER: billing: <task>` narrows the task; absent one, the handoff says
+`"answer the user's request in full."` and the grounded template carries the user's actual ask.
+A transfer that does *not* deliver — the specialist's own gate refused, an authority held it,
+it ran out of turns — comes back marked `[did not complete]` as an observation, and the outer
+brain keeps working the task: a refusal is never presented as the user's answer.
+
+**Chain** — a deterministic sequence lives *outside* the agent, in your code, where determinism
+belongs:
+
+```csharp
+string brief    = await researcher.ProcessPromptAsync(prompt);
+string draft    = await writer.ProcessPromptAsync(brief);
+string answer   = await reviewer.ProcessPromptAsync(draft);
+```
+
+A chain needs no framework feature because each link is just an agent; what the framework
+guarantees is that every link keeps its own guardians, budget, and perimeter.
+
+### The fleet as data
+
+```json
+{
+  "brain": { "apiUrl": "https://api.peerllm.com/v1/", "apiKey": "k", "model": "LLooMA2.0" },
+  "agents": [
+    "Fleet",
+    { "name": "billing", "description": "Handles refunds and invoices.",
+      "brain": { "apiUrl": "https://api.peerllm.com/v1/", "apiKey": "k", "model": "LLooMA2.0" },
+      "ruleGate": ["password"], "maxTurns": 3 }
+  ]
+}
+```
+
+A member is a **path** (a folder of agent documents) or an **inline agent document** — identity
+included, because the document is the agent. A nameless inline member refuses to compose: a
+handoff calls agents by name, and a nameless agent is one the brain could never call.
+
+### What crosses the seam
+
+Nothing new. A registered agent is the same nested run §9 described: the outer budget,
+principal, policy and sessions do not reach it — it brings its own or runs without. The stop
+crosses in (cancelling the outer run stops the whole tree), honesty crosses back (`[did not
+complete]` with the specialist's status), and with a transfer, the answer crosses back verbatim.
+Give each specialist its own guardians for the same reason you give them to the outer agent:
+the perimeter is per agent, and a fleet is only as governed as its least-governed member.
 
 ## Putting it together
 
