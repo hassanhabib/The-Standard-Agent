@@ -61,8 +61,41 @@ public partial class InferenceOrchestrationService
                 Intent = calledTool,
                 DirectionType = calledTool,
                 Payload = arguments,
-                RawReply = reply
+                RawReply = reply,
+                Transferring = false
             };
+        }
+
+        // TRANSFER: the model hands the whole run to a registered agent — same act pipeline as
+        // ACTION (the perimeter governs it by the agent's name), different ending: an answer
+        // from the specialist ends the run as the answer. The model may write a task after the
+        // name; absent one, the transfer's own meaning is the task, and the grounded handoff
+        // template supplies the user's actual ask.
+        if (firstLine.StartsWith(TransferPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            string[] handover =
+                firstLine[TransferPrefix.Length..]
+                .Split(':', 2, StringSplitOptions.TrimEntries);
+
+            string agentName = handover[0];
+
+            string task = handover.Length > 1 && string.IsNullOrWhiteSpace(handover[1]) is false
+                ? handover[1]
+                : TransferTask;
+
+            // The same parroting guard ACTION has below: a bare "TRANSFER:" with no agent
+            // behind it is not a transfer — fall through and read the reply as the answer.
+            if (string.IsNullOrWhiteSpace(agentName) is false)
+            {
+                return context with
+                {
+                    Intent = agentName,
+                    DirectionType = agentName,
+                    Payload = task,
+                    RawReply = reply,
+                    Transferring = true
+                };
+            }
         }
 
         bool modelChoseToAct =
@@ -88,7 +121,8 @@ public partial class InferenceOrchestrationService
                     Intent = toolName,
                     DirectionType = toolName,
                     Payload = toolInput,
-                    RawReply = reply
+                    RawReply = reply,
+                    Transferring = false
                 };
             }
         }
@@ -102,7 +136,8 @@ public partial class InferenceOrchestrationService
             Intent = RespondIntent,
             DirectionType = ReturnResponseDirection,
             Payload = answer,
-            RawReply = reply
+            RawReply = reply,
+            Transferring = false
         };
     }
 

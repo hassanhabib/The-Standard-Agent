@@ -12,6 +12,7 @@ internal sealed class ReplyStreamClassifier
 {
     private const string ActionPrefix = "ACTION:";
     private const string FinalPrefix = "FINAL:";
+    private const string TransferPrefix = "TRANSFER:";
 
     private readonly StringBuilder pending = new();
     private Channel channel = Channel.Undecided;
@@ -50,8 +51,10 @@ internal sealed class ReplyStreamClassifier
         string buffered = this.pending.ToString();
         string leading = buffered.TrimStart();
 
+        // Buffered until the LONGEST act prefix could be ruled out: deciding at ACTION's length
+        // would read the first seven characters of "TRANSFER:" as an answer starting to stream.
         bool canDecide =
-            leading.Length >= ActionPrefix.Length
+            leading.Length >= TransferPrefix.Length
                 || buffered.Contains('\n')
                 || isFinal;
 
@@ -62,7 +65,8 @@ internal sealed class ReplyStreamClassifier
 
         this.pending.Clear();
 
-        if (leading.StartsWith(ActionPrefix, StringComparison.OrdinalIgnoreCase))
+        if (leading.StartsWith(ActionPrefix, StringComparison.OrdinalIgnoreCase)
+            || leading.StartsWith(TransferPrefix, StringComparison.OrdinalIgnoreCase))
         {
             this.channel = Channel.Thinking;
 

@@ -362,12 +362,33 @@ public partial class RunManagementService : IRunManagementService
 
             await this.loggingBroker.LogStepAsync(AgentStep.Direction);
 
+            // Cleared before the act, so a transfer below reads how THIS act ended and never a
+            // handoff from an earlier turn.
+            if (AgentRun.Current is AgentRun actingRun)
+            {
+                actingRun.HandoffOutcome = null;
+            }
+
             // Screened before the Tool event below: a caller watching the stream must not
             // receive the text the Brain was protected from (SPEC.md §4.9).
             int observedBefore = context.Observations.Count;
 
             context = await ActOrUnwindAsync(context);
             context = await ScreenedOrUnwindAsync(context, observedBefore);
+
+            // A transfer is terminal by meaning: the specialist's answer IS the answer,
+            // delivered as delivered — the outer Brain never gets a synthesis turn to rewrite
+            // it. Adopted only when the specialist actually responded; a handoff that was held,
+            // refused or failed stays an observation, and the loop keeps working the task
+            // rather than presenting a refusal as the user's answer. The perimeter has already
+            // ruled by this point — a denied or approval-held transfer never reaches here as
+            // Working-with-an-answer.
+            if (context.Transferring
+                && context.Status is AgentStatus.Working
+                && AgentRun.Current?.HandoffOutcome?.Status is AgentStatus.Responded)
+            {
+                context = context with { Status = AgentStatus.Responded };
+            }
 
             await this.loggingBroker.LogOutcomeAsync($"turn {turn}: {context.Status}");
 
