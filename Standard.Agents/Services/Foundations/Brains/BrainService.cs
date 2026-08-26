@@ -56,9 +56,16 @@ public partial class BrainService : IBrainService
             : await this.generatorBroker.GenerateAsync(systemPrompt, userPrompt, inference);
     });
 
+    public IAsyncEnumerable<string> GenerateStreamAsync(
+        string systemPrompt,
+        string userPrompt,
+        CancellationToken cancellationToken = default) =>
+        GenerateStreamAsync(systemPrompt, userPrompt, inference: null, cancellationToken);
+
     public async IAsyncEnumerable<string> GenerateStreamAsync(
         string systemPrompt,
         string userPrompt,
+        ResolvedInference? inference,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         IAsyncEnumerator<string> tokens;
@@ -67,9 +74,13 @@ public partial class BrainService : IBrainService
         {
             ValidateUserPrompt(userPrompt);
 
-            tokens = this.generatorBroker
-                .GenerateStreamAsync(systemPrompt, userPrompt, cancellationToken)
-                .GetAsyncEnumerator(cancellationToken);
+            IAsyncEnumerable<string> stream = inference is null
+                ? this.generatorBroker.GenerateStreamAsync(
+                    systemPrompt, userPrompt, cancellationToken)
+                : this.generatorBroker.GenerateStreamAsync(
+                    systemPrompt, userPrompt, inference, cancellationToken);
+
+            tokens = stream.GetAsyncEnumerator(cancellationToken);
         }
         catch (Exception exception)
         {

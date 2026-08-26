@@ -13,6 +13,7 @@ using Standard.Agents.Brokers.Memorys;
 using Standard.Agents.Brokers.Skills;
 using Standard.Agents.Models.Clients.Agents;
 using Xunit;
+using Standard.Agents.Models.Brokers.Generators;
 
 namespace Standard.Agents.Tests.Unit.Acceptance;
 
@@ -67,6 +68,16 @@ public class RuleGuardianTests
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(ToStream("FINAL: your password is hunter2"));
 
+        generator.Setup(broker => broker.GenerateStreamAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ResolvedInference>(),
+            It.IsAny<CancellationToken>()))
+                .Returns((
+                    string systemPrompt,
+                    string userPrompt,
+                    ResolvedInference _,
+                    CancellationToken token) =>
+                        generator.Object.GenerateStreamAsync(systemPrompt, userPrompt, token));
+
         StandardAgent agent = BuildAgent(generator);
 
         // when — a prompt that trips the rule
@@ -86,6 +97,16 @@ public class RuleGuardianTests
         generator.Setup(broker => broker.GenerateStreamAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(ToStream("FINAL: Paris"));
+
+        generator.Setup(broker => broker.GenerateStreamAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ResolvedInference>(),
+            It.IsAny<CancellationToken>()))
+                .Returns((
+                    string systemPrompt,
+                    string userPrompt,
+                    ResolvedInference _,
+                    CancellationToken token) =>
+                        generator.Object.GenerateStreamAsync(systemPrompt, userPrompt, token));
 
         StandardAgent agent = BuildAgent(generator);
 

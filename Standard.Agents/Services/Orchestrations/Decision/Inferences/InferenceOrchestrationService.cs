@@ -105,10 +105,18 @@ public partial class InferenceOrchestrationService : IInferenceOrchestrationServ
         var reply = new StringBuilder();
         string userMessage = BuildUserMessage(context);
 
-        IAsyncEnumerable<string> tokens = this.brainService.GenerateStreamAsync(
-            systemPrompt: context.SystemPrompt,
-            userPrompt: userMessage,
-            cancellationToken: cancellationToken);
+        // The same hand-off the batched call makes: the streamed loop carries the resolution's
+        // output too, or the stream becomes the way to step around the seam (SPEC.md §7.6).
+        IAsyncEnumerable<string> tokens = context.Inference is null
+            ? this.brainService.GenerateStreamAsync(
+                systemPrompt: context.SystemPrompt,
+                userPrompt: userMessage,
+                cancellationToken: cancellationToken)
+            : this.brainService.GenerateStreamAsync(
+                systemPrompt: context.SystemPrompt,
+                userPrompt: userMessage,
+                inference: context.Inference,
+                cancellationToken: cancellationToken);
 
         await foreach (string delta in tokens.WithCancellation(cancellationToken))
         {

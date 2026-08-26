@@ -356,6 +356,16 @@ public class StandardAgentTests
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(ToAsyncStream("Hi ", "there."));
 
+        generatorBroker.Setup(broker => broker.GenerateStreamAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ResolvedInference>(),
+            It.IsAny<CancellationToken>()))
+                .Returns((
+                    string systemPrompt,
+                    string userPrompt,
+                    ResolvedInference _,
+                    CancellationToken token) =>
+                        generatorBroker.Object.GenerateStreamAsync(systemPrompt, userPrompt, token));
+
         var agent = new StandardAgent()
             .UseSkills(skillBroker.Object)
             .UseMemory(memory.Object)

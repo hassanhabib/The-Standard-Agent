@@ -325,7 +325,40 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
             yield break;
         }
 
-        setResult(decided);
+        // The shape check, exactly as the batched path runs it — the streamed loop used to skip
+        // it, which made streaming the way to receive an answer the Contract would have refused.
+        // A control a caller can step around by changing method is not a control (SPEC.md §7.6).
+        ContractVerdict shape =
+            await this.guardianService.CheckShapeAsync(
+                decided.Payload,
+                context.Inference?.ResponseSchemaJson ?? this.contractSchema);
+
+        if (shape.Satisfied is false)
+        {
+            await this.loggingBroker.LogProcessAsync(
+                "Decision",
+                $"Contract → REJECTED: {shape.Reason}");
+
+            setResult(context with
+            {
+                Observations =
+                [
+                    .. context.Observations,
+                    ShapeFeedback(shape, decided.Payload)
+                ],
+
+                Status = AgentStatus.Revising
+            });
+
+            yield return new AgentStreamEvent(
+                AgentStreamEventType.Status, "contract rejected the draft; revising");
+
+            yield break;
+        }
+
+        setResult(decided.Status is AgentStatus.Revising
+            ? decided with { Status = AgentStatus.Working }
+            : decided);
     }
 
     private static AgentStreamEvent AsUnsettledDraft(AgentStreamEvent segment) =>

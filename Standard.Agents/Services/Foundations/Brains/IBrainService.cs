@@ -38,4 +38,12 @@ public interface IBrainService
         string systemPrompt,
         string userPrompt,
         CancellationToken cancellationToken = default);
+
+    /// <summary>The streamed twin of the request-carrying call.</summary>
+    IAsyncEnumerable<string> GenerateStreamAsync(
+        string systemPrompt,
+        string userPrompt,
+        ResolvedInference? inference,
+        CancellationToken cancellationToken = default) =>
+        GenerateStreamAsync(systemPrompt, userPrompt, cancellationToken);
 }

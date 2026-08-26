@@ -18,6 +18,7 @@ using Standard.Agents.Brokers.Verifiers;
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Loggings;
 using Xunit;
+using Standard.Agents.Models.Brokers.Generators;
 
 namespace Standard.Agents.Tests.Unit.Acceptance;
 
@@ -44,6 +45,16 @@ public class TraceMetricsTests
         generator.Setup(broker => broker.GenerateStreamAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(ToStream("FINAL: 42"));
+
+        generator.Setup(broker => broker.GenerateStreamAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ResolvedInference>(),
+            It.IsAny<CancellationToken>()))
+                .Returns((
+                    string systemPrompt,
+                    string userPrompt,
+                    ResolvedInference _,
+                    CancellationToken token) =>
+                        generator.Object.GenerateStreamAsync(systemPrompt, userPrompt, token));
 
         var skills = new Mock<ISkillBroker>();
         skills.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(new List<Skill> { new() { Content = "Answer directly." } });

@@ -275,26 +275,36 @@ public partial class RunManagementService : IRunManagementService
         ProcessPromptStreamAsync(prompt, string.Empty, cancellationToken);
 
     public IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
-        PromptRequest request,
-        CancellationToken cancellationToken = default) =>
-        ProcessPromptStreamAsync(request.Prompt, request.SessionId, cancellationToken);
-
-    public async IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
         string prompt,
         string sessionId,
-        [EnumeratorCancellation] CancellationToken cancellationToken)
+        CancellationToken cancellationToken) =>
+        ProcessPromptStreamAsync(
+            new PromptRequest { Prompt = prompt, SessionId = sessionId },
+            cancellationToken);
+
+    public async IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
+        PromptRequest request,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        ValidatePrompt(prompt);
+        ValidatePrompt(request.Prompt);
+
+        string sessionId = request.SessionId;
 
         AgentSession? session = await PeekSessionAsync(sessionId);
 
         // This prompt's run — see ProcessPromptAsync. A streamed prompt is a run like any other,
-        // which is the whole point: every control below is the one the batched loop enforces.
+        // which is the whole point: every control below is the one the batched loop enforces —
+        // per-request resolution included.
         using IDisposable run = AgentRun.Begin(ResumedRunId(session));
 
         await this.loggingBroker.LogResetAsync();
 
-        AgentContext context = new() { Prompt = prompt, SessionId = sessionId };
+        AgentContext context = new()
+        {
+            Prompt = request.Prompt,
+            SessionId = sessionId,
+            Inference = Resolve(request)
+        };
 
         await BeginSessionAsync(context, session);
         context = await LoadSessionAsync(context, session);

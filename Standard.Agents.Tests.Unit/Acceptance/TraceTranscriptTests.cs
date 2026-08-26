@@ -43,6 +43,16 @@ public class TraceTranscriptTests
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(ToStream("FINAL: 42"));
 
+        generator.Setup(broker => broker.GenerateStreamAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ResolvedInference>(),
+            It.IsAny<CancellationToken>()))
+                .Returns((
+                    string systemPrompt,
+                    string userPrompt,
+                    ResolvedInference _,
+                    CancellationToken token) =>
+                        generator.Object.GenerateStreamAsync(systemPrompt, userPrompt, token));
+
         generator.Setup(broker => broker.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync("FINAL: 42");
 
