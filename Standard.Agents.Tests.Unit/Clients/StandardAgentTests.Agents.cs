@@ -8,6 +8,8 @@ using Moq;
 using Standard.Agents.Brokers.Knowledges;
 using Standard.Agents.Brokers.Memorys;
 using Standard.Agents.Models.Brokers.Agents;
+using Standard.Agents.Models.Clients.Agents;
+using Standard.Agents.Models.Orchestrations.Agents;
 using Xunit;
 
 namespace Standard.Agents.Tests.Unit.Clients;
@@ -94,6 +96,84 @@ public class StandardAgentAgentsTests
         // then — the brain can only hand off to an agent it was told exists.
         outerSaw.Should().Contain("billing");
         outerSaw.Should().Contain("Handles refunds and invoices.");
+    }
+
+    // The third flavor of a handoff: TRANSFER. Where a sub-agent call brings the answer BACK
+    // for the outer brain to synthesize, a transfer hands the whole run over — the specialist's
+    // answer IS the answer, delivered as delivered, and the outer brain never rewrites it.
+    [Fact]
+    public async Task ShouldTransferTheRunToARegisteredAgentAsync()
+    {
+        // given — a specialist that answers, and an outer brain that recognizes the whole
+        // prompt belongs to it.
+        string? innerReceived = null;
+
+        StandardAgent billingAgent = new StandardAgent()
+            .UseMemory(EmptyMemory())
+            .UseKnowledge(EmptyKnowledge())
+            .OnBrain(async (systemPrompt, userPrompt) =>
+            {
+                innerReceived = userPrompt;
+
+                return "FINAL: the refund is booked";
+            });
+
+        int outerTurns = 0;
+
+        StandardAgent outerAgent = new StandardAgent()
+            .UseMemory(EmptyMemory())
+            .UseKnowledge(EmptyKnowledge())
+            .OnAgents(() => new ValueTask<IReadOnlyList<RegisteredAgent>>(
+                [new RegisteredAgent("billing", "Handles refunds and invoices.", billingAgent)]))
+            .OnBrain(async (systemPrompt, userPrompt) =>
+            {
+                outerTurns++;
+
+                return "TRANSFER: billing";
+            });
+
+        // when
+        string answer = await outerAgent.ProcessPromptAsync(
+            "please refund my last order, number 7741");
+
+        // then — the specialist's words, verbatim; one outer turn, no synthesis turn; and the
+        // specialist was grounded in the user's actual ask.
+        answer.Should().Be("the refund is booked");
+        outerTurns.Should().Be(1);
+        innerReceived.Should().Contain("please refund my last order, number 7741");
+    }
+
+    // A transfer that does not deliver is an observation, not an answer. The specialist's own
+    // controls can refuse or hold — and the outer loop then keeps working the task instead of
+    // presenting the refusal as the user's answer.
+    [Fact]
+    public async Task ShouldKeepWorkingWhenATransferDoesNotDeliverAsync()
+    {
+        // given — a specialist whose own gate refuses everything about refunds.
+        StandardAgent strictAgent = new StandardAgent()
+            .UseMemory(EmptyMemory())
+            .UseKnowledge(EmptyKnowledge())
+            .RuleGate(["refund"])
+            .OnBrain(async (systemPrompt, userPrompt) => "FINAL: should never be reached");
+
+        int turn = 0;
+
+        StandardAgent outerAgent = new StandardAgent()
+            .UseMemory(EmptyMemory())
+            .UseKnowledge(EmptyKnowledge())
+            .OnAgents(() => new ValueTask<IReadOnlyList<RegisteredAgent>>(
+                [new RegisteredAgent("billing", "Handles refunds and invoices.", strictAgent)]))
+            .OnBrain(async (systemPrompt, userPrompt) =>
+                ++turn is 1
+                    ? "TRANSFER: billing"
+                    : "FINAL: billing could not take this; here is what I can do instead.");
+
+        // when
+        AgentOutcome outcome = await outerAgent.RunAsync("please refund order 7741");
+
+        // then — the outer brain saw the failed transfer and answered itself.
+        outcome.Status.Should().Be(AgentStatus.Responded);
+        outcome.Result.Should().Contain("here is what I can do instead");
     }
 
     // The fleet is data like everything else: an "agents" entry is either a folder of agent
