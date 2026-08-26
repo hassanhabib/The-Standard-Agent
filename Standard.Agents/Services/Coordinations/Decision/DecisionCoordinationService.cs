@@ -147,8 +147,14 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
         // The shape check runs after the Judge and not before it, deliberately: a draft that is
         // wrong on the merits should be told that, not told its punctuation is off. Two rejections
         // in one turn would spend a turn teaching the model the lesser of them.
+        //
+        // The schema is the one that SURVIVED precedence, riding the context from the boundary
+        // (docs/per-request-inference.md §4.1). The configured field remains only for a context
+        // built by hand, where it says exactly what the boundary would have seeded.
         ContractVerdict shape =
-            await this.guardianService.CheckShapeAsync(decided.Payload, this.contractSchema);
+            await this.guardianService.CheckShapeAsync(
+                decided.Payload,
+                context.Inference?.ResponseSchemaJson ?? this.contractSchema);
 
         if (shape.Satisfied is false)
         {

@@ -19,6 +19,15 @@ public interface IRunManagementService
         CancellationToken cancellationToken);
 
     /// <summary>
+    /// The run, asked for by a <b>request</b> — a prompt carrying its own inference options
+    /// (docs/per-request-inference.md). Precedence is resolved once at the top of the run;
+    /// every tier below receives the resolution's output on the context.
+    /// </summary>
+    ValueTask<string> ProcessPromptAsync(
+        PromptRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// The same run, reported with <b>how it ended</b>. Every <c>ProcessPromptAsync</c> above is
     /// this with the answer projected out of it — which is all a caller wants until the agent is
     /// nested inside another one, where "held" and "answered" have to be told apart.

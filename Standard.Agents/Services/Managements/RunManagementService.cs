@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using Standard.Agents.Brokers.Loggings;
 
 using Standard.Agents.Brokers.Times;
+using Standard.Agents.Models.Brokers.Generators;
 using Standard.Agents.Models.Brokers.Sessions;
 using Standard.Agents.Models.Coordinations.Agents;
 using Standard.Agents.Models.Clients.Agents;
@@ -63,6 +64,21 @@ public partial class RunManagementService : IRunManagementService
         this.screenToolOutput = screenToolOutput;
     }
 
+    // Precedence, per field: configured → request → framework default
+    // (docs/per-request-inference.md §4). What is established and hard-configured takes
+    // precedence, always — a caller can never widen the boundary the deployment set.
+    private static ResolvedInference Resolve(PromptRequest request) =>
+        new()
+        {
+            Temperature = request.Temperature ?? ResolvedInference.DefaultTemperature,
+            MaxTokens = request.MaxTokens ?? ResolvedInference.DefaultMaxTokens,
+            Seed = request.Seed,
+            Stop = request.Stop,
+            ResponseSchemaJson = request.ResponseSchemaJson,
+            CallerTools = request.CallerTools,
+            ProviderOptionsJson = request.ProviderOptionsJson
+        };
+
     public ValueTask<string> ProcessPromptAsync(string prompt) =>
         ProcessPromptAsync(prompt, string.Empty, CancellationToken.None);
 
@@ -77,16 +93,33 @@ public partial class RunManagementService : IRunManagementService
         CancellationToken cancellationToken) =>
         (await RunAsync(prompt, sessionId, cancellationToken)).Result;
 
+    public async ValueTask<string> ProcessPromptAsync(
+        PromptRequest request,
+        CancellationToken cancellationToken = default) =>
+        (await RunAsync(request, cancellationToken)).Result;
+
     // The same run, reported with how it ended. ProcessPromptAsync projects the answer out of it,
     // because a caller who only wants the string should not have to know there was more — and a
     // caller who nests this agent inside another one cannot do without it (AgentTool).
+    //
+    // A plain prompt is a request that expressed no opinions — one path, not a simple mode and
+    // an advanced one, which is what keeps every control identical on both.
     public ValueTask<AgentOutcome> RunAsync(
         string prompt,
         string sessionId,
         CancellationToken cancellationToken) =>
+        RunAsync(
+            new PromptRequest { Prompt = prompt, SessionId = sessionId },
+            cancellationToken);
+
+    private ValueTask<AgentOutcome> RunAsync(
+        PromptRequest request,
+        CancellationToken cancellationToken) =>
     TryCatch(async () =>
     {
-        ValidatePrompt(prompt);
+        ValidatePrompt(request.Prompt);
+
+        string sessionId = request.SessionId;
 
         // Read before the run begins: a session that never delivered an answer was interrupted,
         // and the next prompt in it continues that run rather than starting a fresh one.
@@ -99,7 +132,15 @@ public partial class RunManagementService : IRunManagementService
 
         await this.loggingBroker.LogResetAsync();
 
-        AgentContext context = new() { Prompt = prompt, SessionId = sessionId };
+        // Precedence resolved once, at the top of the run, and never again below it: a loop that
+        // can re-resolve is a loop where two turns of one run can disagree
+        // (docs/per-request-inference.md §2).
+        AgentContext context = new()
+        {
+            Prompt = request.Prompt,
+            SessionId = sessionId,
+            Inference = Resolve(request)
+        };
 
         // The start-of-run checkpoint, written before any work is done (SPEC.md §4.11).
         await BeginSessionAsync(context, session);

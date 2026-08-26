@@ -890,8 +890,7 @@ public sealed partial class StandardAgent : IAgent
         PromptRequest request,
         CancellationToken cancellationToken = default)
     {
-        return await ResolveAgent().ProcessPromptAsync(
-            request.Prompt, request.SessionId, cancellationToken);
+        return await ResolveAgent().ProcessPromptAsync(request, cancellationToken);
     }
 
     /// <summary>
