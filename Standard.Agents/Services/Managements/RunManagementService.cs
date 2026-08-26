@@ -40,6 +40,11 @@ public partial class RunManagementService : IRunManagementService
     private readonly int maxTurns;
     private readonly bool compensateOnFailure;
 
+    // What the deployment established, snapshotted at composition so precedence can be resolved
+    // at the top of each run. Null means the host expressed no opinion — which is exactly what
+    // lets a request's value take effect (docs/per-request-inference.md §4.2).
+    private readonly string? contractSchema;
+
     public RunManagementService(
         IDataCoordinationService dataCoordinationService,
         IDecisionCoordinationService decisionCoordinationService,
@@ -50,7 +55,8 @@ public partial class RunManagementService : IRunManagementService
         AgentBudget? budget = null,
         int maxHistoryTurns = 20,
         bool compensateOnFailure = false,
-        bool screenToolOutput = false)
+        bool screenToolOutput = false,
+        string? contractSchema = null)
     {
         this.compensateOnFailure = compensateOnFailure;
         this.dataCoordinationService = dataCoordinationService;
@@ -62,19 +68,26 @@ public partial class RunManagementService : IRunManagementService
         this.budget = budget;
         this.maxHistoryTurns = maxHistoryTurns;
         this.screenToolOutput = screenToolOutput;
+        this.contractSchema = contractSchema;
     }
 
     // Precedence, per field: configured → request → framework default
     // (docs/per-request-inference.md §4). What is established and hard-configured takes
-    // precedence, always — a caller can never widen the boundary the deployment set.
-    private static ResolvedInference Resolve(PromptRequest request) =>
+    // precedence, always — a caller can never widen the boundary the deployment set. The
+    // request's schema is never merged and never partially honored: one schema survives, and it
+    // seeds the wire and the guardian alike (§4.1).
+    private ResolvedInference Resolve(PromptRequest request) =>
         new()
         {
             Temperature = request.Temperature ?? ResolvedInference.DefaultTemperature,
             MaxTokens = request.MaxTokens ?? ResolvedInference.DefaultMaxTokens,
             Seed = request.Seed,
             Stop = request.Stop,
-            ResponseSchemaJson = request.ResponseSchemaJson,
+
+            ResponseSchemaJson = string.IsNullOrWhiteSpace(this.contractSchema)
+                ? request.ResponseSchemaJson
+                : this.contractSchema,
+
             CallerTools = request.CallerTools,
             ProviderOptionsJson = request.ProviderOptionsJson
         };

@@ -1429,7 +1429,8 @@ public sealed partial class StandardAgent : IAgent
 
         return new RunManagementService(
             data, decision, direction, logging, this.maxTurns, new TimeBroker(), this.budget,
-            this.maxHistoryTurns, this.compensateOnFailure, this.screenToolOutput);
+            this.maxHistoryTurns, this.compensateOnFailure, this.screenToolOutput,
+            this.contractSchema);
     }
 
     // The catalog a "{{tools}}" marker in the agent's Data expands into. Only tools that
