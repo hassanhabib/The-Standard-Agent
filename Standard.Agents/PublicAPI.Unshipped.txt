@@ -19,8 +19,12 @@ Standard.Agents.Models.Brokers.Agents.RegisteredAgent.Equals(Standard.Agents.Mod
 Standard.Agents.Models.Brokers.Agents.RegisteredAgent.Name.get -> string!
 Standard.Agents.Models.Brokers.Agents.RegisteredAgent.Name.init -> void
 Standard.Agents.Models.Brokers.Agents.RegisteredAgent.RegisteredAgent(string! Name, string! Description, Standard.Agents.IAgent! Agent) -> void
+Standard.Agents.Models.Loggings.AgentRun.HandoffOutcome.get -> Standard.Agents.Models.Clients.Agents.AgentOutcome?
+Standard.Agents.Models.Loggings.AgentRun.HandoffOutcome.set -> void
 Standard.Agents.Models.Loggings.AgentRun.Prompt.get -> string!
 Standard.Agents.Models.Loggings.AgentRun.Prompt.set -> void
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Transferring.get -> bool
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Transferring.init -> void
 Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog
 Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog.<Clone>$() -> Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog!
 Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog.Deconstruct(out System.Func<System.Threading.Tasks.ValueTask<string!>>! DiscoverAsync) -> void

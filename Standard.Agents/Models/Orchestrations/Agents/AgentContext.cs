@@ -53,6 +53,11 @@ public sealed record AgentContext
     // being inferred from which brain happened to be configured.
     public bool UsageIsEstimated { get; init; }
 
+    // This turn's act is a transfer: the Brain handed the whole run to a registered agent, and
+    // an answer from that agent ends the run as the answer. Set by Inference when it reads
+    // TRANSFER:, cleared on every other intent, so it can never survive into a later turn.
+    public bool Transferring { get; init; }
+
     public string Result { get; init; } = "";
     public string Remember { get; init; } = "";
     public AgentStatus Status { get; init; }

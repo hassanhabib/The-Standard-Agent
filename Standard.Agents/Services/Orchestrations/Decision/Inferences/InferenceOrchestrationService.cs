@@ -20,8 +20,14 @@ public partial class InferenceOrchestrationService : IInferenceOrchestrationServ
     private const string ActionPrefix = "ACTION:";
     private const string ToolPrefix = "TOOL:";
     private const string FinalPrefix = "FINAL:";
+    private const string TransferPrefix = "TRANSFER:";
     private const string ReturnResponseDirection = "ReturnResponse";
     private const string RespondIntent = "Respond";
+
+    // The task a transfer hands over when the model names only the agent. The grounded handoff
+    // template already carries the user's actual ask ({prompt}), so the task slot states the
+    // transfer's meaning rather than repeating the prompt into its own context.
+    private const string TransferTask = "answer the user's request in full.";
 
     private readonly IBrainService brainService;
     private readonly IUsageService usageService;

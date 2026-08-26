@@ -29,6 +29,7 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
     private const string ActionPrefix = "ACTION:";
     private const string ToolPrefix = "TOOL:";
     private const string FinalPrefix = "FINAL:";
+    private const string TransferPrefix = "TRANSFER:";
 
     private const string RefuseVerdict = "refuse";
     private const string RouteVerdict = "route";
@@ -554,7 +555,8 @@ verdict.TrimStart().StartsWith(RefuseVerdict, StringComparison.OrdinalIgnoreCase
     private static bool IsGuardianOverreach(string verdict) =>
         verdict.Contains(FinalPrefix, StringComparison.OrdinalIgnoreCase)
             || verdict.Contains(ActionPrefix, StringComparison.OrdinalIgnoreCase)
-            || verdict.Contains(ToolPrefix, StringComparison.OrdinalIgnoreCase);
+            || verdict.Contains(ToolPrefix, StringComparison.OrdinalIgnoreCase)
+            || verdict.Contains(TransferPrefix, StringComparison.OrdinalIgnoreCase);
 
     private static string ExtractRouteLabel(string verdict)
     {
