@@ -416,7 +416,15 @@
          and many skill sources concatenating in registration order, with "skills" and "mcp"
          arrays in the JSON document. New routines and a widened broker contract, core models
          unchanged: segment 2 advances, 3/4 reset. Tracks SPEC.md v1.5. -->
-    <Version>1.9.0.0</Version>
+    <!-- 1.10.0.0 "The Fleet": other agents become a capability like every other. An agent
+         registry reached three ways (.Agents folder of agent documents / .UseAgents broker /
+         .OnAgents delegate), registered agents materializing as tools so the perimeter that
+         governs acts governs handoffs, identity riding in the document (name/description), the
+         fleet as data ("agents" key), grounded template-configurable handoffs, and a third
+         reply verb TRANSFER: that ends the run with the specialist's answer verbatim - only
+         when it actually answered. New routines and models, core contracts unchanged: segment
+         2 advances, 3/4 reset. Tracks SPEC.md v1.6. -->
+    <Version>1.10.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>
