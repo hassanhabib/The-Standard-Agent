@@ -17,6 +17,7 @@ using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Clients.Agents.Exceptions;
 using Standard.Agents.Models.Loggings;
 using Xunit;
+using Standard.Agents.Models.Brokers.Generators;
 
 namespace Standard.Agents.Tests.Unit.Clients;
 
@@ -30,6 +31,11 @@ public class StandardAgentTests
         var generatorBroker = new Mock<IGeneratorBroker>();
         generatorBroker.Setup(broker => broker.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(brainReply);
+
+        generatorBroker.Setup(broker => broker.GenerateAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ResolvedInference>()))
+                .Returns((string systemPrompt, string userPrompt, ResolvedInference _) =>
+                    generatorBroker.Object.GenerateAsync(systemPrompt, userPrompt));
 
         var memoryBroker = new Mock<IMemoryBroker>();
         memoryBroker.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
@@ -138,6 +144,11 @@ public class StandardAgentTests
         newGenerator.Setup(broker => broker.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync("FINAL: second");
 
+        newGenerator.Setup(broker => broker.GenerateAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ResolvedInference>()))
+                .Returns((string systemPrompt, string userPrompt, ResolvedInference _) =>
+                    newGenerator.Object.GenerateAsync(systemPrompt, userPrompt));
+
         // when
         agent.UseGenerator(newGenerator.Object);
         string secondResult = await agent.ProcessPromptAsync(prompt: "prompt");
@@ -171,6 +182,11 @@ public class StandardAgentTests
         var generatorBroker = new Mock<IGeneratorBroker>();
         generatorBroker.Setup(broker => broker.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync("FINAL: ok");
+
+        generatorBroker.Setup(broker => broker.GenerateAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ResolvedInference>()))
+                .Returns((string systemPrompt, string userPrompt, ResolvedInference _) =>
+                    generatorBroker.Object.GenerateAsync(systemPrompt, userPrompt));
 
         var classifierBroker = new Mock<IClassifierBroker>();
         classifierBroker.Setup(broker => broker.ClassifyAsync(It.IsAny<string>()))
@@ -221,6 +237,11 @@ public class StandardAgentTests
         generatorBroker.Setup(broker => broker.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync("Hello there!");
 
+        generatorBroker.Setup(broker => broker.GenerateAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ResolvedInference>()))
+                .Returns((string systemPrompt, string userPrompt, ResolvedInference _) =>
+                    generatorBroker.Object.GenerateAsync(systemPrompt, userPrompt));
+
         var agent = new StandardAgent()
             .UseSkills(skillBroker.Object)
             .UseMemory(memory.Object)
@@ -242,6 +263,11 @@ public class StandardAgentTests
         var generatorBroker = new Mock<IGeneratorBroker>();
         generatorBroker.Setup(broker => broker.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync("FINAL: composed");
+
+        generatorBroker.Setup(broker => broker.GenerateAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ResolvedInference>()))
+                .Returns((string systemPrompt, string userPrompt, ResolvedInference _) =>
+                    generatorBroker.Object.GenerateAsync(systemPrompt, userPrompt));
 
         var gate = new Mock<IClassifierBroker>();
         gate.Setup(broker => broker.ClassifyAsync(It.IsAny<string>()))
@@ -284,6 +310,11 @@ public class StandardAgentTests
         var generatorBroker = new Mock<IGeneratorBroker>();
         generatorBroker.Setup(broker => broker.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(() => replies.Dequeue());
+
+        generatorBroker.Setup(broker => broker.GenerateAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ResolvedInference>()))
+                .Returns((string systemPrompt, string userPrompt, ResolvedInference _) =>
+                    generatorBroker.Object.GenerateAsync(systemPrompt, userPrompt));
 
         var gate = new Mock<IClassifierBroker>();
         gate.Setup(broker => broker.ClassifyAsync(It.IsAny<string>()))
@@ -384,6 +415,11 @@ public class StandardAgentTests
         generatorBroker.Setup(broker => broker.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
             .Callback<string, string>((systemPrompt, userPrompt) => capturedSystemPrompt = systemPrompt)
             .ReturnsAsync("FINAL: done");
+
+        generatorBroker.Setup(broker => broker.GenerateAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ResolvedInference>()))
+                .Returns((string systemPrompt, string userPrompt, ResolvedInference _) =>
+                    generatorBroker.Object.GenerateAsync(systemPrompt, userPrompt));
 
         var describedTool = new Mock<Standard.Agents.Tools.ITool>();
         describedTool.SetupGet(tool => tool.Name).Returns("calculator");

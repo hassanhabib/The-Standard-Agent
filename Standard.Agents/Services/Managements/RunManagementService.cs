@@ -44,6 +44,8 @@ public partial class RunManagementService : IRunManagementService
     // at the top of each run. Null means the host expressed no opinion — which is exactly what
     // lets a request's value take effect (docs/per-request-inference.md §4.2).
     private readonly string? contractSchema;
+    private readonly double? configuredTemperature;
+    private readonly int? configuredMaxTokens;
 
     public RunManagementService(
         IDataCoordinationService dataCoordinationService,
@@ -56,7 +58,9 @@ public partial class RunManagementService : IRunManagementService
         int maxHistoryTurns = 20,
         bool compensateOnFailure = false,
         bool screenToolOutput = false,
-        string? contractSchema = null)
+        string? contractSchema = null,
+        double? configuredTemperature = null,
+        int? configuredMaxTokens = null)
     {
         this.compensateOnFailure = compensateOnFailure;
         this.dataCoordinationService = dataCoordinationService;
@@ -69,6 +73,8 @@ public partial class RunManagementService : IRunManagementService
         this.maxHistoryTurns = maxHistoryTurns;
         this.screenToolOutput = screenToolOutput;
         this.contractSchema = contractSchema;
+        this.configuredTemperature = configuredTemperature;
+        this.configuredMaxTokens = configuredMaxTokens;
     }
 
     // Precedence, per field: configured → request → framework default
@@ -79,8 +85,13 @@ public partial class RunManagementService : IRunManagementService
     private ResolvedInference Resolve(PromptRequest request) =>
         new()
         {
-            Temperature = request.Temperature ?? ResolvedInference.DefaultTemperature,
-            MaxTokens = request.MaxTokens ?? ResolvedInference.DefaultMaxTokens,
+            Temperature = this.configuredTemperature
+                ?? request.Temperature
+                ?? ResolvedInference.DefaultTemperature,
+
+            MaxTokens = this.configuredMaxTokens
+                ?? request.MaxTokens
+                ?? ResolvedInference.DefaultMaxTokens,
             Seed = request.Seed,
             Stop = request.Stop,
 

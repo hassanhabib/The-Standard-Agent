@@ -26,6 +26,7 @@ using Standard.Agents.Brokers.Times;
 using Standard.Agents.Brokers.Tools;
 using Standard.Agents.Brokers.Verifiers;
 using Standard.Agents.Models.Brokers.Audits;
+using Standard.Agents.Models.Brokers.Generators;
 using Standard.Agents.Models.Brokers.Generators.V1;
 using Standard.Agents.Models.Brokers.Sessions;
 using Standard.Agents.Models.Clients.Agents;
@@ -195,16 +196,23 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="apiUrl">Base URL of the OpenAI-compatible endpoint.</param>
     /// <param name="apiKey">API key for the endpoint (empty string if none is needed).</param>
     /// <param name="model">Model name to request from the endpoint.</param>
-    /// <param name="temperature">Sampling temperature; higher is more varied. Defaults to 0.7.</param>
-    /// <param name="maxTokens">Maximum tokens to generate per turn. Defaults to 1024.</param>
+    /// <param name="temperature">
+    /// Sampling temperature; higher is more varied. Omitted, the framework's 0.7 applies — and a
+    /// request may speak, because the deployment said nothing. Set, it is hard configuration and
+    /// no request can move it (docs/per-request-inference.md §4.2).
+    /// </param>
+    /// <param name="maxTokens">
+    /// Maximum tokens to generate per turn. Omitted, the framework's 1024 applies, on the same
+    /// precedence as <paramref name="temperature"/>.
+    /// </param>
     /// <param name="timeoutSeconds">Per-request timeout in seconds. Defaults to 120.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent Brain(
         string apiUrl,
         string apiKey,
         string model,
-        double temperature = 0.7,
-        int maxTokens = 1024,
+        double? temperature = null,
+        int? maxTokens = null,
         int timeoutSeconds = 120) =>
         Set(() => this.brainSettings =
             new InferenceSettings(apiUrl, apiKey, model, temperature, maxTokens, timeoutSeconds));
@@ -1248,9 +1256,14 @@ public sealed partial class StandardAgent : IAgent
                     ? new FunctionGeneratorBroker((systemPrompt, userPrompt) =>
                         throw new InvalidOperationException(
                             "This agent has a native brain; the text protocol is not in use."))
+                    // The legacy-path values, resolved configured → framework default at
+                    // composition. A per-request value arrives on the request-carrying overload
+                    // and never through here.
                     : new GeneratorBroker(
                         brain.ApiUrl, brain.ApiKey, brain.Model,
-                        brain.Temperature, brain.MaxTokens, brain.TimeoutSeconds));
+                        brain.Temperature ?? ResolvedInference.DefaultTemperature,
+                        brain.MaxTokens ?? ResolvedInference.DefaultMaxTokens,
+                        brain.TimeoutSeconds));
 
         IMemoryService memoryService = this.memoryBroker is null
             ? new MemoryService(file, Path.GetFullPath(this.memoryPath), logging)
@@ -1283,7 +1296,7 @@ public sealed partial class StandardAgent : IAgent
                         ? new NotConfiguredClassifierBroker()
                         : new ClassifierBroker(
                             this.gateSettings.ApiUrl, this.gateSettings.ApiKey, this.gateSettings.Model,
-                            this.gateSettings.Temperature, this.gateSettings.MaxTokens,
+                            this.gateSettings.Temperature ?? 0.0, this.gateSettings.MaxTokens ?? 16,
                             this.gateSettings.TimeoutSeconds, gateRubric));
 
         IVerifierBroker verifier =
@@ -1294,7 +1307,7 @@ public sealed partial class StandardAgent : IAgent
                         ? new NotConfiguredVerifierBroker()
                         : new VerifierBroker(
                             this.judgeSettings.ApiUrl, this.judgeSettings.ApiKey, this.judgeSettings.Model,
-                            this.judgeSettings.Temperature, this.judgeSettings.MaxTokens,
+                            this.judgeSettings.Temperature ?? 0.0, this.judgeSettings.MaxTokens ?? 16,
                             this.judgeSettings.TimeoutSeconds, judgeRubric));
 
         IToolBroker toolBroker = new ToolBroker(allTools);
@@ -1430,7 +1443,7 @@ public sealed partial class StandardAgent : IAgent
         return new RunManagementService(
             data, decision, direction, logging, this.maxTurns, new TimeBroker(), this.budget,
             this.maxHistoryTurns, this.compensateOnFailure, this.screenToolOutput,
-            this.contractSchema);
+            this.contractSchema, brain?.Temperature, brain?.MaxTokens);
     }
 
     // The catalog a "{{tools}}" marker in the agent's Data expands into. Only tools that
