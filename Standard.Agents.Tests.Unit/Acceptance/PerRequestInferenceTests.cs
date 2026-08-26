@@ -11,6 +11,7 @@ using Standard.Agents.Brokers.Knowledges;
 using Standard.Agents.Brokers.Memorys;
 using Standard.Agents.Brokers.Skills;
 using Standard.Agents.Models.Brokers.Generators;
+using Standard.Agents.Models.Brokers.Generators.V1;
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Foundations.Skills;
 using Xunit;
@@ -310,5 +311,73 @@ public class PerRequestInferenceTests
 
         responses.Should().ContainSingle();
         responses[0].Should().Be("""{"city":"Paris"}""");
+    }
+
+    private sealed class CapturingNativeBroker : IGeneratorBrokerV1
+    {
+        public ResolvedInference? Captured { get; private set; }
+
+        public bool HonorsRequest => true;
+
+        public ValueTask<GenerationResult> GenerateAsync(
+            IReadOnlyList<ConversationMessage> messages,
+            IReadOnlyList<ToolDefinition> tools) =>
+            ValueTask.FromResult(
+                new GenerationResult { Content = "FINAL: ok" });
+
+        public ValueTask<GenerationResult> GenerateAsync(
+            IReadOnlyList<ConversationMessage> messages,
+            IReadOnlyList<ToolDefinition> tools,
+            ResolvedInference inference)
+        {
+            this.Captured = inference;
+
+            return ValueTask.FromResult(
+                new GenerationResult { Content = "FINAL: ok" });
+        }
+    }
+
+    // The V1 path is where the context already reached the Brain foundation intact and was then
+    // discarded (design §2). This pins the discarding stopped: the resolved options ride through
+    // to the native broker exactly as they do on the text protocol.
+    [Fact]
+    public async Task ShouldCarryTheRequestToTheNativeBrokerAsync()
+    {
+        // given
+        var broker = new CapturingNativeBroker();
+
+        var skillBroker = new Mock<ISkillBroker>();
+
+        skillBroker.Setup(b => b.SelectSkillsAsync())
+            .ReturnsAsync(new List<Skill> { new() { Content = "You are a helpful agent." } });
+
+        var memoryBroker = new Mock<IMemoryBroker>();
+        memoryBroker.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
+
+        var knowledgeBroker = new Mock<IKnowledgeBroker>();
+
+        knowledgeBroker.Setup(b => b.SelectKnowledgeAsync(It.IsAny<string>()))
+            .ReturnsAsync([]);
+
+        StandardAgent agent = new StandardAgent()
+            .UseSkills(skillBroker.Object)
+            .UseMemory(memoryBroker.Object)
+            .UseKnowledge(knowledgeBroker.Object)
+            .UseNativeBrain(broker);
+
+        var request = new PromptRequest
+        {
+            Prompt = "hello",
+            Temperature = 0.2,
+            MaxTokens = 64
+        };
+
+        // when
+        await agent.ProcessPromptAsync(request);
+
+        // then
+        broker.Captured.Should().NotBeNull();
+        broker.Captured!.Temperature.Should().Be(0.2);
+        broker.Captured.MaxTokens.Should().Be(64);
     }
 }

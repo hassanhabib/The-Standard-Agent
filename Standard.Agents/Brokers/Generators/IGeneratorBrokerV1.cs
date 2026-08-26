@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using Standard.Agents.Models.Brokers.Generators;
 using Standard.Agents.Models.Brokers.Generators.V1;
 
 namespace Standard.Agents.Brokers.Generators;
@@ -20,4 +21,21 @@ public interface IGeneratorBrokerV1
     ValueTask<GenerationResult> GenerateAsync(
         IReadOnlyList<ConversationMessage> messages,
         IReadOnlyList<ToolDefinition> tools);
+
+    /// <summary>
+    /// True when this broker puts resolved inference options on the wire
+    /// (docs/per-request-inference.md §5); the guardian still holds the answer to shape either way.
+    /// </summary>
+    bool HonorsRequest => false;
+
+    /// <summary>
+    /// The request-carrying call — the same generation with the run's resolved inference
+    /// options, already precedence-resolved at the boundary. Default: degrade to the plain
+    /// call, so provider packages keep compiling and opt in on their own schedule.
+    /// </summary>
+    ValueTask<GenerationResult> GenerateAsync(
+        IReadOnlyList<ConversationMessage> messages,
+        IReadOnlyList<ToolDefinition> tools,
+        ResolvedInference inference) =>
+        GenerateAsync(messages, tools);
 }
