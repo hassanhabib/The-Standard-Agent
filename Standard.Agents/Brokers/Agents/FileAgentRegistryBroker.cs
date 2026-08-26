@@ -3,7 +3,6 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
-using System.Text.Json.Nodes;
 using Standard.Agents.Models.Brokers.Agents;
 
 namespace Standard.Agents.Brokers.Agents;
@@ -34,14 +33,15 @@ public sealed class FileAgentRegistryBroker : IAgentRegistryBroker
             .EnumerateFiles(this.agentsPath, "*.json")
             .OrderBy(path => path, StringComparer.Ordinal))
         {
-            string document = await File.ReadAllTextAsync(documentPath);
-            JsonNode? identity = JsonNode.Parse(document);
+            StandardAgent composed =
+                StandardAgent.FromJson(await File.ReadAllTextAsync(documentPath));
 
             agents.Add(new RegisteredAgent(
-                Name: identity?["name"]?.GetValue<string>()
-                    ?? Path.GetFileNameWithoutExtension(documentPath),
-                Description: identity?["description"]?.GetValue<string>() ?? string.Empty,
-                Agent: StandardAgent.FromJson(document)));
+                Name: string.IsNullOrWhiteSpace(composed.Name)
+                    ? Path.GetFileNameWithoutExtension(documentPath)
+                    : composed.Name,
+                Description: composed.Description,
+                Agent: composed));
         }
 
         return agents;

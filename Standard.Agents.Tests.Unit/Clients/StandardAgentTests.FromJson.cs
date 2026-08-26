@@ -97,6 +97,8 @@ public class StandardAgentFromJsonTests
         // given
         const string everything = """
         {
+          "name": "concierge",
+          "description": "Answers anything, hands off what it should not answer.",
           "brain": { "apiUrl": "https://api.peerllm.com/v1/", "apiKey": "k", "model": "LLooMA2.0",
                      "temperature": 0.2, "maxTokens": 512, "timeoutSeconds": 60 },
           "nativeBrain": { "apiUrl": "https://api.peerllm.com/v1/", "apiKey": "k", "model": "m" },

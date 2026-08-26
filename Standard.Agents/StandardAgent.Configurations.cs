@@ -68,6 +68,19 @@ public partial class StandardAgent
     {
         switch (key)
         {
+            // Identity rides in the document, so the file IS the agent: a registry reads the
+            // name a handoff calls and the description that advertises it from the same JSON
+            // that composes it. Each key preserves the other, so their order cannot matter.
+            case "name":
+                agent.Identity(Text(value, key), agent.Description);
+
+                break;
+
+            case "description":
+                agent.Identity(agent.Name, Text(value, key));
+
+                break;
+
             case "brain":
                 agent.Brain(
                     Text(value, key, "apiUrl"),
