@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using Standard.Agents.Models.Brokers.Generators;
 using Standard.Agents.Models.Brokers.Sessions;
 using Standard.Agents.Models.Orchestrations.Effects;
 
@@ -17,6 +18,13 @@ public sealed record AgentContext
     // before sessions did.
     public string SessionId { get; init; } = "";
     public IReadOnlyList<AgentTurn> History { get; init; } = [];
+
+    // What this run's inference resolved to — configured → request → framework default, applied
+    // once at the boundary (docs/per-request-inference.md §2). Seeded on every run the entry
+    // starts, including the plain-string overloads, so no tier below it ever learns that
+    // precedence exists. Nullable only for a context built by hand; a tier reading it treats
+    // null as "the run carried no opinions", which is exactly what the entry would have seeded.
+    public ResolvedInference? Inference { get; init; }
 
     public string SystemPrompt { get; init; } = "";
     public IReadOnlyList<string> Observations { get; init; } = [];
