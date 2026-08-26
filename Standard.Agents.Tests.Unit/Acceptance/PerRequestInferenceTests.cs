@@ -3,11 +3,14 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Runtime.CompilerServices;
 using FluentAssertions;
 using Moq;
+using Standard.Agents.Brokers.Generators;
 using Standard.Agents.Brokers.Knowledges;
 using Standard.Agents.Brokers.Memorys;
 using Standard.Agents.Brokers.Skills;
+using Standard.Agents.Models.Brokers.Generators;
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Foundations.Skills;
 using Xunit;
@@ -98,5 +101,136 @@ public class PerRequestInferenceTests
 
         // then — configured won: the draft shaped like the request was sent back
         actualResult.Should().Be("""{"city":"Paris"}""");
+    }
+
+    // A broker that opts in — it implements the request-carrying overload and says so. What it
+    // captures is the resolution's OUTPUT: a broker below the boundary writes what it is given
+    // and decides nothing (design §4.2).
+    private sealed class CapturingGeneratorBroker : IGeneratorBroker
+    {
+        public ResolvedInference? Captured { get; private set; }
+
+        public bool HonorsRequest => true;
+
+        public ValueTask<string> GenerateAsync(string systemPrompt, string userPrompt) =>
+            ValueTask.FromResult("FINAL: ok");
+
+        public ValueTask<string> GenerateAsync(
+            string systemPrompt,
+            string userPrompt,
+            ResolvedInference inference)
+        {
+            this.Captured = inference;
+
+            return ValueTask.FromResult("FINAL: ok");
+        }
+
+        public async IAsyncEnumerable<string> GenerateStreamAsync(
+            string systemPrompt,
+            string userPrompt,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            yield return "FINAL: ok";
+        }
+    }
+
+    private static StandardAgent AgentWith(CapturingGeneratorBroker broker)
+    {
+        var skillBroker = new Mock<ISkillBroker>();
+
+        skillBroker.Setup(b => b.SelectSkillsAsync())
+            .ReturnsAsync(new List<Skill> { new() { Content = "You are a helpful agent." } });
+
+        var memoryBroker = new Mock<IMemoryBroker>();
+        memoryBroker.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
+
+        var knowledgeBroker = new Mock<IKnowledgeBroker>();
+
+        knowledgeBroker.Setup(b => b.SelectKnowledgeAsync(It.IsAny<string>()))
+            .ReturnsAsync([]);
+
+        return new StandardAgent()
+            .UseSkills(skillBroker.Object)
+            .UseMemory(memoryBroker.Object)
+            .UseKnowledge(knowledgeBroker.Object)
+            .UseGenerator(broker);
+    }
+
+    // §4.2's exact blocker, pinned: the host called .Brain and said nothing about temperature.
+    // "Configured wins" must mean HARD-configured wins — a request beaten by a default nobody
+    // expressed an opinion about would make per-request inference unimplementable.
+    [Fact]
+    public async Task ShouldLetTheRequestSpeakWhereTheDeploymentSaidNothingAsync()
+    {
+        // given — a brain configured with no opinion on temperature or max tokens
+        var broker = new CapturingGeneratorBroker();
+
+        StandardAgent agent = AgentWith(broker)
+            .Brain("http://localhost:9999/v1/", apiKey: "", model: "test");
+
+        var request = new PromptRequest
+        {
+            Prompt = "hello",
+            Temperature = 0.9,
+            MaxTokens = 512
+        };
+
+        // when
+        await agent.ProcessPromptAsync(request);
+
+        // then — the request's values reached the wire
+        broker.Captured.Should().NotBeNull();
+        broker.Captured!.Temperature.Should().Be(0.9);
+        broker.Captured.MaxTokens.Should().Be(512);
+    }
+
+    // Configuration is a ceiling (design §4): a temperature the deployment chose cannot be
+    // moved by asking nicely.
+    [Fact]
+    public async Task ShouldHandTheBrokerTheConfiguredTemperatureOverTheRequestsAsync()
+    {
+        // given — a brain hard-configured on both knobs
+        var broker = new CapturingGeneratorBroker();
+
+        StandardAgent agent = AgentWith(broker)
+            .Brain(
+                "http://localhost:9999/v1/",
+                apiKey: "",
+                model: "test",
+                temperature: 0.3,
+                maxTokens: 256);
+
+        var request = new PromptRequest
+        {
+            Prompt = "hello",
+            Temperature = 0.9,
+            MaxTokens = 4096
+        };
+
+        // when
+        await agent.ProcessPromptAsync(request);
+
+        // then — configured won, on both
+        broker.Captured.Should().NotBeNull();
+        broker.Captured!.Temperature.Should().Be(0.3);
+        broker.Captured.MaxTokens.Should().Be(256);
+    }
+
+    // The third rung: nobody spoke, so the framework default applies — chosen by resolution at
+    // the boundary, not by the broker (design §4.2).
+    [Fact]
+    public async Task ShouldHandTheBrokerTheFrameworkDefaultWhenNobodySaidAnythingAsync()
+    {
+        // given — no configured opinion, no request opinion
+        var broker = new CapturingGeneratorBroker();
+        StandardAgent agent = AgentWith(broker);
+
+        // when
+        await agent.ProcessPromptAsync(new PromptRequest { Prompt = "hello" });
+
+        // then
+        broker.Captured.Should().NotBeNull();
+        broker.Captured!.Temperature.Should().Be(ResolvedInference.DefaultTemperature);
+        broker.Captured.MaxTokens.Should().Be(ResolvedInference.DefaultMaxTokens);
     }
 }
