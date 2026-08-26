@@ -69,4 +69,34 @@ public class PerRequestInferenceTests
         // then — the malformed draft was revised against the schema the request asked for
         actualResult.Should().Be("""{"city":"Paris"}""");
     }
+
+    // Configuration is a ceiling, not a suggestion (design §4). The first draft matches the
+    // REQUEST's shape exactly — and is still revised, because a configured Contract discards the
+    // request's schema outright. Never merged, never partially honored: the model is constrained
+    // to one schema and validated against that same schema, which is what makes the
+    // constrained-to-A-validated-against-B loop unreachable.
+    [Fact]
+    public async Task ShouldDiscardTheRequestSchemaWhenAContractIsConfiguredAsync()
+    {
+        // given — a configured Contract requiring "city", a request asking for "name"
+        int call = 0;
+
+        StandardAgent agent = AgentWith((systemPrompt, userPrompt) =>
+            ValueTask.FromResult(call++ == 0
+                ? """FINAL: {"name":"Paris"}"""
+                : """FINAL: {"city":"Paris"}"""))
+            .Contract("""{"type":"object","required":["city"]}""");
+
+        var request = new PromptRequest
+        {
+            Prompt = "capital of France, as JSON",
+            ResponseSchemaJson = """{"type":"object","required":["name"]}"""
+        };
+
+        // when
+        string actualResult = await agent.ProcessPromptAsync(request);
+
+        // then — configured won: the draft shaped like the request was sent back
+        actualResult.Should().Be("""{"city":"Paris"}""");
+    }
 }
