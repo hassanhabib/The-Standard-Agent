@@ -1,0 +1,21 @@
+{
+  "name": "a-refused-transfer-stays-an-observation",
+  "description": "A transfer that does not deliver is an observation, never the answer (SPEC.md 4.8 v1.6). The specialist's own gate refuses the handed-off task; the refusal comes back marked '[did not complete]' with the specialist's status, the outer Brain keeps working the task, and the run's answer is the outer agent's own - a refusal presented as the user's answer would be the dishonesty the marker exists to prevent.",
+  "agents": [
+    {
+      "name": "billing",
+      "description": "Handles refunds and invoices.",
+      "ruleGate": ["refund"],
+      "replies": ["FINAL: should never be reached"]
+    }
+  ],
+  "generatorReplies": [
+    "TRANSFER: billing",
+    "FINAL: billing could not take this; here is the path forward."
+  ],
+  "prompt": "please refund order 7741",
+  "expect": {
+    "resultContains": "path forward",
+    "brainSees": "[did not complete]"
+  }
+}
