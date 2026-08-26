@@ -51,6 +51,21 @@ public class StandardAgentFromJsonTests
         answer.Should().Contain("ran out of turns");
     }
 
+    // Identity is what makes an agent document registrable: the name a handoff calls, the
+    // description that advertises it. They ride in the document itself, so the file IS the
+    // agent — a registry needs nothing beside it.
+    [Fact]
+    public void ShouldComposeAgentIdentityFromJson()
+    {
+        // given . when
+        StandardAgent agent = StandardAgent.FromJson(
+            """{ "name": "billing", "description": "Handles refunds and invoices." }""");
+
+        // then
+        agent.Name.Should().Be("billing");
+        agent.Description.Should().Be("Handles refunds and invoices.");
+    }
+
     [Fact]
     public void ShouldRejectAnUnknownConfigurationKey()
     {
@@ -61,6 +76,19 @@ public class StandardAgentFromJsonTests
         // then — a typo'd key must not produce an unbounded agent that looks configured.
         composing.Should().Throw<InvalidAgentConfigurationException>()
             .WithMessage("*buget*");
+    }
+
+    [Fact]
+    public void ShouldRejectANamelessInlineFleetMember()
+    {
+        // given . when — an inline fleet member with no name is an agent no handoff could
+        // ever call, so it refuses to compose rather than registering an unreachable agent.
+        Action composing = () =>
+            StandardAgent.FromJson("""{ "agents": [ { "maxTurns": 2 } ] }""");
+
+        // then
+        composing.Should().Throw<InvalidAgentConfigurationException>()
+            .WithMessage("*agents*name*");
     }
 
     [Fact]
@@ -82,6 +110,8 @@ public class StandardAgentFromJsonTests
         // given
         const string everything = """
         {
+          "name": "concierge",
+          "description": "Answers anything, hands off what it should not answer.",
           "brain": { "apiUrl": "https://api.peerllm.com/v1/", "apiKey": "k", "model": "LLooMA2.0",
                      "temperature": 0.2, "maxTokens": 512, "timeoutSeconds": 60 },
           "nativeBrain": { "apiUrl": "https://api.peerllm.com/v1/", "apiKey": "k", "model": "m" },
@@ -93,6 +123,10 @@ public class StandardAgentFromJsonTests
             "https://mcp.example/",
             { "endpointUrl": "https://locked.example/", "timeoutSeconds": 20,
               "bearerToken": "token", "apiKey": "key", "apiKeyHeader": "X-Api-Key" }
+          ],
+          "agents": [
+            "Fleet",
+            { "name": "billing", "description": "Handles refunds and invoices.", "maxTurns": 2 }
           ],
           "gate": { "apiUrl": "https://api.peerllm.com/v1/", "apiKey": "k", "model": "m" },
           "ruleGate": ["password", "ssn"],

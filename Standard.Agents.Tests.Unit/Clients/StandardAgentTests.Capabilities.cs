@@ -77,6 +77,11 @@ public class StandardAgentCapabilityTests
 
         new("Contract", Local: "Contract", External: "UseContract", Custom: "OnContract"),
 
+        // The fleet: other agents, reachable as a registry the way every resource is — a local
+        // folder of agent documents, a provider's registry, or a delegate. A registered agent
+        // materializes as a tool, so the perimeter that governs acts governs handoffs.
+        new("Agents", Local: "Agents", External: "UseAgents", Custom: "OnAgents"),
+
         // Found missing in the 2026-08-23 sweep: a full capability nature — its own broker
         // seam, four decorators, a rule-backed default — absent from this matrix entirely, with
         // one mode on the client (.Redact(), hardcoded to the default rules), no waiver, and no

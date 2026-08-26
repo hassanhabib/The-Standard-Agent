@@ -10,6 +10,7 @@ using System.Runtime.CompilerServices;
 using Lock = System.Object;
 #endif
 using Microsoft.Extensions.Logging.Abstractions;
+using Standard.Agents.Brokers.Agents;
 using Standard.Agents.Brokers.Audits;
 using Standard.Agents.Brokers.Approvals;
 using Standard.Agents.Brokers.Classifiers;
@@ -31,6 +32,7 @@ using Standard.Agents.Brokers.Telemetries;
 using Standard.Agents.Brokers.Times;
 using Standard.Agents.Brokers.Tools;
 using Standard.Agents.Brokers.Verifiers;
+using Standard.Agents.Models.Brokers.Agents;
 using Standard.Agents.Models.Brokers.Audits;
 using Standard.Agents.Models.Brokers.Generators.V1;
 using Standard.Agents.Models.Brokers.Sessions;
@@ -80,6 +82,10 @@ public sealed partial class StandardAgent : IAgent
     // agent the way a second .Tool() always has.
     private readonly List<ISkillBroker> skillSources = [];
     private readonly List<IMcpBroker> mcpSources = [];
+
+    // The fleet accumulates too: each registry is one more place agents come from, and every
+    // registered agent materializes as a tool at composition.
+    private readonly List<IAgentRegistryBroker> agentSources = [];
 
     private string constitutionPath = string.Empty;
     private string consumptionPath = string.Empty;
@@ -782,6 +788,63 @@ public sealed partial class StandardAgent : IAgent
         Set(() => this.skillSources.Add(new FunctionSkillBroker(select)));
 
     /// <summary>
+    /// Points the agent at a folder of agent documents — the <b>Local</b> mode of the fleet
+    /// (SPEC.md §4.8). Every <c>.json</c> file in the folder is an agent (the same documents
+    /// <see cref="FromJson"/> composes), and each one materializes as a tool the brain can hand
+    /// work to: advertised by its <c>description</c>, called by its <c>name</c>, and governed by
+    /// the same perimeter every act crosses.
+    /// </summary>
+    /// <param name="path">Folder of agent documents, relative to the build output.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    /// <remarks>Registries accumulate: a second call adds another folder, and the first source
+    /// to claim a name keeps it — exactly the rule MCP servers already live by.</remarks>
+    public StandardAgent Agents(string path) =>
+        Set(() => this.agentSources.Add(
+            new FileAgentRegistryBroker(Path.Combine(AppContext.BaseDirectory, path))));
+
+    /// <summary>
+    /// Adds an agent registry broker — the <b>External</b> mode: a provider package that knows
+    /// where agents live (a directory service, a control plane, another team's fleet).
+    /// </summary>
+    /// <param name="broker">The registry broker to add.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent UseAgents(IAgentRegistryBroker broker) =>
+        Set(() => this.agentSources.Add(broker));
+
+    /// <summary>
+    /// Supplies registered agents from your own code — the <b>Custom</b> mode: a delegate that
+    /// answers with the fleet, however your host stores it.
+    /// </summary>
+    /// <param name="select">A <c>() =&gt; registered agents</c> delegate.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent OnAgents(Func<ValueTask<IReadOnlyList<RegisteredAgent>>> select) =>
+        Set(() => this.agentSources.Add(new FunctionAgentRegistryBroker(select)));
+
+    /// <summary>What this agent is called — the name a registry offers it under, which is the
+    /// name a handoff calls. Empty until <see cref="Identity"/> or a document's <c>name</c> key
+    /// says otherwise.</summary>
+    public string Name { get; private set; } = string.Empty;
+
+    /// <summary>What this agent is for — the advertisement a registry shows an outer brain.
+    /// Empty means unadvertised, exactly like a tool without a description.</summary>
+    public string Description { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// Names the agent and says what it is for. Identity is what makes an agent registrable:
+    /// the name a handoff calls, and the description that advertises it to an outer brain —
+    /// no description, no advertisement, the same opt-in a tool's description is.
+    /// </summary>
+    /// <param name="name">The name a registry offers this agent under.</param>
+    /// <param name="description">What it does and when to hand work to it.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent Identity(string name, string description = "") =>
+        Set(() =>
+        {
+            this.Name = name;
+            this.Description = description;
+        });
+
+    /// <summary>
     /// Swaps in a custom generator (brain) broker — the extension point for a runtime that streams
     /// natively, an alternative to <see cref="Brain"/> or <see cref="LocalBrain"/>.
     /// </summary>
@@ -937,7 +1000,7 @@ public sealed partial class StandardAgent : IAgent
     // be hit at the assignment, nowhere near the await they were guarding.
     public async ValueTask<string> ProcessPromptAsync(string prompt)
     {
-        return await ResolveAgent().ProcessPromptAsync(prompt);
+        return await (await ResolveAgentAsync()).ProcessPromptAsync(prompt);
     }
 
     /// <summary>
@@ -953,7 +1016,7 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="prompt">What to work on.</param>
     /// <returns>The answer, and how the run ended.</returns>
     public async ValueTask<AgentOutcome> RunAsync(string prompt) =>
-        await ResolveAgent().RunAsync(prompt, string.Empty, CancellationToken.None);
+        await (await ResolveAgentAsync()).RunAsync(prompt, string.Empty, CancellationToken.None);
 
     /// <summary>
     /// The same run, stoppable: cancellation stops it at the next turn boundary, so no effect
@@ -967,7 +1030,7 @@ public sealed partial class StandardAgent : IAgent
     public async ValueTask<AgentOutcome> RunAsync(
         string prompt,
         CancellationToken cancellationToken) =>
-        await ResolveAgent().RunAsync(prompt, string.Empty, cancellationToken);
+        await (await ResolveAgentAsync()).RunAsync(prompt, string.Empty, cancellationToken);
 
     /// <summary>
     /// Runs the agent on a prompt and stops when <paramref name="cancellationToken"/> is
@@ -981,7 +1044,7 @@ public sealed partial class StandardAgent : IAgent
         string prompt,
         CancellationToken cancellationToken)
     {
-        return await ResolveAgent().ProcessPromptAsync(prompt, cancellationToken);
+        return await (await ResolveAgentAsync()).ProcessPromptAsync(prompt, cancellationToken);
     }
 
     /// <summary>
@@ -1005,7 +1068,8 @@ public sealed partial class StandardAgent : IAgent
         string sessionId,
         CancellationToken cancellationToken = default)
     {
-        return await ResolveAgent().ProcessPromptAsync(prompt, sessionId, cancellationToken);
+        return await (await ResolveAgentAsync())
+            .ProcessPromptAsync(prompt, sessionId, cancellationToken);
     }
 
     /// <summary>
@@ -1036,7 +1100,8 @@ public sealed partial class StandardAgent : IAgent
         string answer,
         CancellationToken cancellationToken = default)
     {
-        return await ResolveAgent().ProcessPromptAsync(answer, sessionId, cancellationToken);
+        return await (await ResolveAgentAsync())
+            .ProcessPromptAsync(answer, sessionId, cancellationToken);
     }
 
     /// <summary>
@@ -1250,7 +1315,7 @@ public sealed partial class StandardAgent : IAgent
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         IAsyncEnumerable<AgentStreamEvent> events =
-            ResolveAgent().ProcessPromptStreamAsync(prompt, cancellationToken);
+            (await ResolveAgentAsync()).ProcessPromptStreamAsync(prompt, cancellationToken);
 
         await foreach (AgentStreamEvent streamEvent in events.WithCancellation(cancellationToken))
         {
@@ -1276,8 +1341,8 @@ public sealed partial class StandardAgent : IAgent
         string sessionId,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        IAsyncEnumerable<AgentStreamEvent> events =
-            ResolveAgent().ProcessPromptStreamAsync(prompt, sessionId, cancellationToken);
+        IAsyncEnumerable<AgentStreamEvent> events = (await ResolveAgentAsync())
+            .ProcessPromptStreamAsync(prompt, sessionId, cancellationToken);
 
         await foreach (AgentStreamEvent streamEvent in events.WithCancellation(cancellationToken))
         {
@@ -1288,11 +1353,35 @@ public sealed partial class StandardAgent : IAgent
     // Composes once and reuses. Guarded because one agent serves prompts concurrently
     // (SPEC.md §4.4) and an unguarded `??=` lets two arriving prompts each build a graph —
     // two brokers over one audit sink, two of everything, one silently discarded.
-    private IRunManagementService ResolveAgent()
+    //
+    // Registry selection is async (a registry can be a service call away) and a lock cannot
+    // hold an await, so resolution is three steps: reuse under the lock, select outside it,
+    // compose under it again. A builder call landing between the steps nulls the cache, so
+    // the very next resolution selects and composes afresh — nothing configured is lost.
+    private async ValueTask<IRunManagementService> ResolveAgentAsync()
     {
+        IAgentRegistryBroker[] registries;
+
         lock (this.compositionLock)
         {
-            return this.agent ??= Compose();
+            if (this.agent is not null)
+            {
+                return this.agent;
+            }
+
+            registries = [.. this.agentSources];
+        }
+
+        List<RegisteredAgent> registeredAgents = [];
+
+        foreach (IAgentRegistryBroker registry in registries)
+        {
+            registeredAgents.AddRange(await registry.SelectAgentsAsync());
+        }
+
+        lock (this.compositionLock)
+        {
+            return this.agent ??= Compose(registeredAgents);
         }
     }
 
@@ -1334,7 +1423,7 @@ public sealed partial class StandardAgent : IAgent
     private static string ComposeGuardianRubric(params string[] parts) =>
         string.Join("\n\n", parts.Where(part => string.IsNullOrWhiteSpace(part) is false));
 
-    private IRunManagementService Compose()
+    private IRunManagementService Compose(IReadOnlyList<RegisteredAgent> registeredAgents)
     {
         ValidateComposition();
 
@@ -1372,6 +1461,27 @@ public sealed partial class StandardAgent : IAgent
             : new MemoryService(this.memoryBroker, logging);
 
         List<ITool> allTools = [.. this.tools, new RememberTool(memoryService.RememberAsync)];
+
+        // The fleet materializes as tools — which is the whole design: a handoff is an act, so
+        // the advertisement opt-in, the perimeter, the audit and cancellation across the seam
+        // all apply because they already applied to tools. First to claim a name keeps it, the
+        // rule MCP servers live by, so a registry cannot shadow a tool the host wired in code.
+        HashSet<string> claimedNames =
+            new(allTools.Select(tool => tool.Name), StringComparer.OrdinalIgnoreCase);
+
+        foreach (RegisteredAgent registered in registeredAgents)
+        {
+            if (claimedNames.Add(registered.Name) is false)
+            {
+                continue;
+            }
+
+            allTools.Add(new AgentTool(
+                registered.Name,
+                registered.Agent,
+                AgentTool.GroundedHandoff,
+                registered.Description));
+        }
 
         string constitution = ReadOptionalFile(file, this.constitutionPath);
         string consumption = ReadOptionalFile(file, this.consumptionPath);
