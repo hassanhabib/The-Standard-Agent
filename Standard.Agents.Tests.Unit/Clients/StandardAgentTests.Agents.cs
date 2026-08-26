@@ -96,6 +96,47 @@ public class StandardAgentAgentsTests
         outerSaw.Should().Contain("Handles refunds and invoices.");
     }
 
+    // The fleet is data like everything else: an "agents" entry is either a folder of agent
+    // documents (a path) or an agent document riding inline — identity included, because the
+    // document IS the agent. A form that can post JSON can post a fleet.
+    [Fact]
+    public async Task ShouldComposeAFleetFromJsonAsync()
+    {
+        // given
+        const string fleet = """
+        {
+          "agents": [
+            { "name": "billing", "description": "Handles refunds and invoices.", "maxTurns": 2 }
+          ]
+        }
+        """;
+
+        string? outerSaw = null;
+
+        StandardAgent outerAgent = StandardAgent.FromJson(fleet)
+            .UseMemory(EmptyMemory())
+            .UseKnowledge(EmptyKnowledge())
+            .OnSkills(() => new ValueTask<IReadOnlyList<Models.Foundations.Skills.Skill>>(
+                [new Models.Foundations.Skills.Skill
+                {
+                    Name = "concierge",
+                    Content = "Hand work to whoever does it best.\n\n{{tools}}"
+                }]))
+            .OnBrain(async (systemPrompt, userPrompt) =>
+            {
+                outerSaw = systemPrompt;
+
+                return "FINAL: nothing to do";
+            });
+
+        // when
+        await outerAgent.ProcessPromptAsync("hello");
+
+        // then — the document's fleet member is advertised exactly as a registered agent is.
+        outerSaw.Should().Contain("billing");
+        outerSaw.Should().Contain("Handles refunds and invoices.");
+    }
+
     private static IMemoryBroker EmptyMemory()
     {
         var memoryBroker = new Mock<IMemoryBroker>();

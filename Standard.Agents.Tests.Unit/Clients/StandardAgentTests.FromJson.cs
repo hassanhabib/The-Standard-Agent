@@ -79,6 +79,19 @@ public class StandardAgentFromJsonTests
     }
 
     [Fact]
+    public void ShouldRejectANamelessInlineFleetMember()
+    {
+        // given . when — an inline fleet member with no name is an agent no handoff could
+        // ever call, so it refuses to compose rather than registering an unreachable agent.
+        Action composing = () =>
+            StandardAgent.FromJson("""{ "agents": [ { "maxTurns": 2 } ] }""");
+
+        // then
+        composing.Should().Throw<InvalidAgentConfigurationException>()
+            .WithMessage("*agents*name*");
+    }
+
+    [Fact]
     public void ShouldRejectMalformedConfigurationJson()
     {
         // given . when
