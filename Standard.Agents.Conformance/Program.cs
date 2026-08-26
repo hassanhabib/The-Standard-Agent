@@ -7,6 +7,7 @@ using System.Text.Json;
 using Standard.Agents;
 using Standard.Agents.Brokers.Approvals;
 using Standard.Agents.Conformance;
+using Standard.Agents.Models.Brokers.Agents;
 using Standard.Agents.Models.Brokers.Audits;
 using Standard.Agents.Models.Brokers.Generators.V1;
 using Standard.Agents.Models.Foundations.Skills;
@@ -117,12 +118,21 @@ foreach (string vectorFile in
     bool guardianInputConformant =
         GuardianInputConformant(vector, run, actualResult, out string? guardianFailure);
 
+    // The handoff's content, certified at the specialist: grounding is only real if the text
+    // actually arrived (SPEC.md §4.8 v1.6).
+    bool agentInputConformant = vector.Expect.AgentInput is null
+        || vector.Expect.AgentInput.All(expected =>
+            run.AgentInputs.TryGetValue(expected.Key, out List<string>? handed)
+                && handed.Any(input =>
+                    input.Contains(expected.Value, StringComparison.Ordinal)));
+
     if (resultConformant
         && perPromptResultsConformant
         && toolInputConformant
         && rubricConformant
         && auditConformant
-        && guardianInputConformant)
+        && guardianInputConformant
+        && agentInputConformant)
     {
         passed++;
         passedVectors.Add(vector.Name);
@@ -164,6 +174,25 @@ foreach (string vectorFile in
 
                 Console.WriteLine($"        tool '{expected.Key}' expected input: {Show(expected.Value)}");
                 Console.WriteLine($"        tool '{expected.Key}' actual inputs:  {actualInputs}");
+            }
+        }
+
+        if (agentInputConformant is false)
+        {
+            foreach (KeyValuePair<string, string> expected in vector.Expect.AgentInput!)
+            {
+                string actualHandoffs =
+                    run.AgentInputs.TryGetValue(expected.Key, out List<string>? handed)
+                        && handed.Count > 0
+                        ? string.Join(" | ", handed.Select(Show))
+                        : "(agent never ran)";
+
+                Console.WriteLine(
+                    $"        agent '{expected.Key}' expected handoff containing: "
+                        + Show(expected.Value));
+
+                Console.WriteLine(
+                    $"        agent '{expected.Key}' actually received: {actualHandoffs}");
             }
         }
 
@@ -248,6 +277,36 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
     // server's would.
     List<ScriptedMcpServer> scriptedMcpServers =
         [.. (vector.McpServers ?? []).Select(catalog => new ScriptedMcpServer(catalog))];
+
+    // The fleet (SPEC.md §4.8 v1.6): scripted specialists, created once per vector so their
+    // scripted brains keep their place across instance rebuilds, exactly as real endpoints
+    // would. What each was HANDED is recorded, because the grounded handoff — the user's
+    // actual ask crossing the seam — is the thing worth certifying.
+    Dictionary<string, List<string>> agentInputs = new(StringComparer.OrdinalIgnoreCase);
+    List<RegisteredAgent> fleet = [];
+    object fleetLock = new();
+
+    foreach (FleetAgent member in vector.Agents ?? [])
+    {
+        List<string> handed = [];
+        agentInputs[member.Name] = handed;
+
+        StandardAgent specialist = new StandardAgent()
+            .UseSkills(new StubSkillBroker())
+            .UseMemory(new StubMemoryBroker())
+            .UseKnowledge(new StubKnowledgeBroker())
+            .UseMcp(new NotConfiguredMcpBroker())
+            .UseGenerator(new RecordingGeneratorBroker(
+                new ScriptedGeneratorBroker(member.Replies),
+                input => { lock (fleetLock) { handed.Add(input); } }));
+
+        if (member.RuleGate is { Count: > 0 })
+        {
+            specialist.RuleGate([.. member.RuleGate]);
+        }
+
+        fleet.Add(new RegisteredAgent(member.Name, member.Description, specialist));
+    }
 
     Dictionary<string, StubTool> stubTools =
         (vector.Tools ?? []).ToDictionary(
@@ -334,6 +393,14 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
 
             agent.OnSkills(() => new ValueTask<IReadOnlyList<Skill>>(
                 [new Skill { Name = $"extra-{content.GetHashCode():x}", Content = content }]));
+        }
+
+        // The fleet registers through the same client verb a host would use, so what is
+        // certified is the registry path itself — materialization as tools, the grounded
+        // default handoff, and transfer semantics included.
+        if (fleet.Count > 0)
+        {
+            agent.OnAgents(() => new ValueTask<IReadOnlyList<RegisteredAgent>>(fleet));
         }
 
         agent
@@ -598,7 +665,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         }
     }
 
-    return new VectorRun(result, promptResults, stubTools, gateRubric, judgeRubric, judgeInput, modelInputs, brainInputs, promptScreenings, auditRecords, compensationOrder, nativeGenerator, policyPrincipals, [.. scriptedMcpServers.Select(server => server.CallCount)]);
+    return new VectorRun(result, promptResults, stubTools, gateRubric, judgeRubric, judgeInput, modelInputs, brainInputs, promptScreenings, auditRecords, compensationOrder, nativeGenerator, policyPrincipals, [.. scriptedMcpServers.Select(server => server.CallCount)], agentInputs);
 }
 
 // The decision log's guarantees, certified from the records themselves: one run per prompt,
@@ -1011,4 +1078,5 @@ internal sealed record VectorRun(
     List<string> CompensationOrder,
     ScriptedNativeGeneratorBroker? NativeGenerator,
     List<string?> PolicyPrincipals,
-    List<int> McpServerCalls);
+    List<int> McpServerCalls,
+    Dictionary<string, List<string>> AgentInputs);

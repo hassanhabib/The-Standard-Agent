@@ -128,4 +128,9 @@ public sealed record Vector(
     // Composition from data (SPEC.md §4.8 v1.4). When set, the vector certifies composition
     // alone — the document must refuse with the named text and no run ever happens, so
     // GeneratorReplies and Prompt are carried empty.
-    string? ConfigurationJson = null);
+    string? ConfigurationJson = null,
+
+    // The fleet (SPEC.md §4.8 v1.6). Each entry is a registered agent the outer agent may hand
+    // work to — or transfer the whole run to — with a scripted brain of its own, created once
+    // per vector so its script keeps its place across instance rebuilds.
+    List<FleetAgent>? Agents = null);

@@ -1,0 +1,10 @@
+{
+  "name": "a-nameless-fleet-member-refuses-to-compose",
+  "description": "The fleet is data like everything else (SPEC.md 4.8 v1.6), and its members are called by name - so an inline 'agents' entry with no name is an agent no handoff could ever reach. The document MUST refuse to compose and the refusal MUST name what is missing, rather than silently registering an unreachable agent.",
+  "configurationJson": "{ \"agents\": [ { \"maxTurns\": 2 } ] }",
+  "generatorReplies": [],
+  "prompt": "",
+  "expect": {
+    "configurationRefusalNames": "name"
+  }
+}

@@ -97,4 +97,9 @@ public sealed record Expectation(
     //   ConfigurationRefusalNames — the composition refusal must carry this text: a refusal
     //                               that does not name the offending entry leaves the host
     //                               searching the document by hand (SPEC.md §4.8 v1.4).
-    string? ConfigurationRefusalNames = null);
+    string? ConfigurationRefusalNames = null,
+
+    //   AgentInput — each named fleet agent must have RECEIVED a handoff containing this text,
+    //                which is how grounding is certified (SPEC.md §4.8 v1.6): the specialist
+    //                saw the user's actual ask (or the transfer's task), not the task alone.
+    Dictionary<string, string>? AgentInput = null);
