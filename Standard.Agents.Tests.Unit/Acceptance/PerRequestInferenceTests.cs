@@ -132,6 +132,17 @@ public class PerRequestInferenceTests
         {
             yield return "FINAL: ok";
         }
+
+        public async IAsyncEnumerable<string> GenerateStreamAsync(
+            string systemPrompt,
+            string userPrompt,
+            ResolvedInference inference,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            this.Captured = inference;
+
+            yield return "FINAL: ok";
+        }
     }
 
     private static StandardAgent AgentWith(CapturingGeneratorBroker broker)
@@ -232,5 +243,72 @@ public class PerRequestInferenceTests
         broker.Captured.Should().NotBeNull();
         broker.Captured!.Temperature.Should().Be(ResolvedInference.DefaultTemperature);
         broker.Captured.MaxTokens.Should().Be(ResolvedInference.DefaultMaxTokens);
+    }
+
+    // The streamed loop is a run like any other. A request whose temperature applied on the
+    // batched call and silently vanished on the streamed one would make the stream the way to
+    // step around the seam — and a control a caller can step around by changing method is not
+    // a control (SPEC.md §7.6).
+    [Fact]
+    public async Task ShouldCarryTheRequestToTheBrokerOnTheStreamedPathAsync()
+    {
+        // given
+        var broker = new CapturingGeneratorBroker();
+        StandardAgent agent = AgentWith(broker);
+
+        var request = new PromptRequest
+        {
+            Prompt = "hello",
+            Temperature = 0.2,
+            MaxTokens = 64
+        };
+
+        // when — the stream must be consumed for the run to happen
+        await foreach (AgentStreamEvent _ in agent.StreamPromptAsync(request))
+        {
+        }
+
+        // then
+        broker.Captured.Should().NotBeNull();
+        broker.Captured!.Temperature.Should().Be(0.2);
+        broker.Captured.MaxTokens.Should().Be(64);
+    }
+
+    // Graceful degradation is a property (design §5): this broker never opts in, and the
+    // streamed answer is STILL held to shape, because the guardian validates and revises on the
+    // streamed path exactly as on the batched one.
+    [Fact]
+    public async Task ShouldHoldAStreamedAnswerToTheRequestSchemaAsync()
+    {
+        // given — a brain whose first streamed draft breaks the requested shape
+        int call = 0;
+
+        StandardAgent agent = AgentWith((systemPrompt, userPrompt) =>
+            ValueTask.FromResult(call++ == 0
+                ? "FINAL: Paris"
+                : """FINAL: {"city":"Paris"}"""));
+
+        var request = new PromptRequest
+        {
+            Prompt = "capital of France, as JSON",
+            ResponseSchemaJson = """{"type":"object","required":["city"]}"""
+        };
+
+        // when
+        List<AgentStreamEvent> events = [];
+
+        await foreach (AgentStreamEvent streamEvent in agent.StreamPromptAsync(request))
+        {
+            events.Add(streamEvent);
+        }
+
+        // then — what streamed out as the answer is the revised draft, and only that
+        List<string> responses =
+            [.. events
+                .Where(streamEvent => streamEvent.Type is AgentStreamEventType.Response)
+                .Select(streamEvent => streamEvent.Content)];
+
+        responses.Should().ContainSingle();
+        responses[0].Should().Be("""{"city":"Paris"}""");
     }
 }

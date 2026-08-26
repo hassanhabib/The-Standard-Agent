@@ -1178,6 +1178,28 @@ public sealed partial class StandardAgent : IAgent
         }
     }
 
+    /// <summary>
+    /// Streams the agent's work on a caller's <b>request</b> — the streamed equivalent of
+    /// <see cref="ProcessPromptAsync(PromptRequest, CancellationToken)"/>. The same precedence,
+    /// the same controls: a control a caller can step around by changing method is not a control
+    /// (SPEC.md §7.6).
+    /// </summary>
+    /// <param name="request">The caller's prompt and per-request inference options.</param>
+    /// <param name="cancellationToken">Token to stop streaming early.</param>
+    /// <returns>An async stream of events describing the agent's run.</returns>
+    public async IAsyncEnumerable<AgentStreamEvent> StreamPromptAsync(
+        PromptRequest request,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        IAsyncEnumerable<AgentStreamEvent> events =
+            ResolveAgent().ProcessPromptStreamAsync(request, cancellationToken);
+
+        await foreach (AgentStreamEvent streamEvent in events.WithCancellation(cancellationToken))
+        {
+            yield return streamEvent;
+        }
+    }
+
     // Composes once and reuses. Guarded because one agent serves prompts concurrently
     // (SPEC.md §4.4) and an unguarded `??=` lets two arriving prompts each build a graph —
     // two brokers over one audit sink, two of everything, one silently discarded.

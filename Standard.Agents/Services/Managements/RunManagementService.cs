@@ -274,6 +274,11 @@ public partial class RunManagementService : IRunManagementService
         CancellationToken cancellationToken = default) =>
         ProcessPromptStreamAsync(prompt, string.Empty, cancellationToken);
 
+    public IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
+        PromptRequest request,
+        CancellationToken cancellationToken = default) =>
+        ProcessPromptStreamAsync(request.Prompt, request.SessionId, cancellationToken);
+
     public async IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
         string prompt,
         string sessionId,

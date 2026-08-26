@@ -50,4 +50,12 @@ public interface IRunManagementService
         string prompt,
         string sessionId,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The streamed loop, asked for by a request. The same resolution, the same controls: a
+    /// control a caller can step around by changing method is not a control (SPEC.md §7.6).
+    /// </summary>
+    IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
+        PromptRequest request,
+        CancellationToken cancellationToken = default);
 }
