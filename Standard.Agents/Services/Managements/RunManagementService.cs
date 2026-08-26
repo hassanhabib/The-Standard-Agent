@@ -274,6 +274,13 @@ public partial class RunManagementService : IRunManagementService
         // lands inside it. Null when nothing is listening — a scope nobody observes costs nothing.
         using IDisposable? telemetryRun = this.telemetryBroker.StartRun(sessionId);
 
+        // The prompt rides the run the way its token does, so a handoff template's {prompt}
+        // can ground a sub-agent in the real goal (SPEC.md §6.1).
+        if (AgentRun.Current is AgentRun ambientRun)
+        {
+            ambientRun.Prompt = prompt;
+        }
+
         await this.loggingBroker.LogResetAsync();
 
         AgentContext context = new() { Prompt = prompt, SessionId = sessionId };

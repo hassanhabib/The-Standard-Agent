@@ -11,6 +11,7 @@ namespace Standard.Agents.Tools;
 public sealed class AgentTool : ITool
 {
     private const string InputPlaceholder = "{input}";
+    private const string PromptPlaceholder = "{prompt}";
 
     private readonly IAgent agent;
     private readonly string handoff;
@@ -58,8 +59,14 @@ public sealed class AgentTool : ITool
         CancellationToken outerRun =
             Models.Loggings.AgentRun.Current?.CancellationToken ?? CancellationToken.None;
 
-        AgentOutcome outcome =
-            await this.agent.RunAsync(this.handoff.Replace(InputPlaceholder, input), outerRun);
+        // The template's placeholders resolve host-authored slots: {prompt} is what the user
+        // originally asked the outer run, {input} is the task the outer model wrote. Prompt
+        // first, so user text substituted into the template is never re-scanned for {input}.
+        string handedOff = this.handoff
+            .Replace(PromptPlaceholder, Models.Loggings.AgentRun.Current?.Prompt ?? string.Empty)
+            .Replace(InputPlaceholder, input);
+
+        AgentOutcome outcome = await this.agent.RunAsync(handedOff, outerRun);
 
         // An answer is an answer. Nothing is added to it, because anything added is text the outer
         // model has to reason past on the path that is working correctly.
