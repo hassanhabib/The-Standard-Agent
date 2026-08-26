@@ -51,6 +51,21 @@ public class StandardAgentFromJsonTests
         answer.Should().Contain("ran out of turns");
     }
 
+    // Identity is what makes an agent document registrable: the name a handoff calls, the
+    // description that advertises it. They ride in the document itself, so the file IS the
+    // agent — a registry needs nothing beside it.
+    [Fact]
+    public void ShouldComposeAgentIdentityFromJson()
+    {
+        // given . when
+        StandardAgent agent = StandardAgent.FromJson(
+            """{ "name": "billing", "description": "Handles refunds and invoices." }""");
+
+        // then
+        agent.Name.Should().Be("billing");
+        agent.Description.Should().Be("Handles refunds and invoices.");
+    }
+
     [Fact]
     public void ShouldRejectAnUnknownConfigurationKey()
     {

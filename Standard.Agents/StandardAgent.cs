@@ -820,6 +820,30 @@ public sealed partial class StandardAgent : IAgent
     public StandardAgent OnAgents(Func<ValueTask<IReadOnlyList<RegisteredAgent>>> select) =>
         Set(() => this.agentSources.Add(new FunctionAgentRegistryBroker(select)));
 
+    /// <summary>What this agent is called — the name a registry offers it under, which is the
+    /// name a handoff calls. Empty until <see cref="Identity"/> or a document's <c>name</c> key
+    /// says otherwise.</summary>
+    public string Name { get; private set; } = string.Empty;
+
+    /// <summary>What this agent is for — the advertisement a registry shows an outer brain.
+    /// Empty means unadvertised, exactly like a tool without a description.</summary>
+    public string Description { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// Names the agent and says what it is for. Identity is what makes an agent registrable:
+    /// the name a handoff calls, and the description that advertises it to an outer brain —
+    /// no description, no advertisement, the same opt-in a tool's description is.
+    /// </summary>
+    /// <param name="name">The name a registry offers this agent under.</param>
+    /// <param name="description">What it does and when to hand work to it.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent Identity(string name, string description = "") =>
+        Set(() =>
+        {
+            this.Name = name;
+            this.Description = description;
+        });
+
     /// <summary>
     /// Swaps in a custom generator (brain) broker — the extension point for a runtime that streams
     /// natively, an alternative to <see cref="Brain"/> or <see cref="LocalBrain"/>.
