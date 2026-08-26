@@ -10,6 +10,7 @@ using System.Runtime.CompilerServices;
 using Lock = System.Object;
 #endif
 using Microsoft.Extensions.Logging.Abstractions;
+using Standard.Agents.Brokers.Agents;
 using Standard.Agents.Brokers.Audits;
 using Standard.Agents.Brokers.Approvals;
 using Standard.Agents.Brokers.Classifiers;
@@ -31,6 +32,7 @@ using Standard.Agents.Brokers.Telemetries;
 using Standard.Agents.Brokers.Times;
 using Standard.Agents.Brokers.Tools;
 using Standard.Agents.Brokers.Verifiers;
+using Standard.Agents.Models.Brokers.Agents;
 using Standard.Agents.Models.Brokers.Audits;
 using Standard.Agents.Models.Brokers.Generators.V1;
 using Standard.Agents.Models.Brokers.Sessions;
@@ -80,6 +82,10 @@ public sealed partial class StandardAgent : IAgent
     // agent the way a second .Tool() always has.
     private readonly List<ISkillBroker> skillSources = [];
     private readonly List<IMcpBroker> mcpSources = [];
+
+    // The fleet accumulates too: each registry is one more place agents come from, and every
+    // registered agent materializes as a tool at composition.
+    private readonly List<IAgentRegistryBroker> agentSources = [];
 
     private string constitutionPath = string.Empty;
     private string consumptionPath = string.Empty;
@@ -780,6 +786,39 @@ public sealed partial class StandardAgent : IAgent
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent OnSkills(Func<ValueTask<IReadOnlyList<Skill>>> select) =>
         Set(() => this.skillSources.Add(new FunctionSkillBroker(select)));
+
+    /// <summary>
+    /// Points the agent at a folder of agent documents — the <b>Local</b> mode of the fleet
+    /// (SPEC.md §4.8). Every <c>.json</c> file in the folder is an agent (the same documents
+    /// <see cref="FromJson"/> composes), and each one materializes as a tool the brain can hand
+    /// work to: advertised by its <c>description</c>, called by its <c>name</c>, and governed by
+    /// the same perimeter every act crosses.
+    /// </summary>
+    /// <param name="path">Folder of agent documents, relative to the build output.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    /// <remarks>Registries accumulate: a second call adds another folder, and the first source
+    /// to claim a name keeps it — exactly the rule MCP servers already live by.</remarks>
+    public StandardAgent Agents(string path) =>
+        Set(() => this.agentSources.Add(
+            new FileAgentRegistryBroker(Path.Combine(AppContext.BaseDirectory, path))));
+
+    /// <summary>
+    /// Adds an agent registry broker — the <b>External</b> mode: a provider package that knows
+    /// where agents live (a directory service, a control plane, another team's fleet).
+    /// </summary>
+    /// <param name="broker">The registry broker to add.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent UseAgents(IAgentRegistryBroker broker) =>
+        Set(() => this.agentSources.Add(broker));
+
+    /// <summary>
+    /// Supplies registered agents from your own code — the <b>Custom</b> mode: a delegate that
+    /// answers with the fleet, however your host stores it.
+    /// </summary>
+    /// <param name="select">A <c>() =&gt; registered agents</c> delegate.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent OnAgents(Func<ValueTask<IReadOnlyList<RegisteredAgent>>> select) =>
+        Set(() => this.agentSources.Add(new FunctionAgentRegistryBroker(select)));
 
     /// <summary>
     /// Swaps in a custom generator (brain) broker — the extension point for a runtime that streams
