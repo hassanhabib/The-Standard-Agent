@@ -1000,7 +1000,7 @@ public sealed partial class StandardAgent : IAgent
     // be hit at the assignment, nowhere near the await they were guarding.
     public async ValueTask<string> ProcessPromptAsync(string prompt)
     {
-        return await ResolveAgent().ProcessPromptAsync(prompt);
+        return await (await ResolveAgentAsync()).ProcessPromptAsync(prompt);
     }
 
     /// <summary>
@@ -1016,7 +1016,7 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="prompt">What to work on.</param>
     /// <returns>The answer, and how the run ended.</returns>
     public async ValueTask<AgentOutcome> RunAsync(string prompt) =>
-        await ResolveAgent().RunAsync(prompt, string.Empty, CancellationToken.None);
+        await (await ResolveAgentAsync()).RunAsync(prompt, string.Empty, CancellationToken.None);
 
     /// <summary>
     /// The same run, stoppable: cancellation stops it at the next turn boundary, so no effect
@@ -1030,7 +1030,7 @@ public sealed partial class StandardAgent : IAgent
     public async ValueTask<AgentOutcome> RunAsync(
         string prompt,
         CancellationToken cancellationToken) =>
-        await ResolveAgent().RunAsync(prompt, string.Empty, cancellationToken);
+        await (await ResolveAgentAsync()).RunAsync(prompt, string.Empty, cancellationToken);
 
     /// <summary>
     /// Runs the agent on a prompt and stops when <paramref name="cancellationToken"/> is
@@ -1044,7 +1044,7 @@ public sealed partial class StandardAgent : IAgent
         string prompt,
         CancellationToken cancellationToken)
     {
-        return await ResolveAgent().ProcessPromptAsync(prompt, cancellationToken);
+        return await (await ResolveAgentAsync()).ProcessPromptAsync(prompt, cancellationToken);
     }
 
     /// <summary>
@@ -1068,7 +1068,8 @@ public sealed partial class StandardAgent : IAgent
         string sessionId,
         CancellationToken cancellationToken = default)
     {
-        return await ResolveAgent().ProcessPromptAsync(prompt, sessionId, cancellationToken);
+        return await (await ResolveAgentAsync())
+            .ProcessPromptAsync(prompt, sessionId, cancellationToken);
     }
 
     /// <summary>
@@ -1099,7 +1100,8 @@ public sealed partial class StandardAgent : IAgent
         string answer,
         CancellationToken cancellationToken = default)
     {
-        return await ResolveAgent().ProcessPromptAsync(answer, sessionId, cancellationToken);
+        return await (await ResolveAgentAsync())
+            .ProcessPromptAsync(answer, sessionId, cancellationToken);
     }
 
     /// <summary>
@@ -1313,7 +1315,7 @@ public sealed partial class StandardAgent : IAgent
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         IAsyncEnumerable<AgentStreamEvent> events =
-            ResolveAgent().ProcessPromptStreamAsync(prompt, cancellationToken);
+            (await ResolveAgentAsync()).ProcessPromptStreamAsync(prompt, cancellationToken);
 
         await foreach (AgentStreamEvent streamEvent in events.WithCancellation(cancellationToken))
         {
@@ -1339,8 +1341,8 @@ public sealed partial class StandardAgent : IAgent
         string sessionId,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        IAsyncEnumerable<AgentStreamEvent> events =
-            ResolveAgent().ProcessPromptStreamAsync(prompt, sessionId, cancellationToken);
+        IAsyncEnumerable<AgentStreamEvent> events = (await ResolveAgentAsync())
+            .ProcessPromptStreamAsync(prompt, sessionId, cancellationToken);
 
         await foreach (AgentStreamEvent streamEvent in events.WithCancellation(cancellationToken))
         {
@@ -1351,11 +1353,35 @@ public sealed partial class StandardAgent : IAgent
     // Composes once and reuses. Guarded because one agent serves prompts concurrently
     // (SPEC.md §4.4) and an unguarded `??=` lets two arriving prompts each build a graph —
     // two brokers over one audit sink, two of everything, one silently discarded.
-    private IRunManagementService ResolveAgent()
+    //
+    // Registry selection is async (a registry can be a service call away) and a lock cannot
+    // hold an await, so resolution is three steps: reuse under the lock, select outside it,
+    // compose under it again. A builder call landing between the steps nulls the cache, so
+    // the very next resolution selects and composes afresh — nothing configured is lost.
+    private async ValueTask<IRunManagementService> ResolveAgentAsync()
     {
+        IAgentRegistryBroker[] registries;
+
         lock (this.compositionLock)
         {
-            return this.agent ??= Compose();
+            if (this.agent is not null)
+            {
+                return this.agent;
+            }
+
+            registries = [.. this.agentSources];
+        }
+
+        List<RegisteredAgent> registeredAgents = [];
+
+        foreach (IAgentRegistryBroker registry in registries)
+        {
+            registeredAgents.AddRange(await registry.SelectAgentsAsync());
+        }
+
+        lock (this.compositionLock)
+        {
+            return this.agent ??= Compose(registeredAgents);
         }
     }
 
@@ -1397,7 +1423,7 @@ public sealed partial class StandardAgent : IAgent
     private static string ComposeGuardianRubric(params string[] parts) =>
         string.Join("\n\n", parts.Where(part => string.IsNullOrWhiteSpace(part) is false));
 
-    private IRunManagementService Compose()
+    private IRunManagementService Compose(IReadOnlyList<RegisteredAgent> registeredAgents)
     {
         ValidateComposition();
 
@@ -1435,6 +1461,27 @@ public sealed partial class StandardAgent : IAgent
             : new MemoryService(this.memoryBroker, logging);
 
         List<ITool> allTools = [.. this.tools, new RememberTool(memoryService.RememberAsync)];
+
+        // The fleet materializes as tools — which is the whole design: a handoff is an act, so
+        // the advertisement opt-in, the perimeter, the audit and cancellation across the seam
+        // all apply because they already applied to tools. First to claim a name keeps it, the
+        // rule MCP servers live by, so a registry cannot shadow a tool the host wired in code.
+        HashSet<string> claimedNames =
+            new(allTools.Select(tool => tool.Name), StringComparer.OrdinalIgnoreCase);
+
+        foreach (RegisteredAgent registered in registeredAgents)
+        {
+            if (claimedNames.Add(registered.Name) is false)
+            {
+                continue;
+            }
+
+            allTools.Add(new AgentTool(
+                registered.Name,
+                registered.Agent,
+                AgentTool.GroundedHandoff,
+                registered.Description));
+        }
 
         string constitution = ReadOptionalFile(file, this.constitutionPath);
         string consumption = ReadOptionalFile(file, this.consumptionPath);

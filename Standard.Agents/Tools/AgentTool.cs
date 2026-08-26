@@ -13,6 +13,13 @@ public sealed class AgentTool : ITool
     private const string InputPlaceholder = "{input}";
     private const string PromptPlaceholder = "{prompt}";
 
+    /// <summary>
+    /// The registry's default handoff: the task the outer brain wrote, grounded in what the
+    /// user originally asked — enough context to do the task, and nothing else. A custom
+    /// template replaces it wholesale, which is the whole configurability of a handoff.
+    /// </summary>
+    public const string GroundedHandoff = "The user asked: {prompt}\n\nYour task: {input}";
+
     private readonly IAgent agent;
     private readonly string handoff;
 

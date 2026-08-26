@@ -61,7 +61,8 @@ public class StandardAgentAgentsTests
     public async Task ShouldAdvertiseRegisteredAgentsToTheBrainAsync()
     {
         // given — a registry whose agent carries a description, which is the advertisement
-        // opt-in a tool's description already is.
+        // opt-in a tool's description already is, surfaced where every advertisement is
+        // surfaced: a skill's {{tools}} marker.
         StandardAgent specialist = new StandardAgent()
             .UseMemory(EmptyMemory())
             .UseKnowledge(EmptyKnowledge())
@@ -72,6 +73,12 @@ public class StandardAgentAgentsTests
         StandardAgent outerAgent = new StandardAgent()
             .UseMemory(EmptyMemory())
             .UseKnowledge(EmptyKnowledge())
+            .OnSkills(() => new ValueTask<IReadOnlyList<Models.Foundations.Skills.Skill>>(
+                [new Models.Foundations.Skills.Skill
+                {
+                    Name = "concierge",
+                    Content = "Hand work to whoever does it best.\n\n{{tools}}"
+                }]))
             .OnAgents(() => new ValueTask<IReadOnlyList<RegisteredAgent>>(
                 [new RegisteredAgent("billing", "Handles refunds and invoices.", specialist)]))
             .OnBrain(async (systemPrompt, userPrompt) =>

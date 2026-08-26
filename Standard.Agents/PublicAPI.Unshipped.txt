@@ -35,6 +35,7 @@ Standard.Agents.StandardAgent.Identity(string! name, string! description = "") -
 Standard.Agents.StandardAgent.Name.get -> string!
 Standard.Agents.StandardAgent.OnAgents(System.Func<System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Agents.RegisteredAgent!>!>>! select) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.UseAgents(Standard.Agents.Brokers.Agents.IAgentRegistryBroker! broker) -> Standard.Agents.StandardAgent!
+const Standard.Agents.Tools.AgentTool.GroundedHandoff = "The user asked: {prompt}\n\nYour task: {input}" -> string!
 override Standard.Agents.Models.Brokers.Agents.RegisteredAgent.Equals(object? obj) -> bool
 override Standard.Agents.Models.Brokers.Agents.RegisteredAgent.GetHashCode() -> int
 override Standard.Agents.Models.Brokers.Agents.RegisteredAgent.ToString() -> string!
