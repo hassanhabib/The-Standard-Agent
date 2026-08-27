@@ -275,6 +275,98 @@ public class PerRequestInferenceTests
         broker.Captured.MaxTokens.Should().Be(64);
     }
 
+    private sealed class RecordingGeneratorBroker : IGeneratorBroker
+    {
+        private readonly List<(string UserPrompt, ResolvedInference Inference)> calls = [];
+
+        public IReadOnlyList<(string UserPrompt, ResolvedInference Inference)> Calls
+        {
+            get
+            {
+                lock (this.calls)
+                {
+                    return [.. this.calls];
+                }
+            }
+        }
+
+        public bool HonorsRequest => true;
+
+        public ValueTask<string> GenerateAsync(string systemPrompt, string userPrompt) =>
+            ValueTask.FromResult("FINAL: ok");
+
+        public ValueTask<string> GenerateAsync(
+            string systemPrompt,
+            string userPrompt,
+            ResolvedInference inference)
+        {
+            lock (this.calls)
+            {
+                this.calls.Add((userPrompt, inference));
+            }
+
+            return ValueTask.FromResult("FINAL: ok");
+        }
+
+        public async IAsyncEnumerable<string> GenerateStreamAsync(
+            string systemPrompt,
+            string userPrompt,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            yield return "FINAL: ok";
+        }
+    }
+
+    // The acceptance criterion (design §7): N concurrent prompts with N different values against
+    // ONE StandardAgent instance — one composition, one broker — and every run keeps its own.
+    // This is what neither workaround could do: rebuilding per request exhausts sockets, and
+    // mutating a shared agent recomposes the graph another request is mid-run against.
+    [Fact]
+    public async Task ShouldServeConcurrentHeterogeneousRequestsFromOneCompositionAsync()
+    {
+        // given — one composed agent, three callers who want different things
+        var broker = new RecordingGeneratorBroker();
+
+        var skillBroker = new Mock<ISkillBroker>();
+
+        skillBroker.Setup(b => b.SelectSkillsAsync())
+            .ReturnsAsync(new List<Skill> { new() { Content = "You are a helpful agent." } });
+
+        var memoryBroker = new Mock<IMemoryBroker>();
+        memoryBroker.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
+
+        var knowledgeBroker = new Mock<IKnowledgeBroker>();
+
+        knowledgeBroker.Setup(b => b.SelectKnowledgeAsync(It.IsAny<string>()))
+            .ReturnsAsync([]);
+
+        StandardAgent agent = new StandardAgent()
+            .UseSkills(skillBroker.Object)
+            .UseMemory(memoryBroker.Object)
+            .UseKnowledge(knowledgeBroker.Object)
+            .UseGenerator(broker);
+
+        double[] temperatures = [0.1, 0.5, 0.9];
+
+        // when — all at once, no builder call between them, so the composition cache holds
+        await Task.WhenAll(temperatures.Select(temperature =>
+            agent.ProcessPromptAsync(new PromptRequest
+            {
+                Prompt = $"task-{temperature}",
+                Temperature = temperature
+            }).AsTask()));
+
+        // then — every run reached the one broker carrying its own caller's value
+        broker.Calls.Should().HaveCount(3);
+
+        foreach (double temperature in temperatures)
+        {
+            broker.Calls.Should().ContainSingle(call =>
+                call.UserPrompt.Contains($"task-{temperature}")
+                    && call.Inference.Temperature == temperature);
+        }
+    }
+
     // Graceful degradation is a property (design §5): this broker never opts in, and the
     // streamed answer is STILL held to shape, because the guardian validates and revises on the
     // streamed path exactly as on the batched one.
