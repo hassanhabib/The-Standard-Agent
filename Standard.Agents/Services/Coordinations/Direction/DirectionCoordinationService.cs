@@ -5,6 +5,7 @@
 
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models.Coordinations.Directions;
+using Standard.Agents.Models.Loggings;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Models.Orchestrations.Effects;
 using Standard.Agents.Services.Foundations.Gates;
@@ -86,8 +87,50 @@ public partial class DirectionCoordinationService : IDirectionCoordinationServic
             };
         }
 
+        // A call naming a caller tool is not an act — it is a terminal answer addressed to the
+        // caller (docs/per-request-inference.md §6.2). Classified before the perimeter, because
+        // there is nothing for the perimeter to judge: the agent performs nothing.
+        if (IsAddressedToCaller(context))
+        {
+            return await AwaitCallerAsync(context);
+        }
+
         return await ActOnEffectAsync(context);
     });
+
+    // The boundary already dropped any caller tool sharing a configured name, so a name found
+    // here has exactly one meaning: the caller's.
+    private static bool IsAddressedToCaller(AgentContext context) =>
+        context.Inference?.CallerTools.Any(tool =>
+            tool.Name.Equals(context.DirectionType, StringComparison.OrdinalIgnoreCase)) is true;
+
+    // The framework already models "the run pauses; something outside this process must act and
+    // report back" — built for human approval, structurally identical here. The authority over
+    // this pending effect is the caller: it executes, posts the result on the session, and the
+    // run resumes. Same seam, different authority.
+    private async ValueTask<AgentContext> AwaitCallerAsync(AgentContext context)
+    {
+        AgentEffect effect = AgentEffect.For(
+            runId: AgentRun.Current?.Id ?? string.Empty,
+            toolName: context.DirectionType,
+            arguments: context.Payload,
+            principal: this.identityResolver?.Invoke());
+
+        await this.loggingBroker.LogProcessAsync(
+            "Direction",
+            $"Caller tool '{context.DirectionType}' → returned to the caller as a pending effect");
+
+        return context with
+        {
+            Result = $"'{context.DirectionType}' is addressed to the caller; "
+                + "awaiting its result.",
+
+            // The call travels with the pause, so whoever resumes can be shown the act itself
+            // rather than only the news that something is waiting (SPEC.md §4.11).
+            PendingEffect = effect,
+            Status = AgentStatus.AwaitingInput
+        };
+    }
 
     private static bool IsTerminal(string directionType) =>
         directionType.Equals(ReturnResponseDirection, StringComparison.OrdinalIgnoreCase)

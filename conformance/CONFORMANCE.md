@@ -3,7 +3,7 @@
 A **language-neutral** set of behavioral test vectors that any Standard-Agents
 implementation runs to self-certify against
 [`SPEC.md`](https://github.com/hassanhabib/The-Standard-Agent-Specs/blob/main/SPEC.md).
-Forty-one vectors, four readiness profiles, every vector proven able to fail.
+Sixty-one vectors, four readiness profiles, every vector proven able to fail.
 
 The vectors are the executable half of the specification. Prose can be read two ways; a vector
 cannot, which is why "conformant" here means *this suite passes* rather than *we believe we
@@ -68,6 +68,10 @@ capability it configures did not exist, which is why the early vectors still des
 | `nativeReplies` | the Brain is a native (§6.2) generator returning structured choices |
 | `allowTools`, `permissionMode` | the allow-list (`"tool"` or `"tool:scopePrefix"`) and the disposition toward acts nothing permitted |
 | `toolRisk`, `toolScopeFirstWord` | what a stub tool declares about itself: how consequential it is, and what it is about to touch |
+| `request`, `requests` | per-request inference options — one caller's ask, or one per prompt driven concurrently |
+| `contractSchema`, `configuredTemperature`, `configuredMaxTokens` | the deployment's side of precedence: hard configuration a request can never move |
+| `brokerHonorsRequest` | `false` swaps in the scripted Brain that never opted in, so degradation runs through the interface's real default members |
+| `streamed` | run the request through the streamed loop, which enforces every control the batched one does |
 
 ### Expectations — what must be true afterwards
 
@@ -82,6 +86,9 @@ capability it configures did not exist, which is why the early vectors still des
 | `compensationOrder` | the exact order the unwind ran in |
 | `toolResultAnswersCall` | the call id was replayed and answered |
 | `policySawPrincipal` | the identity the policy broker was **handed when it decided** |
+| `status`, `pendingEffectTool` | how the run ended, and the caller's call riding the session as a pending effect |
+| `brokerTemperature`, `brokerMaxTokens`, `brokerTemperatures` | what the Brain was handed, after precedence resolved at the boundary |
+| `brokerSchemaContains`, `brokerOptionsInclude`, `brokerOptionsExclude` | the surviving schema on the wire, and the passthrough after the core-owned-keys strip |
 
 Two of those are worth singling out, because they are the difference between checking a control and
 checking the *report* of one. `policySawPrincipal` reads the decision's input rather than the audit
@@ -176,6 +183,16 @@ the deterministic core of the Standard.
 | `injected-knowledge-cannot-widen-the-perimeter` | A poisoned passage fools the Brain; the fooled Brain still cannot act (§4.9) |
 | `poisoned-memory-cannot-widen-the-perimeter` | Data can never grant what policy did not, whichever seam it rode in on (§4.9) |
 | `a-fooled-brain-cannot-cross-tenants` | The permitted scope executes, the other tenant's is denied, the run recovers (§4.9) |
+| `request-schema-applies-when-unconfigured` | With no Contract, the request's schema is the survivor and the guardian holds it |
+| `configured-contract-overrides-request-schema` | Hard configuration wins outright; the request's schema is discarded, never merged |
+| `request-schema-seeds-guardian-not-only-wire` | An engine that ignores `response_format` still cannot return a misshapen answer |
+| `broker-without-request-support-degrades-to-guardian` | A broker that never opted in degrades gracefully; shape holds anyway |
+| `concurrent-heterogeneous-requests-share-one-composition` | N requests, N temperatures, one composition — every run keeps its own |
+| `streamed-request-honors-resolved-inference` | The streamed loop carries the same resolved options the batched one does |
+| `provider-options-cannot-touch-core-owned-keys` | The opaque passthrough cannot add a tool or beat a resolved value |
+| `caller-tool-never-executes` | A caller's tool is vocabulary, never capability — the agent performs nothing |
+| `caller-tool-call-ends-run-as-pending-effect` | The caller's call rides the session out as a pending effect, `AwaitingInput` |
+| `caller-tool-name-collision-drops-caller-tool` | A caller cannot shadow the deployment's own tool; configured wins |
 
 ## Readiness profiles
 
@@ -191,7 +208,7 @@ dotnet run --project Standard.Agents.Conformance -- --profile Critical
 |---|---|
 | **Core** | conversation, skills, knowledge, memory, simple tools |
 | **Reliable** | guardians that see what they guard, a durable decision log, run isolation, cancellation, timeouts |
-| **Enterprise** | identity-aware authorization, approval before irreversible acts, run-once, budgets, ranked retrieval |
+| **Enterprise** | identity-aware authorization, approval before irreversible acts, run-once, budgets, ranked retrieval, per-request inference |
 | **Critical** | conversation and effects that survive a process, compensation, native tool calls that round-trip |
 
 A profile names the evidence it requires **before** that evidence exists — the level is the target,

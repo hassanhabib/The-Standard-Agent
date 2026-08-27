@@ -1,1 +1,115 @@
 #nullable enable
+Standard.Agents.Brokers.Generators.GeneratorBroker.HonorsRequest.get -> bool
+Standard.Agents.Brokers.Generators.GeneratorBrokerV1.HonorsRequest.get -> bool
+Standard.Agents.Brokers.Generators.IGeneratorBroker.GenerateAsync(string! systemPrompt, string! userPrompt, Standard.Agents.Models.Brokers.Generators.ResolvedInference! inference) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Generators.IGeneratorBroker.GenerateStreamAsync(string! systemPrompt, string! userPrompt, Standard.Agents.Models.Brokers.Generators.ResolvedInference! inference, System.Threading.CancellationToken cancellationToken) -> System.Collections.Generic.IAsyncEnumerable<string!>!
+Standard.Agents.Brokers.Generators.IGeneratorBroker.HonorsRequest.get -> bool
+Standard.Agents.Brokers.Generators.IGeneratorBrokerV1.GenerateAsync(System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage!>! messages, System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition!>! tools, Standard.Agents.Models.Brokers.Generators.ResolvedInference! inference) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Generators.V1.GenerationResult!>
+Standard.Agents.Brokers.Generators.IGeneratorBrokerV1.HonorsRequest.get -> bool
+Standard.Agents.Brokers.Redactions.RedactingGeneratorBroker.GenerateAsync(string! systemPrompt, string! userPrompt, Standard.Agents.Models.Brokers.Generators.ResolvedInference! inference) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Redactions.RedactingGeneratorBroker.HonorsRequest.get -> bool
+Standard.Agents.Brokers.Redactions.RedactingGeneratorBrokerV1.HonorsRequest.get -> bool
+Standard.Agents.Brokers.Resiliences.RetryingGeneratorBroker.GenerateAsync(string! systemPrompt, string! userPrompt, Standard.Agents.Models.Brokers.Generators.ResolvedInference! inference) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Resiliences.RetryingGeneratorBroker.GenerateStreamAsync(string! systemPrompt, string! userPrompt, Standard.Agents.Models.Brokers.Generators.ResolvedInference! inference, System.Threading.CancellationToken cancellationToken) -> System.Collections.Generic.IAsyncEnumerable<string!>!
+Standard.Agents.Brokers.Resiliences.RetryingGeneratorBroker.HonorsRequest.get -> bool
+Standard.Agents.Brokers.Resiliences.RetryingGeneratorBrokerV1.GenerateAsync(System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage!>! messages, System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition!>! tools, Standard.Agents.Models.Brokers.Generators.ResolvedInference! inference) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Generators.V1.GenerationResult!>
+Standard.Agents.Brokers.Resiliences.RetryingGeneratorBrokerV1.HonorsRequest.get -> bool
+Standard.Agents.Models.Brokers.Generators.ProviderOptions
+Standard.Agents.Models.Brokers.Generators.ResolvedInference
+Standard.Agents.Models.Brokers.Generators.ResolvedInference.<Clone>$() -> Standard.Agents.Models.Brokers.Generators.ResolvedInference!
+Standard.Agents.Models.Brokers.Generators.ResolvedInference.CallerTools.get -> System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition!>!
+Standard.Agents.Models.Brokers.Generators.ResolvedInference.CallerTools.init -> void
+Standard.Agents.Models.Brokers.Generators.ResolvedInference.Equals(Standard.Agents.Models.Brokers.Generators.ResolvedInference? other) -> bool
+Standard.Agents.Models.Brokers.Generators.ResolvedInference.MaxTokens.get -> int
+Standard.Agents.Models.Brokers.Generators.ResolvedInference.MaxTokens.init -> void
+Standard.Agents.Models.Brokers.Generators.ResolvedInference.ProviderOptionsJson.get -> string?
+Standard.Agents.Models.Brokers.Generators.ResolvedInference.ProviderOptionsJson.init -> void
+Standard.Agents.Models.Brokers.Generators.ResolvedInference.ResolvedInference() -> void
+Standard.Agents.Models.Brokers.Generators.ResolvedInference.ResponseSchemaJson.get -> string?
+Standard.Agents.Models.Brokers.Generators.ResolvedInference.ResponseSchemaJson.init -> void
+Standard.Agents.Models.Brokers.Generators.ResolvedInference.Seed.get -> int?
+Standard.Agents.Models.Brokers.Generators.ResolvedInference.Seed.init -> void
+Standard.Agents.Models.Brokers.Generators.ResolvedInference.Stop.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Standard.Agents.Models.Brokers.Generators.ResolvedInference.Stop.init -> void
+Standard.Agents.Models.Brokers.Generators.ResolvedInference.Temperature.get -> double
+Standard.Agents.Models.Brokers.Generators.ResolvedInference.Temperature.init -> void
+Standard.Agents.Models.Brokers.Generators.SanitizedProviderOptions
+Standard.Agents.Models.Brokers.Generators.SanitizedProviderOptions.<Clone>$() -> Standard.Agents.Models.Brokers.Generators.SanitizedProviderOptions!
+Standard.Agents.Models.Brokers.Generators.SanitizedProviderOptions.Deconstruct(out string? Json, out System.Collections.Generic.IReadOnlyList<string!>! StrippedKeys, out bool Malformed) -> void
+Standard.Agents.Models.Brokers.Generators.SanitizedProviderOptions.Equals(Standard.Agents.Models.Brokers.Generators.SanitizedProviderOptions? other) -> bool
+Standard.Agents.Models.Brokers.Generators.SanitizedProviderOptions.Json.get -> string?
+Standard.Agents.Models.Brokers.Generators.SanitizedProviderOptions.Json.init -> void
+Standard.Agents.Models.Brokers.Generators.SanitizedProviderOptions.Malformed.get -> bool
+Standard.Agents.Models.Brokers.Generators.SanitizedProviderOptions.Malformed.init -> void
+Standard.Agents.Models.Brokers.Generators.SanitizedProviderOptions.SanitizedProviderOptions(string? Json, System.Collections.Generic.IReadOnlyList<string!>! StrippedKeys, bool Malformed) -> void
+Standard.Agents.Models.Brokers.Generators.SanitizedProviderOptions.StrippedKeys.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Standard.Agents.Models.Brokers.Generators.SanitizedProviderOptions.StrippedKeys.init -> void
+Standard.Agents.Models.Clients.Agents.PromptRequest
+Standard.Agents.Models.Clients.Agents.PromptRequest.<Clone>$() -> Standard.Agents.Models.Clients.Agents.PromptRequest!
+Standard.Agents.Models.Clients.Agents.PromptRequest.CallerTools.get -> System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition!>!
+Standard.Agents.Models.Clients.Agents.PromptRequest.CallerTools.init -> void
+Standard.Agents.Models.Clients.Agents.PromptRequest.Equals(Standard.Agents.Models.Clients.Agents.PromptRequest? other) -> bool
+Standard.Agents.Models.Clients.Agents.PromptRequest.MaxTokens.get -> int?
+Standard.Agents.Models.Clients.Agents.PromptRequest.MaxTokens.init -> void
+Standard.Agents.Models.Clients.Agents.PromptRequest.Prompt.get -> string!
+Standard.Agents.Models.Clients.Agents.PromptRequest.Prompt.init -> void
+Standard.Agents.Models.Clients.Agents.PromptRequest.PromptRequest() -> void
+Standard.Agents.Models.Clients.Agents.PromptRequest.ProviderOptionsJson.get -> string?
+Standard.Agents.Models.Clients.Agents.PromptRequest.ProviderOptionsJson.init -> void
+Standard.Agents.Models.Clients.Agents.PromptRequest.ResponseSchemaJson.get -> string?
+Standard.Agents.Models.Clients.Agents.PromptRequest.ResponseSchemaJson.init -> void
+Standard.Agents.Models.Clients.Agents.PromptRequest.Seed.get -> int?
+Standard.Agents.Models.Clients.Agents.PromptRequest.Seed.init -> void
+Standard.Agents.Models.Clients.Agents.PromptRequest.SessionId.get -> string!
+Standard.Agents.Models.Clients.Agents.PromptRequest.SessionId.init -> void
+Standard.Agents.Models.Clients.Agents.PromptRequest.Stop.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Standard.Agents.Models.Clients.Agents.PromptRequest.Stop.init -> void
+Standard.Agents.Models.Clients.Agents.PromptRequest.Temperature.get -> double?
+Standard.Agents.Models.Clients.Agents.PromptRequest.Temperature.init -> void
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Inference.get -> Standard.Agents.Models.Brokers.Generators.ResolvedInference?
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Inference.init -> void
+Standard.Agents.Services.Foundations.Brains.BrainService.GenerateAsync(string! systemPrompt, string! userPrompt, Standard.Agents.Models.Brokers.Generators.ResolvedInference? inference) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Foundations.Brains.BrainService.GenerateStreamAsync(string! systemPrompt, string! userPrompt, Standard.Agents.Models.Brokers.Generators.ResolvedInference? inference, System.Threading.CancellationToken cancellationToken) -> System.Collections.Generic.IAsyncEnumerable<string!>!
+Standard.Agents.Services.Foundations.Brains.IBrainService.GenerateAsync(string! systemPrompt, string! userPrompt, Standard.Agents.Models.Brokers.Generators.ResolvedInference? inference) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Foundations.Brains.IBrainService.GenerateStreamAsync(string! systemPrompt, string! userPrompt, Standard.Agents.Models.Brokers.Generators.ResolvedInference? inference, System.Threading.CancellationToken cancellationToken) -> System.Collections.Generic.IAsyncEnumerable<string!>!
+Standard.Agents.Services.Managements.IRunManagementService.ProcessPromptAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Managements.IRunManagementService.ProcessPromptAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Managements.IRunManagementService.ProcessPromptStreamAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request) -> System.Collections.Generic.IAsyncEnumerable<Standard.Agents.Models.Clients.Agents.AgentStreamEvent!>!
+Standard.Agents.Services.Managements.IRunManagementService.ProcessPromptStreamAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request, System.Threading.CancellationToken cancellationToken) -> System.Collections.Generic.IAsyncEnumerable<Standard.Agents.Models.Clients.Agents.AgentStreamEvent!>!
+Standard.Agents.Services.Managements.IRunManagementService.RunAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
+Standard.Agents.Services.Managements.IRunManagementService.RunAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
+Standard.Agents.Services.Managements.RunManagementService.ProcessPromptAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Managements.RunManagementService.ProcessPromptAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Managements.RunManagementService.ProcessPromptStreamAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request) -> System.Collections.Generic.IAsyncEnumerable<Standard.Agents.Models.Clients.Agents.AgentStreamEvent!>!
+Standard.Agents.Services.Managements.RunManagementService.ProcessPromptStreamAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request, System.Threading.CancellationToken cancellationToken) -> System.Collections.Generic.IAsyncEnumerable<Standard.Agents.Models.Clients.Agents.AgentStreamEvent!>!
+Standard.Agents.Services.Managements.RunManagementService.RunAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
+Standard.Agents.Services.Managements.RunManagementService.RunAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
+Standard.Agents.Services.Managements.RunManagementService.RunManagementService(Standard.Agents.Services.Coordinations.Data.IDataCoordinationService! dataCoordinationService, Standard.Agents.Services.Coordinations.Decision.IDecisionCoordinationService! decisionCoordinationService, Standard.Agents.Services.Coordinations.Direction.IDirectionCoordinationService! directionCoordinationService, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, int maxTurns = 7, Standard.Agents.Brokers.Times.ITimeBroker? timeBroker = null, Standard.Agents.Models.Coordinations.Agents.AgentBudget? budget = null, int maxHistoryTurns = 20, bool compensateOnFailure = false, bool screenToolOutput = false, Standard.Agents.Brokers.Telemetries.ITelemetryBroker? telemetryBroker = null, string? contractSchema = null, double? configuredTemperature = null, int? configuredMaxTokens = null, System.Collections.Generic.IEnumerable<string!>? configuredToolNames = null) -> void
+Standard.Agents.StandardAgent.Brain(string! apiUrl, string! apiKey, string! model, double? temperature = null, int? maxTokens = null, int timeoutSeconds = 120) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.ProcessPromptAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.StandardAgent.ProcessPromptAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.StandardAgent.RunAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
+Standard.Agents.StandardAgent.RunAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
+Standard.Agents.StandardAgent.StreamPromptAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request) -> System.Collections.Generic.IAsyncEnumerable<Standard.Agents.Models.Clients.Agents.AgentStreamEvent!>!
+Standard.Agents.StandardAgent.StreamPromptAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request, System.Threading.CancellationToken cancellationToken) -> System.Collections.Generic.IAsyncEnumerable<Standard.Agents.Models.Clients.Agents.AgentStreamEvent!>!
+const Standard.Agents.Models.Brokers.Generators.ResolvedInference.DefaultMaxTokens = 1024 -> int
+const Standard.Agents.Models.Brokers.Generators.ResolvedInference.DefaultTemperature = 0.7 -> double
+override Standard.Agents.Models.Brokers.Generators.ResolvedInference.Equals(object? obj) -> bool
+override Standard.Agents.Models.Brokers.Generators.ResolvedInference.GetHashCode() -> int
+override Standard.Agents.Models.Brokers.Generators.ResolvedInference.ToString() -> string!
+override Standard.Agents.Models.Brokers.Generators.SanitizedProviderOptions.Equals(object? obj) -> bool
+override Standard.Agents.Models.Brokers.Generators.SanitizedProviderOptions.GetHashCode() -> int
+override Standard.Agents.Models.Brokers.Generators.SanitizedProviderOptions.ToString() -> string!
+override Standard.Agents.Models.Clients.Agents.PromptRequest.Equals(object? obj) -> bool
+override Standard.Agents.Models.Clients.Agents.PromptRequest.GetHashCode() -> int
+override Standard.Agents.Models.Clients.Agents.PromptRequest.ToString() -> string!
+static Standard.Agents.Models.Brokers.Generators.ProviderOptions.MergeInto(System.Text.Json.Nodes.JsonObject! request, string? sanitizedJson) -> void
+static Standard.Agents.Models.Brokers.Generators.ProviderOptions.Sanitize(string? providerOptionsJson) -> Standard.Agents.Models.Brokers.Generators.SanitizedProviderOptions!
+static Standard.Agents.Models.Brokers.Generators.ResolvedInference.operator !=(Standard.Agents.Models.Brokers.Generators.ResolvedInference? left, Standard.Agents.Models.Brokers.Generators.ResolvedInference? right) -> bool
+static Standard.Agents.Models.Brokers.Generators.ResolvedInference.operator ==(Standard.Agents.Models.Brokers.Generators.ResolvedInference? left, Standard.Agents.Models.Brokers.Generators.ResolvedInference? right) -> bool
+static Standard.Agents.Models.Brokers.Generators.SanitizedProviderOptions.operator !=(Standard.Agents.Models.Brokers.Generators.SanitizedProviderOptions? left, Standard.Agents.Models.Brokers.Generators.SanitizedProviderOptions? right) -> bool
+static Standard.Agents.Models.Brokers.Generators.SanitizedProviderOptions.operator ==(Standard.Agents.Models.Brokers.Generators.SanitizedProviderOptions? left, Standard.Agents.Models.Brokers.Generators.SanitizedProviderOptions? right) -> bool
+static Standard.Agents.Models.Clients.Agents.PromptRequest.operator !=(Standard.Agents.Models.Clients.Agents.PromptRequest? left, Standard.Agents.Models.Clients.Agents.PromptRequest? right) -> bool
+static Standard.Agents.Models.Clients.Agents.PromptRequest.operator ==(Standard.Agents.Models.Clients.Agents.PromptRequest? left, Standard.Agents.Models.Clients.Agents.PromptRequest? right) -> bool
+*REMOVED*Standard.Agents.Services.Managements.RunManagementService.RunManagementService(Standard.Agents.Services.Coordinations.Data.IDataCoordinationService! dataCoordinationService, Standard.Agents.Services.Coordinations.Decision.IDecisionCoordinationService! decisionCoordinationService, Standard.Agents.Services.Coordinations.Direction.IDirectionCoordinationService! directionCoordinationService, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, int maxTurns = 7, Standard.Agents.Brokers.Times.ITimeBroker? timeBroker = null, Standard.Agents.Models.Coordinations.Agents.AgentBudget? budget = null, int maxHistoryTurns = 20, bool compensateOnFailure = false, bool screenToolOutput = false, Standard.Agents.Brokers.Telemetries.ITelemetryBroker? telemetryBroker = null) -> void
+*REMOVED*Standard.Agents.StandardAgent.Brain(string! apiUrl, string! apiKey, string! model, double temperature = 0.7, int maxTokens = 1024, int timeoutSeconds = 120) -> Standard.Agents.StandardAgent!

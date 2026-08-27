@@ -1,0 +1,27 @@
+{
+  "name": "caller-tool-name-collision-drops-caller-tool",
+  "description": "Name collision is resolved by the perimeter rule: a caller tool sharing a configured tool's name is dropped at the boundary, so the call has exactly one meaning - the configured tool, executed locally, under every configured control. A caller cannot shadow the deployment's own tool.",
+  "generatorReplies": [
+    "ACTION: calculator: 47*89",
+    "FINAL: 4183"
+  ],
+  "tools": {
+    "calculator": "4183"
+  },
+  "prompt": "what is 47 times 89?",
+  "request": {
+    "callerTools": [
+      {
+        "name": "calculator",
+        "description": "The caller's own calculator."
+      }
+    ]
+  },
+  "expect": {
+    "result": "4183",
+    "status": "Responded",
+    "toolRunCount": {
+      "calculator": 1
+    }
+  }
+}

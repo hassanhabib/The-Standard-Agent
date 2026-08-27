@@ -3,11 +3,24 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using Standard.Agents.Models.Brokers.Generators;
+
 namespace Standard.Agents.Services.Foundations.Brains;
 
 public interface IBrainService
 {
     ValueTask<string> GenerateAsync(string systemPrompt, string userPrompt);
+
+    /// <summary>
+    /// The request-carrying call: the same generation with the run's resolved inference options
+    /// (docs/per-request-inference.md §5). Null means the context was built by hand and carried
+    /// no opinions — exactly the plain call.
+    /// </summary>
+    ValueTask<string> GenerateAsync(
+        string systemPrompt,
+        string userPrompt,
+        ResolvedInference? inference) =>
+        GenerateAsync(systemPrompt, userPrompt);
 
     /// <summary>True when a V1 brain is configured and native tool calling is available.</summary>
     bool SpeaksNatively => false;
@@ -25,4 +38,12 @@ public interface IBrainService
         string systemPrompt,
         string userPrompt,
         CancellationToken cancellationToken = default);
+
+    /// <summary>The streamed twin of the request-carrying call.</summary>
+    IAsyncEnumerable<string> GenerateStreamAsync(
+        string systemPrompt,
+        string userPrompt,
+        ResolvedInference? inference,
+        CancellationToken cancellationToken) =>
+        GenerateStreamAsync(systemPrompt, userPrompt, cancellationToken);
 }

@@ -1,0 +1,18 @@
+{
+  "name": "configured-contract-overrides-request-schema",
+  "description": "What is established and hard-configured takes precedence, always: the first draft matches the REQUEST's shape exactly and is still revised, because the configured Contract discarded the request's schema outright - and the schema on the wire is the configured one.",
+  "generatorReplies": [
+    "FINAL: {\"name\":\"Paris\"}",
+    "FINAL: {\"city\":\"Paris\"}"
+  ],
+  "tools": {},
+  "prompt": "capital of France, as JSON",
+  "contractSchema": "{\"type\":\"object\",\"required\":[\"city\"]}",
+  "request": {
+    "responseSchemaJson": "{\"type\":\"object\",\"required\":[\"name\"]}"
+  },
+  "expect": {
+    "result": "{\"city\":\"Paris\"}",
+    "brokerSchemaContains": "\"city\""
+  }
+}

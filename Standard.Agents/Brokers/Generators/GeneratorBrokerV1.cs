@@ -7,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Standard.Agents.Models.Brokers.Generators;
 using Standard.Agents.Models.Brokers.Generators.V1;
 
 namespace Standard.Agents.Brokers.Generators;
@@ -49,11 +50,26 @@ public sealed class GeneratorBrokerV1 : IGeneratorBrokerV1
         this.maxTokens = maxTokens;
     }
 
-    public async ValueTask<GenerationResult> GenerateAsync(
+    public ValueTask<GenerationResult> GenerateAsync(
         IReadOnlyList<ConversationMessage> messages,
-        IReadOnlyList<ToolDefinition> tools)
+        IReadOnlyList<ToolDefinition> tools) =>
+        GenerateAsync(messages, tools, inference: null);
+
+    /// <summary>This broker puts resolved inference options on the wire.</summary>
+    public bool HonorsRequest => true;
+
+    ValueTask<GenerationResult> IGeneratorBrokerV1.GenerateAsync(
+        IReadOnlyList<ConversationMessage> messages,
+        IReadOnlyList<ToolDefinition> tools,
+        ResolvedInference inference) =>
+        GenerateAsync(messages, tools, inference);
+
+    private async ValueTask<GenerationResult> GenerateAsync(
+        IReadOnlyList<ConversationMessage> messages,
+        IReadOnlyList<ToolDefinition> tools,
+        ResolvedInference? inference)
     {
-        JsonObject request = BuildRequest(messages, tools);
+        JsonObject request = BuildRequest(messages, tools, inference);
 
         using var content = new StringContent(
             request.ToJsonString(), Encoding.UTF8, JsonMediaType);
@@ -70,13 +86,14 @@ public sealed class GeneratorBrokerV1 : IGeneratorBrokerV1
 
     private JsonObject BuildRequest(
         IReadOnlyList<ConversationMessage> messages,
-        IReadOnlyList<ToolDefinition> tools)
+        IReadOnlyList<ToolDefinition> tools,
+        ResolvedInference? inference)
     {
         var request = new JsonObject
         {
             ["model"] = this.model,
-            ["temperature"] = this.temperature,
-            ["max_tokens"] = this.maxTokens,
+            ["temperature"] = inference?.Temperature ?? this.temperature,
+            ["max_tokens"] = inference?.MaxTokens ?? this.maxTokens,
             ["messages"] = new JsonArray([.. messages.Select(ToJson)])
         };
 
@@ -87,7 +104,67 @@ public sealed class GeneratorBrokerV1 : IGeneratorBrokerV1
             request["tools"] = new JsonArray([.. tools.Select(ToJson)]);
         }
 
+        WriteInference(request, inference);
+
         return request;
+    }
+
+    // The resolved options, written as the wire knows them. The values arrive already
+    // precedence-resolved at the boundary; this broker writes what it is given and decides
+    // nothing (docs/per-request-inference.md §4.2).
+    private static void WriteInference(JsonObject request, ResolvedInference? inference)
+    {
+        if (inference is null)
+        {
+            return;
+        }
+
+        if (inference.Seed is int seed)
+        {
+            request["seed"] = seed;
+        }
+
+        if (inference.Stop.Count > 0)
+        {
+            request["stop"] = new JsonArray([.. inference.Stop.Select(s => (JsonNode)s)]);
+        }
+
+        // The schema that survived precedence seeds the wire — and the guardian already holds
+        // the same schema, so an engine that quietly ignores response_format degrades to a
+        // guarantee rather than to nothing (§4.1).
+        if (string.IsNullOrWhiteSpace(inference.ResponseSchemaJson) is false)
+        {
+            JsonNode? schema = TryParse(inference.ResponseSchemaJson);
+
+            if (schema is not null)
+            {
+                request["response_format"] = new JsonObject
+                {
+                    ["type"] = "json_schema",
+                    ["json_schema"] = new JsonObject
+                    {
+                        ["name"] = "response",
+                        ["schema"] = schema
+                    }
+                };
+            }
+        }
+
+        // Already sanitized at the boundary; merged under the same rule again here, because
+        // this is the perimeter and one enforcement point is one forgotten call away from none.
+        ProviderOptions.MergeInto(request, inference.ProviderOptionsJson);
+    }
+
+    private static JsonNode? TryParse(string json)
+    {
+        try
+        {
+            return JsonNode.Parse(json);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 
     private static JsonNode ToJson(ConversationMessage message)

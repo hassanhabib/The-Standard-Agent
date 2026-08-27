@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------
 
 using Standard.Agents.Brokers.Generators;
+using Standard.Agents.Models.Brokers.Generators;
 using Standard.Agents.Models.Brokers.Generators.V1;
 
 namespace Standard.Agents.Brokers.Redactions;
@@ -24,9 +25,25 @@ public sealed class RedactingGeneratorBrokerV1 : IGeneratorBrokerV1
         this.redactionBroker = redactionBroker;
     }
 
-    public async ValueTask<GenerationResult> GenerateAsync(
+    // Explicit pass-throughs, never the interface's defaults: a decorator that leaned on the
+    // default member would degrade HERE and silently drop the resolved options before the wire.
+    public bool HonorsRequest => this.generatorBroker.HonorsRequest;
+
+    public ValueTask<GenerationResult> GenerateAsync(
         IReadOnlyList<ConversationMessage> messages,
-        IReadOnlyList<ToolDefinition> tools)
+        IReadOnlyList<ToolDefinition> tools) =>
+        GenerateAsync(messages, tools, inference: null);
+
+    ValueTask<GenerationResult> IGeneratorBrokerV1.GenerateAsync(
+        IReadOnlyList<ConversationMessage> messages,
+        IReadOnlyList<ToolDefinition> tools,
+        ResolvedInference inference) =>
+        GenerateAsync(messages, tools, inference);
+
+    private async ValueTask<GenerationResult> GenerateAsync(
+        IReadOnlyList<ConversationMessage> messages,
+        IReadOnlyList<ToolDefinition> tools,
+        ResolvedInference? inference)
     {
         var vault = new Dictionary<string, string>();
 
@@ -36,7 +53,9 @@ public sealed class RedactingGeneratorBrokerV1 : IGeneratorBrokerV1
                 Content = this.redactionBroker.Redact(message.Content, vault)
             })];
 
-        GenerationResult result = await this.generatorBroker.GenerateAsync(redacted, tools);
+        GenerationResult result = inference is null
+            ? await this.generatorBroker.GenerateAsync(redacted, tools)
+            : await this.generatorBroker.GenerateAsync(redacted, tools, inference);
 
         return result with
         {

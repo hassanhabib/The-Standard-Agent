@@ -6,6 +6,7 @@
 using System.Runtime.CompilerServices;
 using Standard.Agents.Brokers.Generators;
 using Standard.Agents.Brokers.Loggings;
+using Standard.Agents.Models.Brokers.Generators;
 
 namespace Standard.Agents.Services.Foundations.Brains;
 
@@ -39,10 +40,53 @@ public partial class BrainService : IBrainService
         return await this.generatorBroker.GenerateAsync(systemPrompt, userPrompt);
     });
 
+    // Stops discarding what it was handed (docs/per-request-inference.md §2): the resolved
+    // options ride through to the broker, which honors them or degrades to the plain call by
+    // its own default member — either way the guardian still holds the answer to shape.
+    public ValueTask<string> GenerateAsync(
+        string systemPrompt,
+        string userPrompt,
+        ResolvedInference? inference) =>
+    TryCatch(async () =>
+    {
+        ValidateUserPrompt(userPrompt);
+
+        if (inference is null)
+        {
+            return await this.generatorBroker.GenerateAsync(systemPrompt, userPrompt);
+        }
+
+        await AnnounceDegradationAsync(this.generatorBroker.HonorsRequest);
+
+        return await this.generatorBroker.GenerateAsync(systemPrompt, userPrompt, inference);
+    });
+
+    // HonorsRequest exists so the trace can say which of the two happened: options on the wire,
+    // or graceful degradation with shape still enforced by the guardian
+    // (docs/per-request-inference.md §5). Asked only when a run actually carries options — a
+    // plain run has nothing to degrade.
+    private async ValueTask AnnounceDegradationAsync(bool honorsRequest)
+    {
+        if (honorsRequest is false)
+        {
+            await this.loggingBroker.LogProcessAsync(
+                "Decision",
+                "Brain → broker does not honor requests; shape enforced by guardian only",
+                detail: true);
+        }
+    }
+
+    public IAsyncEnumerable<string> GenerateStreamAsync(
+        string systemPrompt,
+        string userPrompt,
+        CancellationToken cancellationToken = default) =>
+        GenerateStreamAsync(systemPrompt, userPrompt, inference: null, cancellationToken);
+
     public async IAsyncEnumerable<string> GenerateStreamAsync(
         string systemPrompt,
         string userPrompt,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        ResolvedInference? inference,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         IAsyncEnumerator<string> tokens;
 
@@ -50,9 +94,18 @@ public partial class BrainService : IBrainService
         {
             ValidateUserPrompt(userPrompt);
 
-            tokens = this.generatorBroker
-                .GenerateStreamAsync(systemPrompt, userPrompt, cancellationToken)
-                .GetAsyncEnumerator(cancellationToken);
+            if (inference is not null)
+            {
+                await AnnounceDegradationAsync(this.generatorBroker.HonorsRequest);
+            }
+
+            IAsyncEnumerable<string> stream = inference is null
+                ? this.generatorBroker.GenerateStreamAsync(
+                    systemPrompt, userPrompt, cancellationToken)
+                : this.generatorBroker.GenerateStreamAsync(
+                    systemPrompt, userPrompt, inference, cancellationToken);
+
+            tokens = stream.GetAsyncEnumerator(cancellationToken);
         }
         catch (Exception exception)
         {

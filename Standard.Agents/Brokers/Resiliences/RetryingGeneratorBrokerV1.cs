@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------
 
 using Standard.Agents.Brokers.Generators;
+using Standard.Agents.Models.Brokers.Generators;
 using Standard.Agents.Models.Brokers.Generators.V1;
 
 namespace Standard.Agents.Brokers.Resiliences;
@@ -23,9 +24,20 @@ public sealed class RetryingGeneratorBrokerV1 : IGeneratorBrokerV1
         this.resilienceBroker = resilienceBroker;
     }
 
+    // Explicit pass-throughs, never the interface's defaults — a decorator that leaned on the
+    // default member would silently drop the resolved options before the wire.
+    public bool HonorsRequest => this.generatorBroker.HonorsRequest;
+
     public ValueTask<GenerationResult> GenerateAsync(
         IReadOnlyList<ConversationMessage> messages,
         IReadOnlyList<ToolDefinition> tools) =>
         this.resilienceBroker.ExecuteAsync(() =>
             this.generatorBroker.GenerateAsync(messages, tools));
+
+    public ValueTask<GenerationResult> GenerateAsync(
+        IReadOnlyList<ConversationMessage> messages,
+        IReadOnlyList<ToolDefinition> tools,
+        ResolvedInference inference) =>
+        this.resilienceBroker.ExecuteAsync(() =>
+            this.generatorBroker.GenerateAsync(messages, tools, inference));
 }

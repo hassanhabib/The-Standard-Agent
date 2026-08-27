@@ -17,6 +17,7 @@ using Standard.Agents.Brokers.Skills;
 using Standard.Agents.Brokers.Verifiers;
 using Standard.Agents.Models.Loggings;
 using Xunit;
+using Standard.Agents.Models.Brokers.Generators;
 
 namespace Standard.Agents.Tests.Unit.Acceptance;
 
@@ -32,6 +33,11 @@ public class TraceFailureTests
 
         generator.Setup(broker => broker.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ThrowsAsync(new Exception("brain exploded"));
+
+        generator.Setup(broker => broker.GenerateAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ResolvedInference>()))
+                .Returns((string systemPrompt, string userPrompt, ResolvedInference _) =>
+                    generator.Object.GenerateAsync(systemPrompt, userPrompt));
 
         var skills = new Mock<ISkillBroker>();
         skills.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(new List<Skill> { new() { Content = "Answer directly." } });

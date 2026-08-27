@@ -21,7 +21,7 @@ public partial class InferenceOrchestrationService
     private async ValueTask<AgentContext> ThinkNativelyAsync(AgentContext context)
     {
         GenerationResult result =
-            await this.brainService.GenerateAsync(context, this.toolDefinitions);
+            await this.brainService.GenerateAsync(context, MergedTools(context));
 
         await this.loggingBroker.LogProcessAsync(
             "Decision",
@@ -74,5 +74,17 @@ public partial class InferenceOrchestrationService
             ToolCallId = call.Id,
             RawReply = result.Content
         };
+    }
+
+    // One vocabulary, two owners (design §6.1): the configured tools and the caller's, side by
+    // side. The boundary already dropped any caller tool sharing a configured name, so appending
+    // is safe — and only Direction knows which words are whose.
+    private IReadOnlyList<ToolDefinition> MergedTools(AgentContext context)
+    {
+        IReadOnlyList<ToolDefinition> callerTools = context.Inference?.CallerTools ?? [];
+
+        return callerTools.Count == 0
+            ? this.toolDefinitions
+            : [.. this.toolDefinitions, .. callerTools];
     }
 }

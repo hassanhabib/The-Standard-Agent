@@ -180,8 +180,17 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
             return (revising, "judge rejected the draft; revising");
         }
 
+        // The shape check runs after the Judge and not before it, deliberately: a draft that is
+        // wrong on the merits should be told that, not told its punctuation is off. Two rejections
+        // in one turn would spend a turn teaching the model the lesser of them.
+        //
+        // The schema is the one that SURVIVED precedence, riding the context from the boundary
+        // (docs/per-request-inference.md §4.1). The configured field remains only for a context
+        // built by hand, where it says exactly what the boundary would have seeded.
         ContractVerdict shape =
-            await this.guardianService.CheckShapeAsync(decided.Payload, this.contractSchema);
+            await this.guardianService.CheckShapeAsync(
+                decided.Payload,
+                context.Inference?.ResponseSchemaJson ?? this.contractSchema);
 
         if (shape.Satisfied is false)
         {
@@ -350,7 +359,40 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
             yield break;
         }
 
-        setResult(decided);
+        // The shape check, exactly as the batched path runs it — the streamed loop used to skip
+        // it, which made streaming the way to receive an answer the Contract would have refused.
+        // A control a caller can step around by changing method is not a control (SPEC.md §7.6).
+        ContractVerdict shape =
+            await this.guardianService.CheckShapeAsync(
+                decided.Payload,
+                context.Inference?.ResponseSchemaJson ?? this.contractSchema);
+
+        if (shape.Satisfied is false)
+        {
+            await this.loggingBroker.LogProcessAsync(
+                "Decision",
+                $"Contract → REJECTED: {shape.Reason}");
+
+            setResult(context with
+            {
+                Observations =
+                [
+                    .. context.Observations,
+                    ShapeFeedback(shape, decided.Payload)
+                ],
+
+                Status = AgentStatus.Revising
+            });
+
+            yield return new AgentStreamEvent(
+                AgentStreamEventType.Status, "contract rejected the draft; revising");
+
+            yield break;
+        }
+
+        setResult(decided.Status is AgentStatus.Revising
+            ? decided with { Status = AgentStatus.Working }
+            : decided);
     }
 
     // The Gate's refusal, handled once for both doors: the verdict never becomes the answer —

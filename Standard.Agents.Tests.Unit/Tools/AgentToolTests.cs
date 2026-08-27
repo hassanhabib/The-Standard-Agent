@@ -11,6 +11,7 @@ using Moq;
 using Standard.Agents.Tools;
 using Tynamix.ObjectFiller;
 using Xunit;
+using Standard.Agents.Models.Brokers.Generators;
 
 namespace Standard.Agents.Tests.Unit.Tools;
 
@@ -80,6 +81,11 @@ public partial class AgentToolTests
         outerBrain.Setup(broker =>
             broker.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(() => replies.Dequeue());
+
+        outerBrain.Setup(broker => broker.GenerateAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ResolvedInference>()))
+                .Returns((string systemPrompt, string userPrompt, ResolvedInference _) =>
+                    outerBrain.Object.GenerateAsync(systemPrompt, userPrompt));
 
         var skills = new Mock<Brokers.Skills.ISkillBroker>();
         skills.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(new List<Skill> { new() { Content = "you are an agent" } });

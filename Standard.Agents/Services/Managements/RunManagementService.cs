@@ -8,6 +8,8 @@ using Standard.Agents.Brokers.Loggings;
 
 using Standard.Agents.Brokers.Telemetries;
 using Standard.Agents.Brokers.Times;
+using Standard.Agents.Models.Brokers.Generators;
+using Standard.Agents.Models.Brokers.Generators.V1;
 using Standard.Agents.Models.Brokers.Sessions;
 using Standard.Agents.Models.Coordinations.Agents;
 using Standard.Agents.Models.Clients.Agents;
@@ -44,6 +46,14 @@ public partial class RunManagementService : IRunManagementService
     private readonly int maxTurns;
     private readonly bool compensateOnFailure;
 
+    // What the deployment established, snapshotted at composition so precedence can be resolved
+    // at the top of each run. Null means the host expressed no opinion — which is exactly what
+    // lets a request's value take effect (docs/per-request-inference.md §4.2).
+    private readonly string? contractSchema;
+    private readonly double? configuredTemperature;
+    private readonly int? configuredMaxTokens;
+    private readonly HashSet<string> configuredToolNames;
+
     public RunManagementService(
         IDataCoordinationService dataCoordinationService,
         IDecisionCoordinationService decisionCoordinationService,
@@ -55,7 +65,11 @@ public partial class RunManagementService : IRunManagementService
         int maxHistoryTurns = 20,
         bool compensateOnFailure = false,
         bool screenToolOutput = false,
-        ITelemetryBroker? telemetryBroker = null)
+        ITelemetryBroker? telemetryBroker = null,
+        string? contractSchema = null,
+        double? configuredTemperature = null,
+        int? configuredMaxTokens = null,
+        IEnumerable<string>? configuredToolNames = null)
     {
         this.compensateOnFailure = compensateOnFailure;
         this.dataCoordinationService = dataCoordinationService;
@@ -68,7 +82,98 @@ public partial class RunManagementService : IRunManagementService
         this.budget = budget;
         this.maxHistoryTurns = maxHistoryTurns;
         this.screenToolOutput = screenToolOutput;
+        this.contractSchema = contractSchema;
+        this.configuredTemperature = configuredTemperature;
+        this.configuredMaxTokens = configuredMaxTokens;
+
+        this.configuredToolNames = new HashSet<string>(
+            configuredToolNames ?? [], StringComparer.OrdinalIgnoreCase);
     }
+
+    // Precedence, per field: configured → request → framework default
+    // (docs/per-request-inference.md §4). What is established and hard-configured takes
+    // precedence, always — a caller can never widen the boundary the deployment set. The
+    // request's schema is never merged and never partially honored: one schema survives, and it
+    // seeds the wire and the guardian alike (§4.1).
+    private ResolvedInference Resolve(PromptRequest request) =>
+        new()
+        {
+            Temperature = this.configuredTemperature
+                ?? request.Temperature
+                ?? ResolvedInference.DefaultTemperature,
+
+            MaxTokens = this.configuredMaxTokens
+                ?? request.MaxTokens
+                ?? ResolvedInference.DefaultMaxTokens,
+
+            Seed = request.Seed,
+            Stop = request.Stop,
+
+            ResponseSchemaJson = string.IsNullOrWhiteSpace(this.contractSchema)
+                ? request.ResponseSchemaJson
+                : this.contractSchema,
+
+            CallerTools = WithoutConfiguredNames(request.CallerTools),
+
+            // Sanitized here, at the boundary, so no broker — built-in or third-party — can
+            // ever be handed a passthrough carrying a core-owned key (§4.4).
+            ProviderOptionsJson = ProviderOptions.Sanitize(request.ProviderOptionsJson).Json
+        };
+
+    // Say so in the trace (docs/per-request-inference.md §4.3): a rejection the trace does not
+    // explain is a turn nobody can account for, and a caller whose schema was discarded or whose
+    // passthrough key was stripped deserves the same courtesy the guardians already extend.
+    private async ValueTask AnnounceResolutionAsync(PromptRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(this.contractSchema) is false
+            && string.IsNullOrWhiteSpace(request.ResponseSchemaJson) is false)
+        {
+            await this.loggingBroker.LogProcessAsync(
+                "Run",
+                "Contract → request schema discarded; the configured Contract wins");
+        }
+
+        SanitizedProviderOptions sanitized =
+            ProviderOptions.Sanitize(request.ProviderOptionsJson);
+
+        if (sanitized.Malformed)
+        {
+            await this.loggingBroker.LogProcessAsync(
+                "Run", "Provider options → ignored: not a JSON object");
+        }
+
+        if (sanitized.StrippedKeys.Count > 0)
+        {
+            await this.loggingBroker.LogProcessAsync(
+                "Run",
+                "Provider options → stripped core-owned key(s): "
+                    + string.Join(", ", sanitized.StrippedKeys));
+        }
+
+        foreach (ToolDefinition tool in request.CallerTools)
+        {
+            if (this.configuredToolNames.Contains(tool.Name))
+            {
+                await this.loggingBroker.LogProcessAsync(
+                    "Run",
+                    $"Caller tools → '{tool.Name}' dropped; a configured tool owns that name");
+            }
+        }
+    }
+
+    // Name collision resolved by the perimeter rule (design §6.1): a caller tool that shares a
+    // configured tool's name is dropped, so a tool_call carrying that name has exactly one
+    // meaning — the configured tool, executed locally, under every configured control. Dropped
+    // HERE, before Direction ever reads the list, because a foreign classification downstream
+    // would otherwise let a caller shadow the deployment's own tool. MCP tool names are not
+    // known at composition; a collision with one degrades toward the caller — the agent then
+    // performs nothing, which is the safe direction to fail in.
+    private IReadOnlyList<ToolDefinition> WithoutConfiguredNames(
+        IReadOnlyList<ToolDefinition> callerTools) =>
+        callerTools.Count == 0
+            ? callerTools
+            : [.. callerTools.Where(tool =>
+                this.configuredToolNames.Contains(tool.Name) is false)];
 
     public ValueTask<string> ProcessPromptAsync(string prompt) =>
         ProcessPromptAsync(prompt, string.Empty, CancellationToken.None);
@@ -84,21 +189,40 @@ public partial class RunManagementService : IRunManagementService
         CancellationToken cancellationToken) =>
         (await RunAsync(prompt, sessionId, cancellationToken)).Result;
 
+    public async ValueTask<string> ProcessPromptAsync(PromptRequest request) =>
+        (await RunAsync(request, CancellationToken.None)).Result;
+
+    public async ValueTask<string> ProcessPromptAsync(
+        PromptRequest request,
+        CancellationToken cancellationToken) =>
+        (await RunAsync(request, cancellationToken)).Result;
+
     // The batched projection of the one loop: drain the events, keep how it ended.
     // ProcessPromptAsync projects the answer out of it, because a caller who only wants the
     // string should not have to know there was more — and a caller who nests this agent inside
     // another one cannot do without it (AgentTool).
+    // A plain prompt is a request that expressed no opinions — one path, not a simple mode
+    // and an advanced one, which is what keeps every control identical on both.
     public ValueTask<AgentOutcome> RunAsync(
         string prompt,
         string sessionId,
+        CancellationToken cancellationToken) =>
+        RunAsync(
+            new PromptRequest { Prompt = prompt, SessionId = sessionId },
+            cancellationToken);
+
+    public ValueTask<AgentOutcome> RunAsync(PromptRequest request) =>
+        RunAsync(request, CancellationToken.None);
+
+    public ValueTask<AgentOutcome> RunAsync(
+        PromptRequest request,
         CancellationToken cancellationToken) =>
     TryCatch(async () =>
     {
         AgentOutcome outcome = new(string.Empty, AgentStatus.Failed);
 
         await foreach (AgentStreamEvent _ in RunCoreAsync(
-            prompt,
-            sessionId,
+            request,
             streaming: false,
             setOutcome: ended => outcome = ended,
             cancellationToken))
@@ -118,15 +242,25 @@ public partial class RunManagementService : IRunManagementService
     // failure points are the awaits, not the yields, so the enumeration advances inside the
     // catch and yields outside it. Cancellation passes through unmapped: the caller asked the
     // run to stop and gets the stop, not a service error.
-    public async IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
+    public IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
         string prompt,
         string sessionId,
+        CancellationToken cancellationToken) =>
+        ProcessPromptStreamAsync(
+            new PromptRequest { Prompt = prompt, SessionId = sessionId },
+            cancellationToken);
+
+    public IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
+        PromptRequest request) =>
+        ProcessPromptStreamAsync(request, CancellationToken.None);
+
+    public async IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
+        PromptRequest request,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         await using IAsyncEnumerator<AgentStreamEvent> events =
             RunCoreAsync(
-                prompt,
-                sessionId,
+                request,
                 streaming: true,
                 setOutcome: _ => { },
                 cancellationToken)
@@ -169,8 +303,7 @@ public partial class RunManagementService : IRunManagementService
     // its whole body, so the pump owns the run and writes events to a channel; this iterator
     // only reads and yields.
     private async IAsyncEnumerable<AgentStreamEvent> RunCoreAsync(
-        string prompt,
-        string sessionId,
+        PromptRequest request,
         bool streaming,
         Action<AgentOutcome> setOutcome,
         [EnumeratorCancellation] CancellationToken cancellationToken)
@@ -184,8 +317,7 @@ public partial class RunManagementService : IRunManagementService
         using var abandoned = new CancellationTokenSource();
 
         Task pump = PumpRunAsync(
-            prompt,
-            sessionId,
+            request,
             streaming,
             events.Writer,
             setOutcome,
@@ -227,8 +359,7 @@ public partial class RunManagementService : IRunManagementService
     // drives (a host's generator sees the same calls it always saw on each door), and whether
     // anybody reads the events (the batched caller drains them).
     private async Task PumpRunAsync(
-        string prompt,
-        string sessionId,
+        PromptRequest request,
         bool streaming,
         System.Threading.Channels.ChannelWriter<AgentStreamEvent> events,
         Action<AgentOutcome> setOutcome,
@@ -238,7 +369,7 @@ public partial class RunManagementService : IRunManagementService
         try
         {
             await RunTheLoopAsync(
-                prompt, sessionId, streaming, events, setOutcome, cancellationToken, abandoned);
+                request, streaming, events, setOutcome, cancellationToken, abandoned);
 
             events.TryComplete();
         }
@@ -251,15 +382,17 @@ public partial class RunManagementService : IRunManagementService
     }
 
     private async Task RunTheLoopAsync(
-        string prompt,
-        string sessionId,
+        PromptRequest request,
         bool streaming,
         System.Threading.Channels.ChannelWriter<AgentStreamEvent> events,
         Action<AgentOutcome> setOutcome,
         CancellationToken cancellationToken,
         CancellationToken abandoned)
     {
-        ValidatePrompt(prompt);
+        ValidatePrompt(request.Prompt);
+
+        string prompt = request.Prompt;
+        string sessionId = request.SessionId;
 
         // Read before the run begins: a session that never delivered an answer was interrupted,
         // and the next prompt in it continues that run rather than starting a fresh one.
@@ -282,8 +415,17 @@ public partial class RunManagementService : IRunManagementService
         }
 
         await this.loggingBroker.LogResetAsync();
+        await AnnounceResolutionAsync(request);
 
-        AgentContext context = new() { Prompt = prompt, SessionId = sessionId };
+        // Precedence resolved once, at the top of the run, and never again below it: a loop
+        // that can re-resolve is a loop where two turns of one run can disagree
+        // (docs/per-request-inference.md §2).
+        AgentContext context = new()
+        {
+            Prompt = prompt,
+            SessionId = sessionId,
+            Inference = Resolve(request)
+        };
 
         // The start-of-run checkpoint, written before any work is done (SPEC.md §4.11), and the
         // conversation so far, loaded before Decision runs so the Brain sees it.

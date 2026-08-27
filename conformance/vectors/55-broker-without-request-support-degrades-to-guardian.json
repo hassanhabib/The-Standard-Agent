@@ -1,0 +1,17 @@
+{
+  "name": "broker-without-request-support-degrades-to-guardian",
+  "description": "This broker never opted in: the request-carrying overload falls back to the plain call by the interface's own default member. The answer is STILL held to shape, because the Contract guardian validates and revises regardless - constrained decoding is an optimization over a guarantee the architecture already provides.",
+  "generatorReplies": [
+    "FINAL: Paris",
+    "FINAL: {\"city\":\"Paris\"}"
+  ],
+  "tools": {},
+  "prompt": "capital of France, as JSON",
+  "brokerHonorsRequest": false,
+  "request": {
+    "responseSchemaJson": "{\"type\":\"object\",\"required\":[\"city\"]}"
+  },
+  "expect": {
+    "result": "{\"city\":\"Paris\"}"
+  }
+}

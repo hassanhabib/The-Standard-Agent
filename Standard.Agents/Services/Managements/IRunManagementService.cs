@@ -19,6 +19,17 @@ public interface IRunManagementService
         CancellationToken cancellationToken);
 
     /// <summary>
+    /// The run, asked for by a <b>request</b> — a prompt carrying its own inference options
+    /// (docs/per-request-inference.md). Precedence is resolved once at the top of the run;
+    /// every tier below receives the resolution's output on the context.
+    /// </summary>
+    ValueTask<string> ProcessPromptAsync(PromptRequest request);
+
+    ValueTask<string> ProcessPromptAsync(
+        PromptRequest request,
+        CancellationToken cancellationToken);
+
+    /// <summary>
     /// The same run, reported with <b>how it ended</b>. Every <c>ProcessPromptAsync</c> above is
     /// this with the answer projected out of it — which is all a caller wants until the agent is
     /// nested inside another one, where "held" and "answered" have to be told apart.
@@ -26,6 +37,17 @@ public interface IRunManagementService
     ValueTask<AgentOutcome> RunAsync(
         string prompt,
         string sessionId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The run asked for by a request, reported with how it ended. An exposer cannot do without
+    /// this: a run that ended <c>AwaitingInput</c> holding a caller's tool call and a run that
+    /// answered read alike as strings.
+    /// </summary>
+    ValueTask<AgentOutcome> RunAsync(PromptRequest request);
+
+    ValueTask<AgentOutcome> RunAsync(
+        PromptRequest request,
         CancellationToken cancellationToken);
 
     IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
@@ -40,5 +62,15 @@ public interface IRunManagementService
     IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
         string prompt,
         string sessionId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The streamed loop, asked for by a request. The same resolution, the same controls: a
+    /// control a caller can step around by changing method is not a control (SPEC.md §7.6).
+    /// </summary>
+    IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(PromptRequest request);
+
+    IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
+        PromptRequest request,
         CancellationToken cancellationToken);
 }

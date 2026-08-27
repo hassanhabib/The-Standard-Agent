@@ -6,6 +6,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 using Standard.Agents.Brokers.Generators;
+using Standard.Agents.Models.Brokers.Generators;
 
 namespace Standard.Agents.Brokers.Redactions;
 
@@ -29,6 +30,10 @@ public sealed class RedactingGeneratorBroker : IGeneratorBroker
         this.redactionBroker = redactionBroker;
     }
 
+    // Explicit pass-throughs, never the interface's defaults: a decorator that leaned on the
+    // default member would degrade HERE and silently drop the resolved options before the wire.
+    public bool HonorsRequest => this.generatorBroker.HonorsRequest;
+
     public async ValueTask<string> GenerateAsync(string systemPrompt, string userPrompt)
     {
         // The vault is per call. Two prompts share it, so the same value redacts to the same
@@ -42,17 +47,53 @@ public sealed class RedactingGeneratorBroker : IGeneratorBroker
         return this.redactionBroker.Rehydrate(reply, vault);
     }
 
-    public async IAsyncEnumerable<string> GenerateStreamAsync(
+    // The inference options travel unredacted: they are knobs and schemas the host or caller
+    // wrote, not conversation carrying PII — and a redacted schema would constrain the model to
+    // shapes nobody asked for.
+    public async ValueTask<string> GenerateAsync(
         string systemPrompt,
         string userPrompt,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        ResolvedInference inference)
     {
         var vault = new Dictionary<string, string>();
 
-        IAsyncEnumerable<string> tokens = this.generatorBroker.GenerateStreamAsync(
+        string reply = await this.generatorBroker.GenerateAsync(
             this.redactionBroker.Redact(systemPrompt, vault),
             this.redactionBroker.Redact(userPrompt, vault),
-            cancellationToken);
+            inference);
+
+        return this.redactionBroker.Rehydrate(reply, vault);
+    }
+
+    public IAsyncEnumerable<string> GenerateStreamAsync(
+        string systemPrompt,
+        string userPrompt,
+        CancellationToken cancellationToken = default) =>
+        GenerateStreamAsync(systemPrompt, userPrompt, inference: null, cancellationToken);
+
+    IAsyncEnumerable<string> IGeneratorBroker.GenerateStreamAsync(
+        string systemPrompt,
+        string userPrompt,
+        ResolvedInference inference,
+        CancellationToken cancellationToken) =>
+        GenerateStreamAsync(systemPrompt, userPrompt, inference, cancellationToken);
+
+    private async IAsyncEnumerable<string> GenerateStreamAsync(
+        string systemPrompt,
+        string userPrompt,
+        ResolvedInference? inference,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        var vault = new Dictionary<string, string>();
+
+        string redactedSystemPrompt = this.redactionBroker.Redact(systemPrompt, vault);
+        string redactedUserPrompt = this.redactionBroker.Redact(userPrompt, vault);
+
+        IAsyncEnumerable<string> tokens = inference is null
+            ? this.generatorBroker.GenerateStreamAsync(
+                redactedSystemPrompt, redactedUserPrompt, cancellationToken)
+            : this.generatorBroker.GenerateStreamAsync(
+                redactedSystemPrompt, redactedUserPrompt, inference, cancellationToken);
 
         var pending = new StringBuilder();
 

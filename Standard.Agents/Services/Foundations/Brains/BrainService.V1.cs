@@ -29,7 +29,18 @@ public partial class BrainService
 
         IReadOnlyList<ConversationMessage> messages = [.. BuildConversation(context)];
 
-        return await this.generatorBrokerV1!.GenerateAsync(messages, tools);
+        // The context arrived intact; it used to be flattened here and its resolution discarded
+        // (docs/per-request-inference.md §2). Now the resolved options ride the last hop too —
+        // the broker honors them or degrades by its own default member, and either way the
+        // guardian still holds the answer to shape.
+        if (context.Inference is null)
+        {
+            return await this.generatorBrokerV1!.GenerateAsync(messages, tools);
+        }
+
+        await AnnounceDegradationAsync(this.generatorBrokerV1!.HonorsRequest);
+
+        return await this.generatorBrokerV1.GenerateAsync(messages, tools, context.Inference);
     }
 
     // The conversation the model actually sees: who it is, what was said before, what it has

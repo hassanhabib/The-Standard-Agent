@@ -133,4 +133,19 @@ public sealed record Vector(
     // The fleet (SPEC.md §4.8 v1.6). Each entry is a registered agent the outer agent may hand
     // work to — or transfer the whole run to — with a scripted brain of its own, created once
     // per vector so its script keeps its place across instance rebuilds.
-    List<FleetAgent>? Agents = null);
+    List<FleetAgent>? Agents = null,
+
+    // Per-request inference (docs/per-request-inference.md). Request carries what one caller
+    // asked for; Requests drives one request per prompt, concurrently, against a single
+    // composition. ContractSchema configures the deployment's Contract; ConfiguredTemperature /
+    // ConfiguredMaxTokens hard-configure the brain's knobs so "configured wins" is certifiable.
+    // BrokerHonorsRequest = false swaps in the scripted Brain that never opted in, so graceful
+    // degradation is certified against the interface's real default members. Streamed runs the
+    // request through the streamed loop, which enforces every control the batched one does.
+    RequestSpec? Request = null,
+    List<RequestSpec>? Requests = null,
+    string? ContractSchema = null,
+    double? ConfiguredTemperature = null,
+    int? ConfiguredMaxTokens = null,
+    bool BrokerHonorsRequest = true,
+    bool Streamed = false);

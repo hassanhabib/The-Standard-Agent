@@ -5,6 +5,7 @@
 
 using System.Runtime.CompilerServices;
 using Standard.Agents.Brokers.Generators;
+using Standard.Agents.Models.Brokers.Generators;
 
 namespace Standard.Agents.Conformance;
 
@@ -22,12 +23,28 @@ public sealed class RecordingGeneratorBroker : IGeneratorBroker
         this.record = record;
     }
 
+    // Explicit pass-throughs, never the interface's defaults — the same rule the core's own
+    // decorators follow, and for the same reason: a wrapper that leaned on the default member
+    // would silently drop the resolved options before the scripted Brain ever saw them.
+    public bool HonorsRequest => this.inner.HonorsRequest;
+
     public async ValueTask<string> GenerateAsync(string systemPrompt, string userPrompt)
     {
         this.record(systemPrompt);
         this.record(userPrompt);
 
         return await this.inner.GenerateAsync(systemPrompt, userPrompt);
+    }
+
+    public async ValueTask<string> GenerateAsync(
+        string systemPrompt,
+        string userPrompt,
+        ResolvedInference inference)
+    {
+        this.record(systemPrompt);
+        this.record(userPrompt);
+
+        return await this.inner.GenerateAsync(systemPrompt, userPrompt, inference);
     }
 
     public async IAsyncEnumerable<string> GenerateStreamAsync(
@@ -40,6 +57,24 @@ public sealed class RecordingGeneratorBroker : IGeneratorBroker
 
         IAsyncEnumerable<string> tokens =
             this.inner.GenerateStreamAsync(systemPrompt, userPrompt, cancellationToken);
+
+        await foreach (string token in tokens.WithCancellation(cancellationToken))
+        {
+            yield return token;
+        }
+    }
+
+    public async IAsyncEnumerable<string> GenerateStreamAsync(
+        string systemPrompt,
+        string userPrompt,
+        ResolvedInference inference,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        this.record(systemPrompt);
+        this.record(userPrompt);
+
+        IAsyncEnumerable<string> tokens =
+            this.inner.GenerateStreamAsync(systemPrompt, userPrompt, inference, cancellationToken);
 
         await foreach (string token in tokens.WithCancellation(cancellationToken))
         {

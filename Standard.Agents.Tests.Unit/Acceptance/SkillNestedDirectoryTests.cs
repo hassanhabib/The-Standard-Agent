@@ -11,6 +11,7 @@ using Standard.Agents.Brokers.Knowledges;
 using Standard.Agents.Brokers.Mcps;
 using Standard.Agents.Brokers.Memorys;
 using Xunit;
+using Standard.Agents.Models.Brokers.Generators;
 
 namespace Standard.Agents.Tests.Unit.Acceptance;
 
@@ -36,6 +37,11 @@ public class SkillNestedDirectoryTests
             broker.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
                 .Callback<string, string>((systemPrompt, _) => capturedSystemPrompt = systemPrompt)
                 .ReturnsAsync("FINAL: ok");
+
+        generator.Setup(broker => broker.GenerateAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ResolvedInference>()))
+                .Returns((string systemPrompt, string userPrompt, ResolvedInference _) =>
+                    generator.Object.GenerateAsync(systemPrompt, userPrompt));
 
         var memory = new Mock<IMemoryBroker>();
         memory.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);

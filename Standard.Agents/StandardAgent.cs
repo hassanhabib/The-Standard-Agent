@@ -34,6 +34,7 @@ using Standard.Agents.Brokers.Tools;
 using Standard.Agents.Brokers.Verifiers;
 using Standard.Agents.Models.Brokers.Agents;
 using Standard.Agents.Models.Brokers.Audits;
+using Standard.Agents.Models.Brokers.Generators;
 using Standard.Agents.Models.Brokers.Generators.V1;
 using Standard.Agents.Models.Brokers.Sessions;
 using Standard.Agents.Models.Clients.Agents;
@@ -211,16 +212,23 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="apiUrl">Base URL of the OpenAI-compatible endpoint.</param>
     /// <param name="apiKey">API key for the endpoint (empty string if none is needed).</param>
     /// <param name="model">Model name to request from the endpoint.</param>
-    /// <param name="temperature">Sampling temperature; higher is more varied. Defaults to 0.7.</param>
-    /// <param name="maxTokens">Maximum tokens to generate per turn. Defaults to 1024.</param>
+    /// <param name="temperature">
+    /// Sampling temperature; higher is more varied. Omitted, the framework's 0.7 applies — and a
+    /// request may speak, because the deployment said nothing. Set, it is hard configuration and
+    /// no request can move it (docs/per-request-inference.md §4.2).
+    /// </param>
+    /// <param name="maxTokens">
+    /// Maximum tokens to generate per turn. Omitted, the framework's 1024 applies, on the same
+    /// precedence as <paramref name="temperature"/>.
+    /// </param>
     /// <param name="timeoutSeconds">Per-request timeout in seconds. Defaults to 120.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent Brain(
         string apiUrl,
         string apiKey,
         string model,
-        double temperature = 0.7,
-        int maxTokens = 1024,
+        double? temperature = null,
+        int? maxTokens = null,
         int timeoutSeconds = 120) =>
         Set(() => this.brainSettings =
             new InferenceSettings(apiUrl, apiKey, model, temperature, maxTokens, timeoutSeconds));
@@ -1033,6 +1041,25 @@ public sealed partial class StandardAgent : IAgent
         await (await ResolveAgentAsync()).RunAsync(prompt, string.Empty, cancellationToken);
 
     /// <summary>
+    /// Runs a caller's request and reports <b>how the run ended</b> as well as what it produced.
+    /// This is the exposer's read: a run that ended <c>AwaitingInput</c> holding a caller's tool
+    /// call and a run that answered read alike as strings, and only the status tells them apart.
+    /// </summary>
+    /// <param name="request">The caller's prompt and per-request inference options.</param>
+    /// <returns>The answer, and how the run ended.</returns>
+    public async ValueTask<AgentOutcome> RunAsync(PromptRequest request) =>
+        await RunAsync(request, CancellationToken.None);
+
+    /// <summary>The same request-carrying run, reported with how it ended, cancellable.</summary>
+    /// <param name="request">The caller's prompt and per-request inference options.</param>
+    /// <param name="cancellationToken">Token to stop the run.</param>
+    /// <returns>The answer, and how the run ended.</returns>
+    public async ValueTask<AgentOutcome> RunAsync(
+        PromptRequest request,
+        CancellationToken cancellationToken) =>
+        await (await ResolveAgentAsync()).RunAsync(request, cancellationToken);
+
+    /// <summary>
     /// Runs the agent on a prompt and stops when <paramref name="cancellationToken"/> is
     /// cancelled — at the next turn boundary at the latest, so no effect is left half-recorded
     /// (SPEC.md §4.10). A cancelled run returns a message saying so rather than an answer.
@@ -1070,6 +1097,33 @@ public sealed partial class StandardAgent : IAgent
     {
         return await (await ResolveAgentAsync())
             .ProcessPromptAsync(prompt, sessionId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Runs the agent on a caller's <b>request</b> — a prompt carrying its own inference options
+    /// (docs/per-request-inference.md). What is established and hard-configured takes precedence,
+    /// always: a request can shape a run only where the deployment expressed no opinion, and it
+    /// can never widen the boundary the deployment set.
+    /// </summary>
+    /// <param name="request">The caller's prompt and per-request inference options.</param>
+    /// <returns>The agent's final answer.</returns>
+    public async ValueTask<string> ProcessPromptAsync(PromptRequest request)
+    {
+        return await ProcessPromptAsync(request, CancellationToken.None);
+    }
+
+    /// <summary>
+    /// The same request-carrying run, stopped when <paramref name="cancellationToken"/> is
+    /// cancelled — at the next turn boundary at the latest (SPEC.md §4.10).
+    /// </summary>
+    /// <param name="request">The caller's prompt and per-request inference options.</param>
+    /// <param name="cancellationToken">Token to stop the run.</param>
+    /// <returns>The agent's final answer.</returns>
+    public async ValueTask<string> ProcessPromptAsync(
+        PromptRequest request,
+        CancellationToken cancellationToken)
+    {
+        return await (await ResolveAgentAsync()).ProcessPromptAsync(request, cancellationToken);
     }
 
     /// <summary>
@@ -1350,6 +1404,34 @@ public sealed partial class StandardAgent : IAgent
         }
     }
 
+    /// <summary>
+    /// Streams the agent's work on a caller's <b>request</b> — the streamed equivalent of
+    /// <see cref="ProcessPromptAsync(PromptRequest, CancellationToken)"/>. The same precedence,
+    /// the same controls: a control a caller can step around by changing method is not a control
+    /// (SPEC.md §7.6).
+    /// </summary>
+    /// <param name="request">The caller's prompt and per-request inference options.</param>
+    /// <returns>An async stream of events describing the agent's run.</returns>
+    public IAsyncEnumerable<AgentStreamEvent> StreamPromptAsync(PromptRequest request) =>
+        StreamPromptAsync(request, CancellationToken.None);
+
+    /// <summary>The same request-carrying stream, cancellable.</summary>
+    /// <param name="request">The caller's prompt and per-request inference options.</param>
+    /// <param name="cancellationToken">Token to stop streaming early.</param>
+    /// <returns>An async stream of events describing the agent's run.</returns>
+    public async IAsyncEnumerable<AgentStreamEvent> StreamPromptAsync(
+        PromptRequest request,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        IAsyncEnumerable<AgentStreamEvent> events =
+            (await ResolveAgentAsync()).ProcessPromptStreamAsync(request, cancellationToken);
+
+        await foreach (AgentStreamEvent streamEvent in events.WithCancellation(cancellationToken))
+        {
+            yield return streamEvent;
+        }
+    }
+
     // Composes once and reuses. Guarded because one agent serves prompts concurrently
     // (SPEC.md §4.4) and an unguarded `??=` lets two arriving prompts each build a graph —
     // two brokers over one audit sink, two of everything, one silently discarded.
@@ -1452,9 +1534,14 @@ public sealed partial class StandardAgent : IAgent
                     ? new FunctionGeneratorBroker((systemPrompt, userPrompt) =>
                         throw new InvalidOperationException(
                             "This agent has a native brain; the text protocol is not in use."))
+                    // The legacy-path values, resolved configured → framework default at
+                    // composition. A per-request value arrives on the request-carrying overload
+                    // and never through here.
                     : new GeneratorBroker(
                         brain.ApiUrl, brain.ApiKey, brain.Model,
-                        brain.Temperature, brain.MaxTokens, brain.TimeoutSeconds));
+                        brain.Temperature ?? ResolvedInference.DefaultTemperature,
+                        brain.MaxTokens ?? ResolvedInference.DefaultMaxTokens,
+                        brain.TimeoutSeconds));
 
         IMemoryService memoryService = this.memoryBroker is null
             ? new MemoryService(file, Path.GetFullPath(this.memoryPath), logging)
@@ -1508,7 +1595,7 @@ public sealed partial class StandardAgent : IAgent
                         ? new NotConfiguredClassifierBroker()
                         : new ClassifierBroker(
                             this.gateSettings.ApiUrl, this.gateSettings.ApiKey, this.gateSettings.Model,
-                            this.gateSettings.Temperature, this.gateSettings.MaxTokens,
+                            this.gateSettings.Temperature ?? 0.0, this.gateSettings.MaxTokens ?? 16,
                             this.gateSettings.TimeoutSeconds, gateRubric));
 
         IVerifierBroker verifier =
@@ -1519,7 +1606,7 @@ public sealed partial class StandardAgent : IAgent
                         ? new NotConfiguredVerifierBroker()
                         : new VerifierBroker(
                             this.judgeSettings.ApiUrl, this.judgeSettings.ApiKey, this.judgeSettings.Model,
-                            this.judgeSettings.Temperature, this.judgeSettings.MaxTokens,
+                            this.judgeSettings.Temperature ?? 0.0, this.judgeSettings.MaxTokens ?? 16,
                             this.judgeSettings.TimeoutSeconds, judgeRubric));
 
         IToolBroker toolBroker = new ToolBroker(allTools);
@@ -1704,7 +1791,8 @@ public sealed partial class StandardAgent : IAgent
         return new RunManagementService(
             data, decision, direction, logging, this.maxTurns, new TimeBroker(), this.budget,
             this.maxHistoryTurns, this.compensateOnFailure, this.screenToolOutput,
-            this.telemetryBroker);
+            this.telemetryBroker, this.contractSchema, brain?.Temperature, brain?.MaxTokens,
+            allTools.Select(tool => tool.Name));
     }
 
     // The catalog a "{{tools}}" marker in the agent's Data expands into. Only tools that

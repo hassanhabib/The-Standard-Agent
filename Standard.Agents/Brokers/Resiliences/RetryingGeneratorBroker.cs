@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------
 
 using Standard.Agents.Brokers.Generators;
+using Standard.Agents.Models.Brokers.Generators;
 
 namespace Standard.Agents.Brokers.Resiliences;
 
@@ -29,9 +30,21 @@ public sealed class RetryingGeneratorBroker : IGeneratorBroker
         this.resilienceBroker = resilienceBroker;
     }
 
+    // A decorator that leaned on the interface's default member would silently drop the resolved
+    // options before the wire — the default degrades on the DECORATOR, not on the broker it
+    // wraps. Every pass-through here is explicit for that reason, and so is the flag.
+    public bool HonorsRequest => this.generatorBroker.HonorsRequest;
+
     public ValueTask<string> GenerateAsync(string systemPrompt, string userPrompt) =>
         this.resilienceBroker.ExecuteAsync(() =>
             this.generatorBroker.GenerateAsync(systemPrompt, userPrompt));
+
+    public ValueTask<string> GenerateAsync(
+        string systemPrompt,
+        string userPrompt,
+        ResolvedInference inference) =>
+        this.resilienceBroker.ExecuteAsync(() =>
+            this.generatorBroker.GenerateAsync(systemPrompt, userPrompt, inference));
 
     // Streaming passes straight through, exactly as it did before. A stream that has already
     // yielded tokens cannot be retried from the start without the caller seeing them twice, and
@@ -41,4 +54,12 @@ public sealed class RetryingGeneratorBroker : IGeneratorBroker
         string userPrompt,
         CancellationToken cancellationToken = default) =>
         this.generatorBroker.GenerateStreamAsync(systemPrompt, userPrompt, cancellationToken);
+
+    public IAsyncEnumerable<string> GenerateStreamAsync(
+        string systemPrompt,
+        string userPrompt,
+        ResolvedInference inference,
+        CancellationToken cancellationToken) =>
+        this.generatorBroker.GenerateStreamAsync(
+            systemPrompt, userPrompt, inference, cancellationToken);
 }

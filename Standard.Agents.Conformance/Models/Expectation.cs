@@ -102,4 +102,27 @@ public sealed record Expectation(
     //   AgentInput — each named fleet agent must have RECEIVED a handoff containing this text,
     //                which is how grounding is certified (SPEC.md §4.8 v1.6): the specialist
     //                saw the user's actual ask (or the transfer's task), not the task alone.
-    Dictionary<string, string>? AgentInput = null);
+    Dictionary<string, string>? AgentInput = null,
+
+    // Per-request assertions (docs/per-request-inference.md).
+    //
+    //   Status            — how the run ended ("Responded", "AwaitingInput", ...), read through
+    //                       RunAsync because a held caller call and an answer read alike as text.
+    //   PendingEffectTool — the tool name the session's pending effect must carry, which is how
+    //                       a caller's call is handed to whoever resumes (design §6.2).
+    //   BrokerTemperature / BrokerMaxTokens — what the scripted Brain was handed, after
+    //                       precedence resolved at the boundary.
+    //   BrokerTemperatures — every temperature the Brain was handed across concurrent requests,
+    //                       in any order — one composition, each run keeping its own.
+    //   BrokerSchemaContains — the schema that reached the wire must contain this text, which
+    //                       is how "one schema survives and seeds both" is certified.
+    //   BrokerOptionsInclude / BrokerOptionsExclude — passthrough keys that must / must not
+    //                       have survived the core-owned-keys strip (design §4.4).
+    string? Status = null,
+    string? PendingEffectTool = null,
+    double? BrokerTemperature = null,
+    int? BrokerMaxTokens = null,
+    List<double>? BrokerTemperatures = null,
+    string? BrokerSchemaContains = null,
+    List<string>? BrokerOptionsInclude = null,
+    List<string>? BrokerOptionsExclude = null);
