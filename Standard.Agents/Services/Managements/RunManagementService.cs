@@ -8,6 +8,7 @@ using Standard.Agents.Brokers.Loggings;
 
 using Standard.Agents.Brokers.Times;
 using Standard.Agents.Models.Brokers.Generators;
+using Standard.Agents.Models.Brokers.Generators.V1;
 using Standard.Agents.Models.Brokers.Sessions;
 using Standard.Agents.Models.Coordinations.Agents;
 using Standard.Agents.Models.Clients.Agents;
@@ -46,6 +47,7 @@ public partial class RunManagementService : IRunManagementService
     private readonly string? contractSchema;
     private readonly double? configuredTemperature;
     private readonly int? configuredMaxTokens;
+    private readonly HashSet<string> configuredToolNames;
 
     public RunManagementService(
         IDataCoordinationService dataCoordinationService,
@@ -60,7 +62,8 @@ public partial class RunManagementService : IRunManagementService
         bool screenToolOutput = false,
         string? contractSchema = null,
         double? configuredTemperature = null,
-        int? configuredMaxTokens = null)
+        int? configuredMaxTokens = null,
+        IEnumerable<string>? configuredToolNames = null)
     {
         this.compensateOnFailure = compensateOnFailure;
         this.dataCoordinationService = dataCoordinationService;
@@ -75,6 +78,9 @@ public partial class RunManagementService : IRunManagementService
         this.contractSchema = contractSchema;
         this.configuredTemperature = configuredTemperature;
         this.configuredMaxTokens = configuredMaxTokens;
+
+        this.configuredToolNames = new HashSet<string>(
+            configuredToolNames ?? [], StringComparer.OrdinalIgnoreCase);
     }
 
     // Precedence, per field: configured → request → framework default
@@ -99,12 +105,26 @@ public partial class RunManagementService : IRunManagementService
                 ? request.ResponseSchemaJson
                 : this.contractSchema,
 
-            CallerTools = request.CallerTools,
+            CallerTools = WithoutConfiguredNames(request.CallerTools),
 
             // Sanitized here, at the boundary, so no broker — built-in or third-party — can
             // ever be handed a passthrough carrying a core-owned key (§4.4).
             ProviderOptionsJson = ProviderOptions.Sanitize(request.ProviderOptionsJson).Json
         };
+
+    // Name collision resolved by the perimeter rule (design §6.1): a caller tool that shares a
+    // configured tool's name is dropped, so a tool_call carrying that name has exactly one
+    // meaning — the configured tool, executed locally, under every configured control. Dropped
+    // HERE, before Direction ever reads the list, because a foreign classification downstream
+    // would otherwise let a caller shadow the deployment's own tool. MCP tool names are not
+    // known at composition; a collision with one degrades toward the caller — the agent then
+    // performs nothing, which is the safe direction to fail in.
+    private IReadOnlyList<ToolDefinition> WithoutConfiguredNames(
+        IReadOnlyList<ToolDefinition> callerTools) =>
+        callerTools.Count == 0
+            ? callerTools
+            : [.. callerTools.Where(tool =>
+                this.configuredToolNames.Contains(tool.Name) is false)];
 
     public ValueTask<string> ProcessPromptAsync(string prompt) =>
         ProcessPromptAsync(prompt, string.Empty, CancellationToken.None);
