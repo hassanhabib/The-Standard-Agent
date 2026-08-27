@@ -495,8 +495,10 @@ Standard.Agents.Models.Brokers.Sessions.AgentTurn.Prompt.get -> string!
 Standard.Agents.Models.Brokers.Sessions.AgentTurn.Prompt.init -> void
 Standard.Agents.Models.Clients.Agents.AgentOutcome
 Standard.Agents.Models.Clients.Agents.AgentOutcome.AgentOutcome(Standard.Agents.Models.Clients.Agents.AgentOutcome! original) -> void
-Standard.Agents.Models.Clients.Agents.AgentOutcome.AgentOutcome(string! Result, Standard.Agents.Models.Orchestrations.Agents.AgentStatus Status) -> void
-Standard.Agents.Models.Clients.Agents.AgentOutcome.Deconstruct(out string! Result, out Standard.Agents.Models.Orchestrations.Agents.AgentStatus Status) -> void
+Standard.Agents.Models.Clients.Agents.AgentOutcome.AgentOutcome(string! Result, Standard.Agents.Models.Orchestrations.Agents.AgentStatus Status, Standard.Agents.Models.Orchestrations.Effects.AgentEffect? PendingEffect = null) -> void
+Standard.Agents.Models.Clients.Agents.AgentOutcome.Deconstruct(out string! Result, out Standard.Agents.Models.Orchestrations.Agents.AgentStatus Status, out Standard.Agents.Models.Orchestrations.Effects.AgentEffect? PendingEffect) -> void
+Standard.Agents.Models.Clients.Agents.AgentOutcome.PendingEffect.get -> Standard.Agents.Models.Orchestrations.Effects.AgentEffect?
+Standard.Agents.Models.Clients.Agents.AgentOutcome.PendingEffect.init -> void
 Standard.Agents.Models.Clients.Agents.AgentOutcome.Result.get -> string!
 Standard.Agents.Models.Clients.Agents.AgentOutcome.Result.init -> void
 Standard.Agents.Models.Clients.Agents.AgentOutcome.Status.get -> Standard.Agents.Models.Orchestrations.Agents.AgentStatus
@@ -524,6 +526,8 @@ Standard.Agents.Models.Clients.Agents.PromptRequest.<Clone>$() -> Standard.Agent
 Standard.Agents.Models.Clients.Agents.PromptRequest.CallerTools.get -> System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition!>!
 Standard.Agents.Models.Clients.Agents.PromptRequest.CallerTools.init -> void
 Standard.Agents.Models.Clients.Agents.PromptRequest.Equals(Standard.Agents.Models.Clients.Agents.PromptRequest? other) -> bool
+Standard.Agents.Models.Clients.Agents.PromptRequest.History.get -> System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Sessions.AgentTurn!>!
+Standard.Agents.Models.Clients.Agents.PromptRequest.History.init -> void
 Standard.Agents.Models.Clients.Agents.PromptRequest.MaxTokens.get -> int?
 Standard.Agents.Models.Clients.Agents.PromptRequest.MaxTokens.init -> void
 Standard.Agents.Models.Clients.Agents.PromptRequest.Prompt.get -> string!
@@ -541,6 +545,8 @@ Standard.Agents.Models.Clients.Agents.PromptRequest.Stop.get -> System.Collectio
 Standard.Agents.Models.Clients.Agents.PromptRequest.Stop.init -> void
 Standard.Agents.Models.Clients.Agents.PromptRequest.Temperature.get -> double?
 Standard.Agents.Models.Clients.Agents.PromptRequest.Temperature.init -> void
+Standard.Agents.Models.Clients.Agents.PromptRequest.ToolExchanges.get -> System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Orchestrations.Agents.ToolExchange!>!
+Standard.Agents.Models.Clients.Agents.PromptRequest.ToolExchanges.init -> void
 Standard.Agents.Models.Coordinations.Agents.AgentBudget
 Standard.Agents.Models.Coordinations.Agents.AgentBudget.<Clone>$() -> Standard.Agents.Models.Coordinations.Agents.AgentBudget!
 Standard.Agents.Models.Coordinations.Agents.AgentBudget.AgentBudget() -> void
@@ -955,6 +961,8 @@ Standard.Agents.Models.Orchestrations.Effects.AgentEffect.ApprovalRequired.get -
 Standard.Agents.Models.Orchestrations.Effects.AgentEffect.ApprovalRequired.init -> void
 Standard.Agents.Models.Orchestrations.Effects.AgentEffect.Arguments.get -> string!
 Standard.Agents.Models.Orchestrations.Effects.AgentEffect.Arguments.init -> void
+Standard.Agents.Models.Orchestrations.Effects.AgentEffect.CallId.get -> string!
+Standard.Agents.Models.Orchestrations.Effects.AgentEffect.CallId.init -> void
 Standard.Agents.Models.Orchestrations.Effects.AgentEffect.Equals(Standard.Agents.Models.Orchestrations.Effects.AgentEffect? other) -> bool
 Standard.Agents.Models.Orchestrations.Effects.AgentEffect.IdempotencyKey.get -> string!
 Standard.Agents.Models.Orchestrations.Effects.AgentEffect.IdempotencyKey.init -> void

@@ -437,7 +437,16 @@
          both doors carry the resolution, and one composition serves concurrent heterogeneous
          requests. New routines and models, core contracts widened additively: segment 2
          advances, 3/4 reset. Tracks SPEC.md v1.7. -->
-    <Version>1.11.0.0</Version>
+    <!-- 1.12.0.0 "The Stateless Caller": the first exposed consumer's two findings, closed.
+         The pending caller call rides the run's outcome as well as the session
+         (AgentOutcome.PendingEffect, AgentEffect.CallId - the model-minted id), because a
+         stateless deployment has no session and the yield is the whole mechanism. And the
+         request carries the caller-owned transcript (PromptRequest.History / ToolExchanges),
+         rendered on both reply protocols exactly as a session's history would be - session
+         wins when both exist. Parallel caller calls stay one-per-run, recorded as a ruling.
+         New routines and additively-widened models: segment 2 advances, 3/4 reset. Tracks
+         SPEC.md v1.8. -->
+    <Version>1.12.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>
