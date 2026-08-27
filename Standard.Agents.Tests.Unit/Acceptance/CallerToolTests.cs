@@ -299,4 +299,148 @@ public class CallerToolTests : IDisposable
         outcome.PendingEffect.CallId.Should().Be("call_9");
         outcome.PendingEffect.Arguments.Should().Contain("jane@acme.com");
     }
+
+    private sealed class MessageRecordingNativeBroker : IGeneratorBrokerV1
+    {
+        public IReadOnlyList<ConversationMessage> CapturedMessages { get; private set; } = [];
+
+        public ValueTask<GenerationResult> GenerateAsync(
+            IReadOnlyList<ConversationMessage> messages,
+            IReadOnlyList<ToolDefinition> tools)
+        {
+            this.CapturedMessages = messages;
+
+            return ValueTask.FromResult(new GenerationResult { Content = "ok" });
+        }
+    }
+
+    private static StandardAgent BareAgent()
+    {
+        var skillBroker = new Mock<ISkillBroker>();
+
+        skillBroker.Setup(b => b.SelectSkillsAsync())
+            .ReturnsAsync(new List<Skill> { new() { Content = "You are a helpful agent." } });
+
+        var memoryBroker = new Mock<IMemoryBroker>();
+        memoryBroker.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
+
+        var knowledgeBroker = new Mock<IKnowledgeBroker>();
+
+        knowledgeBroker.Setup(b => b.SelectKnowledgeAsync(It.IsAny<string>()))
+            .ReturnsAsync([]);
+
+        return new StandardAgent()
+            .UseSkills(skillBroker.Object)
+            .UseMemory(memoryBroker.Object)
+            .UseKnowledge(knowledgeBroker.Object);
+    }
+
+    // The exposed protocols this seam exists for are stateless: the client re-posts the whole
+    // conversation, prior tool exchanges included. A run that cannot receive that transcript
+    // starts from nothing every time — and the second half of the yield (the caller answering a
+    // call the run handed out) becomes impossible to express.
+    [Fact]
+    public async Task ShouldCarryTheCallerOwnedTranscriptToTheNativeBrainAsync()
+    {
+        // given
+        var broker = new MessageRecordingNativeBroker();
+        StandardAgent agent = BareAgent().UseNativeBrain(broker);
+
+        var request = new PromptRequest
+        {
+            Prompt = "and then?",
+            History = [new AgentTurn("What is 2+2?", "4")],
+
+            ToolExchanges =
+            [
+                new ToolExchange(
+                    CallId: "call_9",
+                    ToolName: "send_email",
+                    ArgumentsJson: """{"to":"jane@acme.com"}""",
+                    Result: "sent")
+            ]
+        };
+
+        // when
+        await agent.ProcessPromptAsync(request);
+
+        // then — the prior turn as user/assistant messages, and the exchange as a tool message
+        // still naming the call the model minted
+        broker.CapturedMessages.Should().Contain(message =>
+            message.Role == MessageRole.User && message.Content == "What is 2+2?");
+
+        broker.CapturedMessages.Should().Contain(message =>
+            message.Role == MessageRole.Assistant && message.Content == "4");
+
+        broker.CapturedMessages.Should().Contain(message =>
+            message.Role == MessageRole.Tool
+                && message.ToolCallId == "call_9"
+                && message.Content == "sent");
+    }
+
+    // The same transcript on the text protocol: history renders into the conversation the
+    // model is shown, exactly as a session's history would.
+    [Fact]
+    public async Task ShouldCarryTheCallerOwnedTranscriptOnTheTextProtocolAsync()
+    {
+        // given
+        string capturedUserPrompt = string.Empty;
+
+        StandardAgent agent = BareAgent().OnBrain((systemPrompt, userPrompt) =>
+        {
+            capturedUserPrompt = userPrompt;
+
+            return ValueTask.FromResult("FINAL: ok");
+        });
+
+        var request = new PromptRequest
+        {
+            Prompt = "and then?",
+            History = [new AgentTurn("What is 2+2?", "4")]
+        };
+
+        // when
+        await agent.ProcessPromptAsync(request);
+
+        // then
+        capturedUserPrompt.Should().Contain("What is 2+2?");
+        capturedUserPrompt.Should().Contain("4");
+    }
+
+    // When a session exists it wins: the deployment's record of the conversation beats the
+    // caller's retelling of it — the same precedence every request field obeys (design §4).
+    [Fact]
+    public async Task ShouldLetTheSessionsHistoryWinOverTheRequestsAsync()
+    {
+        // given — a real session holding a real prior turn
+        string capturedUserPrompt = string.Empty;
+        int call = 0;
+
+        StandardAgent agent = BareAgent()
+            .Sessions(this.sessionsPath)
+            .OnBrain((systemPrompt, userPrompt) =>
+            {
+                capturedUserPrompt = userPrompt;
+
+                return ValueTask.FromResult(call++ == 0
+                    ? "FINAL: Tokyo"
+                    : "FINAL: ok");
+            });
+
+        await agent.ProcessPromptAsync("Capital of Japan?", "transcript-1", CancellationToken.None);
+
+        var request = new PromptRequest
+        {
+            Prompt = "and then?",
+            SessionId = "transcript-1",
+            History = [new AgentTurn("a retelling that never happened", "made up")]
+        };
+
+        // when
+        await agent.ProcessPromptAsync(request);
+
+        // then — the session's turn is what the brain saw, not the caller's retelling
+        capturedUserPrompt.Should().Contain("Capital of Japan?");
+        capturedUserPrompt.Should().NotContain("a retelling that never happened");
+    }
 }

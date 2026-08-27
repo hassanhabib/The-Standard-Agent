@@ -7,3 +7,7 @@ Standard.Agents.Models.Orchestrations.Effects.AgentEffect.CallId.get -> string!
 Standard.Agents.Models.Orchestrations.Effects.AgentEffect.CallId.init -> void
 *REMOVED*Standard.Agents.Models.Clients.Agents.AgentOutcome.AgentOutcome(string! Result, Standard.Agents.Models.Orchestrations.Agents.AgentStatus Status) -> void
 *REMOVED*Standard.Agents.Models.Clients.Agents.AgentOutcome.Deconstruct(out string! Result, out Standard.Agents.Models.Orchestrations.Agents.AgentStatus Status) -> void
+Standard.Agents.Models.Clients.Agents.PromptRequest.History.get -> System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Sessions.AgentTurn!>!
+Standard.Agents.Models.Clients.Agents.PromptRequest.History.init -> void
+Standard.Agents.Models.Clients.Agents.PromptRequest.ToolExchanges.get -> System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Orchestrations.Agents.ToolExchange!>!
+Standard.Agents.Models.Clients.Agents.PromptRequest.ToolExchanges.init -> void
