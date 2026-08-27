@@ -1,0 +1,23 @@
+{
+  "name": "pending-call-rides-the-outcome-without-a-session",
+  "description": "A stateless deployment has no session, and an exposer that cannot reach the pending call cannot yield it to the caller - which is the whole mechanism. The caller's call must arrive on the outcome itself.",
+  "generatorReplies": [
+    "ACTION: send_email: {\"to\":\"jane@acme.com\"}"
+  ],
+  "tools": {},
+  "prompt": "email jane the report",
+  "maxTurns": 2,
+  "request": {
+    "callerTools": [
+      {
+        "name": "send_email",
+        "description": "Sends an email from the caller's own outbox."
+      }
+    ]
+  },
+  "expect": {
+    "resultContains": "send_email",
+    "status": "AwaitingInput",
+    "pendingEffectTool": "send_email"
+  }
+}

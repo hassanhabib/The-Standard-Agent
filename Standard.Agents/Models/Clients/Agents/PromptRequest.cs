@@ -4,6 +4,8 @@
 // ---------------------------------------------------------------
 
 using Standard.Agents.Models.Brokers.Generators.V1;
+using Standard.Agents.Models.Brokers.Sessions;
+using Standard.Agents.Models.Orchestrations.Agents;
 
 namespace Standard.Agents.Models.Clients.Agents;
 
@@ -27,6 +29,22 @@ public sealed record PromptRequest
     // does not — it is runtime control, not a statement about the request — so the entry keeps
     // it as a parameter.
     public string SessionId { get; init; } = "";
+
+    /// <summary>
+    /// The caller-owned transcript: what was said before, oldest first. The exposed protocols
+    /// this seam exists for are stateless — the client re-posts the conversation — and a run
+    /// that cannot receive it starts from nothing every time. When a session exists it wins:
+    /// the deployment's record of the conversation beats the caller's retelling of it, the
+    /// same precedence every field on this record obeys.
+    /// </summary>
+    public IReadOnlyList<AgentTurn> History { get; init; } = [];
+
+    /// <summary>
+    /// Tool calls the caller already executed and is answering — the second half of the yield:
+    /// a run ended AwaitingInput holding a caller's call, the caller ran it, and this is the
+    /// result coming back, still naming the call id the model minted.
+    /// </summary>
+    public IReadOnlyList<ToolExchange> ToolExchanges { get; init; } = [];
 
     /// <summary>The shape the answer must take. Null means the caller expressed no opinion.</summary>
     public string? ResponseSchemaJson { get; init; }

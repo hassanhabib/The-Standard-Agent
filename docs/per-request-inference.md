@@ -9,6 +9,15 @@
 > what the entry would have seeded; and the entry also gained `RunAsync(PromptRequest)`, because
 > an exposer holding a caller's tool call needs how-the-run-ended, which the string alone cannot
 > say.
+>
+> **First-consumer amendments (v1.12).** Wiring LLooMA 2.0 — a stateless OpenAI-compatible
+> exposer — found two gaps the sessions-shaped design had hidden: the pending call now rides
+> `AgentOutcome.PendingEffect` too (with the model's `CallId`), because a deployment with no
+> session store otherwise cannot yield it; and `PromptRequest` gained `History` and
+> `ToolExchanges`, because a stateless caller re-posts the transcript and the run must receive
+> it — session wins when both exist. Parallel caller tool calls remain one-per-run, recorded as
+> a deliberate constraint (`parallel_tool_calls: false` at the decider) and a named future
+> widening.
 
 How a single composed agent serves many callers, each asking for something different, without
 rebuilding itself and without any caller widening the boundary the deployment set.

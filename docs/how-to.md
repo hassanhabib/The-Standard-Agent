@@ -1382,10 +1382,21 @@ Two more fields deserve a word:
 
 - **`CallerTools`** — tools the **caller** will execute, OpenAI-style. They are vocabulary for
   the model, never capability for the agent: a call naming one ends the run `AwaitingInput` with
-  the call riding out as the session's pending effect — the same seam a held approval rides —
-  and the caller posts the result back on the session to resume. A caller tool sharing a
-  configured tool's name is dropped at the boundary: a caller cannot shadow the deployment's
-  own tool.
+  the call riding out on **both** seams — the session's pending effect for a different process
+  to read, and `AgentOutcome.PendingEffect` for the stateless exposer, carrying the model's own
+  `CallId` so the caller's result can answer it. A caller tool sharing a configured tool's name
+  is dropped at the boundary: a caller cannot shadow the deployment's own tool.
+
+- **`History` and `ToolExchanges`** — the caller-owned transcript. The exposed protocols are
+  stateless: the client re-posts the conversation, prior tool results included, and the run
+  receives it here — prior turns render into the conversation on both protocols, and a
+  replayed exchange returns as a tool message still naming the call the model minted. When a
+  session exists it wins: the deployment's record of the conversation beats the caller's
+  retelling of it.
+
+- **Parallel tool calls** — one pending call per run, today. A decider that can emit several
+  (set `parallel_tool_calls: false` where the provider supports it) hands them back one turn at
+  a time; plural pending caller-calls are a named future widening, not an accident.
 
 Per-request tools-the-agent-executes, permissions, budgets and approvals are deliberately
 **absent** — a request has no field in which to ask for them. Configuration only, always.

@@ -420,10 +420,16 @@ public partial class RunManagementService : IRunManagementService
         // Precedence resolved once, at the top of the run, and never again below it: a loop
         // that can re-resolve is a loop where two turns of one run can disagree
         // (docs/per-request-inference.md §2).
+        // The caller-owned transcript seeds the run; a session, when one exists, overwrites
+        // the history below — the deployment's record of the conversation beats the caller's
+        // retelling of it, the same precedence every request field obeys
+        // (docs/per-request-inference.md §4).
         AgentContext context = new()
         {
             Prompt = prompt,
             SessionId = sessionId,
+            History = request.History,
+            ToolExchanges = request.ToolExchanges,
             Inference = Resolve(request)
         };
 
@@ -679,6 +685,9 @@ public partial class RunManagementService : IRunManagementService
         this.telemetryBroker.RecordRunOutcome(
             context.Status.ToString(), runPromptTokens, runCompletionTokens);
 
-        setOutcome(new AgentOutcome(context.Result, context.Status));
+        // The pending effect rides the outcome as well as the session (SPEC.md §4.11):
+        // a stateless deployment has no session, and an exposer that cannot reach the
+        // pending call cannot yield it to the caller (docs/per-request-inference.md §6.2).
+        setOutcome(new AgentOutcome(context.Result, context.Status, context.PendingEffect));
     }
 }

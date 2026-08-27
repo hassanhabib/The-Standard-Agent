@@ -17,7 +17,14 @@ public sealed record RequestSpec(
     List<string>? Stop = null,
     string? ResponseSchemaJson = null,
     string? ProviderOptionsJson = null,
-    List<CallerToolSpec>? CallerTools = null);
+    List<CallerToolSpec>? CallerTools = null,
+
+    // The caller-owned transcript (design §3): the exposed protocols are stateless and the
+    // client re-posts the conversation. When a session exists it wins.
+    List<TurnSpec>? History = null);
+
+/// <summary>One prior exchange in the caller-owned transcript, oldest first.</summary>
+public sealed record TurnSpec(string Prompt, string Answer);
 
 /// <summary>
 /// A tool the CALLER will execute, declared so the model may name it. The agent never runs one
