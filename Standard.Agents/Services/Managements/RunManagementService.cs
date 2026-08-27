@@ -100,7 +100,10 @@ public partial class RunManagementService : IRunManagementService
                 : this.contractSchema,
 
             CallerTools = request.CallerTools,
-            ProviderOptionsJson = request.ProviderOptionsJson
+
+            // Sanitized here, at the boundary, so no broker — built-in or third-party — can
+            // ever be handed a passthrough carrying a core-owned key (§4.4).
+            ProviderOptionsJson = ProviderOptions.Sanitize(request.ProviderOptionsJson).Json
         };
 
     public ValueTask<string> ProcessPromptAsync(string prompt) =>
