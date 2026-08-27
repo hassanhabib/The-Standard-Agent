@@ -210,9 +210,11 @@ public sealed class GeneratorBrokerV1 : IGeneratorBrokerV1
             }
         };
 
-    // A tool's parameters are the host's JSON schema. If it does not parse, an empty object is
-    // sent rather than a malformed request: the tool is then callable with no arguments instead
-    // of the whole turn failing on one bad schema.
+    // A tool's parameters are the host's JSON schema — and the wire validates that strictly:
+    // a hosted provider rejects the WHOLE request when any tool's parameters is not a schema
+    // of type object. One bad tool must never take down the turn, so anything that is not an
+    // object schema degrades: a schema that forgot its type but has properties is salvaged,
+    // everything else becomes the empty object schema (callable with no arguments).
     private static JsonNode ParseParameters(string parametersJson)
     {
         if (string.IsNullOrWhiteSpace(parametersJson))
@@ -222,12 +224,33 @@ public sealed class GeneratorBrokerV1 : IGeneratorBrokerV1
 
         try
         {
-            return JsonNode.Parse(parametersJson) ?? new JsonObject { ["type"] = "object" };
+            if (JsonNode.Parse(parametersJson) is JsonObject schema)
+            {
+                string? schemaType = schema["type"] is JsonValue typeValue
+                    ? typeValue.GetValue<string>()
+                    : null;
+
+                if (string.Equals(schemaType, "object", StringComparison.Ordinal))
+                {
+                    return schema;
+                }
+
+                if (schemaType is null && schema.ContainsKey("properties"))
+                {
+                    schema["type"] = "object";
+
+                    return schema;
+                }
+            }
         }
         catch (JsonException)
         {
-            return new JsonObject { ["type"] = "object" };
         }
+        catch (InvalidOperationException)
+        {
+        }
+
+        return new JsonObject { ["type"] = "object" };
     }
 
     private static GenerationResult ReadResult(JsonNode? body)

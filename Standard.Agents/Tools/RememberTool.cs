@@ -22,7 +22,14 @@ public sealed class RememberTool : ITool
         "Store a fact to remember across sessions. Use it when the user tells you "
             + "something worth keeping — their name, where they are, their preferences.";
 
-    public string Parameters => "{ \"fact\": \"the fact to remember\" }";
+    // A JSON SCHEMA, not example JSON. The wire validates this strictly: a hosted provider
+    // rejects the WHOLE request when any advertised tool's parameters is not a schema of type
+    // object — which made every native run against a strict endpoint fail the moment memory
+    // was composed in. Found by the first production consumer, not by any scripted test,
+    // because scripted brokers accept anything.
+    public string Parameters =>
+        "{\"type\":\"object\",\"properties\":{\"fact\":{\"type\":\"string\","
+            + "\"description\":\"the fact to remember\"}},\"required\":[\"fact\"]}";
 
     public RememberTool(Func<string, ValueTask> remember) =>
         this.remember = remember;
