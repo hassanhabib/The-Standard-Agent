@@ -424,7 +424,20 @@
          reply verb TRANSFER: that ends the run with the specialist's answer verbatim - only
          when it actually answered. New routines and models, core contracts unchanged: segment
          2 advances, 3/4 reset. Tracks SPEC.md v1.6. -->
-    <Version>1.10.0.0</Version>
+    <!-- 1.11.0.0 "Per-Request Inference": the seam an exposed agent was blocked on. A request
+         (PromptRequest) carries its own sampling values, response schema, opaque provider
+         passthrough, and caller-executed tools; precedence - configured, then request, then
+         framework default - resolves once at the boundary into ResolvedInference, which is what
+         rides the loop. Hard-configured always wins and is now distinguishable from defaulted
+         (InferenceSettings went nullable, .Brain's knobs opt-in). One schema survives and seeds
+         the wire AND the guardian; core-owned wire keys are stripped from the passthrough;
+         caller tools are vocabulary, never capability - a call naming one ends the run
+         AwaitingInput as the session's pending effect. Request-carrying overloads widen
+         IGeneratorBroker/IGeneratorBrokerV1 additively (HonorsRequest, graceful degradation),
+         both doors carry the resolution, and one composition serves concurrent heterogeneous
+         requests. New routines and models, core contracts widened additively: segment 2
+         advances, 3/4 reset. Tracks SPEC.md v1.7. -->
+    <Version>1.11.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>
