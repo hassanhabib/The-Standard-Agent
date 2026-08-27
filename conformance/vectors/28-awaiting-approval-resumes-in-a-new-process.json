@@ -1,21 +1,37 @@
 {
   "name": "awaiting-approval-resumes-in-a-new-process",
-  "description": "SPEC.md 4.9 and 4.11, Invariant 7: an approval that arrives after the agent stopped is the only kind that happens in practice - a human is asked, the process ends, and someone answers minutes later. The first run proposes the transfer, the authority says pending, and the act is held with its claim released, because a held act is one that still has to be able to happen. A brand-new agent instance then resumes the session with the authority's yes, proposes the same act, and performs it exactly once. Leaving the claim standing would make the approval unusable: the resumed run would be told the act was already done and the transfer would never happen.",
+  "description": "SPEC.md 4.9 and 4.11, Invariant 7: an approval that arrives after the agent stopped is the only kind that happens in practice - a human is asked, the process ends, and someone answers minutes later. The first run proposes the transfer, the authority says pending, and the act is held with its claim released, because a held act is one that still has to be able to happen. A brand-new agent instance then resumes the session with the authority's yes, proposes the same act, and performs it exactly once. Leaving the claim standing would make the approval unusable: the resumed run would be told the act was already done and the transfer would never happen. Each prompt's outcome is asserted in order: the first run must end held, the second must deliver - without that, deleting the approval control entirely produced the same final result (run-once deduped the second proposal and the scripted brain repeated its last reply), and the vector was deletion-blind.",
   "generatorReplies": [
     "ACTION: wire_transfer: 10000",
     "ACTION: wire_transfer: 10000",
     "FINAL: paid"
   ],
-  "tools": { "wire_transfer": "transfer complete" },
+  "tools": {
+    "wire_transfer": "transfer complete"
+  },
   "prompt": "pay the invoice",
-  "prompts": ["pay the invoice", "yes, approve it"],
+  "prompts": [
+    "pay the invoice",
+    "yes, approve it"
+  ],
   "sessionId": "invoice-7712",
-  "requireApproval": ["wire_transfer"],
-  "approvalDecisions": ["pending", "approved"],
+  "requireApproval": [
+    "wire_transfer"
+  ],
+  "approvalDecisions": [
+    "pending",
+    "approved"
+  ],
   "newInstancePerPrompt": true,
   "durableEffectLedger": true,
   "expect": {
     "result": "paid",
-    "toolRunCount": { "wire_transfer": 1 }
+    "toolRunCount": {
+      "wire_transfer": 1
+    },
+    "resultsContain": [
+      "waiting for approval",
+      "paid"
+    ]
   }
 }

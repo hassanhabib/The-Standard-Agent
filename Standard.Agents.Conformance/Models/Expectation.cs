@@ -5,6 +5,10 @@
 
 namespace Standard.Agents.Conformance;
 
+// A typo'd field must fail loudly, not silently delete the assertion or the input it
+// carried: a vector that asserts less than it appears to reads as coverage (SPEC.md §1.1).
+[System.Text.Json.Serialization.JsonUnmappedMemberHandling(
+    System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow)]
 public sealed record Expectation(
     string? Result,
     string? ResultContains,
@@ -70,10 +74,35 @@ public sealed record Expectation(
     //                           about native tool calling (SPEC.md §6).
     string? ToolResultAnswersCall = null,
 
+    //   ResultsContain — one entry per prompt, in order: what each PROMPT's result must carry.
+    //                     The single Result/ResultContains sees only the last prompt, so a
+    //                     multi-prompt vector could misbehave on every run but its final one and
+    //                     still print PASS — which is how the approval-resume vector was
+    //                     deletion-blind.
+    List<string>? ResultsContain = null,
+
     //   PolicySawPrincipal — the identity the policy broker was actually handed when it decided.
     //                        An audit record naming the caller afterwards is not authorization,
     //                        so this reads the decision's input rather than the log (SPEC.md §4.9).
     string? PolicySawPrincipal = null,
+
+    //   McpServerCalls — exactly how many calls each scripted server received, in registration
+    //                    order. Routing across servers is certified by the owner being called
+    //                    and the bystander not (SPEC.md §4.8 v1.5).
+    //   BrainSeesEvery — every entry must have reached the Brain, which is how accumulation is
+    //                    certified: a source silently replaced is a source whose text is absent.
+    List<int>? McpServerCalls = null,
+    List<string>? BrainSeesEvery = null,
+
+    //   ConfigurationRefusalNames — the composition refusal must carry this text: a refusal
+    //                               that does not name the offending entry leaves the host
+    //                               searching the document by hand (SPEC.md §4.8 v1.4).
+    string? ConfigurationRefusalNames = null,
+
+    //   AgentInput — each named fleet agent must have RECEIVED a handoff containing this text,
+    //                which is how grounding is certified (SPEC.md §4.8 v1.6): the specialist
+    //                saw the user's actual ask (or the transfer's task), not the task alone.
+    Dictionary<string, string>? AgentInput = null,
 
     // Per-request assertions (docs/per-request-inference.md).
     //

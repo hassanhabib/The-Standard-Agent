@@ -1,0 +1,14 @@
+# Analyzer dispositions for the public-API bar (Microsoft.CodeAnalysis.PublicApiAnalyzers).
+#
+# RS0016/RS0017 (undeclared / removed API) stay at their error default — they ARE the bar.
+#
+# RS0027 is off, deliberately and with its reason stated: the per-request seam
+# (docs/per-request-inference.md §5) widens shipped overload groups with request-carrying
+# siblings of the SAME name — GenerateStreamAsync, ProcessPromptStreamAsync, StreamPromptAsync —
+# because a differently-named twin would be a second protocol, not an overload. The shipped
+# members keep their optional CancellationToken for source compatibility, so the longer new
+# sibling can never be the one carrying the optional, which is the exact shape RS0027 flags.
+# Overload resolution stays unambiguous: every new sibling adds a required parameter.
+
+[*.cs]
+dotnet_diagnostic.RS0027.severity = none

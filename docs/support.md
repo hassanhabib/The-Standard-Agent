@@ -22,7 +22,7 @@ anything we hold privately.
 | **Core** | conversation, skills, knowledge, memory, simple tools | certified |
 | **Reliable** | guardians that see what they guard, durable decision log, run isolation, cancellation, timeouts | certified |
 | **Enterprise** | identity-aware authorization, approval before irreversible acts, run-once effects, budgets, ranked retrieval | certified |
-| **Critical** | conversation and effects that survive a process, compensation, native tool calls that round-trip | certified |
+| **Critical** | conversation and effects that survive a process, compensation, native tool calls that round-trip, adversarial evaluation — a fooled Brain still cannot act outside the perimeter | certified |
 
 ---
 

@@ -29,9 +29,17 @@ Built for everyone who ships agents: the individual who wants the simplest thing
 small team that needs it reliable, and the enterprise that needs it accountable — **the same agent
 grows all the way up, never a rewrite.**
 
-## Watch
+## Watch — the YouTube sessions
 
 [![Create Your First AI Agent from Scratch — The Standard for Agents](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-video-thumbnail.jpg)](https://www.youtube.com/watch?v=UE6QcvQsOyU)
+
+The sessions are live and ongoing on
+[Hassan Habib's YouTube channel](https://www.youtube.com/c/hassanhabib): start with
+[**Create Your First AI Agent from Scratch**](https://www.youtube.com/watch?v=UE6QcvQsOyU)
+above, then the
+[**The-Standard sessions playlist**](https://www.youtube.com/playlist?list=PLG2w4duP-rS2adJjAs4QvYIuKriacLQBU)
+for the engineering discipline every line of this framework is built on — subscribe there for
+the sessions on each new capability as it ships.
 
 ## Install
 
@@ -92,6 +100,7 @@ var agent = new StandardAgent(url, key, "LLooMA2.0")
     .Redact()                                  // PII tokenized before the brain, restored after
     .LogTo("log.txt", TraceVerbosity.Full)     // full turn-by-turn decision trace
     .Audit("audit.jsonl")                      // structured decision log → your SIEM
+    .Telemetry("teller-agent")                 // OTel spans + metrics — GenAI semconv, no packages
 
     .Principal(() => currentUser.Id)           // authorization has a subject
     .OnPolicy(Authorize)                       // your rules decide, per act and per identity
@@ -122,9 +131,44 @@ Every capability answers **Local**, **External** and **Custom**, and the verbs s
 .OnKnowledge(async query => await MyStore(query)) // Custom — your own code, inline
 ```
 
-Sixteen capabilities, the same three verbs each. A capability offered fewer ways than that fails the
-build — it is a test, not a convention, because the erosion is otherwise invisible until there are
-six of them.
+Twenty capabilities, the same three verbs each — **other agents among them**: `.Agents("Fleet")`
+reads a folder of agent documents, `.UseAgents(...)` takes a provider's registry, and
+`.OnAgents(...)` lets your code decide the fleet. A capability offered fewer ways than that fails
+the build — it is a test, not a convention, because the erosion is otherwise invisible until
+there are six of them.
+
+And what the agent integrates *with* is always plural: tools, MCP servers, skill sources, and
+registered agents all **accumulate** — a second `.Mcp(...)` adds a server (each with its own
+optional auth: none, an API key, or an OAuth bearer token), a second `.Skills(...)` adds a
+folder, and calls route to whichever source's catalog owns the name, first registered winning.
+
+### Agent as data — the whole thing as JSON
+
+There is a fourth door, and no mainstream framework has it: the **entire configurable surface as
+one JSON document**, one key per capability, the same names as the builder verbs. Any platform
+that can push a form into a JSON body can define an agent — guardians, budgets, perimeter,
+approvals, redaction, telemetry and all:
+
+```csharp
+var agent = StandardAgent.FromJson(formBody);   // data
+    // .Tool(new CalculatorTool())              // code still chains — tools ARE code
+```
+
+```json
+{
+  "brain": { "apiUrl": "https://api.peerllm.com/v1/", "apiKey": "k", "model": "LLooMA2.0" },
+  "ruleGate": ["password"], "redact": true, "maxTurns": 5,
+  "requireApproval": ["wire_transfer"], "budget": { "maxCostUsd": 0.25 },
+  "telemetry": "form-built-agent"
+}
+```
+
+A key the agent does not know **refuses to compose, with the key named** — a typo'd `"buget"`
+must never produce an unbounded agent that looks configured. Tools stay code because they are
+code — except MCP, where a tool is a URL, which is data. And the deployment half is one file:
+drop an `agent.json` beside `Standard.Agents.Host` and the hosted agent composes entirely from
+it — no C# anywhere
+([docs/how-to.md §16](https://github.com/hassanhabib/The-Standard-Agent/blob/main/docs/how-to.md)).
 
 ## Streaming, and no DI
 
@@ -212,16 +256,16 @@ var agent = new StandardAgent(url, key, "LLooMA2.0")
 Pick each nature's home independently; the code above doesn't change when you do — that's the whole
 promise of the broker seam.
 
-## The 1·3·9
+## From the 1·3·9 to the 1·3·6·15
 
-![The Standard for Agents — architecture: StandardAgent → RunManagement → the three nature Coordinations (Data, Decision, Direction) → six Orchestration regions → fourteen Foundation services → their thirteen nature Brokers, with three utility and two decorating brokers beneath](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-architecture.png)
+![The Standard for Agents — architecture: StandardAgent → RunManagement → the three nature Coordinations (Data, Decision, Direction) → six Orchestration regions → fifteen Foundation services → their fourteen nature Brokers, with four utility and two decorating brokers beneath](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-architecture.png)
 
 *The diagram is generated from
 [`assets/the-standard-agent-architecture.svg`](https://github.com/hassanhabib/The-Standard-Agent/blob/main/assets/the-standard-agent-architecture.svg)
 — edit the SVG, re-render the PNG.*
 
-**The 1·3·9 is the shape of an agent.** One loop, three natures, and beneath them the foundations —
-the nine that have been there since the beginning:
+**The 1·3·9 is the core shape of an agent.** One loop, three natures, and beneath them the
+foundations — the nine that have been there since the beginning:
 
 | | |
 |---|---|
@@ -232,9 +276,9 @@ the nine that have been there since the beginning:
 `ReturnService` has no broker. It is the dead end — the terminal Direction hands the result back
 and touches nothing.
 
-### The 1·3·6·14
+### The 1·3·6·15
 
-Fourteen is what actually ships. Five foundations joined the nine, and the reason each one had to
+Fifteen is what actually ships. Six foundations joined the nine, and the reason each one had to
 be a foundation is the same: it is a distinct resource with its own failures, and **a resource
 reached without a foundation has no validation, no exception mapping, and its failures get blamed
 on the caller.**
@@ -244,10 +288,11 @@ on the caller.**
 | **Management** | 1 | `RunManagementService` — the only loop: Recall → Think → Act |
 | **Coordination** | 3 | Data · Decision · Direction — the three natures |
 | **Orchestration** | 6 | Retrieval, Recollection / Inference, Guardian / Perimeter, Execution |
-| **Foundation** | 14 | the nine, plus **Usage**, and Session, Policy, Approval, EffectLedger |
-| **Broker** | 13 + 5 | thirteen nature brokers, three utility, two decorating |
+| **Foundation** | 15 | the nine, plus **Usage** and **Contract**, and Session, Policy, Approval, EffectLedger |
+| **Broker** | 14 + 6 | fourteen nature brokers, four utility, two decorating |
 
-**Ten of the fourteen are always there** — the agent proper, the nine plus `Usage`. The other four
+**Eleven of the fifteen are always there** — the agent proper, the nine plus `Usage` and
+`Contract`. The other four
 arrive with the enterprise capabilities; leave them off and it is the same shape with less in it.
 
 Six foundations under Direction alone breaks the 2–3 rule, and a nature holding six is a nature
@@ -259,6 +304,11 @@ it; **Perimeter** asks *may this happen*, **Execution** does it.
 `Usage` is why Decision has two regions rather than one. Measuring what a model call cost is the
 same concept as making it — and without it, `.Budget()` could only bound a run whose provider
 volunteered its own numbers, which is to say not the text protocol at all.
+
+`Contract` is the third guardian, beside the Gate and the Judge. The Judge asks whether an answer
+is good *enough*; the Contract asks whether it is the right *shape* — and a draft that fails its
+declared contract is revised the same way one the Judge rejects is, with the validator's complaint
+handed back verbatim.
 
 **Every tier holds two or three of the tier directly below it.** Management over coordinations,
 coordination over orchestrations, orchestration over foundations, foundation over exactly one
@@ -273,9 +323,9 @@ rather than by convention:
   `IGeneratorBrokerV1` is the same seam as `IGeneratorBroker` under a newer contract — but it is
   one role. A second broker in a foundation is a capability that wants its own foundation.
 - **Nothing above the foundation tier takes a broker at all**, beyond the three utilities.
-- **Utility brokers** — logging, time, audit — are held by any tier. None of them can change what
-  the agent decides *or does*, which is exactly why they are exempt from the count. Usage is not
-  one of them: a budget stops a run.
+- **Utility brokers** — logging, time, audit, telemetry — are held by any tier. None of them can
+  change what the agent decides *or does*, which is exactly why they are exempt from the count.
+  Usage is not one of them: a budget stops a run.
 - **Decorating brokers** — redaction, resilience — are wrapped around another broker at
   composition, so no service holds them.
 
@@ -309,23 +359,27 @@ before any code is written. Build to it.
 
 ```
 Standard.Agents/                  the library
-  |-- Brokers/{Data,Decision,Direction,Loggings}
-  |-- Brokers/{Audits,Policies,Approvals,Effects,Sessions,Resiliences,Redactions}
+  |-- Brokers/{Skills,Generators,Tools,...}   one flat folder per seam — twenty in all
   |-- Models/Foundations/{Entity}/Exceptions
   |-- Models/Orchestrations/Agents          AgentContext, AgentStatus, ToolExchange
   |-- Models/Orchestrations/Effects         AgentEffect, AgentPrincipal, CompensationOutcome
   |-- Models/Brokers/Generators/V1          the native tool-calling contract
-  |-- Services/Foundations/{Entity}s          thirteen, one broker each
+  |-- Services/Foundations/{Entity}s          fifteen; one broker each, Return none
   |-- Services/Orchestrations/{Nature}/...    six regions, grouped by nature
   |-- Services/Coordinations/{Nature}         Data, Decision, Direction
   |-- Services/Managements                    RunManagementService — the loop
   |-- Tools/                                ITool, AgentTool — the fractal bridge
 Standard.Agents.Tests.Unit/       unit tests, mirroring the service tree
 Standard.Agents.Conformance/      the vector runner
+Standard.Agents.Evals/            the quality runner - golden cases, thresholded metrics
+Standard.Agents.Host/             the same agent definition as a web service
 Standard.Agents.Demo/             a console agent you can run
 conformance/vectors/              language-neutral behavioral vectors
 conformance/profiles/             what each readiness level requires
+evals/golden/                     golden quality cases the build certifies against
 docs/how-to.md                    one capability per step, every snippet runnable
+docs/evals.md                     the quality metrics and how to golden-set your own agent
+docs/hosting.md                   the agent behind HTTP - runs, streams, heartbeat
 docs/support.md                   stability, deprecation, supply chain
 docs/generator-contracts.md       text protocol vs native tool calls
 ```
@@ -335,7 +389,7 @@ docs/generator-contracts.md       text protocol vs native tool calls
 Agent behavior involves an LLM and is non-deterministic, so it cannot be asserted directly.
 [`conformance/`](https://github.com/hassanhabib/The-Standard-Agent/blob/main/conformance/CONFORMANCE.md) instead pins the **deterministic** contracts — the
 loop, reply interpretation, tool routing, and the feed-back of results into Data — by scripting
-the Brain. Every double replaces a **broker**, never a service: the whole 1·3·6·14 under test is the
+the Brain. Every double replaces a **broker**, never a service: the whole 1·3·6·15 under test is the
 real library.
 
 ```bash
@@ -354,21 +408,47 @@ dotnet run --project Standard.Agents.Conformance -- --profile Critical
 | **Core** | conversation, skills, knowledge, memory, simple tools |
 | **Reliable** | guardians that see what they guard, durable decision log, run isolation, cancellation, timeouts |
 | **Enterprise** | identity-aware authorization, approval before irreversible acts, run-once effects, budgets, ranked retrieval, per-request inference |
-| **Critical** | conversation and effects that survive a process, compensation, native tool calls that round-trip |
+| **Critical** | conversation and effects that survive a process, compensation, native tool calls that round-trip, adversarial evaluation — a fooled Brain still cannot act outside the perimeter |
 
 All four certify. Exit `0` means certified; the runner is the authority, not this table.
 
-## The fractal
+Beside contract certification sits **quality certification**: golden eval cases measuring task
+completion, groundedness, retrieval precision and recall, tool selection, refusal correctness
+and revision effectiveness — thresholded, deterministic, and run on every build
+([docs/evals.md](https://github.com/hassanhabib/The-Standard-Agent/blob/main/docs/evals.md)):
+
+```bash
+dotnet run --project Standard.Agents.Evals
+```
+
+## The fractal — and the fleet
 
 An agent satisfies `ITool`, so an agent can be a tool of another agent. Theory Ch.4 — *turtles up*:
 
 ```csharp
-var researcher = new AgentTool("researcher", innerAgent);
-var outerAgent = new StandardAgent().Brain(...).Tool(researcher);
+var outerAgent = new StandardAgent().Brain(...)
+    .OnAgents(() => new ValueTask<IReadOnlyList<RegisteredAgent>>(
+        [new RegisteredAgent("billing", "Handles refunds and invoices.", billingAgent)]));
 ```
 
-Nesting needs no new machinery because the shapes already agree. It is also how a guardian scales:
-a compliance sub-agent is a distinct conscience, rather than the same brain grading itself.
+A registered agent **materializes as a tool**, so a handoff is an act and the perimeter that
+governs acts governs handoffs — allow-lists can forbid one, approvals can put a human before
+one. Three flavors of multi-agent flow, all configured, none requiring new machinery:
+
+- **Sub-agent** — `ACTION: billing: <task>`: the answer comes back for the outer brain to
+  synthesize, and the handoff is grounded by default (*"The user asked: {prompt} — Your task:
+  {input}"*), with the template deciding exactly what crosses.
+- **Transfer** — `TRANSFER: billing`: the specialist's answer **is** the run's answer, verbatim.
+  A transfer that does not deliver comes back marked `[did not complete]` and the outer brain
+  keeps working — a refusal is never presented as the user's answer.
+- **Chain** — a deterministic sequence is your code calling agents in order; every link keeps
+  its own guardians, budget and perimeter.
+
+The fleet is data too: an `"agents"` key registers a folder of agent documents or inline agent
+documents — the file *is* the agent, name and advertisement included
+([docs/how-to.md §17](https://github.com/hassanhabib/The-Standard-Agent/blob/main/docs/how-to.md)).
+It is also how a guardian scales: a compliance sub-agent is a distinct conscience, rather than
+the same brain grading itself.
 
 ## Contributing
 

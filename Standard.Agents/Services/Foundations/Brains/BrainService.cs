@@ -86,7 +86,7 @@ public partial class BrainService : IBrainService
         string systemPrompt,
         string userPrompt,
         ResolvedInference? inference,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         IAsyncEnumerator<string> tokens;
 

@@ -97,7 +97,14 @@ public sealed record AgentEffect
             toolName.Trim().ToLowerInvariant(),
             canonicalArguments);
 
+        // Convert.ToHexStringLower is .NET 9+. Both forms emit identical lowercase hex, which
+        // is load-bearing: a key derived on one target must match the same key on the other.
+#if NET9_0_OR_GREATER
         return Convert.ToHexStringLower(
             SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
+#else
+        return Convert.ToHexString(
+            SHA256.HashData(Encoding.UTF8.GetBytes(canonical))).ToLowerInvariant();
+#endif
     }
 }

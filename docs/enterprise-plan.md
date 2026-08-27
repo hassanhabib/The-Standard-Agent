@@ -170,7 +170,9 @@ MOVEMENT I — TRUST                MOVEMENT II — CONTROL           MOVEMENT I
 | 0.25 Supply chain | **landed** | pinned SDK, warnings as errors, vulnerability and licence audit, secret scanning, SBOM, provenance; `docs/support.md` |
 | 1.0 Enterprise model | **landed** | sessions, cross-process run identity, durable run-once, compensation, native tool-call round-trip; vectors 25–29 |
 | 1.1 Audit of 1.0 | **landed** | identity reaches authorization, streamed path at parity, full principal, held effect on the session; vector 30; SPEC.md settles at 1.0 |
-| 1.2 Evals & hosting | next | — |
+| 1.2–1.4 Back on The Standard | **landed** | the architecture realignment (`1.2.0`), every-protocol usage measurement (`1.3.0`), tier adjacency enforced (`1.4.0`) — none of it planned here, all of it found by auditing |
+| 1.5–1.6.1 Structured output, permission, the sweep | **landed** | `.Contract` triad and scoped permission (`1.5.0`); the 2026-08-23 full sweep and its five fix passes (`1.5.1`–`1.6.1`); `docs/reviews/2026-08-23-full-sweep.md` |
+| 1.7 Evals & hosting | **landed** | `Standard.Agents.Evals` (six metrics, thresholded, CI-gated, every metric proven able to fail); adversarial vectors 42–44 required by Critical; `Standard.Agents.Host`; the sweep's three open decisions ruled and closed; `docs/releases/v1.7.0.md` |
 
 **1.1 was not the release that was planned.** Auditing 1.0 against its own claims turned up two
 defects — `.Principal(...)` never reached the policy broker, and the streamed loop enforced neither
@@ -193,9 +195,11 @@ dotnet run --project Standard.Agents.Conformance -- --profile Enterprise   CERTI
 dotnet run --project Standard.Agents.Conformance -- --profile Critical     CERTIFIED   exit 0
 ```
 
-**All four certify**, across 29 vectors and 375 tests. Critical was written as the 1.1 target and
-is met at 1.0 — the three requirements that were outstanding (compensation, an effect outcome that
-survives a crash, a native tool call that round-trips) all landed rather than being deferred.
+**All four certify** — 44 vectors and 563 tests (on each of two targets) as of `1.7.0`, plus six
+golden eval cases. Critical was written as the 1.1 target, met at 1.0 for its mechanics, and is
+complete at 1.7.0: **adversarial evaluation is now verified** — vectors 42–44 fool the scripted
+Brain and certify that a fooled Brain still cannot act outside the perimeter, and the profile
+requires them.
 
 Measured, on `main`, against the two defects that opened this plan:
 
@@ -942,6 +946,9 @@ Three of them landed differently than written, and saying so is cheaper than pre
 ---
 
 ### 1.1.0.0 — Evals and Hosting
+
+> **Status:** planned as 1.1, displaced to 1.2 by the audit of 1.0, then displaced again by
+> everything 1.2–1.6.1 found. Unshipped as written, scope unchanged, now targeting **1.7.0.0**.
 
 > *Conformance pins contracts. Enterprises also need to pin quality — and to deploy the same
 > definition as a service.*

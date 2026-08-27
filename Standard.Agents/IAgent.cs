@@ -30,6 +30,18 @@ public interface IAgent
             Result: await ProcessPromptAsync(prompt),
             Status: AgentStatus.Responded);
 
+    /// <summary>
+    /// The same run, stoppable: cancellation stops it at the next turn boundary, so no effect
+    /// is left half-recorded (SPEC.md §4.10). Nesting reads this — <c>AgentTool</c> forwards
+    /// the outer run's token here, so cancelling an outer run stops the whole tree.
+    /// </summary>
+    /// <remarks>
+    /// The default ignores the token, which is no less accurate than an implementation that
+    /// cannot stop mid-run was before. An implementation that runs the loop should override it.
+    /// </remarks>
+    ValueTask<AgentOutcome> RunAsync(string prompt, CancellationToken cancellationToken) =>
+        RunAsync(prompt);
+
     IAsyncEnumerable<AgentStreamEvent> StreamPromptAsync(
         string prompt,
         CancellationToken cancellationToken = default);

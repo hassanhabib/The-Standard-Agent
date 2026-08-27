@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------
 
 using Standard.Agents.Brokers.Loggings;
+using Standard.Agents.Models.Coordinations.Directions;
 using Standard.Agents.Models.Loggings;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Models.Orchestrations.Effects;
@@ -40,38 +41,31 @@ public partial class DirectionCoordinationService : IDirectionCoordinationServic
     // this framework asks hosts to adopt (SPEC.md §4.4).
     private readonly Func<AgentPrincipal?>? identityResolver;
 
+    // Two services, one utility broker, and the perimeter's standing orders as one datum.
+    // The orders used to arrive as eight constructor parameters, three of them delegates that
+    // participate in authorization — collaborators no dependency count could see. Policy is
+    // Data: they travel in PerimeterPolicy, where adding one is a reviewed model diff.
     public DirectionCoordinationService(
         IPerimeterOrchestrationService perimeterService,
         IExecutionOrchestrationService executionService,
         ILoggingBroker loggingBroker,
-        IEnumerable<string>? irreversibleTools = null,
-        Func<AgentPrincipal?>? identityResolver = null,
-        PermissionMode permissionMode = PermissionMode.Open,
-        IReadOnlyDictionary<string, RiskLevel>? declaredRisk = null,
-        IReadOnlyDictionary<string, RiskLevel>? toolRisk = null,
-        IReadOnlyDictionary<string, Func<string, string>>? toolScope = null,
-        Func<AgentEffect, bool>? explicitlyPermits = null)
+        PerimeterPolicy? policy = null)
     {
-        this.permissionMode = permissionMode;
+        PerimeterPolicy standingOrders = policy ?? new PerimeterPolicy();
 
-        this.declaredRisk = declaredRisk
-            ?? new Dictionary<string, RiskLevel>(StringComparer.OrdinalIgnoreCase);
-
-        this.toolRisk = toolRisk
-            ?? new Dictionary<string, RiskLevel>(StringComparer.OrdinalIgnoreCase);
-
-        this.toolScope = toolScope
-            ?? new Dictionary<string, Func<string, string>>(StringComparer.OrdinalIgnoreCase);
-
-        this.explicitlyPermits = explicitlyPermits;
+        this.permissionMode = standingOrders.Mode;
+        this.declaredRisk = standingOrders.DeclaredRisk;
+        this.toolRisk = standingOrders.ToolRisk;
+        this.toolScope = standingOrders.ToolScope;
+        this.explicitlyPermits = standingOrders.ExplicitlyPermits;
+        this.identityResolver = standingOrders.IdentityResolver;
 
         this.perimeterService = perimeterService;
         this.executionService = executionService;
         this.loggingBroker = loggingBroker;
-        this.identityResolver = identityResolver;
 
-        this.irreversibleToolNames =
-            new HashSet<string>(irreversibleTools ?? [], StringComparer.OrdinalIgnoreCase);
+        this.irreversibleToolNames = new HashSet<string>(
+            standingOrders.IrreversibleTools, StringComparer.OrdinalIgnoreCase);
     }
 
     public ValueTask<AgentContext> ActAsync(AgentContext context) =>

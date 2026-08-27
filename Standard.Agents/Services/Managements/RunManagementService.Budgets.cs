@@ -3,10 +3,12 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Runtime.CompilerServices;
 using Standard.Agents.Models.Coordinations.Agents;
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Models.Orchestrations.Effects;
+using Standard.Agents.Services.Coordinations.Decision;
 
 namespace Standard.Agents.Services.Managements;
 
@@ -66,28 +68,10 @@ public partial class RunManagementService
         return false;
     }
 
-    // The status was taken and never used: a cancelled or budget-exhausted run reported its
-    // message and left how it ended inside this method. Nothing above could tell "I ran out" from
-    // an answer, which is the same flattening that let a held sub-agent read like a result.
-    private async ValueTask<AgentOutcome> StopAsync(
-        AgentContext context,
-        string message,
-        AgentStatus status)
-    {
-        await this.loggingBroker.LogOutcomeAsync($"stopped: {message}");
-
-        string unwound = await UnwindAsync();
-
-        string result = string.IsNullOrEmpty(unwound)
-            ? message
-            : $"{message} {unwound}";
-
-        return new AgentOutcome(result, status);
-    }
-
-    // An async iterator cannot put a catch clause around a yield, so the streamed loop unwinds
-    // through these instead of through one try around the whole body. They cover the two steps
-    // that do not yield — and Direction, the one that performs effects, is among them.
+    // An async iterator cannot put a catch clause around a yield — but the failure points are
+    // the awaits, not the yields, so every step of the one loop unwinds through a wrapper that
+    // catches around the await and yields outside it. These are the only copies: the loop that
+    // used to wrap its whole batched body in one try unwound steps its streamed twin did not.
     private async ValueTask<AgentContext> RecallOrUnwindAsync(AgentContext context)
     {
         try
@@ -107,6 +91,72 @@ public partial class RunManagementService
         try
         {
             return await this.directionCoordinationService.ActAsync(context);
+        }
+        catch (Exception)
+        {
+            await UnwindAsync();
+
+            throw;
+        }
+    }
+
+    private async ValueTask<AgentContext> ThoughtOrUnwindAsync(AgentContext context)
+    {
+        try
+        {
+            return await this.decisionCoordinationService.ThinkAsync(context);
+        }
+        catch (Exception)
+        {
+            await UnwindAsync();
+
+            throw;
+        }
+    }
+
+    // Think's streamed protocol faults inside an enumeration, so the wrapper advances the
+    // enumerator inside the catch and yields outside it — the same rule as everywhere else:
+    // a fault in any step of a run that performed effects unwinds before it surfaces.
+    private async IAsyncEnumerable<AgentStreamEvent> UnwoundOnFaultAsync(
+        IDecisionStream decisionStream,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        await using IAsyncEnumerator<AgentStreamEvent> events =
+            decisionStream.GetAsyncEnumerator(cancellationToken);
+
+        while (true)
+        {
+            AgentStreamEvent decisionEvent;
+
+            try
+            {
+                if (await events.MoveNextAsync() is false)
+                {
+                    yield break;
+                }
+
+                decisionEvent = events.Current;
+            }
+            catch (Exception)
+            {
+                await UnwindAsync();
+
+                throw;
+            }
+
+            yield return decisionEvent;
+        }
+    }
+
+    // Screening asks Decision for a verdict, and a model call can fail like any other — so the
+    // streamed loop unwinds through this exactly as it does for Recall and Act above.
+    private async ValueTask<AgentContext> ScreenedOrUnwindAsync(
+        AgentContext context,
+        int observedBefore)
+    {
+        try
+        {
+            return await ScreenedAsync(context, observedBefore);
         }
         catch (Exception)
         {

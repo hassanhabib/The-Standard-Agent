@@ -32,7 +32,7 @@ public partial class AgentToolTests
         nested.Setup(agent => agent.ProcessPromptAsync(It.IsAny<string>()))
             .ReturnsAsync(result);
 
-        nested.Setup(agent => agent.RunAsync(It.IsAny<string>()))
+        nested.Setup(agent => agent.RunAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new AgentOutcome(Result: result, Status: status));
 
         return nested;

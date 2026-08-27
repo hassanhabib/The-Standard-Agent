@@ -119,6 +119,41 @@ public class ContractTests
                 + "revision budget, rather than throwing or returning nothing");
     }
 
+    // Found in the 2026-08-23 sweep: CheckShapeAsync had exactly one call site — ThinkAsync —
+    // so the identical prose the batched path re-thinks streamed out as the answer. A guardian
+    // a caller can step around by changing method is not a guardian (SPEC.md §7.6).
+    [Fact]
+    public async Task ShouldEnforceTheContractOnTheStreamedPathAsync()
+    {
+        // given — the same drafts as the batched revision test above
+        StandardAgent agent = AgentAnswering(
+            "FINAL: The amount is one hundred US dollars.",
+            """FINAL: { "amount": 100, "currency": "USD" }""")
+                .Contract(InvoiceSchema)
+                .MaxTurns(5);
+
+        // when
+        List<string> responses = [];
+
+        await foreach (var streamEvent in agent.StreamPromptAsync("what is owed"))
+        {
+            if (streamEvent.Type == Models.Clients.Agents.AgentStreamEventType.Response)
+            {
+                responses.Add(streamEvent.Content);
+            }
+        }
+
+        // then — the shape that satisfied the contract, and never the prose that did not
+        string streamedAnswer = string.Concat(responses);
+
+        streamedAnswer.Should().Contain("\"amount\"");
+
+        streamedAnswer.Should().NotContain(
+            "one hundred US dollars",
+            because: "a draft the contract rejects on the batched path must not be delivered "
+                + "by switching to the streamed one");
+    }
+
     // Wide open by default: an agent given no contract is not constrained by having become
     // checkable. Same rule as counting versus blocking in the budget.
     [Fact]

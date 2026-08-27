@@ -240,4 +240,92 @@ public class RedactionTests
         // then
         seenByBrain.Should().Contain(SecretEmail);
     }
+
+    // The 2026-08-23 sweep found Redaction was a capability with one mode: .Redact() hardcoded
+    // the default rules, and there was no way to supply your own rules, broker, or delegates.
+    // These pin the new modes BEHAVIOURALLY — a name-existence check passes without any wiring,
+    // which is exactly how a seam gets a method and no plumbing.
+    [Fact]
+    public async Task ShouldRedactAtTheWireWithCustomDelegatesAsync()
+    {
+        // given — the Custom mode: a codename scheme no regex ships with
+        string seenByBrain = string.Empty;
+
+        StandardAgent agent = AgentBare((_, userPrompt) =>
+        {
+            seenByBrain = userPrompt;
+
+            return ValueTask.FromResult("FINAL: I paged {{ONCALL}} already.");
+        })
+            .OnRedaction(
+                redact: (text, vault) =>
+                {
+                    if (text.Contains("Jane Doe"))
+                    {
+                        vault["{{ONCALL}}"] = "Jane Doe";
+
+                        return text.Replace("Jane Doe", "{{ONCALL}}");
+                    }
+
+                    return text;
+                },
+                rehydrate: (text, vault) =>
+                    vault.TryGetValue("{{ONCALL}}", out string? name)
+                        ? text.Replace("{{ONCALL}}", name)
+                        : text);
+
+        // when
+        string actualAnswer = await agent.ProcessPromptAsync("page Jane Doe about the outage");
+
+        // then — the model never saw the name, and the caller got it back
+        seenByBrain.Should().NotContain("Jane Doe");
+        seenByBrain.Should().Contain("{{ONCALL}}");
+        actualAnswer.Should().Be("I paged Jane Doe already.");
+    }
+
+    [Fact]
+    public async Task ShouldRedactByTheHostsOwnRulesAsync()
+    {
+        // given — the Local mode with custom rules: an internal ticket format
+        string seenByBrain = string.Empty;
+
+        StandardAgent agent = AgentBare((_, userPrompt) =>
+        {
+            seenByBrain = userPrompt;
+
+            return ValueTask.FromResult("FINAL: filed");
+        })
+            .Redact(new Models.Foundations.Brains.RedactionRule
+            {
+                Label = "TICKET",
+                Pattern = @"INC-\d{6}"
+            });
+
+        // when
+        await agent.ProcessPromptAsync("escalate INC-004512 to the vendor");
+
+        // then
+        seenByBrain.Should().NotContain("INC-004512");
+        seenByBrain.Should().Contain("{{TICKET_0}}");
+    }
+
+    private static StandardAgent AgentBare(Func<string, string, ValueTask<string>> brain)
+    {
+        var skillBroker = new Mock<ISkillBroker>();
+        skillBroker.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(new List<Skill>());
+
+        var memoryBroker = new Mock<IMemoryBroker>();
+        memoryBroker.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
+
+        var knowledgeBroker = new Mock<IKnowledgeBroker>();
+
+        knowledgeBroker.Setup(broker => broker.SelectKnowledgeAsync(It.IsAny<string>()))
+            .ReturnsAsync([]);
+
+        return new StandardAgent()
+            .UseSkills(skillBroker.Object)
+            .UseMemory(memoryBroker.Object)
+            .UseKnowledge(knowledgeBroker.Object)
+            .OnBrain(brain);
+    }
 }

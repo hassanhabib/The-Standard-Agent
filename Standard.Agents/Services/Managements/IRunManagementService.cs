@@ -23,9 +23,11 @@ public interface IRunManagementService
     /// (docs/per-request-inference.md). Precedence is resolved once at the top of the run;
     /// every tier below receives the resolution's output on the context.
     /// </summary>
+    ValueTask<string> ProcessPromptAsync(PromptRequest request);
+
     ValueTask<string> ProcessPromptAsync(
         PromptRequest request,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken);
 
     /// <summary>
     /// The same run, reported with <b>how it ended</b>. Every <c>ProcessPromptAsync</c> above is
@@ -42,9 +44,11 @@ public interface IRunManagementService
     /// this: a run that ended <c>AwaitingInput</c> holding a caller's tool call and a run that
     /// answered read alike as strings.
     /// </summary>
+    ValueTask<AgentOutcome> RunAsync(PromptRequest request);
+
     ValueTask<AgentOutcome> RunAsync(
         PromptRequest request,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken);
 
     IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
         string prompt,
@@ -64,7 +68,9 @@ public interface IRunManagementService
     /// The streamed loop, asked for by a request. The same resolution, the same controls: a
     /// control a caller can step around by changing method is not a control (SPEC.md §7.6).
     /// </summary>
+    IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(PromptRequest request);
+
     IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
         PromptRequest request,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken);
 }

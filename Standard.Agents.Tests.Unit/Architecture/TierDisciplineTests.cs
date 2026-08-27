@@ -22,10 +22,11 @@ namespace Standard.Agents.Tests.Unit.Architecture;
 public class TierDisciplineTests
 {
     // Observability, plus the clock. None backs a nature; none can change what the agent decides.
-    // Resilience is deliberately NOT here: it changes control flow, so it does not get logging's
-    // exemption — it is applied by decorating a broker at composition.
+    // Telemetry earns the same exemption the same way: spans and metrics observe the loop and
+    // steer nothing. Resilience is deliberately NOT here: it changes control flow, so it does not
+    // get logging's exemption — it is applied by decorating a broker at composition.
     private static readonly string[] utilityBrokers =
-        ["ILoggingBroker", "ITimeBroker", "IAuditBroker"];
+        ["ILoggingBroker", "ITimeBroker", "IAuditBroker", "ITelemetryBroker"];
 
     private static readonly Assembly agentAssembly = typeof(StandardAgent).Assembly;
 
@@ -205,6 +206,61 @@ public class TierDisciplineTests
             && parameterType.Name.EndsWith("Service", StringComparison.Ordinal)
             && parameterType.Namespace?.Contains(".Services.", StringComparison.Ordinal) is true;
 
+    // The counting escape the sweep demonstrated: replace any IXService with a delegate and the
+    // dependency vanishes from every count above. A delegate that participates in a service's
+    // decisions is a collaborator, and a collaborator the count cannot see belongs inside a
+    // named model under Models/ — policy is Data — where its arrival is a reviewed diff.
+    public static TheoryData<string> AllTierServices()
+    {
+        var services = new TheoryData<string>();
+
+        foreach (Type service in ServicesUnder("Foundations").Concat(ServicesAboveFoundations()))
+        {
+            services.Add(service.Name);
+        }
+
+        return services;
+    }
+
+    [Theory]
+    [MemberData(nameof(AllTierServices))]
+    public void ShouldHoldNoNakedDelegateInAnyServiceConstructor(string serviceName)
+    {
+        // given
+        Type service = ServicesUnder("Foundations")
+            .Concat(ServicesAboveFoundations())
+            .Single(type => type.Name == serviceName);
+
+        // when
+        string[] nakedDelegates =
+            [.. service.GetConstructors()
+                .SelectMany(constructor => constructor.GetParameters())
+                .Where(parameter => CarriesADelegate(parameter.ParameterType))
+                .Select(parameter => parameter.Name ?? parameter.ParameterType.Name)
+                .Distinct()];
+
+        // then
+        nakedDelegates.Should().BeEmpty(
+            because: $"{serviceName} takes [{string.Join(", ", nakedDelegates)}] — a delegate "
+                + "that participates in a service's decisions is a collaborator the dependency "
+                + "count cannot see. Policy is Data: carry it inside a named model under "
+                + "Models/, where its arrival is a reviewed diff rather than constructor "
+                + "sprawl");
+    }
+
+    private static bool CarriesADelegate(Type parameterType)
+    {
+        Type unwrapped = Nullable.GetUnderlyingType(parameterType) ?? parameterType;
+
+        if (typeof(Delegate).IsAssignableFrom(unwrapped))
+        {
+            return true;
+        }
+
+        return unwrapped.IsGenericType
+            && unwrapped.GetGenericArguments().Any(CarriesADelegate);
+    }
+
     // A tier that reaches a broker skips the foundation that would have given it validation,
     // exception mapping and attribution. That is how a full disk came to be blamed on Direction.
     [Theory]
@@ -242,6 +298,9 @@ public class TierDisciplineTests
     public void ShouldNotLetAnyBrokerDependOnANatureBroker()
     {
         // given
+        // Derived sets can empty out silently — a renamed namespace and this rule passes
+        // vacuously forever. A derivation that finds nothing is a broken derivation, not a
+        // clean architecture.
         HashSet<string> natureBrokers =
             [.. ServicesUnder("Foundations")
                 .SelectMany(BrokersTakenBy)
@@ -275,5 +334,99 @@ public class TierDisciplineTests
             because: "a broker is a thin liaison to ONE resource (Invariant 3). A broker that "
                 + "reaches another nature's resource has business flow in it, and it is the "
                 + "hardest kind to see because it sits underneath everything else.");
+    }
+
+    // "A tier missing from this list is a tier nobody is checking" was a comment; now it is a
+    // rule. Every namespace segment under Standard.Agents.Services must be one of the four
+    // checked tiers — when the loop moved to Managements, it left every rule in this file for
+    // as long as nobody noticed, and a future tier gets no such window.
+    [Fact]
+    public void ShouldCheckEveryServiceTierThatExists()
+    {
+        // given
+        string[] checkedTiers = ["Foundations", "Orchestrations", "Coordinations", "Managements"];
+
+        // when
+        string[] actualTiers =
+            [.. agentAssembly.GetTypes()
+                .Where(type => type.Namespace is not null)
+                .Select(type => type.Namespace!)
+                .Where(space => space.Contains(".Services.", StringComparison.Ordinal))
+                .Select(space => space
+                    .Split(".Services.", 2)[1]
+                    .Split('.')[0])
+                .Distinct()];
+
+        // then
+        actualTiers.Should().BeSubsetOf(
+            checkedTiers,
+            because: "a tier absent from the checked list is a tier nobody is checking, which "
+                + "is how the loop's move to Managements went unwatched");
+    }
+
+    // The tool seam, found unscanned in the 2026-08-23 sweep. Tools are host-space: Direction
+    // reaches them through ToolBroker, underneath the foundation tier — so a framework tool that
+    // KEEPS a service or a broker re-enters the tier stack from below it. RememberTool held
+    // IMemoryService, making the live chain InternalToolService → ToolBroker → RememberTool →
+    // IMemoryService: a foundation transitively calling a foundation through a broker, and no
+    // rule in this file could see it because nothing here scanned Standard.Agents.Tools at all.
+    //
+    // The rule is about what a tool HOLDS, which is why it scans fields rather than
+    // constructors: a converting [Obsolete] constructor may still ACCEPT a service for
+    // compatibility, but nothing of the tier stack may live in the tool. The client seam
+    // (IAgent, in the root namespace) passes by construction — nesting a whole agent is
+    // composition, not tier reach-through.
+    [Fact]
+    public void ShouldKeepFrameworkToolsOutOfTheTierStack()
+    {
+        // given
+        IEnumerable<Type> frameworkTools = agentAssembly.GetTypes()
+            .Where(type => type.IsClass && type.IsAbstract is false)
+            .Where(type => type.Namespace is "Standard.Agents.Tools");
+
+        // when
+        List<string> offenders = [];
+
+        foreach (Type tool in frameworkTools)
+        {
+            string[] held =
+                [.. tool
+                    .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                    .SelectMany(field => TypesReferencedBy(field.FieldType))
+                    .Where(fieldType =>
+                        fieldType.Namespace?.Contains(".Services.", StringComparison.Ordinal) is true
+                            || fieldType.Namespace?.Contains(".Brokers.", StringComparison.Ordinal) is true)
+                    .Select(fieldType => fieldType.Name)
+                    .Distinct()];
+
+            if (held.Length > 0)
+            {
+                offenders.Add($"{tool.Name} holds [{string.Join(", ", held)}]");
+            }
+        }
+
+        // then
+        offenders.Should().BeEmpty(
+            because: "a tool is reached through a broker, underneath the foundations — a tool "
+                + "holding a service or a broker re-enters the tier stack from below it, and "
+                + "no adjacency rule can see the reach because it travels through data");
+    }
+
+    // Generic arguments count: IReadOnlyList<IMemoryService> holds the service as surely as the
+    // bare field does.
+    private static IEnumerable<Type> TypesReferencedBy(Type type)
+    {
+        yield return type;
+
+        if (type.IsGenericType)
+        {
+            foreach (Type argument in type.GetGenericArguments())
+            {
+                foreach (Type referenced in TypesReferencedBy(argument))
+                {
+                    yield return referenced;
+                }
+            }
+        }
     }
 }

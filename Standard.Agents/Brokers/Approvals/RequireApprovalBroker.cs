@@ -13,18 +13,21 @@ namespace Standard.Agents.Brokers.Approvals;
 // because the control would read as present while granting everything.
 public sealed class RequireApprovalBroker : IApprovalBroker
 {
-    private readonly HashSet<string> toolNamesRequiringApproval;
-
-    public RequireApprovalBroker(IEnumerable<string> toolNamesRequiringApproval) =>
-        this.toolNamesRequiringApproval =
-            new HashSet<string>(toolNamesRequiringApproval, StringComparer.OrdinalIgnoreCase);
+    // The list's work happens in composition, where it decides WHICH acts require approval at
+    // all (DirectionCoordinationService.RequiresApproval). By the time a request reaches this
+    // broker the question is always "may this act run?" — asked for a listed tool, or for an
+    // act the Ask mode says nothing permitted — and with no approver wired in, the honest
+    // answer to both is the same. Answering Approved for a tool absent from the list was
+    // consent from nobody: that branch was reachable only under Ask, where it ran acts the
+    // authority was never told about.
+    public RequireApprovalBroker(IEnumerable<string> toolNamesRequiringApproval)
+    {
+    }
 
     public async ValueTask<ApprovalDecision> RequestAsync(AgentEffect effect)
     {
         await Task.CompletedTask;
 
-        return this.toolNamesRequiringApproval.Contains(effect.ToolName)
-            ? ApprovalDecision.Pending
-            : ApprovalDecision.Approved;
+        return ApprovalDecision.Pending;
     }
 }

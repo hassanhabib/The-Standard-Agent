@@ -1,0 +1,21 @@
+{
+  "name": "a-registered-agent-answers-a-handoff",
+  "description": "The fleet (SPEC.md 4.8 v1.6): the outer Brain hands a task to a registered agent exactly as it calls a tool. The specialist answers, the answer returns as an observation for the outer Brain to synthesize - and the handoff itself MUST carry the user's original ask, because the grounded default template shares the task plus just enough context to do it.",
+  "agents": [
+    {
+      "name": "billing",
+      "description": "Handles refunds and invoices.",
+      "replies": ["FINAL: the refund is booked"]
+    }
+  ],
+  "generatorReplies": [
+    "ACTION: billing: refund order 7741",
+    "FINAL: done - billing booked the refund."
+  ],
+  "prompt": "please refund my last order, number 7741",
+  "expect": {
+    "resultContains": "billing booked the refund",
+    "brainSees": "the refund is booked",
+    "agentInput": { "billing": "please refund my last order, number 7741" }
+  }
+}

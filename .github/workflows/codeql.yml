@@ -1,0 +1,48 @@
+# Static analysis for the classes of defect a test suite structurally cannot catch -
+# injection sinks, path traversal, insecure deserialization. Runs on every change to main
+# and weekly between changes, because a query pack update can find yesterday's code guilty.
+name: Standard.Agents CodeQL
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '17 6 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Pulling Code
+      uses: actions/checkout@v7
+
+    # Same rule as dotnet.yml: global.json pins the SDK, so analysis compiles with the
+    # same compiler as the build it analyzes.
+    - name: Installing .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        global-json-file: global.json
+
+    - name: Initializing CodeQL
+      uses: github/codeql-action/init@v4
+      with:
+        languages: csharp
+        build-mode: manual
+
+    - name: Restoring Packages
+      run: dotnet restore
+
+    - name: Building Solution
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Analyzing
+      uses: github/codeql-action/analyze@v4
+      with:
+        category: "/language:csharp"

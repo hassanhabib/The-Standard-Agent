@@ -16,6 +16,24 @@ public partial class DecisionCoordinationService
 {
     private delegate ValueTask<AgentContext> ReturningContextFunction();
 
+    // The mapping TryCatch applies, callable on a caught exception — what the streamed door
+    // needs, since an iterator cannot wrap its yields in a catch. Implemented by rethrowing
+    // through TryCatch itself, so there is exactly one copy of the catch chain and the two
+    // doors cannot grow different families.
+    private async ValueTask<Exception> MappedAndLoggedAsync(Exception exception)
+    {
+        try
+        {
+            await TryCatch(() => throw exception);
+
+            return exception;
+        }
+        catch (Exception mapped)
+        {
+            return mapped;
+        }
+    }
+
     private async ValueTask<AgentContext> TryCatch(
 ReturningContextFunction returningContextFunction)
     {

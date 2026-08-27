@@ -203,6 +203,120 @@ public class PermissionTests
         tool.Writes.Should().Be(1);
     }
 
+    // Gap 5, found in the 2026-08-23 sweep. PermissionMode.Deny was declared, documented
+    // ("Denied. Nothing runs but what was named.") and never consulted: the only read of the
+    // mode compared against Ask, so the strictest disposition behaved exactly like Open and an
+    // unnamed tool ran unasked.
+    [Fact]
+    public async Task ShouldDenyAnActThatWasNeverExplicitlyPermittedAsync()
+    {
+        // given — nothing names the tool: no allow-list, no approval list, no policy
+        var tool = new WriteFileTool();
+        string secondPrompt = string.Empty;
+        int asked = 0;
+
+        StandardAgent agent = new StandardAgent()
+            .Tool(tool)
+            .OnBrain((_, userPrompt) =>
+            {
+                if (asked > 0)
+                {
+                    secondPrompt = userPrompt;
+                }
+
+                string reply = asked == 0 ? "ACTION: write_file: /project/a.txt hello" : "FINAL: done";
+                asked++;
+
+                return ValueTask.FromResult(reply);
+            })
+            .Permissions(PermissionMode.Deny)
+            .MaxTurns(4);
+
+        // when
+        string actualAnswer = await agent.ProcessPromptAsync("write it");
+
+        // then — denied, told, and non-terminal: the agent chooses another path
+        tool.Writes.Should().Be(
+            0,
+            because: "Deny says nothing runs but what was named, and nothing named this tool");
+
+        secondPrompt.Should().Contain(
+            "not permitted",
+            because: "a denial the agent is not told about leaves it to propose the act forever");
+
+        actualAnswer.Should().Be("done");
+    }
+
+    // The positive half, so a mode that denies everything cannot pass: an act that WAS named —
+    // here through RequireApproval — still reaches its authority and still runs when permitted.
+    [Fact]
+    public async Task ShouldStillPermitWhatWasExplicitlyNamedUnderDenyAsync()
+    {
+        // given
+        var tool = new WriteFileTool();
+
+        StandardAgent agent = AgentActing(tool, "ACTION: write_file: /project/a.txt hello", "FINAL: done")
+            .Permissions(PermissionMode.Deny)
+            .RequireApproval("write_file")
+            .OnApproval(_ => ValueTask.FromResult(ApprovalDecision.Approved));
+
+        // when
+        await agent.ProcessPromptAsync("write it");
+
+        // then — the mode speaks only for what the explicit permissions did not mention
+        tool.Writes.Should().Be(1);
+    }
+
+    // Gap 6, found in the 2026-08-23 sweep. Ask promises "held, not failed, exactly as
+    // RequireApproval does" — and RequireApproval with no approver holds, because waiting is
+    // not consent. But Ask alone routed to NotConfiguredApprovalBroker, which answered
+    // Approved unconditionally: the perimeter asked, heard yes from nobody, and ran the act.
+    [Fact]
+    public async Task ShouldHoldAnUnpermittedActWhenAskHasNoAuthorityAsync()
+    {
+        // given — Ask, and nobody wired to answer
+        var tool = new WriteFileTool();
+
+        StandardAgent agent = AgentActing(tool, "ACTION: write_file: /project/a.txt hello", "FINAL: done")
+            .Permissions(PermissionMode.Ask);
+
+        // when
+        string actualAnswer = await agent.ProcessPromptAsync("write it");
+
+        // then — held, not performed: an authority that does not exist cannot have said yes
+        tool.Writes.Should().Be(
+            0,
+            because: "Ask with no approval authority must hold the act — waiting is not consent, "
+                + "and an absent authority is nothing but waiting");
+
+        actualAnswer.Should().Contain("waiting for approval");
+    }
+
+    // The same silent consent through the second door: RequireApprovalBroker answered Approved
+    // for any tool NOT on its list — a branch only reachable under Ask, where it meant an act
+    // the authority was never told about ran as if someone had said yes.
+    [Fact]
+    public async Task ShouldHoldAnUnlistedActUnderAskWhenTheAuthorityOnlyKnowsOtherToolsAsync()
+    {
+        // given — the approval list names a different tool entirely
+        var tool = new WriteFileTool();
+
+        StandardAgent agent = AgentActing(tool, "ACTION: write_file: /project/a.txt hello", "FINAL: done")
+            .Permissions(PermissionMode.Ask)
+            .RequireApproval("wire_transfer");
+
+        // when
+        string actualAnswer = await agent.ProcessPromptAsync("write it");
+
+        // then
+        tool.Writes.Should().Be(
+            0,
+            because: "the list names wire_transfer, nobody can answer for write_file, and an "
+                + "unanswerable question is a held act, not a granted one");
+
+        actualAnswer.Should().Contain("waiting for approval");
+    }
+
     // Gap 4. A granted approval was forgotten immediately, so a second act on the same target
     // asked again — and an authority asked the identical question twice stops reading it.
     [Fact]
@@ -235,6 +349,60 @@ public class PermissionTests
                 + "identical question twice is how they stop reading it");
 
         tool.Writes.Should().Be(2);
+    }
+
+    // Gap 7, found in the 2026-08-23 sweep. The grant key is the tool AND the scope, exactly —
+    // but ScopeOf defaults to empty, so for any tool that names no scope (every MCP tool among
+    // them) the key collapsed to the tool name alone: approving a $10 transfer silently
+    // approved the $10,000 one later in the same run. An act with no named scope cannot be
+    // matched to a later one "exactly", so nothing may be remembered and each act is asked
+    // about — an identical repeat is already replayed by run-once before approval is reached.
+    [Fact]
+    public async Task ShouldAskAgainWhenTheToolNamesNoScopeAsync()
+    {
+        // given — a tool with no ScopeOf, proposing two very different acts
+        var tool = new WireTransferTool();
+        int asked = 0;
+
+        StandardAgent agent = AgentActing(
+            tool,
+            "ACTION: wire_transfer: 10 to bob",
+            "ACTION: wire_transfer: 10000 to mallory",
+            "FINAL: done")
+                .RequireApproval("wire_transfer")
+                .OnApproval(_ =>
+                {
+                    asked++;
+
+                    return ValueTask.FromResult(ApprovalDecision.Approved);
+                });
+
+        // when
+        await agent.ProcessPromptAsync("settle up");
+
+        // then
+        asked.Should().Be(
+            2,
+            because: "approving ten dollars is not approving ten thousand — with no scope to "
+                + "match exactly, every act of the tool is its own question");
+
+        tool.Transfers.Should().Be(2);
+    }
+
+    private sealed class WireTransferTool : ITool
+    {
+        public string Name => "wire_transfer";
+        public string Description => "Moves money.";
+        public int Transfers { get; private set; }
+
+        // Deliberately no ScopeOf: this is the shape of every tool that does not implement it,
+        // which includes every tool that arrives over MCP.
+        public ValueTask<string> ExecuteAsync(string input)
+        {
+            Transfers++;
+
+            return ValueTask.FromResult("paid");
+        }
     }
 
     // The other half of gap 4, and the one that makes it safe: a grant is for the scope it was

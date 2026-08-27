@@ -3,7 +3,7 @@
 A **language-neutral** set of behavioral test vectors that any Standard-Agents
 implementation runs to self-certify against
 [`SPEC.md`](https://github.com/hassanhabib/The-Standard-Agent-Specs/blob/main/SPEC.md).
-Forty-five vectors, four readiness profiles, every vector proven able to fail.
+Sixty-one vectors, four readiness profiles, every vector proven able to fail.
 
 The vectors are the executable half of the specification. Prose can be read two ways; a vector
 cannot, which is why "conformant" here means *this suite passes* rather than *we believe we
@@ -61,6 +61,7 @@ capability it configures did not exist, which is why the early vectors still des
 | `cancelBeforeStart`, `transientFailures`, `retries`, `budgetMaxWallClockSeconds` | resilience and budget |
 | `fallbackReply`, `failuresBeforeOpen` | the circuit breaker's alternative |
 | `knowledge`, `knowledgeMaxResults` | real files in a real folder, so ranking is exercised |
+| `memories` | what the run recalls — also the seam a poisoned memory rides in on |
 | `sessionId` | run every prompt in one conversation |
 | `compensateOnFailure`, `compensatingTools` | unwind a failed run; tools left out declare no way back |
 | `newInstancePerPrompt`, `durableEffectLedger` | a fresh agent per prompt over shared folders — the harness's stand-in for a different process |
@@ -111,7 +112,7 @@ A conformant implementation **passes every vector**.
 
 Two rules the reference harness follows, both learned the hard way:
 
-- **Every double replaces a broker, never a service.** The whole 1·3·6·14 under test is the real
+- **Every double replaces a broker, never a service.** The whole 1·3·6·15 under test is the real
   library. A harness that stubs a service is certifying its own stub.
 - **Observe through the real seams.** The decision log is watched through its own Custom sink, the
   generator is *wrapped* rather than replaced so redaction and streaming still run, and guardians
@@ -161,9 +162,15 @@ the deterministic core of the Standard.
 | `budget-stops-the-loop` | Exhaustion stops the loop and is distinguishable from a refusal |
 | `budget-bounds-tokens-on-any-protocol` | A token bound holds where the provider reports no usage (§4.10) |
 | `budget-bounds-cost-on-any-protocol` | A cost bound holds there too — cost is priced off the count |
+| `a-budget-counts-every-turn` | The bound tracks actual cumulative spend, not turn 1 re-billed (§4.10) |
+| `a-generous-budget-lets-the-run-finish` | A budget is a bound, not a switch: under it, the run completes |
 | `a-repeat-in-a-session-is-a-new-act` | Run-once is scoped to a run; a repeat in a later run performs (§4.9) |
 | `an-allow-list-can-say-where` | Permission is what **and where**; the tool names the scope (§4.9) |
 | `ask-first-covers-what-nothing-permitted` | A mode answers for the acts no permission mentioned (§4.9) |
+| `deny-covers-what-nothing-permitted` | Deny refuses the unnamed act and still runs the named one (§4.9) |
+| `ask-with-no-authority-holds` | Ask with nobody wired to answer holds the act; waiting is not consent (§4.9) |
+| `ask-approved-act-runs` | The authority's yes runs the act — the third side of the Ask triangle (§4.9) |
+| `a-grant-is-for-what-it-was-granted-for` | A grant needs a named scope; an unscoped tool is asked each time (§4.9) |
 | `knowledge-retrieves-by-relevance` | Retrieval returns the passage that answers, not the first found |
 | `guardian-screens-once-per-prompt` | An unchanged prompt is screened once, not once per turn |
 | `open-circuit-falls-back-to-secondary` | An unhealthy provider degrades rather than fails (§4.10) |
@@ -173,6 +180,9 @@ the deterministic core of the Standard.
 | `awaiting-approval-resumes-in-a-new-process` | A held act runs once the authority says yes, elsewhere |
 | `native-tool-call-round-trips` | A result returns as a tool message naming its call (§6.2) |
 | `policy-authorizes-on-identity` | The principal reaches the decision, not only the log (§3.3, §4.9) |
+| `injected-knowledge-cannot-widen-the-perimeter` | A poisoned passage fools the Brain; the fooled Brain still cannot act (§4.9) |
+| `poisoned-memory-cannot-widen-the-perimeter` | Data can never grant what policy did not, whichever seam it rode in on (§4.9) |
+| `a-fooled-brain-cannot-cross-tenants` | The permitted scope executes, the other tenant's is denied, the run recovers (§4.9) |
 | `request-schema-applies-when-unconfigured` | With no Contract, the request's schema is the survivor and the guardian holds it |
 | `configured-contract-overrides-request-schema` | Hard configuration wins outright; the request's schema is discarded, never merged |
 | `request-schema-seeds-guardian-not-only-wire` | An engine that ignores `response_format` still cannot return a misshapen answer |
@@ -203,6 +213,17 @@ dotnet run --project Standard.Agents.Conformance -- --profile Critical
 
 A profile names the evidence it requires **before** that evidence exists — the level is the target,
 not a description of what already passes. `NOT CERTIFIED` lists exactly which vectors are missing.
+
+## One loop, two doors
+
+The vectors drive `ProcessPromptAsync` — the batched door. They do not drive
+`StreamPromptAsync`, and silence must not read as coverage: what certifies the streamed door in
+this implementation is structure plus a derived comparison. Both doors are projections of one
+loop (`RunManagementService`), so a control cannot exist on one and not the other; and
+`LoopParityTests` runs fourteen scenarios through both doors and requires the answer, the tool
+executions and the **entire decision-log trace** to be identical. An implementation in another
+language that offers a streamed door owes it the same guarantee: every vector's behaviour,
+reproduced on both doors, with the trace as the witness.
 
 ## Sabotage-verification
 

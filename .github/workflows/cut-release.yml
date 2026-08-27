@@ -1,0 +1,41 @@
+name: Standard.Agents Cut Release
+
+# Creates the version tag and the GitHub Release, taking the notes from a markdown file kept
+# in the repository — so release notes are reviewed like everything else, and a release can be
+# cut from any environment that can dispatch a workflow but cannot reach the Releases API.
+#
+# Publishing stays in release.yml. A release created with GITHUB_TOKEN does not fire the
+# `release` event (GitHub prevents workflows from triggering workflows through that token),
+# so after this succeeds, dispatch release.yml on the new tag to attach artifacts and publish.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The version tag to create (e.g. v1.6.1)"
+        required: true
+      name:
+        description: "The release title"
+        required: true
+      notes_path:
+        description: "Repository path of the markdown file holding the release notes"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  cut:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Pulling Code
+      uses: actions/checkout@v7
+
+    - name: Creating The Tag And The Release
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: >
+        gh release create "${{ inputs.tag }}"
+        --target "${{ github.sha }}"
+        --title "${{ inputs.name }}"
+        --notes-file "${{ inputs.notes_path }}"

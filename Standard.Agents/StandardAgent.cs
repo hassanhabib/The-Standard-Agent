@@ -4,7 +4,13 @@
 // ---------------------------------------------------------------
 
 using System.Runtime.CompilerServices;
+#if !NET9_0_OR_GREATER
+// System.Threading.Lock arrived in .NET 9. On the net8.0 target a plain object under the
+// same lock statements is the identical semantic; the alias keeps one body for both.
+using Lock = System.Object;
+#endif
 using Microsoft.Extensions.Logging.Abstractions;
+using Standard.Agents.Brokers.Agents;
 using Standard.Agents.Brokers.Audits;
 using Standard.Agents.Brokers.Approvals;
 using Standard.Agents.Brokers.Classifiers;
@@ -22,15 +28,18 @@ using Standard.Agents.Brokers.Resiliences;
 using Standard.Agents.Brokers.Sessions;
 using Standard.Agents.Brokers.Usages;
 using Standard.Agents.Brokers.Skills;
+using Standard.Agents.Brokers.Telemetries;
 using Standard.Agents.Brokers.Times;
 using Standard.Agents.Brokers.Tools;
 using Standard.Agents.Brokers.Verifiers;
+using Standard.Agents.Models.Brokers.Agents;
 using Standard.Agents.Models.Brokers.Audits;
 using Standard.Agents.Models.Brokers.Generators;
 using Standard.Agents.Models.Brokers.Generators.V1;
 using Standard.Agents.Models.Brokers.Sessions;
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Coordinations.Agents;
+using Standard.Agents.Models.Coordinations.Directions;
 using Standard.Agents.Models.Foundations.Brains;
 using Standard.Agents.Models.Foundations.Skills;
 using Standard.Agents.Models.Orchestrations.Effects;
@@ -70,12 +79,21 @@ public sealed partial class StandardAgent : IAgent
     private readonly List<ITool> tools = [];
     private readonly Lock compositionLock = new();
 
-    private string skillsPath = "Skills";
+    // Integrations accumulate, never replace: a second skill source or MCP server adds to the
+    // agent the way a second .Tool() always has.
+    private readonly List<ISkillBroker> skillSources = [];
+    private readonly List<IMcpBroker> mcpSources = [];
+
+    // The fleet accumulates too: each registry is one more place agents come from, and every
+    // registered agent materializes as a tool at composition.
+    private readonly List<IAgentRegistryBroker> agentSources = [];
+
     private string constitutionPath = string.Empty;
     private string consumptionPath = string.Empty;
     private string logPath = string.Empty;
     private string auditPath = string.Empty;
     private IEnumerable<RedactionRule>? redactionRules;
+    private IRedactionBroker? redactionBroker;
     private IEnumerable<string>? allowedTools;
     private TraceVerbosity traceVerbosity = TraceVerbosity.Full;
     private string memoryPath = "memory.txt";
@@ -89,11 +107,6 @@ public sealed partial class StandardAgent : IAgent
     private InferenceSettings? gateSettings;
     private InferenceSettings? judgeSettings;
 
-    private string mcpEndpointUrl = string.Empty;
-    private string mcpRelativeUrl = string.Empty;
-    private int mcpTimeoutSeconds = 30;
-
-    private ISkillBroker? skillBroker;
     private IGeneratorBroker? generatorBroker;
     private IMemoryBroker? memoryBroker;
     private IKnowledgeBroker? knowledgeBroker;
@@ -101,9 +114,9 @@ public sealed partial class StandardAgent : IAgent
     private IVerifierBroker? verifierBroker;
     private Func<string, string, ValueTask<string>>? localGateScreen;
     private Func<string, string, ValueTask<string>>? localJudgeEvaluate;
-    private IMcpBroker? mcpBroker;
     private ILoggingBroker? loggingBroker;
     private IAuditBroker? auditBroker;
+    private ITelemetryBroker? telemetryBroker;
     private IPolicyBroker? policyBroker;
     private IApprovalBroker? approvalBroker;
     private IEffectLedgerBroker? effectLedgerBroker;
@@ -160,8 +173,11 @@ public sealed partial class StandardAgent : IAgent
     /// </summary>
     /// <param name="path">Folder holding the <c>.md</c> skill files.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
+    /// <remarks>Sources accumulate: a second call adds another folder rather than replacing the
+    /// first, and skills read in registration order across sources.</remarks>
     public StandardAgent Skills(string path) =>
-        Set(() => this.skillsPath = path);
+        Set(() => this.skillSources.Add(
+            new FileSkillBroker(Path.Combine(AppContext.BaseDirectory, path))));
 
     /// <summary>
     /// Points the agent at the ethical constitution: a markdown file whose text is prepended
@@ -403,14 +419,37 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="endpointUrl">Base URL of the MCP server.</param>
     /// <param name="relativeUrl">Relative path appended to the base URL. Defaults to empty.</param>
     /// <param name="timeoutSeconds">Per-call timeout in seconds. Defaults to 30.</param>
+    /// <param name="bearerToken">
+    /// Optional <c>Authorization: Bearer</c> credential — an OAuth access token or PAT, for a
+    /// server that wants one. A server with no auth needs none of these parameters.
+    /// </param>
+    /// <param name="apiKey">Optional API key, sent as <paramref name="apiKeyHeader"/>.</param>
+    /// <param name="apiKeyHeader">Header the API key travels in. Defaults to <c>X-Api-Key</c>.</param>
+    /// <param name="bearerTokenProvider">
+    /// Optional per-call token source for OAuth refresh flows: every request asks it, so the
+    /// token is always the current one. Your OAuth client runs the flow; the agent carries the
+    /// result. Wins over <paramref name="bearerToken"/> when both are given.
+    /// </param>
     /// <returns>The same agent, so calls can be chained.</returns>
-    public StandardAgent Mcp(string endpointUrl, string relativeUrl = "", int timeoutSeconds = 30) =>
-    Set(() =>
-    {
-        this.mcpEndpointUrl = endpointUrl;
-        this.mcpRelativeUrl = relativeUrl;
-        this.mcpTimeoutSeconds = timeoutSeconds;
-    });
+    /// <remarks>Servers accumulate: each call adds another server, a tool call routes to the
+    /// server whose catalog owns the name, and the first-registered server wins a name both
+    /// claim.</remarks>
+    public StandardAgent Mcp(
+        string endpointUrl,
+        string relativeUrl = "",
+        int timeoutSeconds = 30,
+        string? bearerToken = null,
+        string? apiKey = null,
+        string apiKeyHeader = "X-Api-Key",
+        Func<ValueTask<string>>? bearerTokenProvider = null) =>
+        Set(() => this.mcpSources.Add(new McpBroker(
+            endpointUrl,
+            relativeUrl,
+            timeoutSeconds,
+            bearerToken,
+            apiKey,
+            apiKeyHeader,
+            bearerTokenProvider)));
 
     /// <summary>
     /// Registers one tool the agent may call. It is only advertised to the brain when it carries a
@@ -481,6 +520,36 @@ public sealed partial class StandardAgent : IAgent
         Set(() => this.auditBroker = new FunctionAuditBroker(write));
 
     /// <summary>
+    /// Turns on OpenTelemetry-compatible spans and metrics — the <b>Local</b> mode (SPEC.md §4.8),
+    /// in the box through the BCL's <c>ActivitySource</c> and <c>Meter</c>, no packages and no
+    /// exporter. A host that wires an OpenTelemetry SDK against the <c>Standard.Agents</c> source
+    /// sees a span per run and per turn, token usage and outcomes, named by the GenAI semantic
+    /// conventions; a host that wires nothing pays nothing.
+    /// </summary>
+    /// <param name="agentName">How the run spans name this agent (<c>gen_ai.agent.name</c>).</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent Telemetry(string agentName = "standard-agent") =>
+        Set(() => this.telemetryBroker = new ActivityTelemetryBroker(agentName));
+
+    /// <summary>
+    /// Sends telemetry to a provider — the <b>External</b> mode (SPEC.md §4.8). Pass a broker
+    /// from a metrics or tracing package and nothing else about the agent changes.
+    /// </summary>
+    /// <param name="broker">The telemetry broker to emit through.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent UseTelemetry(ITelemetryBroker broker) =>
+        Set(() => this.telemetryBroker = broker);
+
+    /// <summary>
+    /// Sends every loop boundary to your own delegate — the <b>Custom</b> mode (SPEC.md §4.8),
+    /// each as a named event with its attributes, for a pipeline no ActivityListener reaches.
+    /// </summary>
+    /// <param name="record">A <c>(eventName, attributes) =&gt; ...</c> delegate.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent OnTelemetry(Action<string, IReadOnlyDictionary<string, object?>> record) =>
+        Set(() => this.telemetryBroker = new FunctionTelemetryBroker(record));
+
+    /// <summary>
     /// Records <b>on whose behalf</b> each run executes. The value is resolved per record, so a
     /// per-request principal works on a shared agent, and it is stamped on every record of the run
     /// — the decision log then answers <i>who</i> as well as <i>what</i> (SPEC.md §4.7). Absent,
@@ -520,6 +589,40 @@ public sealed partial class StandardAgent : IAgent
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent Redact() =>
         Set(() => this.redactionRules = RedactionRules.Default);
+
+    /// <summary>
+    /// Turns on redaction with <b>your own rules</b> — still the Local mode, still in the box:
+    /// each rule is a pattern and a label, and matches are swapped for <c>{{LABEL_N}}</c> tokens
+    /// exactly as the default set's are. Passing no rules keeps the default set.
+    /// </summary>
+    /// <param name="rules">The rules to redact by. See <see cref="RedactionRules.Default"/>.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent Redact(params RedactionRule[] rules) =>
+        Set(() => this.redactionRules = rules.Length == 0 ? RedactionRules.Default : rules);
+
+    /// <summary>
+    /// Redacts with a provider — the <b>External</b> mode (SPEC.md §4.8). Install a redaction
+    /// package (an entity recognizer, a DLP service adapter), pass its broker, and every model
+    /// call the agent drives — Brain, Gate and Judge alike — goes through it at the wire.
+    /// </summary>
+    /// <param name="broker">The redaction broker to tokenize with and restore from.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent UseRedaction(IRedactionBroker broker) =>
+        Set(() => this.redactionBroker = broker);
+
+    /// <summary>
+    /// Redacts with your own code — the <b>Custom</b> mode, for rules a pattern cannot express.
+    /// <paramref name="redact"/> replaces sensitive values with tokens and records each pair in
+    /// the vault; <paramref name="rehydrate"/> restores them in the model's reply. The vault is
+    /// per model call and shared between its prompts, so one value redacts to one token.
+    /// </summary>
+    /// <param name="redact">A <c>(text, vault) =&gt; redactedText</c> delegate.</param>
+    /// <param name="rehydrate">A <c>(text, vault) =&gt; restoredText</c> delegate.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent OnRedaction(
+        Func<string, IDictionary<string, string>, string> redact,
+        Func<string, IReadOnlyDictionary<string, string>, string> rehydrate) =>
+        Set(() => this.redactionBroker = new FunctionRedactionBroker(redact, rehydrate));
 
     /// <summary>
     /// Restricts the agent to a <b>least-privilege</b> set of tools: the brain may still propose any
@@ -681,7 +784,7 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="broker">The skill broker to use.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent UseSkills(ISkillBroker broker) =>
-        Set(() => this.skillBroker = broker);
+        Set(() => this.skillSources.Add(broker));
 
     /// <summary>
     /// Supplies skills from your own code — the <b>Custom</b> mode (SPEC.md §4.8), for when they
@@ -690,7 +793,64 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="select">A <c>() =&gt; skills</c> delegate, called each turn.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent OnSkills(Func<ValueTask<IReadOnlyList<Skill>>> select) =>
-        Set(() => this.skillBroker = new FunctionSkillBroker(select));
+        Set(() => this.skillSources.Add(new FunctionSkillBroker(select)));
+
+    /// <summary>
+    /// Points the agent at a folder of agent documents — the <b>Local</b> mode of the fleet
+    /// (SPEC.md §4.8). Every <c>.json</c> file in the folder is an agent (the same documents
+    /// <see cref="FromJson"/> composes), and each one materializes as a tool the brain can hand
+    /// work to: advertised by its <c>description</c>, called by its <c>name</c>, and governed by
+    /// the same perimeter every act crosses.
+    /// </summary>
+    /// <param name="path">Folder of agent documents, relative to the build output.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    /// <remarks>Registries accumulate: a second call adds another folder, and the first source
+    /// to claim a name keeps it — exactly the rule MCP servers already live by.</remarks>
+    public StandardAgent Agents(string path) =>
+        Set(() => this.agentSources.Add(
+            new FileAgentRegistryBroker(Path.Combine(AppContext.BaseDirectory, path))));
+
+    /// <summary>
+    /// Adds an agent registry broker — the <b>External</b> mode: a provider package that knows
+    /// where agents live (a directory service, a control plane, another team's fleet).
+    /// </summary>
+    /// <param name="broker">The registry broker to add.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent UseAgents(IAgentRegistryBroker broker) =>
+        Set(() => this.agentSources.Add(broker));
+
+    /// <summary>
+    /// Supplies registered agents from your own code — the <b>Custom</b> mode: a delegate that
+    /// answers with the fleet, however your host stores it.
+    /// </summary>
+    /// <param name="select">A <c>() =&gt; registered agents</c> delegate.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent OnAgents(Func<ValueTask<IReadOnlyList<RegisteredAgent>>> select) =>
+        Set(() => this.agentSources.Add(new FunctionAgentRegistryBroker(select)));
+
+    /// <summary>What this agent is called — the name a registry offers it under, which is the
+    /// name a handoff calls. Empty until <see cref="Identity"/> or a document's <c>name</c> key
+    /// says otherwise.</summary>
+    public string Name { get; private set; } = string.Empty;
+
+    /// <summary>What this agent is for — the advertisement a registry shows an outer brain.
+    /// Empty means unadvertised, exactly like a tool without a description.</summary>
+    public string Description { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// Names the agent and says what it is for. Identity is what makes an agent registrable:
+    /// the name a handoff calls, and the description that advertises it to an outer brain —
+    /// no description, no advertisement, the same opt-in a tool's description is.
+    /// </summary>
+    /// <param name="name">The name a registry offers this agent under.</param>
+    /// <param name="description">What it does and when to hand work to it.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent Identity(string name, string description = "") =>
+        Set(() =>
+        {
+            this.Name = name;
+            this.Description = description;
+        });
 
     /// <summary>
     /// Swaps in a custom generator (brain) broker — the extension point for a runtime that streams
@@ -721,6 +881,25 @@ public sealed partial class StandardAgent : IAgent
         int maxTokens = 1024) =>
         Set(() => this.generatorBrokerV1 =
             new GeneratorBrokerV1(apiUrl, apiKey, model, temperature, maxTokens));
+
+    /// <summary>
+    /// Gives the agent a native tool-calling brain on the <b>Anthropic Messages API</b> — the
+    /// same V1 seam as <see cref="NativeBrain"/> under Anthropic's wire shape (top-level system,
+    /// <c>tool_use</c> / <c>tool_result</c> blocks, reported usage), in the box with no
+    /// packages. One line: an API key and a model.
+    /// </summary>
+    /// <param name="apiKey">Anthropic API key.</param>
+    /// <param name="model">Model name to request (e.g. a claude-* model id).</param>
+    /// <param name="temperature">Sampling temperature. Defaults to 0.7.</param>
+    /// <param name="maxTokens">Maximum tokens per turn. Defaults to 1024.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent NativeBrainAnthropic(
+        string apiKey,
+        string model,
+        double temperature = 0.7,
+        int maxTokens = 1024) =>
+        Set(() => this.generatorBrokerV1 =
+            new AnthropicGeneratorBrokerV1(apiKey, model, temperature, maxTokens));
 
     /// <summary>
     /// Swaps in a custom native-brain broker — the <b>External</b> seam for a provider package
@@ -800,12 +979,13 @@ public sealed partial class StandardAgent : IAgent
         Set(() => this.verifierBroker = broker);
 
     /// <summary>
-    /// Swaps in a custom MCP broker, replacing the HTTP-backed one set up by <see cref="Mcp"/>.
+    /// Adds a custom MCP broker alongside any servers registered with <see cref="Mcp"/> — the
+    /// door for a transport or auth scheme the built-in HTTP broker does not speak.
     /// </summary>
-    /// <param name="broker">The MCP broker to use.</param>
+    /// <param name="broker">The MCP broker to add.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent UseMcp(IMcpBroker broker) =>
-        Set(() => this.mcpBroker = broker);
+        Set(() => this.mcpSources.Add(broker));
 
     /// <summary>
     /// Swaps in a custom logging broker for the agent's internal diagnostic logging.
@@ -828,7 +1008,7 @@ public sealed partial class StandardAgent : IAgent
     // be hit at the assignment, nowhere near the await they were guarding.
     public async ValueTask<string> ProcessPromptAsync(string prompt)
     {
-        return await ResolveAgent().ProcessPromptAsync(prompt);
+        return await (await ResolveAgentAsync()).ProcessPromptAsync(prompt);
     }
 
     /// <summary>
@@ -844,7 +1024,21 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="prompt">What to work on.</param>
     /// <returns>The answer, and how the run ended.</returns>
     public async ValueTask<AgentOutcome> RunAsync(string prompt) =>
-        await ResolveAgent().RunAsync(prompt, string.Empty, CancellationToken.None);
+        await (await ResolveAgentAsync()).RunAsync(prompt, string.Empty, CancellationToken.None);
+
+    /// <summary>
+    /// The same run, stoppable: cancellation stops it at the next turn boundary, so no effect
+    /// is left half-recorded (SPEC.md §4.10). This is the overload nesting calls —
+    /// <c>AgentTool</c> forwards the outer run's token here, so cancelling an outer run stops
+    /// the whole tree.
+    /// </summary>
+    /// <param name="prompt">What to work on.</param>
+    /// <param name="cancellationToken">Token to stop the run.</param>
+    /// <returns>The answer, and how the run ended.</returns>
+    public async ValueTask<AgentOutcome> RunAsync(
+        string prompt,
+        CancellationToken cancellationToken) =>
+        await (await ResolveAgentAsync()).RunAsync(prompt, string.Empty, cancellationToken);
 
     /// <summary>
     /// Runs a caller's request and reports <b>how the run ended</b> as well as what it produced.
@@ -852,12 +1046,18 @@ public sealed partial class StandardAgent : IAgent
     /// call and a run that answered read alike as strings, and only the status tells them apart.
     /// </summary>
     /// <param name="request">The caller's prompt and per-request inference options.</param>
+    /// <returns>The answer, and how the run ended.</returns>
+    public async ValueTask<AgentOutcome> RunAsync(PromptRequest request) =>
+        await RunAsync(request, CancellationToken.None);
+
+    /// <summary>The same request-carrying run, reported with how it ended, cancellable.</summary>
+    /// <param name="request">The caller's prompt and per-request inference options.</param>
     /// <param name="cancellationToken">Token to stop the run.</param>
     /// <returns>The answer, and how the run ended.</returns>
     public async ValueTask<AgentOutcome> RunAsync(
         PromptRequest request,
-        CancellationToken cancellationToken = default) =>
-        await ResolveAgent().RunAsync(request, cancellationToken);
+        CancellationToken cancellationToken) =>
+        await (await ResolveAgentAsync()).RunAsync(request, cancellationToken);
 
     /// <summary>
     /// Runs the agent on a prompt and stops when <paramref name="cancellationToken"/> is
@@ -871,7 +1071,7 @@ public sealed partial class StandardAgent : IAgent
         string prompt,
         CancellationToken cancellationToken)
     {
-        return await ResolveAgent().ProcessPromptAsync(prompt, cancellationToken);
+        return await (await ResolveAgentAsync()).ProcessPromptAsync(prompt, cancellationToken);
     }
 
     /// <summary>
@@ -895,7 +1095,8 @@ public sealed partial class StandardAgent : IAgent
         string sessionId,
         CancellationToken cancellationToken = default)
     {
-        return await ResolveAgent().ProcessPromptAsync(prompt, sessionId, cancellationToken);
+        return await (await ResolveAgentAsync())
+            .ProcessPromptAsync(prompt, sessionId, cancellationToken);
     }
 
     /// <summary>
@@ -905,13 +1106,24 @@ public sealed partial class StandardAgent : IAgent
     /// can never widen the boundary the deployment set.
     /// </summary>
     /// <param name="request">The caller's prompt and per-request inference options.</param>
+    /// <returns>The agent's final answer.</returns>
+    public async ValueTask<string> ProcessPromptAsync(PromptRequest request)
+    {
+        return await ProcessPromptAsync(request, CancellationToken.None);
+    }
+
+    /// <summary>
+    /// The same request-carrying run, stopped when <paramref name="cancellationToken"/> is
+    /// cancelled — at the next turn boundary at the latest (SPEC.md §4.10).
+    /// </summary>
+    /// <param name="request">The caller's prompt and per-request inference options.</param>
     /// <param name="cancellationToken">Token to stop the run.</param>
     /// <returns>The agent's final answer.</returns>
     public async ValueTask<string> ProcessPromptAsync(
         PromptRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken)
     {
-        return await ResolveAgent().ProcessPromptAsync(request, cancellationToken);
+        return await (await ResolveAgentAsync()).ProcessPromptAsync(request, cancellationToken);
     }
 
     /// <summary>
@@ -942,7 +1154,8 @@ public sealed partial class StandardAgent : IAgent
         string answer,
         CancellationToken cancellationToken = default)
     {
-        return await ResolveAgent().ProcessPromptAsync(answer, sessionId, cancellationToken);
+        return await (await ResolveAgentAsync())
+            .ProcessPromptAsync(answer, sessionId, cancellationToken);
     }
 
     /// <summary>
@@ -1156,7 +1369,7 @@ public sealed partial class StandardAgent : IAgent
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         IAsyncEnumerable<AgentStreamEvent> events =
-            ResolveAgent().ProcessPromptStreamAsync(prompt, cancellationToken);
+            (await ResolveAgentAsync()).ProcessPromptStreamAsync(prompt, cancellationToken);
 
         await foreach (AgentStreamEvent streamEvent in events.WithCancellation(cancellationToken))
         {
@@ -1182,8 +1395,8 @@ public sealed partial class StandardAgent : IAgent
         string sessionId,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        IAsyncEnumerable<AgentStreamEvent> events =
-            ResolveAgent().ProcessPromptStreamAsync(prompt, sessionId, cancellationToken);
+        IAsyncEnumerable<AgentStreamEvent> events = (await ResolveAgentAsync())
+            .ProcessPromptStreamAsync(prompt, sessionId, cancellationToken);
 
         await foreach (AgentStreamEvent streamEvent in events.WithCancellation(cancellationToken))
         {
@@ -1198,14 +1411,20 @@ public sealed partial class StandardAgent : IAgent
     /// (SPEC.md §7.6).
     /// </summary>
     /// <param name="request">The caller's prompt and per-request inference options.</param>
+    /// <returns>An async stream of events describing the agent's run.</returns>
+    public IAsyncEnumerable<AgentStreamEvent> StreamPromptAsync(PromptRequest request) =>
+        StreamPromptAsync(request, CancellationToken.None);
+
+    /// <summary>The same request-carrying stream, cancellable.</summary>
+    /// <param name="request">The caller's prompt and per-request inference options.</param>
     /// <param name="cancellationToken">Token to stop streaming early.</param>
     /// <returns>An async stream of events describing the agent's run.</returns>
     public async IAsyncEnumerable<AgentStreamEvent> StreamPromptAsync(
         PromptRequest request,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         IAsyncEnumerable<AgentStreamEvent> events =
-            ResolveAgent().ProcessPromptStreamAsync(request, cancellationToken);
+            (await ResolveAgentAsync()).ProcessPromptStreamAsync(request, cancellationToken);
 
         await foreach (AgentStreamEvent streamEvent in events.WithCancellation(cancellationToken))
         {
@@ -1216,11 +1435,35 @@ public sealed partial class StandardAgent : IAgent
     // Composes once and reuses. Guarded because one agent serves prompts concurrently
     // (SPEC.md §4.4) and an unguarded `??=` lets two arriving prompts each build a graph —
     // two brokers over one audit sink, two of everything, one silently discarded.
-    private IRunManagementService ResolveAgent()
+    //
+    // Registry selection is async (a registry can be a service call away) and a lock cannot
+    // hold an await, so resolution is three steps: reuse under the lock, select outside it,
+    // compose under it again. A builder call landing between the steps nulls the cache, so
+    // the very next resolution selects and composes afresh — nothing configured is lost.
+    private async ValueTask<IRunManagementService> ResolveAgentAsync()
     {
+        IAgentRegistryBroker[] registries;
+
         lock (this.compositionLock)
         {
-            return this.agent ??= Compose();
+            if (this.agent is not null)
+            {
+                return this.agent;
+            }
+
+            registries = [.. this.agentSources];
+        }
+
+        List<RegisteredAgent> registeredAgents = [];
+
+        foreach (IAgentRegistryBroker registry in registries)
+        {
+            registeredAgents.AddRange(await registry.SelectAgentsAsync());
+        }
+
+        lock (this.compositionLock)
+        {
+            return this.agent ??= Compose(registeredAgents);
         }
     }
 
@@ -1262,7 +1505,7 @@ public sealed partial class StandardAgent : IAgent
     private static string ComposeGuardianRubric(params string[] parts) =>
         string.Join("\n\n", parts.Where(part => string.IsNullOrWhiteSpace(part) is false));
 
-    private IRunManagementService Compose()
+    private IRunManagementService Compose(IReadOnlyList<RegisteredAgent> registeredAgents)
     {
         ValidateComposition();
 
@@ -1304,7 +1547,28 @@ public sealed partial class StandardAgent : IAgent
             ? new MemoryService(file, Path.GetFullPath(this.memoryPath), logging)
             : new MemoryService(this.memoryBroker, logging);
 
-        List<ITool> allTools = [.. this.tools, new RememberTool(memoryService)];
+        List<ITool> allTools = [.. this.tools, new RememberTool(memoryService.RememberAsync)];
+
+        // The fleet materializes as tools — which is the whole design: a handoff is an act, so
+        // the advertisement opt-in, the perimeter, the audit and cancellation across the seam
+        // all apply because they already applied to tools. First to claim a name keeps it, the
+        // rule MCP servers live by, so a registry cannot shadow a tool the host wired in code.
+        HashSet<string> claimedNames =
+            new(allTools.Select(tool => tool.Name), StringComparer.OrdinalIgnoreCase);
+
+        foreach (RegisteredAgent registered in registeredAgents)
+        {
+            if (claimedNames.Add(registered.Name) is false)
+            {
+                continue;
+            }
+
+            allTools.Add(new AgentTool(
+                registered.Name,
+                registered.Agent,
+                AgentTool.GroundedHandoff,
+                registered.Description));
+        }
 
         string constitution = ReadOptionalFile(file, this.constitutionPath);
         string consumption = ReadOptionalFile(file, this.consumptionPath);
@@ -1347,18 +1611,23 @@ public sealed partial class StandardAgent : IAgent
 
         IToolBroker toolBroker = new ToolBroker(allTools);
 
-        IMcpBroker mcp =
-            this.mcpBroker ?? (string.IsNullOrWhiteSpace(this.mcpEndpointUrl)
-                ? new NotConfiguredMcpBroker()
-                : new McpBroker(
-                    this.mcpEndpointUrl, this.mcpRelativeUrl, this.mcpTimeoutSeconds));
+        // One source composes as itself; several compose behind the same seam the service
+        // already speaks — the tier above never learns how many integrations answered.
+        IMcpBroker mcp = this.mcpSources.Count switch
+        {
+            0 => new NotConfiguredMcpBroker(),
+            1 => this.mcpSources[0],
+            _ => new CompositeMcpBroker(this.mcpSources)
+        };
 
+        ISkillBroker skills = this.skillSources.Count switch
+        {
+            0 => new FileSkillBroker(Path.Combine(AppContext.BaseDirectory, "Skills")),
+            1 => this.skillSources[0],
+            _ => new CompositeSkillBroker(this.skillSources)
+        };
 
-        ISkillService skillService = this.skillBroker is null
-            ? new SkillService(
-                new FileSkillBroker(Path.Combine(AppContext.BaseDirectory, this.skillsPath)),
-                logging)
-            : new SkillService(this.skillBroker, logging);
+        ISkillService skillService = new SkillService(skills, logging);
 
         IKnowledgeService knowledgeService = this.knowledgeBroker is null
             ? new KnowledgeService(
@@ -1366,14 +1635,49 @@ public sealed partial class StandardAgent : IAgent
                 Path.GetFullPath(this.knowledgePath),
                 this.knowledgePattern,
                 this.knowledgeMaxResults,
-                logging)
+                logging,
+                this.knowledgeMinScore)
             : new KnowledgeService(this.knowledgeBroker, logging);
+
+        // Remote tools advertise beside local ones, under the same opt-in: only tools whose
+        // catalog carries a description are listed. Best-effort and cached on success — a server
+        // down at discovery hides only its own tools this turn, is asked again on the next, and
+        // never fails the run.
+        string? discoveredCatalog = null;
+
+        Models.Orchestrations.Retrievals.ExternalToolCatalog? externalToolCatalog =
+            this.mcpSources.Count is 0
+            ? null
+            : new(async () =>
+            {
+                if (discoveredCatalog is not null)
+                {
+                    return discoveredCatalog;
+                }
+
+                try
+                {
+                    IReadOnlyList<Models.Brokers.Mcps.McpTool> remoteTools =
+                        await mcp.ListToolsAsync();
+
+                    discoveredCatalog = string.Join("\n", remoteTools
+                        .Where(tool => string.IsNullOrWhiteSpace(tool.Description) is false)
+                        .Select(tool => $"- {tool.Name} — {tool.Description} parameters: {{}}"));
+
+                    return discoveredCatalog;
+                }
+                catch
+                {
+                    return string.Empty;
+                }
+            });
 
         // The Data nature, as two regions and the coordination that composes them. Retrieval is
         // authored material selected by relevance; Recollection is what the agent accumulated.
         DataCoordinationService data = new(
             new RetrievalOrchestrationService(
-                skillService, knowledgeService, RenderToolCatalog(allTools), logging),
+                skillService, knowledgeService, RenderToolCatalog(allTools), logging,
+                externalToolCatalog),
             new RecollectionOrchestrationService(
                 memoryService,
                 new SessionService(
@@ -1389,9 +1693,10 @@ public sealed partial class StandardAgent : IAgent
         // service. That is what makes "every model call" structural: a foundation holds one
         // broker, knows nothing of redaction, and a fourth model call added tomorrow cannot
         // forget (docs/architecture-alignment.md).
-        IRedactionBroker redaction = this.redactionRules is null
-            ? new NotConfiguredRedactionBroker()
-            : new RuleRedactionBroker(this.redactionRules);
+        IRedactionBroker redaction = this.redactionBroker
+            ?? (this.redactionRules is null
+                ? new NotConfiguredRedactionBroker()
+                : new RuleRedactionBroker(this.redactionRules));
 
         IResilienceBroker resilience =
             this.resilienceBroker ?? new NotConfiguredResilienceBroker();
@@ -1453,32 +1758,40 @@ public sealed partial class StandardAgent : IAgent
                 new ReturnService(logging),
                 logging),
             logging,
-            this.approvalRequiredTools,
-            this.identityResolver,
-            this.permissionMode,
-            this.declaredRisk,
+            new PerimeterPolicy
+            {
+                Mode = this.permissionMode,
+                IrreversibleTools = [.. this.approvalRequiredTools ?? []],
 
-            // What each tool says about itself, read once at composition. The tool is the only
-            // thing that knows what its arguments mean, and the framework never parses them.
-            allTools.ToDictionary(
-                tool => tool.Name,
-                tool => tool.Risk,
-                StringComparer.OrdinalIgnoreCase),
+                DeclaredRisk = this.declaredRisk
+                    ?? new Dictionary<string, RiskLevel>(StringComparer.OrdinalIgnoreCase),
 
-            allTools.ToDictionary(
-                tool => tool.Name,
-                tool => (Func<string, string>)tool.ScopeOf,
-                StringComparer.OrdinalIgnoreCase),
+                // What each tool says about itself, read once at composition. The tool is the
+                // only thing that knows what its arguments mean, and the framework never
+                // parses them.
+                ToolRisk = allTools.ToDictionary(
+                    tool => tool.Name,
+                    tool => tool.Risk,
+                    StringComparer.OrdinalIgnoreCase),
 
-            // Whether the allow-list speaks to an act at all — which the mode needs and a yes/no
-            // authorization decision cannot carry. Null when no allow-list was configured, so Ask
-            // asks about everything, which is what it says on the tin.
-            policy is AllowListPolicyBroker allowList ? allowList.Mentions : null);
+                ToolScope = allTools.ToDictionary(
+                    tool => tool.Name,
+                    tool => (Func<string, string>)tool.ScopeOf,
+                    StringComparer.OrdinalIgnoreCase),
+
+                // Whether the allow-list speaks to an act at all — which the mode needs and a
+                // yes/no authorization decision cannot carry. Null when no allow-list was
+                // configured, so Ask asks about everything, which is what it says on the tin.
+                ExplicitlyPermits =
+                    policy is AllowListPolicyBroker allowList ? allowList.Mentions : null,
+
+                IdentityResolver = this.identityResolver
+            });
 
         return new RunManagementService(
             data, decision, direction, logging, this.maxTurns, new TimeBroker(), this.budget,
             this.maxHistoryTurns, this.compensateOnFailure, this.screenToolOutput,
-            this.contractSchema, brain?.Temperature, brain?.MaxTokens,
+            this.telemetryBroker, this.contractSchema, brain?.Temperature, brain?.MaxTokens,
             allTools.Select(tool => tool.Name));
     }
 

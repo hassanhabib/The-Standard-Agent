@@ -1,12 +1,15 @@
 {
   "name": "Critical",
-  "description": "Enterprise, plus conversation that survives a process, effects that can be unwound, and adversarial evaluation. The level a wire transfer needs.",
+  "description": "Enterprise, plus conversation that survives a process, effects that can be unwound, an approval that resumes across processes, and adversarial evaluation - a fooled Brain still cannot act outside the perimeter. The level a wire transfer needs.",
   "inherits": "Enterprise",
   "requires": [
     "conversation-carries-history",
     "failed-run-unwinds-in-reverse",
     "native-tool-call-round-trips",
     "awaiting-approval-resumes-in-a-new-process",
-    "effect-outcome-survives-a-crash"
+    "effect-outcome-survives-a-crash",
+    "injected-knowledge-cannot-widen-the-perimeter",
+    "poisoned-memory-cannot-widen-the-perimeter",
+    "a-fooled-brain-cannot-cross-tenants"
   ]
 }

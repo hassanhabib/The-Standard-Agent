@@ -1,7 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <!-- net8.0 is the LTS most enterprise estates actually run; net10.0 is current. One
+         compiler (global.json) builds both, and the unit suite runs against both, so the
+         net8.0 asset is proven, not assumed. -->
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
@@ -20,6 +24,180 @@
     <!-- The Standard's release format is v1.2.3.4 — model . service/routine . fix/config
          . automated build. Deliberately NOT semver; the segments say what KIND of change
          happened, so a model change can never hide in the service segment.
+         1.7.0.0: Evals and Hosting - the release the enterprise plan owed since 1.1,
+         displaced five times by audits that outranked it - plus the three decisions the
+         sweep left open, all ruled and closed. Standard.Agents.Evals pins QUALITY the way
+         conformance pins contracts: task completion, groundedness, retrieval precision and
+         recall, tool selection, refusal correctness and revision effectiveness, measured
+         deterministically against golden cases through the real composition, thresholded,
+         CI-gated, every metric proven able to fail, every report stamped with the framework
+         version and the golden-set hash. Three ADVERSARIAL vectors certify what no suite
+         did: a poisoned knowledge passage and a poisoned memory that FOOL the scripted
+         Brain still cannot act outside the allow-list, and a fooled Brain cannot cross
+         tenant scopes - each asserts the poison REACHED the Brain, so a pass means the
+         attack was survived, not dodged. The Critical profile now REQUIRES all three and
+         says "adversarial evaluation" again - words it lost when nothing verified them.
+         Standard.Agents.Host is the exposure layer as The Standard defines one: controllers
+         that are pure mapping over one IAgent dependency, a heartbeat, SSE streaming whose
+         Response events equal the batched answer, and zero-config startup that stands and
+         says what to configure. NOTHING was added to the builder for any of it. The three
+         sweep decisions closed: a turn-capped run delivers prose about why and never
+         records an answer it never gave (the one Skipped test now runs); Direction's
+         standing orders travel as one PerimeterPolicy datum and a new tier rule bans naked
+         delegates in every service constructor; and cancellation crosses the nesting seam -
+         AgentRun carries the run's token and AgentTool hands it to the nested agent through
+         the new stoppable IAgent.RunAsync(prompt, token). Also: the package multi-targets
+         net8.0 and net10.0 with the suite green on both, the public API is declared in
+         PublicAPI.Shipped.txt and guarded by the build, and the supply chain is watched
+         between builds (Dependabot, CodeQL). New public routines and one new model, no
+         contract removed, no field repurposed: a service/routine change, so segment 2
+         advances, 3/4 reset.
+         1.6.1.0: the docs said what the code does, and saying it caught a defect. The
+         2026-08-23 sweep's most common finding was the silence — a true statement with an
+         unstated boundary — and this pass states them where a reader decides: run-once is
+         scoped to a run and an at-least-once trigger MUST be deduplicated at the trigger
+         boundary (previously said only inside vector 33's JSON); nothing crosses the nesting
+         seam — budget, principal, policy, approvals, ledger, sessions, grants, and the outer
+         cancellation token — and what crosses back is the [did not complete] marker; .Risk()
+         classifies and does not enforce; .Budget meters the Brain. False claims corrected:
+         how-to described the retrieval matcher that 1.3 REPLACED, complete with a worked
+         example that now behaves the opposite of what it showed; AgentOutcome's XML claimed a
+         capped run produced prose (it carries the last tool result with Status Working);
+         README said sixteen capabilities where the enforced matrix holds eighteen; and the
+         Contract guardian - shipped and enforced since 1.5.0 - was documented in no
+         consumer-facing doc at all. VERIFYING RATHER THAN TRANSCRIBING caught one more
+         defect, sweep shape 3 at a new site: .Knowledge(minScore:) stored the floor and
+         composition never passed it on, so a host raising the relevance floor changed
+         nothing. One line fixes it; the class was swept (52 builder fields, zero other
+         orphans) and the floor is documented with the ranking it floors. A behaviour fix and
+         a documentation pass, no new public surface, no model change: a fix/config change,
+         so segment 3 advances, 4 resets.
+         1.6.0.0: the enforcement pass - the checks that could not fail were made to bite, and
+         the one capability the matrix could not see got its missing modes. A vector that
+         cannot fail reports coverage: the sweep proved redaction's vector passed with
+         rehydration deleted and the scoped allow-list's passed with the scope check inverted,
+         and traced wrong-reason passes through four more. Six vectors strengthened, each
+         proven able to fail by applying the very mutation it exists to catch: 14 requires
+         rehydration to run ({{EMAIL_0}} in the scripted reply), 34 pins WHICH act executed,
+         08 pins that the Brain never saw the refused task, 26 declares a reversible tool that
+         never ran and excludes it from the unwind, 28 asserts each prompt's outcome in order
+         (held, then delivered - deletion of the approval control was previously invisible to
+         it), and the new ask-approved-act-runs closes the Ask triangle with 35 and 37 so
+         "deny everything under Ask, consult nobody" fails six vectors instead of zero. The
+         harness now rejects unknown fields on Vector/Expectation/NativeReply (a typo'd key
+         silently deleted the assertion it carried) and gains ResultsContain, per-prompt and
+         in order. TierDisciplineTests gains the tool seam: Standard.Agents.Tools was scanned
+         by no rule and held a live inversion - RememberTool kept IMemoryService, composed
+         into ToolBroker, so a foundation transitively called a foundation through a broker.
+         RememberTool now holds a Func like any host tool (the IMemoryService constructor
+         stays as a converting [Obsolete] alias), and the new rule scans every framework
+         tool's fields, generics included. Also encoded: every .Services namespace segment
+         must be a checked tier; a capability that skips a mode must waive it with a reason
+         beyond the bare N/A (a null-Local row with no waiver was silently unasserted).
+         REDACTION JOINS THE MATRIX it was missing from entirely: .Redact(params
+         RedactionRule[]) for the host's own patterns, .UseRedaction(IRedactionBroker) for a
+         provider, .OnRedaction(redact, rehydrate) for rules no pattern expresses - wired
+         through the same decorators, pinned behaviourally, sabotage-verified. New public
+         routines and one new broker, no existing contract removed and no model change: a
+         service/routine change, so segment 2 advances, 3/4 reset.
+         1.5.3.0: every turn is measured, and a rejected draft still costs. On the text
+         protocol only the FIRST turn was ever measured: Interpret carries the token counts
+         across turns exactly as it carried Status, MeasuredAsync read the carried copy as
+         "the provider already reported", and the loop re-billed turn 1's figure every turn —
+         a 7-turn run whose prompt grows every turn was billed as seven times its smallest
+         turn. The same shape as the eight-release hole 1.3.0 closed, introduced by the fix
+         that closed it. FreshOfLastTurn now clears Status AND cost at both of Decision's
+         doors — one clear for the whole "per-turn signal carried by the context copy" class,
+         whose two members (0.12.0's Revising, 1.3.0's counts) were introduced by two
+         different fixes and hid in the same copy. The guardian rejection paths carry the
+         rejected draft's measured cost onto the Revising context, because a revision loop
+         the budget cannot see is where a run burns tokens fastest.
+         Two vectors close the certification hole that let this ship: every budget vector
+         used a deliberately impossible bound, so an implementation that counted nothing and
+         stopped immediately - or re-billed turn 1 forever - was certifiable.
+         a-budget-counts-every-turn grows the prompt each turn and requires the bound to trip
+         on real cumulative spend; a-generous-budget-lets-the-run-finish requires a run under
+         a generous bound to complete, and was proven able to fail by mutating the check to
+         "exhausted whenever bounded". Stated rather than silent: .Budget meters the Brain's
+         calls only - guardians run small fixed verdicts, and .MaxTurns is the bound that
+         covers everything - written into how-to 13 as a boundary instead of left to be
+         discovered. Behaviour fixes on existing routines, no new public surface, no model
+         change: a fix/config change, so segment 3 advances, 4 resets.
+         1.5.2.0: one loop, two projections. The 2026-08-23 sweep found six controls enforced
+         on one door and not the other — tool-output screening, the Contract, the revision
+         reset, the approval hold's announcement, the Gate's route label (the mirror image:
+         streamed only), and native tool calling, which THREW on the streamed door — and every
+         one had been introduced by editing one loop and not its twin. Each was closed
+         FAIL-first; then the class was closed: RunManagementService now has exactly ONE loop
+         (a plain async method pumping a bounded channel), with RunAsync draining it and
+         StreamPromptAsync yielding it, and the only named seam between the doors is which
+         Brain protocol Decision drives. Decision's own two doors were likewise reduced to thin
+         projections over shared verdict handling: entry normalization of a carried Revising
+         (which also fixes the tool-call-after-rejection swallow on BOTH doors — the third exit
+         of the 1.5.0 revision bug), gate refusal and routing, the Judge-then-Contract
+         sequence, and the model-call narration, each written once.
+         THE PUMP IS NOT AN ITERATOR, for a reason found the hard way: an async iterator's
+         execution context does not survive a yield boundary, so the ambient AgentRun — the
+         identity run-once keys, approval grants, compensation and record attribution hang off
+         — silently reverted to null after the first streamed event. The OLD streamed loop had
+         exactly that shape: those controls were quietly detached from the run identity between
+         events, and nothing saw it because no streamed test exercised them. Unifying the loops
+         surfaced it as twelve immediate batched-test failures, which is the one-loop argument
+         demonstrated by the refactor that implemented it.
+         Exception mapping is now a control on both doors at every tier that maps —
+         RunManagement, Decision, Inference — via one MappedAndLoggedAsync per tier that
+         rethrows through that tier's own TryCatch, and streamed wrappers that advance the
+         enumeration inside the catch and yield outside it: the answer to "an iterator cannot
+         wrap a yield" is that the failure points are the awaits. Two deliberate streamed
+         alignments to the batched contract: a stopped run no longer writes Remember, and a
+         turn-capped run whose unwind reported something no longer appends the session.
+         LoopParityTests replaces enumerated parity with DERIVED parity: fourteen scenarios
+         through both doors, requiring the answer, the tool executions and the entire
+         decision-log trace to be identical — every control narrates itself, so a control
+         added to one door only diverges without the test naming it. Sabotage-verified at the
+         seam: the streamed door was made to skip screening and the suite went red on the trace.
+         Behaviour fixes and an internal restructure on existing routines, no new public
+         surface, no model change: a fix/config change, so segment 3 advances, 4 resets.
+         1.5.1.0: the permission hotfix — four silent grants closed, none of them new rules.
+         All four violate SPEC 1.3 §4.9 as it shipped in 1.5.0, which is why this is a fix
+         segment and the spec is untouched: when a rule and the code disagree, the code changes.
+         PERMISSIONMODE.DENY WAS NEVER CONSULTED. Declared, documented ("Denied. Nothing runs
+         but what was named."), and compared against nothing — the only read of the mode checked
+         Ask, so the strictest disposition behaved exactly like Open. The perimeter gains step
+         1b: an act nothing named is refused under Deny after authorization and before its
+         intent is recorded, told and non-terminal like a policy denial; an act RequireApproval
+         names still travels to its authority. The class was swept, not the instance: every enum
+         in src was checked for members with zero references outside their declaration, and
+         Deny was the only one.
+         ASK WITH NOBODY WIRED TO ANSWER WAS CONSENT. Ask promises what RequireApproval
+         delivers - held, because waiting is not consent - but with no approver configured it
+         routed to NotConfiguredApprovalBroker, which answered Approved unconditionally; and
+         RequireApprovalBroker answered Approved for any tool NOT on its list, a branch only
+         reachable under Ask. Both brokers now answer Pending wherever no human could have said
+         yes. The class was swept: of every NotConfigured/rule broker default, these two were
+         the only ones a switched-on control routed to for a grant.
+         ONE APPROVAL COVERED EVERY LATER USE OF THE TOOL. A grant is keyed on the tool AND the
+         scope, exactly - but ScopeOf defaults to empty, so for any tool that names no scope
+         (every MCP tool among them) the key collapsed to the tool name and approving a $10
+         transfer silently approved the $10,000 one. An act with no named scope now remembers
+         nothing and is asked about each time; an identical repeat is already replayed by
+         run-once before approval is reached. The class was swept: no other derived key in src
+         collapses on an empty component.
+         THE STREAMED LOOP NEVER SCREENED WHAT A TOOL HANDED BACK. ScreenedAsync had exactly one
+         call site - the batched loop - so with .ScreenToolOutput() on, the injected result the
+         batched path withholds sailed into the Brain whenever the caller streamed. The streamed
+         loop now screens on the same terms, before the Tool event is yielded, and unwinds
+         through screening failures as it does through Recall and Act. This one is deliberately
+         an instance fix: the remaining batched/streamed asymmetries (contract, revision reset,
+         AwaitingApproval event, route capture, native streaming, exception mapping) are a
+         class the loop unification closes next, and an open injection path does not queue
+         behind a refactor.
+         Three new vectors - deny-covers-what-nothing-permitted, ask-with-no-authority-holds,
+         a-grant-is-for-what-it-was-granted-for - each observed failing against 1.5.0 before
+         the fix, each pinning the positive direction too, so an implementation that denies or
+         holds everything fails them as surely as one that grants everything. All three join
+         the Enterprise profile. Behaviour fixes on existing routines, no new public surface,
+         no model change: a fix/config change, so segment 3 advances, 4 resets.
          1.5.0.0: what an answer must look like, what a sub-agent actually did, and what
          permission means.
          ContractService is a third guardian. The client returned a string and nothing else, so
@@ -226,7 +404,27 @@
          3/4 reset. Still tracks SPEC.md v0.1 (draft): segment 1 goes to 1 when the spec settles.
          (0.8.0.0: memory and knowledge came alive — knowledge retrieval in Recall + a built-in
          'remember' tool.) -->
-    <Version>1.5.0.0</Version>
+    <!-- 1.8.0.0 "Agent As Data": the whole configurable surface as one JSON document
+         (FromJson / FromJsonFile, unknown keys refuse with the key named), telemetry as the
+         fourth utility broker (BCL ActivitySource/Meter, GenAI semconv, all three verbs), and
+         the Anthropic Messages API as a second in-box native wire shape (NativeBrainAnthropic).
+         New public routines on the client and a new broker seam; the core models are unchanged,
+         so segment 2 advances and 3/4 reset. Tracks SPEC.md v1.4, which names both additions. -->
+    <!-- 1.9.0.0 "Plural Integrations": what the agent connects to accumulates, never replaces -
+         many MCP servers behind one seam (tools/list discovery, name-owned routing,
+         first-registered wins, per-server auth: none, API key, OAuth bearer, refresh delegate)
+         and many skill sources concatenating in registration order, with "skills" and "mcp"
+         arrays in the JSON document. New routines and a widened broker contract, core models
+         unchanged: segment 2 advances, 3/4 reset. Tracks SPEC.md v1.5. -->
+    <!-- 1.10.0.0 "The Fleet": other agents become a capability like every other. An agent
+         registry reached three ways (.Agents folder of agent documents / .UseAgents broker /
+         .OnAgents delegate), registered agents materializing as tools so the perimeter that
+         governs acts governs handoffs, identity riding in the document (name/description), the
+         fleet as data ("agents" key), grounded template-configurable handoffs, and a third
+         reply verb TRANSFER: that ends the run with the specialist's answer verbatim - only
+         when it actually answered. New routines and models, core contracts unchanged: segment
+         2 advances, 3/4 reset. Tracks SPEC.md v1.6. -->
+    <Version>1.10.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>
@@ -264,9 +462,23 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
+    <!-- The public surface, written down. PublicAPI.Shipped.txt is the contract Standard
+         Versioning's segments describe; a routine added without declaring it, or removed
+         while still declared, fails the zero-warning build. Segment 1 and 2 changes become
+         visible in the diff of this file instead of resting on discipline. Analyzer only -
+         nothing ships to consumers. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
     <PackageReference Include="RESTFulSense" Version="3.2.0" />
     <PackageReference Include="Xeption" Version="2.9.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="PublicAPI.Shipped.txt" />
+    <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
   </ItemGroup>
 
   <ItemGroup>

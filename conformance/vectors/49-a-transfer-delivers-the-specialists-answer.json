@@ -1,0 +1,19 @@
+{
+  "name": "a-transfer-delivers-the-specialists-answer",
+  "description": "TRANSFER hands the whole run to a registered agent (SPEC.md 4.8 v1.6): the specialist's answer IS the run's answer, verbatim - no synthesis turn, no rewriting. The handoff states the transfer's task in its own words while the grounded template carries the user's actual ask, so nothing is repeated and nothing is lost.",
+  "agents": [
+    {
+      "name": "billing",
+      "description": "Handles refunds and invoices.",
+      "replies": ["FINAL: the refund is booked"]
+    }
+  ],
+  "generatorReplies": [
+    "TRANSFER: billing"
+  ],
+  "prompt": "please refund my last order, number 7741",
+  "expect": {
+    "result": "the refund is booked",
+    "agentInput": { "billing": "answer the user's request in full." }
+  }
+}

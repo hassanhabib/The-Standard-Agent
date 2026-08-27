@@ -1,0 +1,1443 @@
+#nullable enable
+Standard.Agents.Brokers.Agents.FileAgentRegistryBroker
+Standard.Agents.Brokers.Agents.FileAgentRegistryBroker.FileAgentRegistryBroker(string! agentsPath) -> void
+Standard.Agents.Brokers.Agents.FileAgentRegistryBroker.SelectAgentsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Agents.RegisteredAgent!>!>
+Standard.Agents.Brokers.Agents.FunctionAgentRegistryBroker
+Standard.Agents.Brokers.Agents.FunctionAgentRegistryBroker.FunctionAgentRegistryBroker(System.Func<System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Agents.RegisteredAgent!>!>>! select) -> void
+Standard.Agents.Brokers.Agents.FunctionAgentRegistryBroker.SelectAgentsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Agents.RegisteredAgent!>!>
+Standard.Agents.Brokers.Agents.IAgentRegistryBroker
+Standard.Agents.Brokers.Agents.IAgentRegistryBroker.SelectAgentsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Agents.RegisteredAgent!>!>
+Standard.Agents.Brokers.Approvals.ApprovalDecision
+Standard.Agents.Brokers.Approvals.ApprovalDecision.Approved = 0 -> Standard.Agents.Brokers.Approvals.ApprovalDecision
+Standard.Agents.Brokers.Approvals.ApprovalDecision.Denied = 1 -> Standard.Agents.Brokers.Approvals.ApprovalDecision
+Standard.Agents.Brokers.Approvals.ApprovalDecision.Pending = 2 -> Standard.Agents.Brokers.Approvals.ApprovalDecision
+Standard.Agents.Brokers.Approvals.FunctionApprovalBroker
+Standard.Agents.Brokers.Approvals.FunctionApprovalBroker.FunctionApprovalBroker(System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentEffect!, System.Threading.Tasks.ValueTask<Standard.Agents.Brokers.Approvals.ApprovalDecision>>! request) -> void
+Standard.Agents.Brokers.Approvals.FunctionApprovalBroker.RequestAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Brokers.Approvals.ApprovalDecision>
+Standard.Agents.Brokers.Approvals.IApprovalBroker
+Standard.Agents.Brokers.Approvals.IApprovalBroker.RequestAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Brokers.Approvals.ApprovalDecision>
+Standard.Agents.Brokers.Approvals.NotConfiguredApprovalBroker
+Standard.Agents.Brokers.Approvals.NotConfiguredApprovalBroker.NotConfiguredApprovalBroker() -> void
+Standard.Agents.Brokers.Approvals.NotConfiguredApprovalBroker.RequestAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Brokers.Approvals.ApprovalDecision>
+Standard.Agents.Brokers.Approvals.RequireApprovalBroker
+Standard.Agents.Brokers.Approvals.RequireApprovalBroker.RequestAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Brokers.Approvals.ApprovalDecision>
+Standard.Agents.Brokers.Approvals.RequireApprovalBroker.RequireApprovalBroker(System.Collections.Generic.IEnumerable<string!>! toolNamesRequiringApproval) -> void
+Standard.Agents.Brokers.Audits.FileAuditBroker
+Standard.Agents.Brokers.Audits.FileAuditBroker.FileAuditBroker(string! auditPath) -> void
+Standard.Agents.Brokers.Audits.FileAuditBroker.WriteAsync(Standard.Agents.Models.Brokers.Audits.AuditRecord! record) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Audits.FunctionAuditBroker
+Standard.Agents.Brokers.Audits.FunctionAuditBroker.FunctionAuditBroker(System.Func<Standard.Agents.Models.Brokers.Audits.AuditRecord!, System.Threading.Tasks.ValueTask>! write) -> void
+Standard.Agents.Brokers.Audits.FunctionAuditBroker.WriteAsync(Standard.Agents.Models.Brokers.Audits.AuditRecord! record) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Audits.IAuditBroker
+Standard.Agents.Brokers.Audits.IAuditBroker.WriteAsync(Standard.Agents.Models.Brokers.Audits.AuditRecord! record) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Audits.NotConfiguredAuditBroker
+Standard.Agents.Brokers.Audits.NotConfiguredAuditBroker.NotConfiguredAuditBroker() -> void
+Standard.Agents.Brokers.Audits.NotConfiguredAuditBroker.WriteAsync(Standard.Agents.Models.Brokers.Audits.AuditRecord! record) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Classifiers.ClassifierBroker
+Standard.Agents.Brokers.Classifiers.ClassifierBroker.AssessAsync(string! systemPrompt, string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Classifiers.ClassifierBroker.ClassifierBroker(string! apiUrl, string! apiKey, string! model, double temperature, int maxTokens, int timeoutSeconds, string! systemPrompt) -> void
+Standard.Agents.Brokers.Classifiers.ClassifierBroker.ClassifyAsync(string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Classifiers.FunctionClassifierBroker
+Standard.Agents.Brokers.Classifiers.FunctionClassifierBroker.AssessAsync(string! systemPrompt, string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Classifiers.FunctionClassifierBroker.ClassifyAsync(string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Classifiers.FunctionClassifierBroker.FunctionClassifierBroker(System.Func<string!, string!, System.Threading.Tasks.ValueTask<string!>>! screen, string! systemPrompt) -> void
+Standard.Agents.Brokers.Classifiers.IClassifierBroker
+Standard.Agents.Brokers.Classifiers.IClassifierBroker.AssessAsync(string! systemPrompt, string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Classifiers.IClassifierBroker.ClassifyAsync(string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Classifiers.NotConfiguredClassifierBroker
+Standard.Agents.Brokers.Classifiers.NotConfiguredClassifierBroker.AssessAsync(string! systemPrompt, string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Classifiers.NotConfiguredClassifierBroker.ClassifyAsync(string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Classifiers.NotConfiguredClassifierBroker.NotConfiguredClassifierBroker() -> void
+Standard.Agents.Brokers.Classifiers.RuleClassifierBroker
+Standard.Agents.Brokers.Classifiers.RuleClassifierBroker.AssessAsync(string! systemPrompt, string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Classifiers.RuleClassifierBroker.ClassifyAsync(string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Classifiers.RuleClassifierBroker.RuleClassifierBroker(System.Collections.Generic.IEnumerable<string!>! refusePatterns) -> void
+Standard.Agents.Brokers.Contracts.FunctionContractBroker
+Standard.Agents.Brokers.Contracts.FunctionContractBroker.FunctionContractBroker(System.Func<string!, string!, System.Threading.Tasks.ValueTask<string?>>! validate) -> void
+Standard.Agents.Brokers.Contracts.FunctionContractBroker.ValidateAsync(string! answer, string! schema) -> System.Threading.Tasks.ValueTask<string?>
+Standard.Agents.Brokers.Contracts.IContractBroker
+Standard.Agents.Brokers.Contracts.IContractBroker.ValidateAsync(string! answer, string! schema) -> System.Threading.Tasks.ValueTask<string?>
+Standard.Agents.Brokers.Contracts.RuleContractBroker
+Standard.Agents.Brokers.Contracts.RuleContractBroker.RuleContractBroker() -> void
+Standard.Agents.Brokers.Contracts.RuleContractBroker.ValidateAsync(string! answer, string! schema) -> System.Threading.Tasks.ValueTask<string?>
+Standard.Agents.Brokers.Effects.FileEffectLedgerBroker
+Standard.Agents.Brokers.Effects.FileEffectLedgerBroker.DeleteClaimAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Effects.FileEffectLedgerBroker.FileEffectLedgerBroker(string! ledgerPath) -> void
+Standard.Agents.Brokers.Effects.FileEffectLedgerBroker.InsertOutcomeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect, string! outcome) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Effects.FileEffectLedgerBroker.SelectOutcomeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<string?>
+Standard.Agents.Brokers.Effects.FunctionEffectLedgerBroker
+Standard.Agents.Brokers.Effects.FunctionEffectLedgerBroker.DeleteClaimAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Effects.FunctionEffectLedgerBroker.FunctionEffectLedgerBroker(System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentEffect!, System.Threading.Tasks.ValueTask<string?>>! claim, System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentEffect!, string!, System.Threading.Tasks.ValueTask>! record, System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentEffect!, System.Threading.Tasks.ValueTask>! release) -> void
+Standard.Agents.Brokers.Effects.FunctionEffectLedgerBroker.InsertOutcomeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect, string! outcome) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Effects.FunctionEffectLedgerBroker.SelectOutcomeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<string?>
+Standard.Agents.Brokers.Effects.IEffectLedgerBroker
+Standard.Agents.Brokers.Effects.IEffectLedgerBroker.DeleteClaimAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Effects.IEffectLedgerBroker.InsertOutcomeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect, string! outcome) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Effects.IEffectLedgerBroker.SelectOutcomeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<string?>
+Standard.Agents.Brokers.Effects.InMemoryEffectLedgerBroker
+Standard.Agents.Brokers.Effects.InMemoryEffectLedgerBroker.DeleteClaimAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Effects.InMemoryEffectLedgerBroker.InMemoryEffectLedgerBroker() -> void
+Standard.Agents.Brokers.Effects.InMemoryEffectLedgerBroker.InsertOutcomeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect, string! outcome) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Effects.InMemoryEffectLedgerBroker.SelectOutcomeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<string?>
+Standard.Agents.Brokers.Files.FileBroker
+Standard.Agents.Brokers.Files.FileBroker.AppendAllLinesAsync(string! path, System.Collections.Generic.IEnumerable<string!>! lines) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Files.FileBroker.CreateDirectory(string! path) -> void
+Standard.Agents.Brokers.Files.FileBroker.DirectoryExists(string! path) -> bool
+Standard.Agents.Brokers.Files.FileBroker.FileBroker() -> void
+Standard.Agents.Brokers.Files.FileBroker.FileExists(string! path) -> bool
+Standard.Agents.Brokers.Files.FileBroker.ReadAllLinesAsync(string! path) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
+Standard.Agents.Brokers.Files.FileBroker.ReadFile(string! path) -> string!
+Standard.Agents.Brokers.Files.FileBroker.ReadFileAsync(string! path) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Files.FileBroker.SelectFiles(string! path, string! searchPattern, System.IO.SearchOption searchOption) -> System.Collections.Generic.IReadOnlyList<string!>!
+Standard.Agents.Brokers.Files.IFileBroker
+Standard.Agents.Brokers.Files.IFileBroker.AppendAllLinesAsync(string! path, System.Collections.Generic.IEnumerable<string!>! lines) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Files.IFileBroker.CreateDirectory(string! path) -> void
+Standard.Agents.Brokers.Files.IFileBroker.DirectoryExists(string! path) -> bool
+Standard.Agents.Brokers.Files.IFileBroker.FileExists(string! path) -> bool
+Standard.Agents.Brokers.Files.IFileBroker.ReadAllLinesAsync(string! path) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
+Standard.Agents.Brokers.Files.IFileBroker.ReadFile(string! path) -> string!
+Standard.Agents.Brokers.Files.IFileBroker.ReadFileAsync(string! path) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Files.IFileBroker.SelectFiles(string! path, string! searchPattern, System.IO.SearchOption searchOption) -> System.Collections.Generic.IReadOnlyList<string!>!
+Standard.Agents.Brokers.Generators.AnthropicGeneratorBrokerV1
+Standard.Agents.Brokers.Generators.AnthropicGeneratorBrokerV1.AnthropicGeneratorBrokerV1(string! apiKey, string! model, double temperature = 0.7, int maxTokens = 1024, int timeoutSeconds = 120, string! apiUrl = "https://api.anthropic.com/") -> void
+Standard.Agents.Brokers.Generators.AnthropicGeneratorBrokerV1.GenerateAsync(System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage!>! messages, System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition!>! tools) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Generators.V1.GenerationResult!>
+Standard.Agents.Brokers.Generators.FunctionGeneratorBroker
+Standard.Agents.Brokers.Generators.FunctionGeneratorBroker.FunctionGeneratorBroker(System.Func<string!, string!, System.Threading.Tasks.ValueTask<string!>>! generate) -> void
+Standard.Agents.Brokers.Generators.FunctionGeneratorBroker.GenerateAsync(string! systemPrompt, string! userPrompt) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Generators.FunctionGeneratorBroker.GenerateStreamAsync(string! systemPrompt, string! userPrompt, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<string!>!
+Standard.Agents.Brokers.Generators.FunctionGeneratorBrokerV1
+Standard.Agents.Brokers.Generators.FunctionGeneratorBrokerV1.FunctionGeneratorBrokerV1(System.Func<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage!>!, System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition!>!, System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Generators.V1.GenerationResult!>>! generate) -> void
+Standard.Agents.Brokers.Generators.FunctionGeneratorBrokerV1.GenerateAsync(System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage!>! messages, System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition!>! tools) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Generators.V1.GenerationResult!>
+Standard.Agents.Brokers.Generators.GeneratorBroker
+Standard.Agents.Brokers.Generators.GeneratorBroker.GenerateAsync(string! systemPrompt, string! userPrompt) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Generators.GeneratorBroker.GenerateStreamAsync(string! systemPrompt, string! userPrompt, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<string!>!
+Standard.Agents.Brokers.Generators.GeneratorBroker.GeneratorBroker(string! apiUrl, string! apiKey, string! model, double temperature, int maxTokens, int timeoutSeconds) -> void
+Standard.Agents.Brokers.Generators.GeneratorBrokerV1
+Standard.Agents.Brokers.Generators.GeneratorBrokerV1.GenerateAsync(System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage!>! messages, System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition!>! tools) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Generators.V1.GenerationResult!>
+Standard.Agents.Brokers.Generators.GeneratorBrokerV1.GeneratorBrokerV1(string! apiUrl, string! apiKey, string! model, double temperature = 0.7, int maxTokens = 1024, int timeoutSeconds = 120) -> void
+Standard.Agents.Brokers.Generators.IGeneratorBroker
+Standard.Agents.Brokers.Generators.IGeneratorBroker.GenerateAsync(string! systemPrompt, string! userPrompt) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Generators.IGeneratorBroker.GenerateStreamAsync(string! systemPrompt, string! userPrompt, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<string!>!
+Standard.Agents.Brokers.Generators.IGeneratorBrokerV1
+Standard.Agents.Brokers.Generators.IGeneratorBrokerV1.GenerateAsync(System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage!>! messages, System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition!>! tools) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Generators.V1.GenerationResult!>
+Standard.Agents.Brokers.Knowledges.FunctionKnowledgeBroker
+Standard.Agents.Brokers.Knowledges.FunctionKnowledgeBroker.FunctionKnowledgeBroker(System.Func<string!, System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>>! retrieve) -> void
+Standard.Agents.Brokers.Knowledges.FunctionKnowledgeBroker.SelectKnowledgeAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
+Standard.Agents.Brokers.Knowledges.IKnowledgeBroker
+Standard.Agents.Brokers.Knowledges.IKnowledgeBroker.SelectKnowledgeAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
+Standard.Agents.Brokers.Loggings.ILoggingBroker
+Standard.Agents.Brokers.Loggings.ILoggingBroker.LogCriticalAsync(System.Exception! exception) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Loggings.ILoggingBroker.LogDebugAsync(string! message) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Loggings.ILoggingBroker.LogErrorAsync(System.Exception! exception) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Loggings.ILoggingBroker.LogInformationAsync(string! message) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Loggings.ILoggingBroker.LogOutcomeAsync(string! message) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Loggings.ILoggingBroker.LogProcessAsync(string! actor, string! message, bool detail = false) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Loggings.ILoggingBroker.LogResetAsync() -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Loggings.ILoggingBroker.LogStepAsync(Standard.Agents.Models.Loggings.AgentStep step) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Loggings.ILoggingBroker.LogTraceAsync(string! message) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Loggings.ILoggingBroker.LogTurnAsync(int turn) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Loggings.ILoggingBroker.LogWarningAsync(string! message) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Loggings.LoggingBroker
+Standard.Agents.Brokers.Loggings.LoggingBroker.LogCriticalAsync(System.Exception! exception) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Loggings.LoggingBroker.LogDebugAsync(string! message) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Loggings.LoggingBroker.LogErrorAsync(System.Exception! exception) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Loggings.LoggingBroker.LogInformationAsync(string! message) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Loggings.LoggingBroker.LogOutcomeAsync(string! message) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Loggings.LoggingBroker.LogProcessAsync(string! actor, string! message, bool detail = false) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Loggings.LoggingBroker.LogResetAsync() -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Loggings.LoggingBroker.LogStepAsync(Standard.Agents.Models.Loggings.AgentStep step) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Loggings.LoggingBroker.LogTraceAsync(string! message) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Loggings.LoggingBroker.LogTurnAsync(int turn) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Loggings.LoggingBroker.LogWarningAsync(string! message) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Loggings.LoggingBroker.LoggingBroker(Microsoft.Extensions.Logging.ILogger<Standard.Agents.Brokers.Loggings.LoggingBroker!>! logger, Standard.Agents.Brokers.Times.ITimeBroker! timeBroker, Standard.Agents.Models.Loggings.TraceVerbosity verbosity = Standard.Agents.Models.Loggings.TraceVerbosity.Full, string? logPath = null, Standard.Agents.Brokers.Audits.IAuditBroker? auditBroker = null, System.Func<string?>? principal = null) -> void
+Standard.Agents.Brokers.Mcps.CompositeMcpBroker
+Standard.Agents.Brokers.Mcps.CompositeMcpBroker.CallAsync(string! name, string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Mcps.CompositeMcpBroker.CompositeMcpBroker(System.Collections.Generic.IEnumerable<Standard.Agents.Brokers.Mcps.IMcpBroker!>! brokers) -> void
+Standard.Agents.Brokers.Mcps.CompositeMcpBroker.ListToolsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Mcps.McpTool!>!>
+Standard.Agents.Brokers.Mcps.IMcpBroker
+Standard.Agents.Brokers.Mcps.IMcpBroker.CallAsync(string! name, string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Mcps.IMcpBroker.ListToolsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Mcps.McpTool!>!>
+Standard.Agents.Brokers.Mcps.McpBroker
+Standard.Agents.Brokers.Mcps.McpBroker.CallAsync(string! name, string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Mcps.McpBroker.ListToolsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Mcps.McpTool!>!>
+Standard.Agents.Brokers.Mcps.McpBroker.McpBroker(string! endpointUrl, string! relativeUrl, int timeoutSeconds, string? bearerToken = null, string? apiKey = null, string! apiKeyHeader = "X-Api-Key", System.Func<System.Threading.Tasks.ValueTask<string!>>? bearerTokenProvider = null) -> void
+Standard.Agents.Brokers.Mcps.NotConfiguredMcpBroker
+Standard.Agents.Brokers.Mcps.NotConfiguredMcpBroker.CallAsync(string! name, string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Mcps.NotConfiguredMcpBroker.ListToolsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Mcps.McpTool!>!>
+Standard.Agents.Brokers.Mcps.NotConfiguredMcpBroker.NotConfiguredMcpBroker() -> void
+Standard.Agents.Brokers.Memorys.FunctionMemoryBroker
+Standard.Agents.Brokers.Memorys.FunctionMemoryBroker.FunctionMemoryBroker(System.Func<System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>>! recall, System.Func<string!, System.Threading.Tasks.ValueTask>! remember) -> void
+Standard.Agents.Brokers.Memorys.FunctionMemoryBroker.InsertMemoryAsync(string! memory) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Memorys.FunctionMemoryBroker.SelectMemoriesAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
+Standard.Agents.Brokers.Memorys.IMemoryBroker
+Standard.Agents.Brokers.Memorys.IMemoryBroker.InsertMemoryAsync(string! memory) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Memorys.IMemoryBroker.SelectMemoriesAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
+Standard.Agents.Brokers.Policies.AllowListPolicyBroker
+Standard.Agents.Brokers.Policies.AllowListPolicyBroker.AllowListPolicyBroker(System.Collections.Generic.IEnumerable<string!>! allowedEntries) -> void
+Standard.Agents.Brokers.Policies.AllowListPolicyBroker.AuthorizeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision!>
+Standard.Agents.Brokers.Policies.AllowListPolicyBroker.Mentions(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> bool
+Standard.Agents.Brokers.Policies.FunctionPolicyBroker
+Standard.Agents.Brokers.Policies.FunctionPolicyBroker.AuthorizeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision!>
+Standard.Agents.Brokers.Policies.FunctionPolicyBroker.FunctionPolicyBroker(System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentEffect!, System.Threading.Tasks.ValueTask<Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision!>>! authorize) -> void
+Standard.Agents.Brokers.Policies.IPolicyBroker
+Standard.Agents.Brokers.Policies.IPolicyBroker.AuthorizeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision!>
+Standard.Agents.Brokers.Policies.NotConfiguredPolicyBroker
+Standard.Agents.Brokers.Policies.NotConfiguredPolicyBroker.AuthorizeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision!>
+Standard.Agents.Brokers.Policies.NotConfiguredPolicyBroker.NotConfiguredPolicyBroker() -> void
+Standard.Agents.Brokers.Redactions.FunctionRedactionBroker
+Standard.Agents.Brokers.Redactions.FunctionRedactionBroker.FunctionRedactionBroker(System.Func<string!, System.Collections.Generic.IDictionary<string!, string!>!, string!>! redact, System.Func<string!, System.Collections.Generic.IReadOnlyDictionary<string!, string!>!, string!>! rehydrate) -> void
+Standard.Agents.Brokers.Redactions.FunctionRedactionBroker.Redact(string! text, System.Collections.Generic.IDictionary<string!, string!>! vault) -> string!
+Standard.Agents.Brokers.Redactions.FunctionRedactionBroker.Rehydrate(string! text, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! vault) -> string!
+Standard.Agents.Brokers.Redactions.IRedactionBroker
+Standard.Agents.Brokers.Redactions.IRedactionBroker.Redact(string! text, System.Collections.Generic.IDictionary<string!, string!>! vault) -> string!
+Standard.Agents.Brokers.Redactions.IRedactionBroker.Rehydrate(string! text, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! vault) -> string!
+Standard.Agents.Brokers.Redactions.NotConfiguredRedactionBroker
+Standard.Agents.Brokers.Redactions.NotConfiguredRedactionBroker.NotConfiguredRedactionBroker() -> void
+Standard.Agents.Brokers.Redactions.NotConfiguredRedactionBroker.Redact(string! text, System.Collections.Generic.IDictionary<string!, string!>! vault) -> string!
+Standard.Agents.Brokers.Redactions.NotConfiguredRedactionBroker.Rehydrate(string! text, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! vault) -> string!
+Standard.Agents.Brokers.Redactions.RedactingClassifierBroker
+Standard.Agents.Brokers.Redactions.RedactingClassifierBroker.AssessAsync(string! systemPrompt, string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Redactions.RedactingClassifierBroker.ClassifyAsync(string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Redactions.RedactingClassifierBroker.RedactingClassifierBroker(Standard.Agents.Brokers.Classifiers.IClassifierBroker! classifierBroker, Standard.Agents.Brokers.Redactions.IRedactionBroker! redactionBroker) -> void
+Standard.Agents.Brokers.Redactions.RedactingGeneratorBroker
+Standard.Agents.Brokers.Redactions.RedactingGeneratorBroker.GenerateAsync(string! systemPrompt, string! userPrompt) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Redactions.RedactingGeneratorBroker.GenerateStreamAsync(string! systemPrompt, string! userPrompt, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<string!>!
+Standard.Agents.Brokers.Redactions.RedactingGeneratorBroker.RedactingGeneratorBroker(Standard.Agents.Brokers.Generators.IGeneratorBroker! generatorBroker, Standard.Agents.Brokers.Redactions.IRedactionBroker! redactionBroker) -> void
+Standard.Agents.Brokers.Redactions.RedactingGeneratorBrokerV1
+Standard.Agents.Brokers.Redactions.RedactingGeneratorBrokerV1.GenerateAsync(System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage!>! messages, System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition!>! tools) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Generators.V1.GenerationResult!>
+Standard.Agents.Brokers.Redactions.RedactingGeneratorBrokerV1.RedactingGeneratorBrokerV1(Standard.Agents.Brokers.Generators.IGeneratorBrokerV1! generatorBroker, Standard.Agents.Brokers.Redactions.IRedactionBroker! redactionBroker) -> void
+Standard.Agents.Brokers.Redactions.RedactingVerifierBroker
+Standard.Agents.Brokers.Redactions.RedactingVerifierBroker.RedactingVerifierBroker(Standard.Agents.Brokers.Verifiers.IVerifierBroker! verifierBroker, Standard.Agents.Brokers.Redactions.IRedactionBroker! redactionBroker) -> void
+Standard.Agents.Brokers.Redactions.RedactingVerifierBroker.VerifyAsync(string! task, string! candidate) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Redactions.RuleRedactionBroker
+Standard.Agents.Brokers.Redactions.RuleRedactionBroker.Redact(string! text, System.Collections.Generic.IDictionary<string!, string!>! vault) -> string!
+Standard.Agents.Brokers.Redactions.RuleRedactionBroker.Rehydrate(string! text, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! vault) -> string!
+Standard.Agents.Brokers.Redactions.RuleRedactionBroker.RuleRedactionBroker(System.Collections.Generic.IEnumerable<Standard.Agents.Models.Foundations.Brains.RedactionRule!>! rules) -> void
+Standard.Agents.Brokers.Resiliences.FallbackResilienceBroker
+Standard.Agents.Brokers.Resiliences.FallbackResilienceBroker.ExecuteAsync<T>(System.Func<System.Threading.Tasks.ValueTask<T>>! operation) -> System.Threading.Tasks.ValueTask<T>
+Standard.Agents.Brokers.Resiliences.FallbackResilienceBroker.FallbackResilienceBroker(Standard.Agents.Brokers.Resiliences.IResilienceBroker! primary, System.Func<System.Threading.Tasks.ValueTask<string!>>? alternative = null, int failuresBeforeOpen = 3, System.TimeSpan? coolDown = null, System.Func<System.DateTimeOffset>? now = null) -> void
+Standard.Agents.Brokers.Resiliences.FallbackResilienceBroker.IsOpen.get -> bool
+Standard.Agents.Brokers.Resiliences.IResilienceBroker
+Standard.Agents.Brokers.Resiliences.IResilienceBroker.ExecuteAsync<T>(System.Func<System.Threading.Tasks.ValueTask<T>>! operation) -> System.Threading.Tasks.ValueTask<T>
+Standard.Agents.Brokers.Resiliences.NotConfiguredResilienceBroker
+Standard.Agents.Brokers.Resiliences.NotConfiguredResilienceBroker.ExecuteAsync<T>(System.Func<System.Threading.Tasks.ValueTask<T>>! operation) -> System.Threading.Tasks.ValueTask<T>
+Standard.Agents.Brokers.Resiliences.NotConfiguredResilienceBroker.NotConfiguredResilienceBroker() -> void
+Standard.Agents.Brokers.Resiliences.RetryResilienceBroker
+Standard.Agents.Brokers.Resiliences.RetryResilienceBroker.ExecuteAsync<T>(System.Func<System.Threading.Tasks.ValueTask<T>>! operation) -> System.Threading.Tasks.ValueTask<T>
+Standard.Agents.Brokers.Resiliences.RetryResilienceBroker.RetryResilienceBroker(int retries = 3, System.TimeSpan? initialDelay = null, System.Func<System.TimeSpan, System.Threading.Tasks.ValueTask>? delay = null) -> void
+Standard.Agents.Brokers.Resiliences.RetryingGeneratorBroker
+Standard.Agents.Brokers.Resiliences.RetryingGeneratorBroker.GenerateAsync(string! systemPrompt, string! userPrompt) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Resiliences.RetryingGeneratorBroker.GenerateStreamAsync(string! systemPrompt, string! userPrompt, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<string!>!
+Standard.Agents.Brokers.Resiliences.RetryingGeneratorBroker.RetryingGeneratorBroker(Standard.Agents.Brokers.Generators.IGeneratorBroker! generatorBroker, Standard.Agents.Brokers.Resiliences.IResilienceBroker! resilienceBroker) -> void
+Standard.Agents.Brokers.Resiliences.RetryingGeneratorBrokerV1
+Standard.Agents.Brokers.Resiliences.RetryingGeneratorBrokerV1.GenerateAsync(System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage!>! messages, System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition!>! tools) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Generators.V1.GenerationResult!>
+Standard.Agents.Brokers.Resiliences.RetryingGeneratorBrokerV1.RetryingGeneratorBrokerV1(Standard.Agents.Brokers.Generators.IGeneratorBrokerV1! generatorBroker, Standard.Agents.Brokers.Resiliences.IResilienceBroker! resilienceBroker) -> void
+Standard.Agents.Brokers.Sessions.FileSessionBroker
+Standard.Agents.Brokers.Sessions.FileSessionBroker.FileSessionBroker(string! sessionsPath) -> void
+Standard.Agents.Brokers.Sessions.FileSessionBroker.SelectSessionAsync(string! sessionId) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Sessions.AgentSession?>
+Standard.Agents.Brokers.Sessions.FileSessionBroker.UpsertSessionAsync(Standard.Agents.Models.Brokers.Sessions.AgentSession! session) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Sessions.FunctionSessionBroker
+Standard.Agents.Brokers.Sessions.FunctionSessionBroker.FunctionSessionBroker(System.Func<string!, System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Sessions.AgentSession?>>! select, System.Func<Standard.Agents.Models.Brokers.Sessions.AgentSession!, System.Threading.Tasks.ValueTask>! upsert) -> void
+Standard.Agents.Brokers.Sessions.FunctionSessionBroker.SelectSessionAsync(string! sessionId) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Sessions.AgentSession?>
+Standard.Agents.Brokers.Sessions.FunctionSessionBroker.UpsertSessionAsync(Standard.Agents.Models.Brokers.Sessions.AgentSession! session) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Sessions.ISessionBroker
+Standard.Agents.Brokers.Sessions.ISessionBroker.SelectSessionAsync(string! sessionId) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Sessions.AgentSession?>
+Standard.Agents.Brokers.Sessions.ISessionBroker.UpsertSessionAsync(Standard.Agents.Models.Brokers.Sessions.AgentSession! session) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Sessions.NotConfiguredSessionBroker
+Standard.Agents.Brokers.Sessions.NotConfiguredSessionBroker.NotConfiguredSessionBroker() -> void
+Standard.Agents.Brokers.Sessions.NotConfiguredSessionBroker.SelectSessionAsync(string! sessionId) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Sessions.AgentSession?>
+Standard.Agents.Brokers.Sessions.NotConfiguredSessionBroker.UpsertSessionAsync(Standard.Agents.Models.Brokers.Sessions.AgentSession! session) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Skills.CompositeSkillBroker
+Standard.Agents.Brokers.Skills.CompositeSkillBroker.CompositeSkillBroker(System.Collections.Generic.IEnumerable<Standard.Agents.Brokers.Skills.ISkillBroker!>! brokers) -> void
+Standard.Agents.Brokers.Skills.CompositeSkillBroker.SelectSkillsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Skills.Skill!>!>
+Standard.Agents.Brokers.Skills.FileSkillBroker
+Standard.Agents.Brokers.Skills.FileSkillBroker.FileSkillBroker(string! skillsPath, string! searchPattern = "*.md") -> void
+Standard.Agents.Brokers.Skills.FileSkillBroker.SelectSkillsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Skills.Skill!>!>
+Standard.Agents.Brokers.Skills.FunctionSkillBroker
+Standard.Agents.Brokers.Skills.FunctionSkillBroker.FunctionSkillBroker(System.Func<System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Skills.Skill!>!>>! select) -> void
+Standard.Agents.Brokers.Skills.FunctionSkillBroker.SelectSkillsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Skills.Skill!>!>
+Standard.Agents.Brokers.Skills.ISkillBroker
+Standard.Agents.Brokers.Skills.ISkillBroker.SelectSkillsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Skills.Skill!>!>
+Standard.Agents.Brokers.Telemetries.ActivityTelemetryBroker
+Standard.Agents.Brokers.Telemetries.ActivityTelemetryBroker.ActivityTelemetryBroker(string! agentName = "standard-agent") -> void
+Standard.Agents.Brokers.Telemetries.ActivityTelemetryBroker.RecordRunOutcome(string! status, int promptTokens, int completionTokens) -> void
+Standard.Agents.Brokers.Telemetries.ActivityTelemetryBroker.RecordTurnUsage(int promptTokens, int completionTokens, bool estimated) -> void
+Standard.Agents.Brokers.Telemetries.ActivityTelemetryBroker.StartRun(string! sessionId) -> System.IDisposable?
+Standard.Agents.Brokers.Telemetries.ActivityTelemetryBroker.StartTurn(int turn) -> System.IDisposable?
+Standard.Agents.Brokers.Telemetries.FunctionTelemetryBroker
+Standard.Agents.Brokers.Telemetries.FunctionTelemetryBroker.FunctionTelemetryBroker(System.Action<string!, System.Collections.Generic.IReadOnlyDictionary<string!, object?>!>! record) -> void
+Standard.Agents.Brokers.Telemetries.FunctionTelemetryBroker.RecordRunOutcome(string! status, int promptTokens, int completionTokens) -> void
+Standard.Agents.Brokers.Telemetries.FunctionTelemetryBroker.RecordTurnUsage(int promptTokens, int completionTokens, bool estimated) -> void
+Standard.Agents.Brokers.Telemetries.FunctionTelemetryBroker.StartRun(string! sessionId) -> System.IDisposable?
+Standard.Agents.Brokers.Telemetries.FunctionTelemetryBroker.StartTurn(int turn) -> System.IDisposable?
+Standard.Agents.Brokers.Telemetries.ITelemetryBroker
+Standard.Agents.Brokers.Telemetries.ITelemetryBroker.RecordRunOutcome(string! status, int promptTokens, int completionTokens) -> void
+Standard.Agents.Brokers.Telemetries.ITelemetryBroker.RecordTurnUsage(int promptTokens, int completionTokens, bool estimated) -> void
+Standard.Agents.Brokers.Telemetries.ITelemetryBroker.StartRun(string! sessionId) -> System.IDisposable?
+Standard.Agents.Brokers.Telemetries.ITelemetryBroker.StartTurn(int turn) -> System.IDisposable?
+Standard.Agents.Brokers.Telemetries.NotConfiguredTelemetryBroker
+Standard.Agents.Brokers.Telemetries.NotConfiguredTelemetryBroker.NotConfiguredTelemetryBroker() -> void
+Standard.Agents.Brokers.Telemetries.NotConfiguredTelemetryBroker.RecordRunOutcome(string! status, int promptTokens, int completionTokens) -> void
+Standard.Agents.Brokers.Telemetries.NotConfiguredTelemetryBroker.RecordTurnUsage(int promptTokens, int completionTokens, bool estimated) -> void
+Standard.Agents.Brokers.Telemetries.NotConfiguredTelemetryBroker.StartRun(string! sessionId) -> System.IDisposable?
+Standard.Agents.Brokers.Telemetries.NotConfiguredTelemetryBroker.StartTurn(int turn) -> System.IDisposable?
+Standard.Agents.Brokers.Times.ITimeBroker
+Standard.Agents.Brokers.Times.ITimeBroker.GetCurrentDateTimeOffset() -> System.DateTimeOffset
+Standard.Agents.Brokers.Times.TimeBroker
+Standard.Agents.Brokers.Times.TimeBroker.GetCurrentDateTimeOffset() -> System.DateTimeOffset
+Standard.Agents.Brokers.Times.TimeBroker.TimeBroker() -> void
+Standard.Agents.Brokers.Tools.IToolBroker
+Standard.Agents.Brokers.Tools.IToolBroker.CompensateAsync(string! name, string! input, string! outcome) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Tools.IToolBroker.HasAsync(string! name) -> System.Threading.Tasks.ValueTask<bool>
+Standard.Agents.Brokers.Tools.IToolBroker.RunAsync(string! name, string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Tools.ToolBroker
+Standard.Agents.Brokers.Tools.ToolBroker.CompensateAsync(string! name, string! input, string! outcome) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Tools.ToolBroker.HasAsync(string! name) -> System.Threading.Tasks.ValueTask<bool>
+Standard.Agents.Brokers.Tools.ToolBroker.RunAsync(string! name, string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Tools.ToolBroker.ToolBroker(System.Collections.Generic.IEnumerable<Standard.Agents.Tools.ITool!>! tools) -> void
+Standard.Agents.Brokers.Usages.FunctionUsageBroker
+Standard.Agents.Brokers.Usages.FunctionUsageBroker.CountTokensAsync(string! text) -> System.Threading.Tasks.ValueTask<int>
+Standard.Agents.Brokers.Usages.FunctionUsageBroker.FunctionUsageBroker(System.Func<string!, System.Threading.Tasks.ValueTask<int>>! count) -> void
+Standard.Agents.Brokers.Usages.IUsageBroker
+Standard.Agents.Brokers.Usages.IUsageBroker.CountTokensAsync(string! text) -> System.Threading.Tasks.ValueTask<int>
+Standard.Agents.Brokers.Usages.RatioUsageBroker
+Standard.Agents.Brokers.Usages.RatioUsageBroker.CountTokensAsync(string! text) -> System.Threading.Tasks.ValueTask<int>
+Standard.Agents.Brokers.Usages.RatioUsageBroker.RatioUsageBroker(double charactersPerToken = 4) -> void
+Standard.Agents.Brokers.Verifiers.FunctionVerifierBroker
+Standard.Agents.Brokers.Verifiers.FunctionVerifierBroker.FunctionVerifierBroker(System.Func<string!, string!, System.Threading.Tasks.ValueTask<string!>>! evaluate, string! systemPrompt) -> void
+Standard.Agents.Brokers.Verifiers.FunctionVerifierBroker.VerifyAsync(string! task, string! candidate) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Verifiers.IVerifierBroker
+Standard.Agents.Brokers.Verifiers.IVerifierBroker.VerifyAsync(string! task, string! candidate) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Verifiers.NotConfiguredVerifierBroker
+Standard.Agents.Brokers.Verifiers.NotConfiguredVerifierBroker.NotConfiguredVerifierBroker() -> void
+Standard.Agents.Brokers.Verifiers.NotConfiguredVerifierBroker.VerifyAsync(string! task, string! candidate) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Verifiers.RuleVerifierBroker
+Standard.Agents.Brokers.Verifiers.RuleVerifierBroker.RuleVerifierBroker(System.Collections.Generic.IEnumerable<string!>! requiredPatterns) -> void
+Standard.Agents.Brokers.Verifiers.RuleVerifierBroker.VerifyAsync(string! task, string! candidate) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Verifiers.VerifierBroker
+Standard.Agents.Brokers.Verifiers.VerifierBroker.VerifierBroker(string! apiUrl, string! apiKey, string! model, double temperature, int maxTokens, int timeoutSeconds, string! systemPrompt) -> void
+Standard.Agents.Brokers.Verifiers.VerifierBroker.VerifyAsync(string! task, string! candidate) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.IAgent
+Standard.Agents.IAgent.ProcessPromptAsync(string! prompt) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.IAgent.RunAsync(string! prompt) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
+Standard.Agents.IAgent.RunAsync(string! prompt, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
+Standard.Agents.IAgent.StreamPromptAsync(string! prompt, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<Standard.Agents.Models.Clients.Agents.AgentStreamEvent!>!
+Standard.Agents.Models.Brokers.Agents.RegisteredAgent
+Standard.Agents.Models.Brokers.Agents.RegisteredAgent.<Clone>$() -> Standard.Agents.Models.Brokers.Agents.RegisteredAgent!
+Standard.Agents.Models.Brokers.Agents.RegisteredAgent.Agent.get -> Standard.Agents.IAgent!
+Standard.Agents.Models.Brokers.Agents.RegisteredAgent.Agent.init -> void
+Standard.Agents.Models.Brokers.Agents.RegisteredAgent.Deconstruct(out string! Name, out string! Description, out Standard.Agents.IAgent! Agent) -> void
+Standard.Agents.Models.Brokers.Agents.RegisteredAgent.Description.get -> string!
+Standard.Agents.Models.Brokers.Agents.RegisteredAgent.Description.init -> void
+Standard.Agents.Models.Brokers.Agents.RegisteredAgent.Equals(Standard.Agents.Models.Brokers.Agents.RegisteredAgent? other) -> bool
+Standard.Agents.Models.Brokers.Agents.RegisteredAgent.Name.get -> string!
+Standard.Agents.Models.Brokers.Agents.RegisteredAgent.Name.init -> void
+Standard.Agents.Models.Brokers.Agents.RegisteredAgent.RegisteredAgent(string! Name, string! Description, Standard.Agents.IAgent! Agent) -> void
+Standard.Agents.Models.Brokers.Audits.AuditKind
+Standard.Agents.Models.Brokers.Audits.AuditKind.Error = 5 -> Standard.Agents.Models.Brokers.Audits.AuditKind
+Standard.Agents.Models.Brokers.Audits.AuditKind.Outcome = 4 -> Standard.Agents.Models.Brokers.Audits.AuditKind
+Standard.Agents.Models.Brokers.Audits.AuditKind.Process = 3 -> Standard.Agents.Models.Brokers.Audits.AuditKind
+Standard.Agents.Models.Brokers.Audits.AuditKind.Run = 0 -> Standard.Agents.Models.Brokers.Audits.AuditKind
+Standard.Agents.Models.Brokers.Audits.AuditKind.Step = 2 -> Standard.Agents.Models.Brokers.Audits.AuditKind
+Standard.Agents.Models.Brokers.Audits.AuditKind.Turn = 1 -> Standard.Agents.Models.Brokers.Audits.AuditKind
+Standard.Agents.Models.Brokers.Audits.AuditRecord
+Standard.Agents.Models.Brokers.Audits.AuditRecord.<Clone>$() -> Standard.Agents.Models.Brokers.Audits.AuditRecord!
+Standard.Agents.Models.Brokers.Audits.AuditRecord.Actor.get -> string!
+Standard.Agents.Models.Brokers.Audits.AuditRecord.Actor.init -> void
+Standard.Agents.Models.Brokers.Audits.AuditRecord.AuditRecord() -> void
+Standard.Agents.Models.Brokers.Audits.AuditRecord.Detail.get -> bool
+Standard.Agents.Models.Brokers.Audits.AuditRecord.Detail.init -> void
+Standard.Agents.Models.Brokers.Audits.AuditRecord.Equals(Standard.Agents.Models.Brokers.Audits.AuditRecord? other) -> bool
+Standard.Agents.Models.Brokers.Audits.AuditRecord.Kind.get -> Standard.Agents.Models.Brokers.Audits.AuditKind
+Standard.Agents.Models.Brokers.Audits.AuditRecord.Kind.init -> void
+Standard.Agents.Models.Brokers.Audits.AuditRecord.Message.get -> string!
+Standard.Agents.Models.Brokers.Audits.AuditRecord.Message.init -> void
+Standard.Agents.Models.Brokers.Audits.AuditRecord.PreviousHash.get -> string?
+Standard.Agents.Models.Brokers.Audits.AuditRecord.PreviousHash.init -> void
+Standard.Agents.Models.Brokers.Audits.AuditRecord.Principal.get -> string?
+Standard.Agents.Models.Brokers.Audits.AuditRecord.Principal.init -> void
+Standard.Agents.Models.Brokers.Audits.AuditRecord.RunId.get -> string!
+Standard.Agents.Models.Brokers.Audits.AuditRecord.RunId.init -> void
+Standard.Agents.Models.Brokers.Audits.AuditRecord.Sequence.get -> int
+Standard.Agents.Models.Brokers.Audits.AuditRecord.Sequence.init -> void
+Standard.Agents.Models.Brokers.Audits.AuditRecord.Timestamp.get -> System.DateTimeOffset
+Standard.Agents.Models.Brokers.Audits.AuditRecord.Timestamp.init -> void
+Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage
+Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage.<Clone>$() -> Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage!
+Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage.Content.get -> string!
+Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage.Content.init -> void
+Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage.ConversationMessage() -> void
+Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage.Equals(Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage? other) -> bool
+Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage.Role.get -> Standard.Agents.Models.Brokers.Generators.V1.MessageRole
+Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage.Role.init -> void
+Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage.ToolCallId.get -> string!
+Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage.ToolCallId.init -> void
+Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage.ToolCalls.get -> System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall!>!
+Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage.ToolCalls.init -> void
+Standard.Agents.Models.Brokers.Generators.V1.GenerationResult
+Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.<Clone>$() -> Standard.Agents.Models.Brokers.Generators.V1.GenerationResult!
+Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.CompletionTokens.get -> int
+Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.CompletionTokens.init -> void
+Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.Content.get -> string!
+Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.Content.init -> void
+Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.Equals(Standard.Agents.Models.Brokers.Generators.V1.GenerationResult? other) -> bool
+Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.GenerationResult() -> void
+Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.HasToolCalls.get -> bool
+Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.PromptTokens.get -> int
+Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.PromptTokens.init -> void
+Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.ToolCalls.get -> System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall!>!
+Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.ToolCalls.init -> void
+Standard.Agents.Models.Brokers.Generators.V1.MessageRole
+Standard.Agents.Models.Brokers.Generators.V1.MessageRole.Assistant = 2 -> Standard.Agents.Models.Brokers.Generators.V1.MessageRole
+Standard.Agents.Models.Brokers.Generators.V1.MessageRole.System = 0 -> Standard.Agents.Models.Brokers.Generators.V1.MessageRole
+Standard.Agents.Models.Brokers.Generators.V1.MessageRole.Tool = 3 -> Standard.Agents.Models.Brokers.Generators.V1.MessageRole
+Standard.Agents.Models.Brokers.Generators.V1.MessageRole.User = 1 -> Standard.Agents.Models.Brokers.Generators.V1.MessageRole
+Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall
+Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall.<Clone>$() -> Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall!
+Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall.ArgumentsJson.get -> string!
+Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall.ArgumentsJson.init -> void
+Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall.Deconstruct(out string! Id, out string! Name, out string! ArgumentsJson) -> void
+Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall.Equals(Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall? other) -> bool
+Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall.Id.get -> string!
+Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall.Id.init -> void
+Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall.ModelToolCall(string! Id, string! Name, string! ArgumentsJson) -> void
+Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall.Name.get -> string!
+Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall.Name.init -> void
+Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition
+Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition.<Clone>$() -> Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition!
+Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition.Deconstruct(out string! Name, out string! Description, out string! ParametersJson) -> void
+Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition.Description.get -> string!
+Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition.Description.init -> void
+Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition.Equals(Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition? other) -> bool
+Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition.Name.get -> string!
+Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition.Name.init -> void
+Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition.ParametersJson.get -> string!
+Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition.ParametersJson.init -> void
+Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition.ToolDefinition(string! Name, string! Description, string! ParametersJson) -> void
+Standard.Agents.Models.Brokers.Mcps.McpTool
+Standard.Agents.Models.Brokers.Mcps.McpTool.<Clone>$() -> Standard.Agents.Models.Brokers.Mcps.McpTool!
+Standard.Agents.Models.Brokers.Mcps.McpTool.Deconstruct(out string! Name, out string! Description) -> void
+Standard.Agents.Models.Brokers.Mcps.McpTool.Description.get -> string!
+Standard.Agents.Models.Brokers.Mcps.McpTool.Description.init -> void
+Standard.Agents.Models.Brokers.Mcps.McpTool.Equals(Standard.Agents.Models.Brokers.Mcps.McpTool? other) -> bool
+Standard.Agents.Models.Brokers.Mcps.McpTool.McpTool(string! Name, string! Description) -> void
+Standard.Agents.Models.Brokers.Mcps.McpTool.Name.get -> string!
+Standard.Agents.Models.Brokers.Mcps.McpTool.Name.init -> void
+Standard.Agents.Models.Brokers.Sessions.AgentSession
+Standard.Agents.Models.Brokers.Sessions.AgentSession.<Clone>$() -> Standard.Agents.Models.Brokers.Sessions.AgentSession!
+Standard.Agents.Models.Brokers.Sessions.AgentSession.AgentSession() -> void
+Standard.Agents.Models.Brokers.Sessions.AgentSession.Equals(Standard.Agents.Models.Brokers.Sessions.AgentSession? other) -> bool
+Standard.Agents.Models.Brokers.Sessions.AgentSession.History.get -> System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Sessions.AgentTurn!>!
+Standard.Agents.Models.Brokers.Sessions.AgentSession.History.init -> void
+Standard.Agents.Models.Brokers.Sessions.AgentSession.Id.get -> string!
+Standard.Agents.Models.Brokers.Sessions.AgentSession.Id.init -> void
+Standard.Agents.Models.Brokers.Sessions.AgentSession.PendingEffect.get -> Standard.Agents.Models.Orchestrations.Effects.AgentEffect?
+Standard.Agents.Models.Brokers.Sessions.AgentSession.PendingEffect.init -> void
+Standard.Agents.Models.Brokers.Sessions.AgentSession.PendingQuestion.get -> string!
+Standard.Agents.Models.Brokers.Sessions.AgentSession.PendingQuestion.init -> void
+Standard.Agents.Models.Brokers.Sessions.AgentSession.RunId.get -> string!
+Standard.Agents.Models.Brokers.Sessions.AgentSession.RunId.init -> void
+Standard.Agents.Models.Brokers.Sessions.AgentSession.Status.get -> Standard.Agents.Models.Orchestrations.Agents.AgentStatus
+Standard.Agents.Models.Brokers.Sessions.AgentSession.Status.init -> void
+Standard.Agents.Models.Brokers.Sessions.AgentTurn
+Standard.Agents.Models.Brokers.Sessions.AgentTurn.<Clone>$() -> Standard.Agents.Models.Brokers.Sessions.AgentTurn!
+Standard.Agents.Models.Brokers.Sessions.AgentTurn.AgentTurn(string! Prompt, string! Answer) -> void
+Standard.Agents.Models.Brokers.Sessions.AgentTurn.Answer.get -> string!
+Standard.Agents.Models.Brokers.Sessions.AgentTurn.Answer.init -> void
+Standard.Agents.Models.Brokers.Sessions.AgentTurn.Deconstruct(out string! Prompt, out string! Answer) -> void
+Standard.Agents.Models.Brokers.Sessions.AgentTurn.Equals(Standard.Agents.Models.Brokers.Sessions.AgentTurn? other) -> bool
+Standard.Agents.Models.Brokers.Sessions.AgentTurn.Prompt.get -> string!
+Standard.Agents.Models.Brokers.Sessions.AgentTurn.Prompt.init -> void
+Standard.Agents.Models.Clients.Agents.AgentOutcome
+Standard.Agents.Models.Clients.Agents.AgentOutcome.AgentOutcome(Standard.Agents.Models.Clients.Agents.AgentOutcome! original) -> void
+Standard.Agents.Models.Clients.Agents.AgentOutcome.AgentOutcome(string! Result, Standard.Agents.Models.Orchestrations.Agents.AgentStatus Status) -> void
+Standard.Agents.Models.Clients.Agents.AgentOutcome.Deconstruct(out string! Result, out Standard.Agents.Models.Orchestrations.Agents.AgentStatus Status) -> void
+Standard.Agents.Models.Clients.Agents.AgentOutcome.Result.get -> string!
+Standard.Agents.Models.Clients.Agents.AgentOutcome.Result.init -> void
+Standard.Agents.Models.Clients.Agents.AgentOutcome.Status.get -> Standard.Agents.Models.Orchestrations.Agents.AgentStatus
+Standard.Agents.Models.Clients.Agents.AgentOutcome.Status.init -> void
+Standard.Agents.Models.Clients.Agents.AgentStreamEvent
+Standard.Agents.Models.Clients.Agents.AgentStreamEvent.<Clone>$() -> Standard.Agents.Models.Clients.Agents.AgentStreamEvent!
+Standard.Agents.Models.Clients.Agents.AgentStreamEvent.AgentStreamEvent(Standard.Agents.Models.Clients.Agents.AgentStreamEventType Type, string! Content) -> void
+Standard.Agents.Models.Clients.Agents.AgentStreamEvent.Content.get -> string!
+Standard.Agents.Models.Clients.Agents.AgentStreamEvent.Content.init -> void
+Standard.Agents.Models.Clients.Agents.AgentStreamEvent.Deconstruct(out Standard.Agents.Models.Clients.Agents.AgentStreamEventType Type, out string! Content) -> void
+Standard.Agents.Models.Clients.Agents.AgentStreamEvent.Equals(Standard.Agents.Models.Clients.Agents.AgentStreamEvent? other) -> bool
+Standard.Agents.Models.Clients.Agents.AgentStreamEvent.Type.get -> Standard.Agents.Models.Clients.Agents.AgentStreamEventType
+Standard.Agents.Models.Clients.Agents.AgentStreamEvent.Type.init -> void
+Standard.Agents.Models.Clients.Agents.AgentStreamEventType
+Standard.Agents.Models.Clients.Agents.AgentStreamEventType.Response = 3 -> Standard.Agents.Models.Clients.Agents.AgentStreamEventType
+Standard.Agents.Models.Clients.Agents.AgentStreamEventType.Status = 0 -> Standard.Agents.Models.Clients.Agents.AgentStreamEventType
+Standard.Agents.Models.Clients.Agents.AgentStreamEventType.Thinking = 1 -> Standard.Agents.Models.Clients.Agents.AgentStreamEventType
+Standard.Agents.Models.Clients.Agents.AgentStreamEventType.Tool = 2 -> Standard.Agents.Models.Clients.Agents.AgentStreamEventType
+Standard.Agents.Models.Clients.Agents.Exceptions.InvalidAgentCompositionException
+Standard.Agents.Models.Clients.Agents.Exceptions.InvalidAgentCompositionException.InvalidAgentCompositionException(string! message) -> void
+Standard.Agents.Models.Clients.Agents.Exceptions.InvalidAgentConfigurationException
+Standard.Agents.Models.Clients.Agents.Exceptions.InvalidAgentConfigurationException.InvalidAgentConfigurationException(string! message) -> void
+Standard.Agents.Models.Coordinations.Agents.AgentBudget
+Standard.Agents.Models.Coordinations.Agents.AgentBudget.<Clone>$() -> Standard.Agents.Models.Coordinations.Agents.AgentBudget!
+Standard.Agents.Models.Coordinations.Agents.AgentBudget.AgentBudget() -> void
+Standard.Agents.Models.Coordinations.Agents.AgentBudget.CostPerThousandTokens.get -> decimal
+Standard.Agents.Models.Coordinations.Agents.AgentBudget.CostPerThousandTokens.init -> void
+Standard.Agents.Models.Coordinations.Agents.AgentBudget.Equals(Standard.Agents.Models.Coordinations.Agents.AgentBudget? other) -> bool
+Standard.Agents.Models.Coordinations.Agents.AgentBudget.IsBounded.get -> bool
+Standard.Agents.Models.Coordinations.Agents.AgentBudget.MaxCostUsd.get -> decimal?
+Standard.Agents.Models.Coordinations.Agents.AgentBudget.MaxCostUsd.init -> void
+Standard.Agents.Models.Coordinations.Agents.AgentBudget.MaxTokens.get -> int?
+Standard.Agents.Models.Coordinations.Agents.AgentBudget.MaxTokens.init -> void
+Standard.Agents.Models.Coordinations.Agents.AgentBudget.MaxWallClock.get -> System.TimeSpan?
+Standard.Agents.Models.Coordinations.Agents.AgentBudget.MaxWallClock.init -> void
+Standard.Agents.Models.Coordinations.Agents.AgentSpend
+Standard.Agents.Models.Coordinations.Agents.AgentSpend.AddTokens(int promptTokens, int completionTokens) -> void
+Standard.Agents.Models.Coordinations.Agents.AgentSpend.AgentSpend() -> void
+Standard.Agents.Models.Coordinations.Agents.AgentSpend.CostUsd(decimal costPerThousandTokens) -> decimal
+Standard.Agents.Models.Coordinations.Agents.AgentSpend.Tokens.get -> int
+Standard.Agents.Models.Coordinations.Agents.Exceptions.AgentCoordinationDependencyException
+Standard.Agents.Models.Coordinations.Agents.Exceptions.AgentCoordinationDependencyException.AgentCoordinationDependencyException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Coordinations.Agents.Exceptions.AgentCoordinationDependencyValidationException
+Standard.Agents.Models.Coordinations.Agents.Exceptions.AgentCoordinationDependencyValidationException.AgentCoordinationDependencyValidationException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Coordinations.Agents.Exceptions.AgentCoordinationValidationException
+Standard.Agents.Models.Coordinations.Agents.Exceptions.AgentCoordinationValidationException.AgentCoordinationValidationException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Coordinations.Agents.Exceptions.FailedRunManagementServiceException
+Standard.Agents.Models.Coordinations.Agents.Exceptions.FailedRunManagementServiceException.FailedRunManagementServiceException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Coordinations.Agents.Exceptions.InvalidAgentException
+Standard.Agents.Models.Coordinations.Agents.Exceptions.InvalidAgentException.InvalidAgentException(string! message) -> void
+Standard.Agents.Models.Coordinations.Agents.Exceptions.RunManagementServiceException
+Standard.Agents.Models.Coordinations.Agents.Exceptions.RunManagementServiceException.RunManagementServiceException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.<Clone>$() -> Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy!
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.DeclaredRisk.get -> System.Collections.Generic.IReadOnlyDictionary<string!, Standard.Agents.Models.Orchestrations.Effects.RiskLevel>!
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.DeclaredRisk.init -> void
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.Equals(Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy? other) -> bool
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.ExplicitlyPermits.get -> System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentEffect!, bool>?
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.ExplicitlyPermits.init -> void
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.IdentityResolver.get -> System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal?>?
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.IdentityResolver.init -> void
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.IrreversibleTools.get -> System.Collections.Generic.IReadOnlyCollection<string!>!
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.IrreversibleTools.init -> void
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.Mode.get -> Standard.Agents.Models.Orchestrations.Effects.PermissionMode
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.Mode.init -> void
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.PerimeterPolicy() -> void
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.ToolRisk.get -> System.Collections.Generic.IReadOnlyDictionary<string!, Standard.Agents.Models.Orchestrations.Effects.RiskLevel>!
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.ToolRisk.init -> void
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.ToolScope.get -> System.Collections.Generic.IReadOnlyDictionary<string!, System.Func<string!, string!>!>!
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.ToolScope.init -> void
+Standard.Agents.Models.Foundations.Approvals.Exceptions.ApprovalDependencyException
+Standard.Agents.Models.Foundations.Approvals.Exceptions.ApprovalDependencyException.ApprovalDependencyException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Approvals.Exceptions.ApprovalServiceException
+Standard.Agents.Models.Foundations.Approvals.Exceptions.ApprovalServiceException.ApprovalServiceException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Approvals.Exceptions.ApprovalValidationException
+Standard.Agents.Models.Foundations.Approvals.Exceptions.ApprovalValidationException.ApprovalValidationException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Approvals.Exceptions.FailedApprovalDependencyException
+Standard.Agents.Models.Foundations.Approvals.Exceptions.FailedApprovalDependencyException.FailedApprovalDependencyException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.Approvals.Exceptions.FailedApprovalServiceException
+Standard.Agents.Models.Foundations.Approvals.Exceptions.FailedApprovalServiceException.FailedApprovalServiceException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.Approvals.Exceptions.InvalidApprovalException
+Standard.Agents.Models.Foundations.Approvals.Exceptions.InvalidApprovalException.InvalidApprovalException(string! message) -> void
+Standard.Agents.Models.Foundations.Brains.Exceptions.BrainDependencyException
+Standard.Agents.Models.Foundations.Brains.Exceptions.BrainDependencyException.BrainDependencyException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Brains.Exceptions.BrainDependencyValidationException
+Standard.Agents.Models.Foundations.Brains.Exceptions.BrainDependencyValidationException.BrainDependencyValidationException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Brains.Exceptions.BrainServiceException
+Standard.Agents.Models.Foundations.Brains.Exceptions.BrainServiceException.BrainServiceException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Brains.Exceptions.BrainValidationException
+Standard.Agents.Models.Foundations.Brains.Exceptions.BrainValidationException.BrainValidationException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Brains.Exceptions.FailedBrainDependencyException
+Standard.Agents.Models.Foundations.Brains.Exceptions.FailedBrainDependencyException.FailedBrainDependencyException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.Brains.Exceptions.FailedBrainServiceException
+Standard.Agents.Models.Foundations.Brains.Exceptions.FailedBrainServiceException.FailedBrainServiceException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.Brains.Exceptions.InvalidBrainException
+Standard.Agents.Models.Foundations.Brains.Exceptions.InvalidBrainException.InvalidBrainException(string! message) -> void
+Standard.Agents.Models.Foundations.Brains.RedactionRule
+Standard.Agents.Models.Foundations.Brains.RedactionRule.Label.get -> string!
+Standard.Agents.Models.Foundations.Brains.RedactionRule.Label.init -> void
+Standard.Agents.Models.Foundations.Brains.RedactionRule.Pattern.get -> string!
+Standard.Agents.Models.Foundations.Brains.RedactionRule.Pattern.init -> void
+Standard.Agents.Models.Foundations.Brains.RedactionRule.RedactionRule() -> void
+Standard.Agents.Models.Foundations.Brains.RedactionRule.RedactionRule(Standard.Agents.Models.Foundations.Brains.RedactionRule! original) -> void
+Standard.Agents.Models.Foundations.Brains.RedactionRules
+Standard.Agents.Models.Foundations.Contracts.ContractVerdict
+Standard.Agents.Models.Foundations.Contracts.ContractVerdict.ContractVerdict(Standard.Agents.Models.Foundations.Contracts.ContractVerdict! original) -> void
+Standard.Agents.Models.Foundations.Contracts.ContractVerdict.ContractVerdict(bool Satisfied, string! Reason) -> void
+Standard.Agents.Models.Foundations.Contracts.ContractVerdict.Deconstruct(out bool Satisfied, out string! Reason) -> void
+Standard.Agents.Models.Foundations.Contracts.ContractVerdict.Reason.get -> string!
+Standard.Agents.Models.Foundations.Contracts.ContractVerdict.Reason.init -> void
+Standard.Agents.Models.Foundations.Contracts.ContractVerdict.Satisfied.get -> bool
+Standard.Agents.Models.Foundations.Contracts.ContractVerdict.Satisfied.init -> void
+Standard.Agents.Models.Foundations.Contracts.Exceptions.ContractDependencyException
+Standard.Agents.Models.Foundations.Contracts.Exceptions.ContractDependencyException.ContractDependencyException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Contracts.Exceptions.ContractServiceException
+Standard.Agents.Models.Foundations.Contracts.Exceptions.ContractServiceException.ContractServiceException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Contracts.Exceptions.ContractValidationException
+Standard.Agents.Models.Foundations.Contracts.Exceptions.ContractValidationException.ContractValidationException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Contracts.Exceptions.FailedContractDependencyException
+Standard.Agents.Models.Foundations.Contracts.Exceptions.FailedContractDependencyException.FailedContractDependencyException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.Contracts.Exceptions.FailedContractServiceException
+Standard.Agents.Models.Foundations.Contracts.Exceptions.FailedContractServiceException.FailedContractServiceException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.Contracts.Exceptions.InvalidContractException
+Standard.Agents.Models.Foundations.Contracts.Exceptions.InvalidContractException.InvalidContractException(string! message) -> void
+Standard.Agents.Models.Foundations.EffectLedgers.Exceptions.EffectLedgerDependencyException
+Standard.Agents.Models.Foundations.EffectLedgers.Exceptions.EffectLedgerDependencyException.EffectLedgerDependencyException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.EffectLedgers.Exceptions.EffectLedgerServiceException
+Standard.Agents.Models.Foundations.EffectLedgers.Exceptions.EffectLedgerServiceException.EffectLedgerServiceException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.EffectLedgers.Exceptions.EffectLedgerValidationException
+Standard.Agents.Models.Foundations.EffectLedgers.Exceptions.EffectLedgerValidationException.EffectLedgerValidationException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.EffectLedgers.Exceptions.FailedEffectLedgerDependencyException
+Standard.Agents.Models.Foundations.EffectLedgers.Exceptions.FailedEffectLedgerDependencyException.FailedEffectLedgerDependencyException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.EffectLedgers.Exceptions.FailedEffectLedgerServiceException
+Standard.Agents.Models.Foundations.EffectLedgers.Exceptions.FailedEffectLedgerServiceException.FailedEffectLedgerServiceException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.EffectLedgers.Exceptions.InvalidEffectLedgerException
+Standard.Agents.Models.Foundations.EffectLedgers.Exceptions.InvalidEffectLedgerException.InvalidEffectLedgerException(string! message) -> void
+Standard.Agents.Models.Foundations.ExternalTools.Exceptions.ExternalToolDependencyException
+Standard.Agents.Models.Foundations.ExternalTools.Exceptions.ExternalToolDependencyException.ExternalToolDependencyException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.ExternalTools.Exceptions.ExternalToolDependencyValidationException
+Standard.Agents.Models.Foundations.ExternalTools.Exceptions.ExternalToolDependencyValidationException.ExternalToolDependencyValidationException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.ExternalTools.Exceptions.ExternalToolServiceException
+Standard.Agents.Models.Foundations.ExternalTools.Exceptions.ExternalToolServiceException.ExternalToolServiceException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.ExternalTools.Exceptions.ExternalToolValidationException
+Standard.Agents.Models.Foundations.ExternalTools.Exceptions.ExternalToolValidationException.ExternalToolValidationException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.ExternalTools.Exceptions.FailedExternalToolDependencyException
+Standard.Agents.Models.Foundations.ExternalTools.Exceptions.FailedExternalToolDependencyException.FailedExternalToolDependencyException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.ExternalTools.Exceptions.FailedExternalToolServiceException
+Standard.Agents.Models.Foundations.ExternalTools.Exceptions.FailedExternalToolServiceException.FailedExternalToolServiceException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.ExternalTools.Exceptions.InvalidExternalToolException
+Standard.Agents.Models.Foundations.ExternalTools.Exceptions.InvalidExternalToolException.InvalidExternalToolException(string! message) -> void
+Standard.Agents.Models.Foundations.Gates.Exceptions.FailedGateDependencyException
+Standard.Agents.Models.Foundations.Gates.Exceptions.FailedGateDependencyException.FailedGateDependencyException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.Gates.Exceptions.FailedGateServiceException
+Standard.Agents.Models.Foundations.Gates.Exceptions.FailedGateServiceException.FailedGateServiceException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.Gates.Exceptions.GateDependencyException
+Standard.Agents.Models.Foundations.Gates.Exceptions.GateDependencyException.GateDependencyException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Gates.Exceptions.GateDependencyValidationException
+Standard.Agents.Models.Foundations.Gates.Exceptions.GateDependencyValidationException.GateDependencyValidationException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Gates.Exceptions.GateServiceException
+Standard.Agents.Models.Foundations.Gates.Exceptions.GateServiceException.GateServiceException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Gates.Exceptions.GateValidationException
+Standard.Agents.Models.Foundations.Gates.Exceptions.GateValidationException.GateValidationException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Gates.Exceptions.InvalidGateException
+Standard.Agents.Models.Foundations.Gates.Exceptions.InvalidGateException.InvalidGateException(string! message) -> void
+Standard.Agents.Models.Foundations.Gates.SkillConflict
+Standard.Agents.Models.Foundations.Gates.SkillConflict.<Clone>$() -> Standard.Agents.Models.Foundations.Gates.SkillConflict!
+Standard.Agents.Models.Foundations.Gates.SkillConflict.Deconstruct(out System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Gates.SkillDirective!>! Options) -> void
+Standard.Agents.Models.Foundations.Gates.SkillConflict.Equals(Standard.Agents.Models.Foundations.Gates.SkillConflict? other) -> bool
+Standard.Agents.Models.Foundations.Gates.SkillConflict.Options.get -> System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Gates.SkillDirective!>!
+Standard.Agents.Models.Foundations.Gates.SkillConflict.Options.init -> void
+Standard.Agents.Models.Foundations.Gates.SkillConflict.SkillConflict(System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Gates.SkillDirective!>! Options) -> void
+Standard.Agents.Models.Foundations.Gates.SkillDirective
+Standard.Agents.Models.Foundations.Gates.SkillDirective.<Clone>$() -> Standard.Agents.Models.Foundations.Gates.SkillDirective!
+Standard.Agents.Models.Foundations.Gates.SkillDirective.Deconstruct(out string! Skill, out string! Instruction) -> void
+Standard.Agents.Models.Foundations.Gates.SkillDirective.Equals(Standard.Agents.Models.Foundations.Gates.SkillDirective? other) -> bool
+Standard.Agents.Models.Foundations.Gates.SkillDirective.Instruction.get -> string!
+Standard.Agents.Models.Foundations.Gates.SkillDirective.Instruction.init -> void
+Standard.Agents.Models.Foundations.Gates.SkillDirective.Skill.get -> string!
+Standard.Agents.Models.Foundations.Gates.SkillDirective.Skill.init -> void
+Standard.Agents.Models.Foundations.Gates.SkillDirective.SkillDirective(string! Skill, string! Instruction) -> void
+Standard.Agents.Models.Foundations.InternalTools.Exceptions.FailedInternalToolDependencyException
+Standard.Agents.Models.Foundations.InternalTools.Exceptions.FailedInternalToolDependencyException.FailedInternalToolDependencyException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.InternalTools.Exceptions.FailedInternalToolServiceException
+Standard.Agents.Models.Foundations.InternalTools.Exceptions.FailedInternalToolServiceException.FailedInternalToolServiceException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.InternalTools.Exceptions.InternalToolDependencyException
+Standard.Agents.Models.Foundations.InternalTools.Exceptions.InternalToolDependencyException.InternalToolDependencyException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.InternalTools.Exceptions.InternalToolServiceException
+Standard.Agents.Models.Foundations.InternalTools.Exceptions.InternalToolServiceException.InternalToolServiceException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.InternalTools.Exceptions.InternalToolValidationException
+Standard.Agents.Models.Foundations.InternalTools.Exceptions.InternalToolValidationException.InternalToolValidationException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.InternalTools.Exceptions.InvalidInternalToolException
+Standard.Agents.Models.Foundations.InternalTools.Exceptions.InvalidInternalToolException.InvalidInternalToolException(string! message) -> void
+Standard.Agents.Models.Foundations.Judges.Exceptions.FailedJudgeDependencyException
+Standard.Agents.Models.Foundations.Judges.Exceptions.FailedJudgeDependencyException.FailedJudgeDependencyException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.Judges.Exceptions.FailedJudgeServiceException
+Standard.Agents.Models.Foundations.Judges.Exceptions.FailedJudgeServiceException.FailedJudgeServiceException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.Judges.Exceptions.InvalidJudgeException
+Standard.Agents.Models.Foundations.Judges.Exceptions.InvalidJudgeException.InvalidJudgeException(string! message) -> void
+Standard.Agents.Models.Foundations.Judges.Exceptions.InvalidJudgeScoreException
+Standard.Agents.Models.Foundations.Judges.Exceptions.InvalidJudgeScoreException.InvalidJudgeScoreException(string! message) -> void
+Standard.Agents.Models.Foundations.Judges.Exceptions.JudgeDependencyException
+Standard.Agents.Models.Foundations.Judges.Exceptions.JudgeDependencyException.JudgeDependencyException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Judges.Exceptions.JudgeDependencyValidationException
+Standard.Agents.Models.Foundations.Judges.Exceptions.JudgeDependencyValidationException.JudgeDependencyValidationException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Judges.Exceptions.JudgeServiceException
+Standard.Agents.Models.Foundations.Judges.Exceptions.JudgeServiceException.JudgeServiceException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Judges.Exceptions.JudgeValidationException
+Standard.Agents.Models.Foundations.Judges.Exceptions.JudgeValidationException.JudgeValidationException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Judges.Judgement
+Standard.Agents.Models.Foundations.Judges.Judgement.Judgement() -> void
+Standard.Agents.Models.Foundations.Judges.Judgement.Judgement(Standard.Agents.Models.Foundations.Judges.Judgement! original) -> void
+Standard.Agents.Models.Foundations.Judges.Judgement.Reason.get -> string!
+Standard.Agents.Models.Foundations.Judges.Judgement.Reason.init -> void
+Standard.Agents.Models.Foundations.Judges.Judgement.Score.get -> double
+Standard.Agents.Models.Foundations.Judges.Judgement.Score.init -> void
+Standard.Agents.Models.Foundations.Knowledges.Exceptions.FailedKnowledgeDependencyException
+Standard.Agents.Models.Foundations.Knowledges.Exceptions.FailedKnowledgeDependencyException.FailedKnowledgeDependencyException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.Knowledges.Exceptions.FailedKnowledgeServiceException
+Standard.Agents.Models.Foundations.Knowledges.Exceptions.FailedKnowledgeServiceException.FailedKnowledgeServiceException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.Knowledges.Exceptions.InvalidKnowledgeException
+Standard.Agents.Models.Foundations.Knowledges.Exceptions.InvalidKnowledgeException.InvalidKnowledgeException(string! message) -> void
+Standard.Agents.Models.Foundations.Knowledges.Exceptions.KnowledgeDependencyException
+Standard.Agents.Models.Foundations.Knowledges.Exceptions.KnowledgeDependencyException.KnowledgeDependencyException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Knowledges.Exceptions.KnowledgeServiceException
+Standard.Agents.Models.Foundations.Knowledges.Exceptions.KnowledgeServiceException.KnowledgeServiceException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Knowledges.Exceptions.KnowledgeValidationException
+Standard.Agents.Models.Foundations.Knowledges.Exceptions.KnowledgeValidationException.KnowledgeValidationException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Memorys.Exceptions.FailedMemoryDependencyException
+Standard.Agents.Models.Foundations.Memorys.Exceptions.FailedMemoryDependencyException.FailedMemoryDependencyException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.Memorys.Exceptions.FailedMemoryServiceException
+Standard.Agents.Models.Foundations.Memorys.Exceptions.FailedMemoryServiceException.FailedMemoryServiceException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.Memorys.Exceptions.InvalidMemoryException
+Standard.Agents.Models.Foundations.Memorys.Exceptions.InvalidMemoryException.InvalidMemoryException(string! message) -> void
+Standard.Agents.Models.Foundations.Memorys.Exceptions.MemoryDependencyException
+Standard.Agents.Models.Foundations.Memorys.Exceptions.MemoryDependencyException.MemoryDependencyException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Memorys.Exceptions.MemoryServiceException
+Standard.Agents.Models.Foundations.Memorys.Exceptions.MemoryServiceException.MemoryServiceException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Memorys.Exceptions.MemoryValidationException
+Standard.Agents.Models.Foundations.Memorys.Exceptions.MemoryValidationException.MemoryValidationException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Policys.Exceptions.FailedPolicyDependencyException
+Standard.Agents.Models.Foundations.Policys.Exceptions.FailedPolicyDependencyException.FailedPolicyDependencyException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.Policys.Exceptions.FailedPolicyServiceException
+Standard.Agents.Models.Foundations.Policys.Exceptions.FailedPolicyServiceException.FailedPolicyServiceException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.Policys.Exceptions.InvalidPolicyException
+Standard.Agents.Models.Foundations.Policys.Exceptions.InvalidPolicyException.InvalidPolicyException(string! message) -> void
+Standard.Agents.Models.Foundations.Policys.Exceptions.PolicyDependencyException
+Standard.Agents.Models.Foundations.Policys.Exceptions.PolicyDependencyException.PolicyDependencyException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Policys.Exceptions.PolicyServiceException
+Standard.Agents.Models.Foundations.Policys.Exceptions.PolicyServiceException.PolicyServiceException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Policys.Exceptions.PolicyValidationException
+Standard.Agents.Models.Foundations.Policys.Exceptions.PolicyValidationException.PolicyValidationException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Returns.Exceptions.FailedReturnServiceException
+Standard.Agents.Models.Foundations.Returns.Exceptions.FailedReturnServiceException.FailedReturnServiceException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.Returns.Exceptions.InvalidReturnException
+Standard.Agents.Models.Foundations.Returns.Exceptions.InvalidReturnException.InvalidReturnException(string! message) -> void
+Standard.Agents.Models.Foundations.Returns.Exceptions.ReturnServiceException
+Standard.Agents.Models.Foundations.Returns.Exceptions.ReturnServiceException.ReturnServiceException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Returns.Exceptions.ReturnValidationException
+Standard.Agents.Models.Foundations.Returns.Exceptions.ReturnValidationException.ReturnValidationException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Sessions.Exceptions.FailedSessionDependencyException
+Standard.Agents.Models.Foundations.Sessions.Exceptions.FailedSessionDependencyException.FailedSessionDependencyException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.Sessions.Exceptions.FailedSessionServiceException
+Standard.Agents.Models.Foundations.Sessions.Exceptions.FailedSessionServiceException.FailedSessionServiceException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.Sessions.Exceptions.InvalidSessionException
+Standard.Agents.Models.Foundations.Sessions.Exceptions.InvalidSessionException.InvalidSessionException(string! message) -> void
+Standard.Agents.Models.Foundations.Sessions.Exceptions.SessionDependencyException
+Standard.Agents.Models.Foundations.Sessions.Exceptions.SessionDependencyException.SessionDependencyException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Sessions.Exceptions.SessionServiceException
+Standard.Agents.Models.Foundations.Sessions.Exceptions.SessionServiceException.SessionServiceException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Sessions.Exceptions.SessionValidationException
+Standard.Agents.Models.Foundations.Sessions.Exceptions.SessionValidationException.SessionValidationException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Skills.Exceptions.FailedSkillDependencyException
+Standard.Agents.Models.Foundations.Skills.Exceptions.FailedSkillDependencyException.FailedSkillDependencyException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.Skills.Exceptions.FailedSkillServiceException
+Standard.Agents.Models.Foundations.Skills.Exceptions.FailedSkillServiceException.FailedSkillServiceException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.Skills.Exceptions.SkillDependencyException
+Standard.Agents.Models.Foundations.Skills.Exceptions.SkillDependencyException.SkillDependencyException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Skills.Exceptions.SkillServiceException
+Standard.Agents.Models.Foundations.Skills.Exceptions.SkillServiceException.SkillServiceException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Skills.Skill
+Standard.Agents.Models.Foundations.Skills.Skill.Content.get -> string!
+Standard.Agents.Models.Foundations.Skills.Skill.Content.init -> void
+Standard.Agents.Models.Foundations.Skills.Skill.Description.get -> string!
+Standard.Agents.Models.Foundations.Skills.Skill.Description.init -> void
+Standard.Agents.Models.Foundations.Skills.Skill.Name.get -> string!
+Standard.Agents.Models.Foundations.Skills.Skill.Name.init -> void
+Standard.Agents.Models.Foundations.Skills.Skill.Skill() -> void
+Standard.Agents.Models.Foundations.Skills.Skill.Skill(Standard.Agents.Models.Foundations.Skills.Skill! original) -> void
+Standard.Agents.Models.Foundations.Usages.AgentUsage
+Standard.Agents.Models.Foundations.Usages.AgentUsage.AgentUsage(Standard.Agents.Models.Foundations.Usages.AgentUsage! original) -> void
+Standard.Agents.Models.Foundations.Usages.AgentUsage.AgentUsage(int PromptTokens, int CompletionTokens, bool IsEstimated) -> void
+Standard.Agents.Models.Foundations.Usages.AgentUsage.CompletionTokens.get -> int
+Standard.Agents.Models.Foundations.Usages.AgentUsage.CompletionTokens.init -> void
+Standard.Agents.Models.Foundations.Usages.AgentUsage.Deconstruct(out int PromptTokens, out int CompletionTokens, out bool IsEstimated) -> void
+Standard.Agents.Models.Foundations.Usages.AgentUsage.IsEstimated.get -> bool
+Standard.Agents.Models.Foundations.Usages.AgentUsage.IsEstimated.init -> void
+Standard.Agents.Models.Foundations.Usages.AgentUsage.PromptTokens.get -> int
+Standard.Agents.Models.Foundations.Usages.AgentUsage.PromptTokens.init -> void
+Standard.Agents.Models.Foundations.Usages.AgentUsage.TotalTokens.get -> int
+Standard.Agents.Models.Foundations.Usages.Exceptions.FailedUsageDependencyException
+Standard.Agents.Models.Foundations.Usages.Exceptions.FailedUsageDependencyException.FailedUsageDependencyException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.Usages.Exceptions.FailedUsageServiceException
+Standard.Agents.Models.Foundations.Usages.Exceptions.FailedUsageServiceException.FailedUsageServiceException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Foundations.Usages.Exceptions.InvalidUsageException
+Standard.Agents.Models.Foundations.Usages.Exceptions.InvalidUsageException.InvalidUsageException(string! message) -> void
+Standard.Agents.Models.Foundations.Usages.Exceptions.UsageDependencyException
+Standard.Agents.Models.Foundations.Usages.Exceptions.UsageDependencyException.UsageDependencyException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Usages.Exceptions.UsageDependencyValidationException
+Standard.Agents.Models.Foundations.Usages.Exceptions.UsageDependencyValidationException.UsageDependencyValidationException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Usages.Exceptions.UsageServiceException
+Standard.Agents.Models.Foundations.Usages.Exceptions.UsageServiceException.UsageServiceException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Usages.Exceptions.UsageValidationException
+Standard.Agents.Models.Foundations.Usages.Exceptions.UsageValidationException.UsageValidationException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Loggings.AgentRun
+Standard.Agents.Models.Loggings.AgentRun.CancellationToken.get -> System.Threading.CancellationToken
+Standard.Agents.Models.Loggings.AgentRun.HandoffOutcome.get -> Standard.Agents.Models.Clients.Agents.AgentOutcome?
+Standard.Agents.Models.Loggings.AgentRun.HandoffOutcome.set -> void
+Standard.Agents.Models.Loggings.AgentRun.Id.get -> string!
+Standard.Agents.Models.Loggings.AgentRun.NextProcessIndex() -> int
+Standard.Agents.Models.Loggings.AgentRun.NextSequence() -> int
+Standard.Agents.Models.Loggings.AgentRun.PerformedEffects.get -> System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Loggings.PerformedEffect!>!
+Standard.Agents.Models.Loggings.AgentRun.Prompt.get -> string!
+Standard.Agents.Models.Loggings.AgentRun.Prompt.set -> void
+Standard.Agents.Models.Loggings.AgentRun.RecordPerformed(Standard.Agents.Models.Loggings.PerformedEffect! effect) -> void
+Standard.Agents.Models.Loggings.AgentRun.RememberGrant(string! toolName, string! scope) -> void
+Standard.Agents.Models.Loggings.AgentRun.RememberVerdict(string! prompt, string! verdict) -> void
+Standard.Agents.Models.Loggings.AgentRun.ResetProcessIndex() -> void
+Standard.Agents.Models.Loggings.AgentRun.StartedOn.get -> System.DateTimeOffset
+Standard.Agents.Models.Loggings.AgentRun.StartedOn.set -> void
+Standard.Agents.Models.Loggings.AgentRun.TryGetVerdict(string! prompt, out string! verdict) -> bool
+Standard.Agents.Models.Loggings.AgentRun.WasGranted(string! toolName, string! scope) -> bool
+Standard.Agents.Models.Loggings.AgentStep
+Standard.Agents.Models.Loggings.AgentStep.Data = 0 -> Standard.Agents.Models.Loggings.AgentStep
+Standard.Agents.Models.Loggings.AgentStep.Decision = 1 -> Standard.Agents.Models.Loggings.AgentStep
+Standard.Agents.Models.Loggings.AgentStep.Direction = 2 -> Standard.Agents.Models.Loggings.AgentStep
+Standard.Agents.Models.Loggings.PerformedEffect
+Standard.Agents.Models.Loggings.PerformedEffect.<Clone>$() -> Standard.Agents.Models.Loggings.PerformedEffect!
+Standard.Agents.Models.Loggings.PerformedEffect.Arguments.get -> string!
+Standard.Agents.Models.Loggings.PerformedEffect.Arguments.init -> void
+Standard.Agents.Models.Loggings.PerformedEffect.Deconstruct(out string! ToolName, out string! Arguments, out string! Outcome) -> void
+Standard.Agents.Models.Loggings.PerformedEffect.Equals(Standard.Agents.Models.Loggings.PerformedEffect? other) -> bool
+Standard.Agents.Models.Loggings.PerformedEffect.Outcome.get -> string!
+Standard.Agents.Models.Loggings.PerformedEffect.Outcome.init -> void
+Standard.Agents.Models.Loggings.PerformedEffect.PerformedEffect(string! ToolName, string! Arguments, string! Outcome) -> void
+Standard.Agents.Models.Loggings.PerformedEffect.ToolName.get -> string!
+Standard.Agents.Models.Loggings.PerformedEffect.ToolName.init -> void
+Standard.Agents.Models.Loggings.TraceVerbosity
+Standard.Agents.Models.Loggings.TraceVerbosity.Full = 2 -> Standard.Agents.Models.Loggings.TraceVerbosity
+Standard.Agents.Models.Loggings.TraceVerbosity.Natures = 1 -> Standard.Agents.Models.Loggings.TraceVerbosity
+Standard.Agents.Models.Loggings.TraceVerbosity.Summary = 0 -> Standard.Agents.Models.Loggings.TraceVerbosity
+Standard.Agents.Models.Orchestrations.Agents.AgentContext
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.<Clone>$() -> Standard.Agents.Models.Orchestrations.Agents.AgentContext!
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.AgentContext() -> void
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.CompletionTokens.get -> int
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.CompletionTokens.init -> void
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.DirectionType.get -> string!
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.DirectionType.init -> void
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Equals(Standard.Agents.Models.Orchestrations.Agents.AgentContext? other) -> bool
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.History.get -> System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Sessions.AgentTurn!>!
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.History.init -> void
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Intent.get -> string!
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Intent.init -> void
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Observations.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Observations.init -> void
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Payload.get -> string!
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Payload.init -> void
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.PendingEffect.get -> Standard.Agents.Models.Orchestrations.Effects.AgentEffect?
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.PendingEffect.init -> void
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Prompt.get -> string!
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Prompt.init -> void
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.PromptTokens.get -> int
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.PromptTokens.init -> void
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.RawReply.get -> string!
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.RawReply.init -> void
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Remember.get -> string!
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Remember.init -> void
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Result.get -> string!
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Result.init -> void
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Route.get -> string!
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Route.init -> void
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.SessionId.get -> string!
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.SessionId.init -> void
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Status.get -> Standard.Agents.Models.Orchestrations.Agents.AgentStatus
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Status.init -> void
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.SystemPrompt.get -> string!
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.SystemPrompt.init -> void
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.ToolCallId.get -> string!
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.ToolCallId.init -> void
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.ToolExchanges.get -> System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Orchestrations.Agents.ToolExchange!>!
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.ToolExchanges.init -> void
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Transferring.get -> bool
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Transferring.init -> void
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.UsageIsEstimated.get -> bool
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.UsageIsEstimated.init -> void
+Standard.Agents.Models.Orchestrations.Agents.AgentStatus
+Standard.Agents.Models.Orchestrations.Agents.AgentStatus.AwaitingApproval = 6 -> Standard.Agents.Models.Orchestrations.Agents.AgentStatus
+Standard.Agents.Models.Orchestrations.Agents.AgentStatus.AwaitingInput = 2 -> Standard.Agents.Models.Orchestrations.Agents.AgentStatus
+Standard.Agents.Models.Orchestrations.Agents.AgentStatus.Failed = 4 -> Standard.Agents.Models.Orchestrations.Agents.AgentStatus
+Standard.Agents.Models.Orchestrations.Agents.AgentStatus.Refused = 3 -> Standard.Agents.Models.Orchestrations.Agents.AgentStatus
+Standard.Agents.Models.Orchestrations.Agents.AgentStatus.Responded = 1 -> Standard.Agents.Models.Orchestrations.Agents.AgentStatus
+Standard.Agents.Models.Orchestrations.Agents.AgentStatus.Revising = 5 -> Standard.Agents.Models.Orchestrations.Agents.AgentStatus
+Standard.Agents.Models.Orchestrations.Agents.AgentStatus.Working = 0 -> Standard.Agents.Models.Orchestrations.Agents.AgentStatus
+Standard.Agents.Models.Orchestrations.Agents.Exceptions.AgentOrchestrationDependencyException
+Standard.Agents.Models.Orchestrations.Agents.Exceptions.AgentOrchestrationDependencyException.AgentOrchestrationDependencyException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Orchestrations.Agents.Exceptions.AgentOrchestrationDependencyValidationException
+Standard.Agents.Models.Orchestrations.Agents.Exceptions.AgentOrchestrationDependencyValidationException.AgentOrchestrationDependencyValidationException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Orchestrations.Agents.Exceptions.AgentOrchestrationServiceException
+Standard.Agents.Models.Orchestrations.Agents.Exceptions.AgentOrchestrationServiceException.AgentOrchestrationServiceException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Orchestrations.Agents.Exceptions.AgentOrchestrationValidationException
+Standard.Agents.Models.Orchestrations.Agents.Exceptions.AgentOrchestrationValidationException.AgentOrchestrationValidationException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Orchestrations.Agents.Exceptions.FailedAgentOrchestrationServiceException
+Standard.Agents.Models.Orchestrations.Agents.Exceptions.FailedAgentOrchestrationServiceException.FailedAgentOrchestrationServiceException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Orchestrations.Agents.Exceptions.NullAgentContextException
+Standard.Agents.Models.Orchestrations.Agents.Exceptions.NullAgentContextException.NullAgentContextException(string! message) -> void
+Standard.Agents.Models.Orchestrations.Agents.ToolExchange
+Standard.Agents.Models.Orchestrations.Agents.ToolExchange.<Clone>$() -> Standard.Agents.Models.Orchestrations.Agents.ToolExchange!
+Standard.Agents.Models.Orchestrations.Agents.ToolExchange.ArgumentsJson.get -> string!
+Standard.Agents.Models.Orchestrations.Agents.ToolExchange.ArgumentsJson.init -> void
+Standard.Agents.Models.Orchestrations.Agents.ToolExchange.CallId.get -> string!
+Standard.Agents.Models.Orchestrations.Agents.ToolExchange.CallId.init -> void
+Standard.Agents.Models.Orchestrations.Agents.ToolExchange.Deconstruct(out string! CallId, out string! ToolName, out string! ArgumentsJson, out string! Result) -> void
+Standard.Agents.Models.Orchestrations.Agents.ToolExchange.Equals(Standard.Agents.Models.Orchestrations.Agents.ToolExchange? other) -> bool
+Standard.Agents.Models.Orchestrations.Agents.ToolExchange.Result.get -> string!
+Standard.Agents.Models.Orchestrations.Agents.ToolExchange.Result.init -> void
+Standard.Agents.Models.Orchestrations.Agents.ToolExchange.ToolExchange(string! CallId, string! ToolName, string! ArgumentsJson, string! Result) -> void
+Standard.Agents.Models.Orchestrations.Agents.ToolExchange.ToolName.get -> string!
+Standard.Agents.Models.Orchestrations.Agents.ToolExchange.ToolName.init -> void
+Standard.Agents.Models.Orchestrations.Effects.AgentEffect
+Standard.Agents.Models.Orchestrations.Effects.AgentEffect.<Clone>$() -> Standard.Agents.Models.Orchestrations.Effects.AgentEffect!
+Standard.Agents.Models.Orchestrations.Effects.AgentEffect.AgentEffect() -> void
+Standard.Agents.Models.Orchestrations.Effects.AgentEffect.ApprovalRequired.get -> bool
+Standard.Agents.Models.Orchestrations.Effects.AgentEffect.ApprovalRequired.init -> void
+Standard.Agents.Models.Orchestrations.Effects.AgentEffect.Arguments.get -> string!
+Standard.Agents.Models.Orchestrations.Effects.AgentEffect.Arguments.init -> void
+Standard.Agents.Models.Orchestrations.Effects.AgentEffect.Equals(Standard.Agents.Models.Orchestrations.Effects.AgentEffect? other) -> bool
+Standard.Agents.Models.Orchestrations.Effects.AgentEffect.IdempotencyKey.get -> string!
+Standard.Agents.Models.Orchestrations.Effects.AgentEffect.IdempotencyKey.init -> void
+Standard.Agents.Models.Orchestrations.Effects.AgentEffect.Identity.get -> Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal?
+Standard.Agents.Models.Orchestrations.Effects.AgentEffect.Identity.init -> void
+Standard.Agents.Models.Orchestrations.Effects.AgentEffect.Principal.get -> string?
+Standard.Agents.Models.Orchestrations.Effects.AgentEffect.Principal.init -> void
+Standard.Agents.Models.Orchestrations.Effects.AgentEffect.RiskLevel.get -> Standard.Agents.Models.Orchestrations.Effects.RiskLevel
+Standard.Agents.Models.Orchestrations.Effects.AgentEffect.RiskLevel.init -> void
+Standard.Agents.Models.Orchestrations.Effects.AgentEffect.RunId.get -> string!
+Standard.Agents.Models.Orchestrations.Effects.AgentEffect.RunId.init -> void
+Standard.Agents.Models.Orchestrations.Effects.AgentEffect.Scope.get -> string!
+Standard.Agents.Models.Orchestrations.Effects.AgentEffect.Scope.init -> void
+Standard.Agents.Models.Orchestrations.Effects.AgentEffect.ToolName.get -> string!
+Standard.Agents.Models.Orchestrations.Effects.AgentEffect.ToolName.init -> void
+Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal
+Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal.<Clone>$() -> Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal!
+Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal.AgentPrincipal() -> void
+Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal.DelegatedBy.get -> string?
+Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal.DelegatedBy.init -> void
+Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal.Equals(Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal? other) -> bool
+Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal.Id.get -> string!
+Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal.Id.init -> void
+Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal.Jurisdiction.get -> string?
+Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal.Jurisdiction.init -> void
+Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal.TenantId.get -> string?
+Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal.TenantId.init -> void
+Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision
+Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision.<Clone>$() -> Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision!
+Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision.AuthorizationDecision(bool Permitted, string! Reason) -> void
+Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision.Deconstruct(out bool Permitted, out string! Reason) -> void
+Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision.Equals(Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision? other) -> bool
+Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision.Permitted.get -> bool
+Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision.Permitted.init -> void
+Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision.Reason.get -> string!
+Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision.Reason.init -> void
+Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome
+Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome.<Clone>$() -> Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome!
+Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome.CompensationOutcome(string! ToolName, bool Undone, string! Detail) -> void
+Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome.Deconstruct(out string! ToolName, out bool Undone, out string! Detail) -> void
+Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome.Detail.get -> string!
+Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome.Detail.init -> void
+Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome.Equals(Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome? other) -> bool
+Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome.ToolName.get -> string!
+Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome.ToolName.init -> void
+Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome.Undone.get -> bool
+Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome.Undone.init -> void
+Standard.Agents.Models.Orchestrations.Effects.PermissionMode
+Standard.Agents.Models.Orchestrations.Effects.PermissionMode.Ask = 1 -> Standard.Agents.Models.Orchestrations.Effects.PermissionMode
+Standard.Agents.Models.Orchestrations.Effects.PermissionMode.Deny = 2 -> Standard.Agents.Models.Orchestrations.Effects.PermissionMode
+Standard.Agents.Models.Orchestrations.Effects.PermissionMode.Open = 0 -> Standard.Agents.Models.Orchestrations.Effects.PermissionMode
+Standard.Agents.Models.Orchestrations.Effects.RiskLevel
+Standard.Agents.Models.Orchestrations.Effects.RiskLevel.Irreversible = 2 -> Standard.Agents.Models.Orchestrations.Effects.RiskLevel
+Standard.Agents.Models.Orchestrations.Effects.RiskLevel.Safe = 0 -> Standard.Agents.Models.Orchestrations.Effects.RiskLevel
+Standard.Agents.Models.Orchestrations.Effects.RiskLevel.Sensitive = 1 -> Standard.Agents.Models.Orchestrations.Effects.RiskLevel
+Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog
+Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog.<Clone>$() -> Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog!
+Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog.Deconstruct(out System.Func<System.Threading.Tasks.ValueTask<string!>>! DiscoverAsync) -> void
+Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog.DiscoverAsync.get -> System.Func<System.Threading.Tasks.ValueTask<string!>>!
+Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog.DiscoverAsync.init -> void
+Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog.Equals(Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog? other) -> bool
+Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog.ExternalToolCatalog(System.Func<System.Threading.Tasks.ValueTask<string!>>! DiscoverAsync) -> void
+Standard.Agents.Services.Coordinations.Data.DataCoordinationService
+Standard.Agents.Services.Coordinations.Data.DataCoordinationService.DataCoordinationService(Standard.Agents.Services.Orchestrations.Data.Retrievals.IRetrievalOrchestrationService! retrievalService, Standard.Agents.Services.Orchestrations.Data.Recollections.IRecollectionOrchestrationService! recollectionService, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+Standard.Agents.Services.Coordinations.Data.DataCoordinationService.RecallAsync(Standard.Agents.Models.Orchestrations.Agents.AgentContext! context) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Orchestrations.Agents.AgentContext!>
+Standard.Agents.Services.Coordinations.Data.DataCoordinationService.RecallSessionAsync(string! sessionId) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Sessions.AgentSession?>
+Standard.Agents.Services.Coordinations.Data.DataCoordinationService.RecordSessionAsync(Standard.Agents.Models.Brokers.Sessions.AgentSession! session) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Coordinations.Data.DataCoordinationService.RememberAsync(string! memory) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Coordinations.Data.IDataCoordinationService
+Standard.Agents.Services.Coordinations.Data.IDataCoordinationService.RecallAsync(Standard.Agents.Models.Orchestrations.Agents.AgentContext! context) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Orchestrations.Agents.AgentContext!>
+Standard.Agents.Services.Coordinations.Data.IDataCoordinationService.RecallSessionAsync(string! sessionId) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Sessions.AgentSession?>
+Standard.Agents.Services.Coordinations.Data.IDataCoordinationService.RecordSessionAsync(Standard.Agents.Models.Brokers.Sessions.AgentSession! session) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Coordinations.Data.IDataCoordinationService.RememberAsync(string! memory) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Coordinations.Decision.DecisionCoordinationService
+Standard.Agents.Services.Coordinations.Decision.DecisionCoordinationService.DecisionCoordinationService(Standard.Agents.Services.Orchestrations.Decision.Inferences.IInferenceOrchestrationService! inferenceService, Standard.Agents.Services.Orchestrations.Decision.Guardians.IGuardianOrchestrationService! guardianService, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, string? contractSchema = null) -> void
+Standard.Agents.Services.Coordinations.Decision.DecisionCoordinationService.ScreenAsync(string! text) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Coordinations.Decision.DecisionCoordinationService.ThinkAsync(Standard.Agents.Models.Orchestrations.Agents.AgentContext! context) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Orchestrations.Agents.AgentContext!>
+Standard.Agents.Services.Coordinations.Decision.DecisionCoordinationService.ThinkStreamAsync(Standard.Agents.Models.Orchestrations.Agents.AgentContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> Standard.Agents.Services.Coordinations.Decision.IDecisionStream!
+Standard.Agents.Services.Coordinations.Decision.IDecisionCoordinationService
+Standard.Agents.Services.Coordinations.Decision.IDecisionCoordinationService.ScreenAsync(string! text) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Coordinations.Decision.IDecisionCoordinationService.ThinkAsync(Standard.Agents.Models.Orchestrations.Agents.AgentContext! context) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Orchestrations.Agents.AgentContext!>
+Standard.Agents.Services.Coordinations.Decision.IDecisionCoordinationService.ThinkStreamAsync(Standard.Agents.Models.Orchestrations.Agents.AgentContext! context, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> Standard.Agents.Services.Coordinations.Decision.IDecisionStream!
+Standard.Agents.Services.Coordinations.Decision.IDecisionStream
+Standard.Agents.Services.Coordinations.Decision.IDecisionStream.Result.get -> Standard.Agents.Models.Orchestrations.Agents.AgentContext!
+Standard.Agents.Services.Coordinations.Direction.DirectionCoordinationService
+Standard.Agents.Services.Coordinations.Direction.DirectionCoordinationService.ActAsync(Standard.Agents.Models.Orchestrations.Agents.AgentContext! context) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Orchestrations.Agents.AgentContext!>
+Standard.Agents.Services.Coordinations.Direction.DirectionCoordinationService.CompensateRunAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome!>!>
+Standard.Agents.Services.Coordinations.Direction.DirectionCoordinationService.DirectionCoordinationService(Standard.Agents.Services.Orchestrations.Direction.Perimeters.IPerimeterOrchestrationService! perimeterService, Standard.Agents.Services.Orchestrations.Direction.Executions.IExecutionOrchestrationService! executionService, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy? policy = null) -> void
+Standard.Agents.Services.Coordinations.Direction.IDirectionCoordinationService
+Standard.Agents.Services.Coordinations.Direction.IDirectionCoordinationService.ActAsync(Standard.Agents.Models.Orchestrations.Agents.AgentContext! context) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Orchestrations.Agents.AgentContext!>
+Standard.Agents.Services.Coordinations.Direction.IDirectionCoordinationService.CompensateRunAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome!>!>
+Standard.Agents.Services.Foundations.Approvals.ApprovalService
+Standard.Agents.Services.Foundations.Approvals.ApprovalService.ApprovalService(Standard.Agents.Brokers.Approvals.IApprovalBroker! approvalBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+Standard.Agents.Services.Foundations.Approvals.ApprovalService.RequestApprovalAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Brokers.Approvals.ApprovalDecision>
+Standard.Agents.Services.Foundations.Approvals.IApprovalService
+Standard.Agents.Services.Foundations.Approvals.IApprovalService.RequestApprovalAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Brokers.Approvals.ApprovalDecision>
+Standard.Agents.Services.Foundations.Brains.BrainService
+Standard.Agents.Services.Foundations.Brains.BrainService.BrainService(Standard.Agents.Brokers.Generators.IGeneratorBroker! generatorBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, Standard.Agents.Brokers.Generators.IGeneratorBrokerV1? generatorBrokerV1 = null) -> void
+Standard.Agents.Services.Foundations.Brains.BrainService.GenerateAsync(Standard.Agents.Models.Orchestrations.Agents.AgentContext! context, System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition!>! tools) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Generators.V1.GenerationResult!>
+Standard.Agents.Services.Foundations.Brains.BrainService.GenerateAsync(string! systemPrompt, string! userPrompt) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Foundations.Brains.BrainService.GenerateStreamAsync(string! systemPrompt, string! userPrompt, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<string!>!
+Standard.Agents.Services.Foundations.Brains.BrainService.SpeaksNatively.get -> bool
+Standard.Agents.Services.Foundations.Brains.IBrainService
+Standard.Agents.Services.Foundations.Brains.IBrainService.GenerateAsync(Standard.Agents.Models.Orchestrations.Agents.AgentContext! context, System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition!>! tools) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Generators.V1.GenerationResult!>
+Standard.Agents.Services.Foundations.Brains.IBrainService.GenerateAsync(string! systemPrompt, string! userPrompt) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Foundations.Brains.IBrainService.GenerateStreamAsync(string! systemPrompt, string! userPrompt, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<string!>!
+Standard.Agents.Services.Foundations.Brains.IBrainService.SpeaksNatively.get -> bool
+Standard.Agents.Services.Foundations.Contracts.ContractService
+Standard.Agents.Services.Foundations.Contracts.ContractService.CheckAsync(string! answer, string! schema) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Foundations.Contracts.ContractVerdict!>
+Standard.Agents.Services.Foundations.Contracts.ContractService.ContractService(Standard.Agents.Brokers.Contracts.IContractBroker! contractBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+Standard.Agents.Services.Foundations.Contracts.IContractService
+Standard.Agents.Services.Foundations.Contracts.IContractService.CheckAsync(string! answer, string! schema) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Foundations.Contracts.ContractVerdict!>
+Standard.Agents.Services.Foundations.EffectLedgers.EffectLedgerService
+Standard.Agents.Services.Foundations.EffectLedgers.EffectLedgerService.EffectLedgerService(Standard.Agents.Brokers.Effects.IEffectLedgerBroker! effectLedgerBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+Standard.Agents.Services.Foundations.EffectLedgers.EffectLedgerService.RecordOutcomeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect, string! outcome) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Foundations.EffectLedgers.EffectLedgerService.ReleaseClaimAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Foundations.EffectLedgers.EffectLedgerService.RetrieveOutcomeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<string?>
+Standard.Agents.Services.Foundations.EffectLedgers.IEffectLedgerService
+Standard.Agents.Services.Foundations.EffectLedgers.IEffectLedgerService.RecordOutcomeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect, string! outcome) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Foundations.EffectLedgers.IEffectLedgerService.ReleaseClaimAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Foundations.EffectLedgers.IEffectLedgerService.RetrieveOutcomeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<string?>
+Standard.Agents.Services.Foundations.ExternalTools.ExternalToolService
+Standard.Agents.Services.Foundations.ExternalTools.ExternalToolService.CallAsync(string! name, string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Foundations.ExternalTools.ExternalToolService.ExternalToolService(Standard.Agents.Brokers.Mcps.IMcpBroker! mcpBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+Standard.Agents.Services.Foundations.ExternalTools.IExternalToolService
+Standard.Agents.Services.Foundations.ExternalTools.IExternalToolService.CallAsync(string! name, string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Foundations.Gates.GateService
+Standard.Agents.Services.Foundations.Gates.GateService.DetectConflictAsync(string! instructions) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Foundations.Gates.GateService.GateService(Standard.Agents.Brokers.Classifiers.IClassifierBroker! classifierBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+Standard.Agents.Services.Foundations.Gates.GateService.ScreenAsync(string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Foundations.Gates.IGateService
+Standard.Agents.Services.Foundations.Gates.IGateService.DetectConflictAsync(string! instructions) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Foundations.Gates.IGateService.ScreenAsync(string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Foundations.InternalTools.IInternalToolService
+Standard.Agents.Services.Foundations.InternalTools.IInternalToolService.CompensateAsync(string! name, string! input, string! outcome) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Foundations.InternalTools.IInternalToolService.HandlesAsync(string! name) -> System.Threading.Tasks.ValueTask<bool>
+Standard.Agents.Services.Foundations.InternalTools.IInternalToolService.RunAsync(string! name, string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Foundations.InternalTools.InternalToolService
+Standard.Agents.Services.Foundations.InternalTools.InternalToolService.CompensateAsync(string! name, string! input, string! outcome) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Foundations.InternalTools.InternalToolService.HandlesAsync(string! name) -> System.Threading.Tasks.ValueTask<bool>
+Standard.Agents.Services.Foundations.InternalTools.InternalToolService.InternalToolService(Standard.Agents.Brokers.Tools.IToolBroker! toolBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+Standard.Agents.Services.Foundations.InternalTools.InternalToolService.RunAsync(string! name, string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Foundations.Judges.IJudgeService
+Standard.Agents.Services.Foundations.Judges.IJudgeService.EvaluateAsync(string! task, string! candidate) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Foundations.Judges.Judgement!>
+Standard.Agents.Services.Foundations.Judges.JudgeService
+Standard.Agents.Services.Foundations.Judges.JudgeService.EvaluateAsync(string! task, string! candidate) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Foundations.Judges.Judgement!>
+Standard.Agents.Services.Foundations.Judges.JudgeService.JudgeService(Standard.Agents.Brokers.Verifiers.IVerifierBroker! verifierBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+Standard.Agents.Services.Foundations.Knowledges.IKnowledgeService
+Standard.Agents.Services.Foundations.Knowledges.IKnowledgeService.RetrieveKnowledgeAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
+Standard.Agents.Services.Foundations.Knowledges.KnowledgeService
+Standard.Agents.Services.Foundations.Knowledges.KnowledgeService.KnowledgeService(Standard.Agents.Brokers.Files.IFileBroker! fileBroker, string! knowledgePath, string! searchPattern, int maxResults, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, double minimumScore = 0) -> void
+Standard.Agents.Services.Foundations.Knowledges.KnowledgeService.KnowledgeService(Standard.Agents.Brokers.Knowledges.IKnowledgeBroker! knowledgeBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+Standard.Agents.Services.Foundations.Knowledges.KnowledgeService.RetrieveKnowledgeAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
+Standard.Agents.Services.Foundations.Memorys.IMemoryService
+Standard.Agents.Services.Foundations.Memorys.IMemoryService.RecallMemoriesAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
+Standard.Agents.Services.Foundations.Memorys.IMemoryService.RememberAsync(string! memory) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Foundations.Memorys.MemoryService
+Standard.Agents.Services.Foundations.Memorys.MemoryService.MemoryService(Standard.Agents.Brokers.Files.IFileBroker! fileBroker, string! memoryPath, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+Standard.Agents.Services.Foundations.Memorys.MemoryService.MemoryService(Standard.Agents.Brokers.Memorys.IMemoryBroker! memoryBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+Standard.Agents.Services.Foundations.Memorys.MemoryService.RecallMemoriesAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
+Standard.Agents.Services.Foundations.Memorys.MemoryService.RememberAsync(string! memory) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Foundations.Policys.IPolicyService
+Standard.Agents.Services.Foundations.Policys.IPolicyService.AuthorizeEffectAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision!>
+Standard.Agents.Services.Foundations.Policys.PolicyService
+Standard.Agents.Services.Foundations.Policys.PolicyService.AuthorizeEffectAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision!>
+Standard.Agents.Services.Foundations.Policys.PolicyService.PolicyService(Standard.Agents.Brokers.Policies.IPolicyBroker! policyBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+Standard.Agents.Services.Foundations.Returns.IReturnService
+Standard.Agents.Services.Foundations.Returns.IReturnService.ReturnAsync(string! payload) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Foundations.Returns.ReturnService
+Standard.Agents.Services.Foundations.Returns.ReturnService.ReturnAsync(string! payload) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Foundations.Returns.ReturnService.ReturnService(Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+Standard.Agents.Services.Foundations.Sessions.ISessionService
+Standard.Agents.Services.Foundations.Sessions.ISessionService.RecordSessionAsync(Standard.Agents.Models.Brokers.Sessions.AgentSession! session) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Foundations.Sessions.ISessionService.RetrieveSessionAsync(string! sessionId) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Sessions.AgentSession?>
+Standard.Agents.Services.Foundations.Sessions.SessionService
+Standard.Agents.Services.Foundations.Sessions.SessionService.RecordSessionAsync(Standard.Agents.Models.Brokers.Sessions.AgentSession! session) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Foundations.Sessions.SessionService.RetrieveSessionAsync(string! sessionId) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Sessions.AgentSession?>
+Standard.Agents.Services.Foundations.Sessions.SessionService.SessionService(Standard.Agents.Brokers.Sessions.ISessionBroker! sessionBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+Standard.Agents.Services.Foundations.Skills.ISkillService
+Standard.Agents.Services.Foundations.Skills.ISkillService.RetrieveSkillCatalogAsync() -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Foundations.Skills.ISkillService.RetrieveSkillsAsync(string! route = "") -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Foundations.Skills.SkillService
+Standard.Agents.Services.Foundations.Skills.SkillService.RetrieveSkillCatalogAsync() -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Foundations.Skills.SkillService.RetrieveSkillsAsync(string! route = "") -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Foundations.Skills.SkillService.SkillService(Standard.Agents.Brokers.Skills.ISkillBroker! skillBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+Standard.Agents.Services.Foundations.Usages.IUsageService
+Standard.Agents.Services.Foundations.Usages.IUsageService.MeasureAsync(string! prompt, string! completion) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Foundations.Usages.AgentUsage!>
+Standard.Agents.Services.Foundations.Usages.UsageService
+Standard.Agents.Services.Foundations.Usages.UsageService.MeasureAsync(string! prompt, string! completion) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Foundations.Usages.AgentUsage!>
+Standard.Agents.Services.Foundations.Usages.UsageService.UsageService(Standard.Agents.Brokers.Usages.IUsageBroker! usageBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+Standard.Agents.Services.Managements.IRunManagementService
+Standard.Agents.Services.Managements.IRunManagementService.ProcessPromptAsync(string! prompt) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Managements.IRunManagementService.ProcessPromptAsync(string! prompt, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Managements.IRunManagementService.ProcessPromptAsync(string! prompt, string! sessionId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Managements.IRunManagementService.ProcessPromptStreamAsync(string! prompt, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<Standard.Agents.Models.Clients.Agents.AgentStreamEvent!>!
+Standard.Agents.Services.Managements.IRunManagementService.ProcessPromptStreamAsync(string! prompt, string! sessionId, System.Threading.CancellationToken cancellationToken) -> System.Collections.Generic.IAsyncEnumerable<Standard.Agents.Models.Clients.Agents.AgentStreamEvent!>!
+Standard.Agents.Services.Managements.IRunManagementService.RunAsync(string! prompt, string! sessionId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
+Standard.Agents.Services.Managements.RunManagementService
+Standard.Agents.Services.Managements.RunManagementService.ProcessPromptAsync(string! prompt) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Managements.RunManagementService.ProcessPromptAsync(string! prompt, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Managements.RunManagementService.ProcessPromptAsync(string! prompt, string! sessionId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Managements.RunManagementService.ProcessPromptStreamAsync(string! prompt, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<Standard.Agents.Models.Clients.Agents.AgentStreamEvent!>!
+Standard.Agents.Services.Managements.RunManagementService.ProcessPromptStreamAsync(string! prompt, string! sessionId, System.Threading.CancellationToken cancellationToken) -> System.Collections.Generic.IAsyncEnumerable<Standard.Agents.Models.Clients.Agents.AgentStreamEvent!>!
+Standard.Agents.Services.Managements.RunManagementService.RunAsync(string! prompt, string! sessionId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
+Standard.Agents.Services.Managements.RunManagementService.RunManagementService(Standard.Agents.Services.Coordinations.Data.IDataCoordinationService! dataCoordinationService, Standard.Agents.Services.Coordinations.Decision.IDecisionCoordinationService! decisionCoordinationService, Standard.Agents.Services.Coordinations.Direction.IDirectionCoordinationService! directionCoordinationService, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, int maxTurns = 7, Standard.Agents.Brokers.Times.ITimeBroker? timeBroker = null, Standard.Agents.Models.Coordinations.Agents.AgentBudget? budget = null, int maxHistoryTurns = 20, bool compensateOnFailure = false, bool screenToolOutput = false, Standard.Agents.Brokers.Telemetries.ITelemetryBroker? telemetryBroker = null) -> void
+Standard.Agents.Services.Orchestrations.Data.Recollections.IRecollectionOrchestrationService
+Standard.Agents.Services.Orchestrations.Data.Recollections.IRecollectionOrchestrationService.RecallMemoriesAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
+Standard.Agents.Services.Orchestrations.Data.Recollections.IRecollectionOrchestrationService.RecallSessionAsync(string! sessionId) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Sessions.AgentSession?>
+Standard.Agents.Services.Orchestrations.Data.Recollections.IRecollectionOrchestrationService.RecordSessionAsync(Standard.Agents.Models.Brokers.Sessions.AgentSession! session) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Orchestrations.Data.Recollections.IRecollectionOrchestrationService.RememberAsync(string! memory) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Orchestrations.Data.Recollections.RecollectionOrchestrationService
+Standard.Agents.Services.Orchestrations.Data.Recollections.RecollectionOrchestrationService.RecallMemoriesAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
+Standard.Agents.Services.Orchestrations.Data.Recollections.RecollectionOrchestrationService.RecallSessionAsync(string! sessionId) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Sessions.AgentSession?>
+Standard.Agents.Services.Orchestrations.Data.Recollections.RecollectionOrchestrationService.RecollectionOrchestrationService(Standard.Agents.Services.Foundations.Memorys.IMemoryService! memoryService, Standard.Agents.Services.Foundations.Sessions.ISessionService! sessionService, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+Standard.Agents.Services.Orchestrations.Data.Recollections.RecollectionOrchestrationService.RecordSessionAsync(Standard.Agents.Models.Brokers.Sessions.AgentSession! session) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Orchestrations.Data.Recollections.RecollectionOrchestrationService.RememberAsync(string! memory) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Orchestrations.Data.Retrievals.IRetrievalOrchestrationService
+Standard.Agents.Services.Orchestrations.Data.Retrievals.IRetrievalOrchestrationService.RetrieveGroundingAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
+Standard.Agents.Services.Orchestrations.Data.Retrievals.IRetrievalOrchestrationService.RetrieveInstructionsAsync(string! route) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Orchestrations.Data.Retrievals.RetrievalOrchestrationService
+Standard.Agents.Services.Orchestrations.Data.Retrievals.RetrievalOrchestrationService.RetrievalOrchestrationService(Standard.Agents.Services.Foundations.Skills.ISkillService! skillService, Standard.Agents.Services.Foundations.Knowledges.IKnowledgeService! knowledgeService, string! toolCatalog, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog? externalToolCatalog = null) -> void
+Standard.Agents.Services.Orchestrations.Data.Retrievals.RetrievalOrchestrationService.RetrieveGroundingAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
+Standard.Agents.Services.Orchestrations.Data.Retrievals.RetrievalOrchestrationService.RetrieveInstructionsAsync(string! route) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Orchestrations.Decision.Guardians.GuardianOrchestrationService
+Standard.Agents.Services.Orchestrations.Decision.Guardians.GuardianOrchestrationService.CheckShapeAsync(string! answer, string! schema) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Foundations.Contracts.ContractVerdict!>
+Standard.Agents.Services.Orchestrations.Decision.Guardians.GuardianOrchestrationService.DetectConflictAsync(string! instructions) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Orchestrations.Decision.Guardians.GuardianOrchestrationService.EvaluateAsync(string! task, string! candidate) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Foundations.Judges.Judgement!>
+Standard.Agents.Services.Orchestrations.Decision.Guardians.GuardianOrchestrationService.GuardianOrchestrationService(Standard.Agents.Services.Foundations.Gates.IGateService! gateService, Standard.Agents.Services.Foundations.Judges.IJudgeService! judgeService, Standard.Agents.Services.Foundations.Contracts.IContractService! contractService, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+Standard.Agents.Services.Orchestrations.Decision.Guardians.GuardianOrchestrationService.ScreenAsync(string! prompt) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Orchestrations.Decision.Guardians.IGuardianOrchestrationService
+Standard.Agents.Services.Orchestrations.Decision.Guardians.IGuardianOrchestrationService.CheckShapeAsync(string! answer, string! schema) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Foundations.Contracts.ContractVerdict!>
+Standard.Agents.Services.Orchestrations.Decision.Guardians.IGuardianOrchestrationService.DetectConflictAsync(string! instructions) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Orchestrations.Decision.Guardians.IGuardianOrchestrationService.EvaluateAsync(string! task, string! candidate) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Foundations.Judges.Judgement!>
+Standard.Agents.Services.Orchestrations.Decision.Guardians.IGuardianOrchestrationService.ScreenAsync(string! prompt) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Orchestrations.Decision.Inferences.IInferenceOrchestrationService
+Standard.Agents.Services.Orchestrations.Decision.Inferences.IInferenceOrchestrationService.DecideAsync(Standard.Agents.Models.Orchestrations.Agents.AgentContext! context) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Orchestrations.Agents.AgentContext!>
+Standard.Agents.Services.Orchestrations.Decision.Inferences.IInferenceOrchestrationService.DecideStreamAsync(Standard.Agents.Models.Orchestrations.Agents.AgentContext! context, System.Action<Standard.Agents.Models.Orchestrations.Agents.AgentContext!>! setDecided, System.Threading.CancellationToken cancellationToken) -> System.Collections.Generic.IAsyncEnumerable<Standard.Agents.Models.Clients.Agents.AgentStreamEvent!>!
+Standard.Agents.Services.Orchestrations.Decision.Inferences.InferenceOrchestrationService
+Standard.Agents.Services.Orchestrations.Decision.Inferences.InferenceOrchestrationService.DecideAsync(Standard.Agents.Models.Orchestrations.Agents.AgentContext! context) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Orchestrations.Agents.AgentContext!>
+Standard.Agents.Services.Orchestrations.Decision.Inferences.InferenceOrchestrationService.DecideStreamAsync(Standard.Agents.Models.Orchestrations.Agents.AgentContext! context, System.Action<Standard.Agents.Models.Orchestrations.Agents.AgentContext!>! setDecided, System.Threading.CancellationToken cancellationToken) -> System.Collections.Generic.IAsyncEnumerable<Standard.Agents.Models.Clients.Agents.AgentStreamEvent!>!
+Standard.Agents.Services.Orchestrations.Decision.Inferences.InferenceOrchestrationService.InferenceOrchestrationService(Standard.Agents.Services.Foundations.Brains.IBrainService! brainService, Standard.Agents.Services.Foundations.Usages.IUsageService! usageService, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition!>? toolDefinitions = null) -> void
+Standard.Agents.Services.Orchestrations.Direction.Executions.ExecutionOrchestrationService
+Standard.Agents.Services.Orchestrations.Direction.Executions.ExecutionOrchestrationService.CompensateAsync(string! toolName, string! arguments, string! outcome) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Orchestrations.Direction.Executions.ExecutionOrchestrationService.ExecutionOrchestrationService(Standard.Agents.Services.Foundations.InternalTools.IInternalToolService! internalToolService, Standard.Agents.Services.Foundations.ExternalTools.IExternalToolService! externalToolService, Standard.Agents.Services.Foundations.Returns.IReturnService! returnService, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+Standard.Agents.Services.Orchestrations.Direction.Executions.ExecutionOrchestrationService.HandlesLocallyAsync(string! toolName) -> System.Threading.Tasks.ValueTask<bool>
+Standard.Agents.Services.Orchestrations.Direction.Executions.ExecutionOrchestrationService.ReturnAsync(string! payload) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Orchestrations.Direction.Executions.ExecutionOrchestrationService.RunAsync(string! toolName, string! payload) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Orchestrations.Direction.Executions.IExecutionOrchestrationService
+Standard.Agents.Services.Orchestrations.Direction.Executions.IExecutionOrchestrationService.CompensateAsync(string! toolName, string! arguments, string! outcome) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Orchestrations.Direction.Executions.IExecutionOrchestrationService.HandlesLocallyAsync(string! toolName) -> System.Threading.Tasks.ValueTask<bool>
+Standard.Agents.Services.Orchestrations.Direction.Executions.IExecutionOrchestrationService.ReturnAsync(string! payload) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Orchestrations.Direction.Executions.IExecutionOrchestrationService.RunAsync(string! toolName, string! payload) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Services.Orchestrations.Direction.Perimeters.IPerimeterOrchestrationService
+Standard.Agents.Services.Orchestrations.Direction.Perimeters.IPerimeterOrchestrationService.AuthorizeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision!>
+Standard.Agents.Services.Orchestrations.Direction.Perimeters.IPerimeterOrchestrationService.ClaimAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<string?>
+Standard.Agents.Services.Orchestrations.Direction.Perimeters.IPerimeterOrchestrationService.RecordOutcomeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect, string! outcome) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Orchestrations.Direction.Perimeters.IPerimeterOrchestrationService.ReleaseClaimAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Orchestrations.Direction.Perimeters.IPerimeterOrchestrationService.RequestApprovalAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Brokers.Approvals.ApprovalDecision>
+Standard.Agents.Services.Orchestrations.Direction.Perimeters.PerimeterOrchestrationService
+Standard.Agents.Services.Orchestrations.Direction.Perimeters.PerimeterOrchestrationService.AuthorizeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision!>
+Standard.Agents.Services.Orchestrations.Direction.Perimeters.PerimeterOrchestrationService.ClaimAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<string?>
+Standard.Agents.Services.Orchestrations.Direction.Perimeters.PerimeterOrchestrationService.PerimeterOrchestrationService(Standard.Agents.Services.Foundations.Policys.IPolicyService! policyService, Standard.Agents.Services.Foundations.Approvals.IApprovalService! approvalService, Standard.Agents.Services.Foundations.EffectLedgers.IEffectLedgerService! effectLedgerService, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+Standard.Agents.Services.Orchestrations.Direction.Perimeters.PerimeterOrchestrationService.RecordOutcomeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect, string! outcome) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Orchestrations.Direction.Perimeters.PerimeterOrchestrationService.ReleaseClaimAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Orchestrations.Direction.Perimeters.PerimeterOrchestrationService.RequestApprovalAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Brokers.Approvals.ApprovalDecision>
+Standard.Agents.StandardAgent
+Standard.Agents.StandardAgent.Agents(string! path) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.AllowTools(params string![]! toolNames) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.Audit(string! path) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.Brain(string! apiUrl, string! apiKey, string! model, double temperature = 0.7, int maxTokens = 1024, int timeoutSeconds = 120) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.Budget(int? maxTokens = null, decimal? maxCostUsd = null, System.TimeSpan? maxWallClock = null, decimal costPerThousandTokens = 0) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.CompensateOnFailure() -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.Constitution(string! path) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.Consumption(string! path) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.Contract(string! jsonSchema) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.Description.get -> string!
+Standard.Agents.StandardAgent.EffectLedger(string! path) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.Fallback(System.Func<System.Threading.Tasks.ValueTask<string!>>! fallback, int retries = 0, int failuresBeforeOpen = 3) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.Gate(string! apiUrl, string! apiKey, string! model, double temperature = 0, int maxTokens = 16, int timeoutSeconds = 30) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.Identity(string! name, string! description = "") -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.Judge(string! apiUrl, string! apiKey, string! model, double temperature = 0, int maxTokens = 16, int timeoutSeconds = 30) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.Knowledge(string! path, string! pattern = "*.md", int maxResults = 3, double minScore = 0) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.LocalBrain(System.Func<string!, string!, System.Threading.Tasks.ValueTask<string!>>! generate) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.LocalGate(System.Func<string!, string!, System.Threading.Tasks.ValueTask<string!>>! screen) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.LocalJudge(System.Func<string!, string!, System.Threading.Tasks.ValueTask<string!>>! evaluate) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.LogTo(string! path, Standard.Agents.Models.Loggings.TraceVerbosity verbosity = Standard.Agents.Models.Loggings.TraceVerbosity.Full) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.MaxTurns(int turns) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.Mcp(string! endpointUrl, string! relativeUrl = "", int timeoutSeconds = 30, string? bearerToken = null, string? apiKey = null, string! apiKeyHeader = "X-Api-Key", System.Func<System.Threading.Tasks.ValueTask<string!>>? bearerTokenProvider = null) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.Memory(string! path) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.Name.get -> string!
+Standard.Agents.StandardAgent.NativeBrain(string! apiUrl, string! apiKey, string! model, double temperature = 0.7, int maxTokens = 1024) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.NativeBrainAnthropic(string! apiKey, string! model, double temperature = 0.7, int maxTokens = 1024) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.OnAgents(System.Func<System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Agents.RegisteredAgent!>!>>! select) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.OnApproval(System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentEffect!, System.Threading.Tasks.ValueTask<Standard.Agents.Brokers.Approvals.ApprovalDecision>>! request) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.OnAudit(System.Func<Standard.Agents.Models.Brokers.Audits.AuditRecord!, System.Threading.Tasks.ValueTask>! write) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.OnBrain(System.Func<string!, string!, System.Threading.Tasks.ValueTask<string!>>! generate) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.OnContract(System.Func<string!, string!, System.Threading.Tasks.ValueTask<string?>>! validate) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.OnEffectLedger(System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentEffect!, System.Threading.Tasks.ValueTask<string?>>! claim, System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentEffect!, string!, System.Threading.Tasks.ValueTask>! record, System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentEffect!, System.Threading.Tasks.ValueTask>! release) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.OnGate(System.Func<string!, string!, System.Threading.Tasks.ValueTask<string!>>! screen) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.OnJudge(System.Func<string!, string!, System.Threading.Tasks.ValueTask<string!>>! evaluate) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.OnKnowledge(System.Func<string!, System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>>! retrieve) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.OnMemory(System.Func<System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>>! recall, System.Func<string!, System.Threading.Tasks.ValueTask>! remember) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.OnNativeBrain(System.Func<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage!>!, System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition!>!, System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Generators.V1.GenerationResult!>>! generate) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.OnPolicy(System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentEffect!, System.Threading.Tasks.ValueTask<Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision!>>! authorize) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.OnRedaction(System.Func<string!, System.Collections.Generic.IDictionary<string!, string!>!, string!>! redact, System.Func<string!, System.Collections.Generic.IReadOnlyDictionary<string!, string!>!, string!>! rehydrate) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.OnSessions(System.Func<string!, System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Sessions.AgentSession?>>! select, System.Func<Standard.Agents.Models.Brokers.Sessions.AgentSession!, System.Threading.Tasks.ValueTask>! upsert) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.OnSkills(System.Func<System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Skills.Skill!>!>>! select) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.OnTelemetry(System.Action<string!, System.Collections.Generic.IReadOnlyDictionary<string!, object?>!>! record) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.OnUsage(System.Func<string!, System.Threading.Tasks.ValueTask<int>>! count) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.Permissions(Standard.Agents.Models.Orchestrations.Effects.PermissionMode mode) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.Principal(System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal?>! principal) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.Principal(System.Func<string?>! principal) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.ProcessPromptAsync(string! prompt) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.StandardAgent.ProcessPromptAsync(string! prompt, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.StandardAgent.ProcessPromptAsync(string! prompt, string! sessionId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.StandardAgent.Redact() -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.Redact(params Standard.Agents.Models.Foundations.Brains.RedactionRule![]! rules) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.RequireApproval(params string![]! toolNames) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.Resilience(int retries = 3) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.ResumeAsync(string! sessionId, string! answer, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.StandardAgent.Risk(Standard.Agents.Models.Orchestrations.Effects.RiskLevel level, params string![]! toolNames) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.RuleGate(params string![]! refusePatterns) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.RuleJudge(params string![]! requiredPatterns) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.RunAsync(string! prompt) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
+Standard.Agents.StandardAgent.RunAsync(string! prompt, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
+Standard.Agents.StandardAgent.ScreenToolOutput() -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.Sessions(string! path, int maxHistoryTurns = 20) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.Skills(string! path) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.StandardAgent() -> void
+Standard.Agents.StandardAgent.StandardAgent(string! apiUrl, string! apiKey, string! model) -> void
+Standard.Agents.StandardAgent.StreamPromptAsync(string! prompt, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<Standard.Agents.Models.Clients.Agents.AgentStreamEvent!>!
+Standard.Agents.StandardAgent.StreamPromptAsync(string! prompt, string! sessionId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<Standard.Agents.Models.Clients.Agents.AgentStreamEvent!>!
+Standard.Agents.StandardAgent.Telemetry(string! agentName = "standard-agent") -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.Tool(Standard.Agents.Tools.ITool! tool) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.Tools(System.Collections.Generic.IEnumerable<Standard.Agents.Tools.ITool!>! tools) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.Usage(double charactersPerToken = 4) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.UseAgents(Standard.Agents.Brokers.Agents.IAgentRegistryBroker! broker) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.UseApprovals(Standard.Agents.Brokers.Approvals.IApprovalBroker! broker) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.UseAudit(Standard.Agents.Brokers.Audits.IAuditBroker! broker) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.UseContract(Standard.Agents.Brokers.Contracts.IContractBroker! broker) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.UseEffectLedger(Standard.Agents.Brokers.Effects.IEffectLedgerBroker! broker) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.UseGate(Standard.Agents.Brokers.Classifiers.IClassifierBroker! broker) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.UseGenerator(Standard.Agents.Brokers.Generators.IGeneratorBroker! broker) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.UseJudge(Standard.Agents.Brokers.Verifiers.IVerifierBroker! broker) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.UseKnowledge(Standard.Agents.Brokers.Knowledges.IKnowledgeBroker! broker) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.UseLogging(Standard.Agents.Brokers.Loggings.ILoggingBroker! broker) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.UseMcp(Standard.Agents.Brokers.Mcps.IMcpBroker! broker) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.UseMemory(Standard.Agents.Brokers.Memorys.IMemoryBroker! broker) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.UseNativeBrain(Standard.Agents.Brokers.Generators.IGeneratorBrokerV1! broker) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.UsePolicy(Standard.Agents.Brokers.Policies.IPolicyBroker! broker) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.UseRedaction(Standard.Agents.Brokers.Redactions.IRedactionBroker! broker) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.UseResilience(Standard.Agents.Brokers.Resiliences.IResilienceBroker! broker) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.UseSessions(Standard.Agents.Brokers.Sessions.ISessionBroker! broker) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.UseSkills(Standard.Agents.Brokers.Skills.ISkillBroker! broker) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.UseTelemetry(Standard.Agents.Brokers.Telemetries.ITelemetryBroker! broker) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.UseUsage(Standard.Agents.Brokers.Usages.IUsageBroker! broker) -> Standard.Agents.StandardAgent!
+Standard.Agents.Tools.AgentTool
+Standard.Agents.Tools.AgentTool.AgentTool(string! name, Standard.Agents.IAgent! agent, string! handoff = "{input}", string! description = "", string! parameters = "{}") -> void
+Standard.Agents.Tools.AgentTool.Description.get -> string!
+Standard.Agents.Tools.AgentTool.ExecuteAsync(string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Tools.AgentTool.Name.get -> string!
+Standard.Agents.Tools.AgentTool.Parameters.get -> string!
+Standard.Agents.Tools.ITool
+Standard.Agents.Tools.ITool.CompensateAsync(string! input, string! outcome) -> System.Threading.Tasks.ValueTask<string?>
+Standard.Agents.Tools.ITool.Description.get -> string!
+Standard.Agents.Tools.ITool.ExecuteAsync(string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Tools.ITool.Name.get -> string!
+Standard.Agents.Tools.ITool.Parameters.get -> string!
+Standard.Agents.Tools.ITool.Risk.get -> Standard.Agents.Models.Orchestrations.Effects.RiskLevel
+Standard.Agents.Tools.ITool.ScopeOf(string! input) -> string!
+Standard.Agents.Tools.RememberTool
+Standard.Agents.Tools.RememberTool.Description.get -> string!
+Standard.Agents.Tools.RememberTool.ExecuteAsync(string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Tools.RememberTool.Name.get -> string!
+Standard.Agents.Tools.RememberTool.Parameters.get -> string!
+Standard.Agents.Tools.RememberTool.RememberTool(Standard.Agents.Services.Foundations.Memorys.IMemoryService! memoryService) -> void
+Standard.Agents.Tools.RememberTool.RememberTool(System.Func<string!, System.Threading.Tasks.ValueTask>! remember) -> void
+const Standard.Agents.Brokers.Telemetries.ActivityTelemetryBroker.SourceName = "Standard.Agents" -> string!
+const Standard.Agents.Tools.AgentTool.GroundedHandoff = "The user asked: {prompt}\n\nYour task: {input}" -> string!
+override Standard.Agents.Models.Brokers.Agents.RegisteredAgent.Equals(object? obj) -> bool
+override Standard.Agents.Models.Brokers.Agents.RegisteredAgent.GetHashCode() -> int
+override Standard.Agents.Models.Brokers.Agents.RegisteredAgent.ToString() -> string!
+override Standard.Agents.Models.Brokers.Audits.AuditRecord.Equals(object? obj) -> bool
+override Standard.Agents.Models.Brokers.Audits.AuditRecord.GetHashCode() -> int
+override Standard.Agents.Models.Brokers.Audits.AuditRecord.ToString() -> string!
+override Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage.Equals(object? obj) -> bool
+override Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage.GetHashCode() -> int
+override Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage.ToString() -> string!
+override Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.Equals(object? obj) -> bool
+override Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.GetHashCode() -> int
+override Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.ToString() -> string!
+override Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall.Equals(object? obj) -> bool
+override Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall.GetHashCode() -> int
+override Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall.ToString() -> string!
+override Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition.Equals(object? obj) -> bool
+override Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition.GetHashCode() -> int
+override Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition.ToString() -> string!
+override Standard.Agents.Models.Brokers.Mcps.McpTool.Equals(object? obj) -> bool
+override Standard.Agents.Models.Brokers.Mcps.McpTool.GetHashCode() -> int
+override Standard.Agents.Models.Brokers.Mcps.McpTool.ToString() -> string!
+override Standard.Agents.Models.Brokers.Sessions.AgentSession.Equals(object? obj) -> bool
+override Standard.Agents.Models.Brokers.Sessions.AgentSession.GetHashCode() -> int
+override Standard.Agents.Models.Brokers.Sessions.AgentSession.ToString() -> string!
+override Standard.Agents.Models.Brokers.Sessions.AgentTurn.Equals(object? obj) -> bool
+override Standard.Agents.Models.Brokers.Sessions.AgentTurn.GetHashCode() -> int
+override Standard.Agents.Models.Brokers.Sessions.AgentTurn.ToString() -> string!
+override Standard.Agents.Models.Clients.Agents.AgentOutcome.Equals(object? obj) -> bool
+override Standard.Agents.Models.Clients.Agents.AgentOutcome.GetHashCode() -> int
+override Standard.Agents.Models.Clients.Agents.AgentOutcome.ToString() -> string!
+override Standard.Agents.Models.Clients.Agents.AgentStreamEvent.Equals(object? obj) -> bool
+override Standard.Agents.Models.Clients.Agents.AgentStreamEvent.GetHashCode() -> int
+override Standard.Agents.Models.Clients.Agents.AgentStreamEvent.ToString() -> string!
+override Standard.Agents.Models.Coordinations.Agents.AgentBudget.Equals(object? obj) -> bool
+override Standard.Agents.Models.Coordinations.Agents.AgentBudget.GetHashCode() -> int
+override Standard.Agents.Models.Coordinations.Agents.AgentBudget.ToString() -> string!
+override Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.Equals(object? obj) -> bool
+override Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.GetHashCode() -> int
+override Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.ToString() -> string!
+override Standard.Agents.Models.Foundations.Brains.RedactionRule.Equals(object? obj) -> bool
+override Standard.Agents.Models.Foundations.Brains.RedactionRule.GetHashCode() -> int
+override Standard.Agents.Models.Foundations.Brains.RedactionRule.ToString() -> string!
+override Standard.Agents.Models.Foundations.Contracts.ContractVerdict.Equals(object? obj) -> bool
+override Standard.Agents.Models.Foundations.Contracts.ContractVerdict.GetHashCode() -> int
+override Standard.Agents.Models.Foundations.Contracts.ContractVerdict.ToString() -> string!
+override Standard.Agents.Models.Foundations.Gates.SkillConflict.Equals(object? obj) -> bool
+override Standard.Agents.Models.Foundations.Gates.SkillConflict.GetHashCode() -> int
+override Standard.Agents.Models.Foundations.Gates.SkillConflict.ToString() -> string!
+override Standard.Agents.Models.Foundations.Gates.SkillDirective.Equals(object? obj) -> bool
+override Standard.Agents.Models.Foundations.Gates.SkillDirective.GetHashCode() -> int
+override Standard.Agents.Models.Foundations.Gates.SkillDirective.ToString() -> string!
+override Standard.Agents.Models.Foundations.Judges.Judgement.Equals(object? obj) -> bool
+override Standard.Agents.Models.Foundations.Judges.Judgement.GetHashCode() -> int
+override Standard.Agents.Models.Foundations.Judges.Judgement.ToString() -> string!
+override Standard.Agents.Models.Foundations.Skills.Skill.Equals(object? obj) -> bool
+override Standard.Agents.Models.Foundations.Skills.Skill.GetHashCode() -> int
+override Standard.Agents.Models.Foundations.Skills.Skill.ToString() -> string!
+override Standard.Agents.Models.Foundations.Usages.AgentUsage.Equals(object? obj) -> bool
+override Standard.Agents.Models.Foundations.Usages.AgentUsage.GetHashCode() -> int
+override Standard.Agents.Models.Foundations.Usages.AgentUsage.ToString() -> string!
+override Standard.Agents.Models.Loggings.PerformedEffect.Equals(object? obj) -> bool
+override Standard.Agents.Models.Loggings.PerformedEffect.GetHashCode() -> int
+override Standard.Agents.Models.Loggings.PerformedEffect.ToString() -> string!
+override Standard.Agents.Models.Orchestrations.Agents.AgentContext.Equals(object? obj) -> bool
+override Standard.Agents.Models.Orchestrations.Agents.AgentContext.GetHashCode() -> int
+override Standard.Agents.Models.Orchestrations.Agents.AgentContext.ToString() -> string!
+override Standard.Agents.Models.Orchestrations.Agents.ToolExchange.Equals(object? obj) -> bool
+override Standard.Agents.Models.Orchestrations.Agents.ToolExchange.GetHashCode() -> int
+override Standard.Agents.Models.Orchestrations.Agents.ToolExchange.ToString() -> string!
+override Standard.Agents.Models.Orchestrations.Effects.AgentEffect.Equals(object? obj) -> bool
+override Standard.Agents.Models.Orchestrations.Effects.AgentEffect.GetHashCode() -> int
+override Standard.Agents.Models.Orchestrations.Effects.AgentEffect.ToString() -> string!
+override Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal.Equals(object? obj) -> bool
+override Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal.GetHashCode() -> int
+override Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal.ToString() -> string!
+override Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision.Equals(object? obj) -> bool
+override Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision.GetHashCode() -> int
+override Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision.ToString() -> string!
+override Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome.Equals(object? obj) -> bool
+override Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome.GetHashCode() -> int
+override Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome.ToString() -> string!
+override Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog.Equals(object? obj) -> bool
+override Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog.GetHashCode() -> int
+override Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog.ToString() -> string!
+static Standard.Agents.Brokers.Audits.FileAuditBroker.FindBrokenLink(System.Collections.Generic.IEnumerable<string!>! lines) -> int?
+static Standard.Agents.Models.Brokers.Agents.RegisteredAgent.operator !=(Standard.Agents.Models.Brokers.Agents.RegisteredAgent? left, Standard.Agents.Models.Brokers.Agents.RegisteredAgent? right) -> bool
+static Standard.Agents.Models.Brokers.Agents.RegisteredAgent.operator ==(Standard.Agents.Models.Brokers.Agents.RegisteredAgent? left, Standard.Agents.Models.Brokers.Agents.RegisteredAgent? right) -> bool
+static Standard.Agents.Models.Brokers.Audits.AuditRecord.operator !=(Standard.Agents.Models.Brokers.Audits.AuditRecord? left, Standard.Agents.Models.Brokers.Audits.AuditRecord? right) -> bool
+static Standard.Agents.Models.Brokers.Audits.AuditRecord.operator ==(Standard.Agents.Models.Brokers.Audits.AuditRecord? left, Standard.Agents.Models.Brokers.Audits.AuditRecord? right) -> bool
+static Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage.operator !=(Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage? left, Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage? right) -> bool
+static Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage.operator ==(Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage? left, Standard.Agents.Models.Brokers.Generators.V1.ConversationMessage? right) -> bool
+static Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.operator !=(Standard.Agents.Models.Brokers.Generators.V1.GenerationResult? left, Standard.Agents.Models.Brokers.Generators.V1.GenerationResult? right) -> bool
+static Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.operator ==(Standard.Agents.Models.Brokers.Generators.V1.GenerationResult? left, Standard.Agents.Models.Brokers.Generators.V1.GenerationResult? right) -> bool
+static Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall.operator !=(Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall? left, Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall? right) -> bool
+static Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall.operator ==(Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall? left, Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall? right) -> bool
+static Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition.operator !=(Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition? left, Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition? right) -> bool
+static Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition.operator ==(Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition? left, Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition? right) -> bool
+static Standard.Agents.Models.Brokers.Mcps.McpTool.operator !=(Standard.Agents.Models.Brokers.Mcps.McpTool? left, Standard.Agents.Models.Brokers.Mcps.McpTool? right) -> bool
+static Standard.Agents.Models.Brokers.Mcps.McpTool.operator ==(Standard.Agents.Models.Brokers.Mcps.McpTool? left, Standard.Agents.Models.Brokers.Mcps.McpTool? right) -> bool
+static Standard.Agents.Models.Brokers.Sessions.AgentSession.operator !=(Standard.Agents.Models.Brokers.Sessions.AgentSession? left, Standard.Agents.Models.Brokers.Sessions.AgentSession? right) -> bool
+static Standard.Agents.Models.Brokers.Sessions.AgentSession.operator ==(Standard.Agents.Models.Brokers.Sessions.AgentSession? left, Standard.Agents.Models.Brokers.Sessions.AgentSession? right) -> bool
+static Standard.Agents.Models.Brokers.Sessions.AgentTurn.operator !=(Standard.Agents.Models.Brokers.Sessions.AgentTurn? left, Standard.Agents.Models.Brokers.Sessions.AgentTurn? right) -> bool
+static Standard.Agents.Models.Brokers.Sessions.AgentTurn.operator ==(Standard.Agents.Models.Brokers.Sessions.AgentTurn? left, Standard.Agents.Models.Brokers.Sessions.AgentTurn? right) -> bool
+static Standard.Agents.Models.Clients.Agents.AgentOutcome.operator !=(Standard.Agents.Models.Clients.Agents.AgentOutcome? left, Standard.Agents.Models.Clients.Agents.AgentOutcome? right) -> bool
+static Standard.Agents.Models.Clients.Agents.AgentOutcome.operator ==(Standard.Agents.Models.Clients.Agents.AgentOutcome? left, Standard.Agents.Models.Clients.Agents.AgentOutcome? right) -> bool
+static Standard.Agents.Models.Clients.Agents.AgentStreamEvent.operator !=(Standard.Agents.Models.Clients.Agents.AgentStreamEvent? left, Standard.Agents.Models.Clients.Agents.AgentStreamEvent? right) -> bool
+static Standard.Agents.Models.Clients.Agents.AgentStreamEvent.operator ==(Standard.Agents.Models.Clients.Agents.AgentStreamEvent? left, Standard.Agents.Models.Clients.Agents.AgentStreamEvent? right) -> bool
+static Standard.Agents.Models.Coordinations.Agents.AgentBudget.operator !=(Standard.Agents.Models.Coordinations.Agents.AgentBudget? left, Standard.Agents.Models.Coordinations.Agents.AgentBudget? right) -> bool
+static Standard.Agents.Models.Coordinations.Agents.AgentBudget.operator ==(Standard.Agents.Models.Coordinations.Agents.AgentBudget? left, Standard.Agents.Models.Coordinations.Agents.AgentBudget? right) -> bool
+static Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.operator !=(Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy? left, Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy? right) -> bool
+static Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.operator ==(Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy? left, Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy? right) -> bool
+static Standard.Agents.Models.Foundations.Brains.RedactionRule.operator !=(Standard.Agents.Models.Foundations.Brains.RedactionRule? left, Standard.Agents.Models.Foundations.Brains.RedactionRule? right) -> bool
+static Standard.Agents.Models.Foundations.Brains.RedactionRule.operator ==(Standard.Agents.Models.Foundations.Brains.RedactionRule? left, Standard.Agents.Models.Foundations.Brains.RedactionRule? right) -> bool
+static Standard.Agents.Models.Foundations.Brains.RedactionRules.Default.get -> System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Brains.RedactionRule!>!
+static Standard.Agents.Models.Foundations.Contracts.ContractVerdict.Unconstrained.get -> Standard.Agents.Models.Foundations.Contracts.ContractVerdict!
+static Standard.Agents.Models.Foundations.Contracts.ContractVerdict.operator !=(Standard.Agents.Models.Foundations.Contracts.ContractVerdict? left, Standard.Agents.Models.Foundations.Contracts.ContractVerdict? right) -> bool
+static Standard.Agents.Models.Foundations.Contracts.ContractVerdict.operator ==(Standard.Agents.Models.Foundations.Contracts.ContractVerdict? left, Standard.Agents.Models.Foundations.Contracts.ContractVerdict? right) -> bool
+static Standard.Agents.Models.Foundations.Gates.SkillConflict.operator !=(Standard.Agents.Models.Foundations.Gates.SkillConflict? left, Standard.Agents.Models.Foundations.Gates.SkillConflict? right) -> bool
+static Standard.Agents.Models.Foundations.Gates.SkillConflict.operator ==(Standard.Agents.Models.Foundations.Gates.SkillConflict? left, Standard.Agents.Models.Foundations.Gates.SkillConflict? right) -> bool
+static Standard.Agents.Models.Foundations.Gates.SkillDirective.operator !=(Standard.Agents.Models.Foundations.Gates.SkillDirective? left, Standard.Agents.Models.Foundations.Gates.SkillDirective? right) -> bool
+static Standard.Agents.Models.Foundations.Gates.SkillDirective.operator ==(Standard.Agents.Models.Foundations.Gates.SkillDirective? left, Standard.Agents.Models.Foundations.Gates.SkillDirective? right) -> bool
+static Standard.Agents.Models.Foundations.Judges.Judgement.operator !=(Standard.Agents.Models.Foundations.Judges.Judgement? left, Standard.Agents.Models.Foundations.Judges.Judgement? right) -> bool
+static Standard.Agents.Models.Foundations.Judges.Judgement.operator ==(Standard.Agents.Models.Foundations.Judges.Judgement? left, Standard.Agents.Models.Foundations.Judges.Judgement? right) -> bool
+static Standard.Agents.Models.Foundations.Skills.Skill.operator !=(Standard.Agents.Models.Foundations.Skills.Skill? left, Standard.Agents.Models.Foundations.Skills.Skill? right) -> bool
+static Standard.Agents.Models.Foundations.Skills.Skill.operator ==(Standard.Agents.Models.Foundations.Skills.Skill? left, Standard.Agents.Models.Foundations.Skills.Skill? right) -> bool
+static Standard.Agents.Models.Foundations.Usages.AgentUsage.None.get -> Standard.Agents.Models.Foundations.Usages.AgentUsage!
+static Standard.Agents.Models.Foundations.Usages.AgentUsage.operator !=(Standard.Agents.Models.Foundations.Usages.AgentUsage? left, Standard.Agents.Models.Foundations.Usages.AgentUsage? right) -> bool
+static Standard.Agents.Models.Foundations.Usages.AgentUsage.operator ==(Standard.Agents.Models.Foundations.Usages.AgentUsage? left, Standard.Agents.Models.Foundations.Usages.AgentUsage? right) -> bool
+static Standard.Agents.Models.Loggings.AgentRun.Begin(string? resumedId = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.IDisposable!
+static Standard.Agents.Models.Loggings.AgentRun.Current.get -> Standard.Agents.Models.Loggings.AgentRun?
+static Standard.Agents.Models.Loggings.AgentRun.Detached() -> Standard.Agents.Models.Loggings.AgentRun!
+static Standard.Agents.Models.Loggings.PerformedEffect.operator !=(Standard.Agents.Models.Loggings.PerformedEffect? left, Standard.Agents.Models.Loggings.PerformedEffect? right) -> bool
+static Standard.Agents.Models.Loggings.PerformedEffect.operator ==(Standard.Agents.Models.Loggings.PerformedEffect? left, Standard.Agents.Models.Loggings.PerformedEffect? right) -> bool
+static Standard.Agents.Models.Orchestrations.Agents.AgentContext.operator !=(Standard.Agents.Models.Orchestrations.Agents.AgentContext? left, Standard.Agents.Models.Orchestrations.Agents.AgentContext? right) -> bool
+static Standard.Agents.Models.Orchestrations.Agents.AgentContext.operator ==(Standard.Agents.Models.Orchestrations.Agents.AgentContext? left, Standard.Agents.Models.Orchestrations.Agents.AgentContext? right) -> bool
+static Standard.Agents.Models.Orchestrations.Agents.ToolExchange.operator !=(Standard.Agents.Models.Orchestrations.Agents.ToolExchange? left, Standard.Agents.Models.Orchestrations.Agents.ToolExchange? right) -> bool
+static Standard.Agents.Models.Orchestrations.Agents.ToolExchange.operator ==(Standard.Agents.Models.Orchestrations.Agents.ToolExchange? left, Standard.Agents.Models.Orchestrations.Agents.ToolExchange? right) -> bool
+static Standard.Agents.Models.Orchestrations.Effects.AgentEffect.For(string! runId, string! toolName, string! arguments, Standard.Agents.Models.Orchestrations.Effects.RiskLevel riskLevel = Standard.Agents.Models.Orchestrations.Effects.RiskLevel.Safe, bool approvalRequired = false, Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal? principal = null, string! scope = "") -> Standard.Agents.Models.Orchestrations.Effects.AgentEffect!
+static Standard.Agents.Models.Orchestrations.Effects.AgentEffect.operator !=(Standard.Agents.Models.Orchestrations.Effects.AgentEffect? left, Standard.Agents.Models.Orchestrations.Effects.AgentEffect? right) -> bool
+static Standard.Agents.Models.Orchestrations.Effects.AgentEffect.operator ==(Standard.Agents.Models.Orchestrations.Effects.AgentEffect? left, Standard.Agents.Models.Orchestrations.Effects.AgentEffect? right) -> bool
+static Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal.operator !=(Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal? left, Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal? right) -> bool
+static Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal.operator ==(Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal? left, Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal? right) -> bool
+static Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision.Allow() -> Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision!
+static Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision.Deny(string! reason) -> Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision!
+static Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision.operator !=(Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision? left, Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision? right) -> bool
+static Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision.operator ==(Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision? left, Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision? right) -> bool
+static Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome.operator !=(Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome? left, Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome? right) -> bool
+static Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome.operator ==(Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome? left, Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome? right) -> bool
+static Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog.operator !=(Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog? left, Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog? right) -> bool
+static Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog.operator ==(Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog? left, Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog? right) -> bool
+static Standard.Agents.StandardAgent.FromJson(string! json) -> Standard.Agents.StandardAgent!
+static Standard.Agents.StandardAgent.FromJsonFile(string! path) -> Standard.Agents.StandardAgent!
+virtual Standard.Agents.Models.Clients.Agents.AgentOutcome.<Clone>$() -> Standard.Agents.Models.Clients.Agents.AgentOutcome!
+virtual Standard.Agents.Models.Clients.Agents.AgentOutcome.EqualityContract.get -> System.Type!
+virtual Standard.Agents.Models.Clients.Agents.AgentOutcome.Equals(Standard.Agents.Models.Clients.Agents.AgentOutcome? other) -> bool
+virtual Standard.Agents.Models.Clients.Agents.AgentOutcome.PrintMembers(System.Text.StringBuilder! builder) -> bool
+virtual Standard.Agents.Models.Foundations.Brains.RedactionRule.<Clone>$() -> Standard.Agents.Models.Foundations.Brains.RedactionRule!
+virtual Standard.Agents.Models.Foundations.Brains.RedactionRule.EqualityContract.get -> System.Type!
+virtual Standard.Agents.Models.Foundations.Brains.RedactionRule.Equals(Standard.Agents.Models.Foundations.Brains.RedactionRule? other) -> bool
+virtual Standard.Agents.Models.Foundations.Brains.RedactionRule.PrintMembers(System.Text.StringBuilder! builder) -> bool
+virtual Standard.Agents.Models.Foundations.Contracts.ContractVerdict.<Clone>$() -> Standard.Agents.Models.Foundations.Contracts.ContractVerdict!
+virtual Standard.Agents.Models.Foundations.Contracts.ContractVerdict.EqualityContract.get -> System.Type!
+virtual Standard.Agents.Models.Foundations.Contracts.ContractVerdict.Equals(Standard.Agents.Models.Foundations.Contracts.ContractVerdict? other) -> bool
+virtual Standard.Agents.Models.Foundations.Contracts.ContractVerdict.PrintMembers(System.Text.StringBuilder! builder) -> bool
+virtual Standard.Agents.Models.Foundations.Judges.Judgement.<Clone>$() -> Standard.Agents.Models.Foundations.Judges.Judgement!
+virtual Standard.Agents.Models.Foundations.Judges.Judgement.EqualityContract.get -> System.Type!
+virtual Standard.Agents.Models.Foundations.Judges.Judgement.Equals(Standard.Agents.Models.Foundations.Judges.Judgement? other) -> bool
+virtual Standard.Agents.Models.Foundations.Judges.Judgement.PrintMembers(System.Text.StringBuilder! builder) -> bool
+virtual Standard.Agents.Models.Foundations.Skills.Skill.<Clone>$() -> Standard.Agents.Models.Foundations.Skills.Skill!
+virtual Standard.Agents.Models.Foundations.Skills.Skill.EqualityContract.get -> System.Type!
+virtual Standard.Agents.Models.Foundations.Skills.Skill.Equals(Standard.Agents.Models.Foundations.Skills.Skill? other) -> bool
+virtual Standard.Agents.Models.Foundations.Skills.Skill.PrintMembers(System.Text.StringBuilder! builder) -> bool
+virtual Standard.Agents.Models.Foundations.Usages.AgentUsage.<Clone>$() -> Standard.Agents.Models.Foundations.Usages.AgentUsage!
+virtual Standard.Agents.Models.Foundations.Usages.AgentUsage.EqualityContract.get -> System.Type!
+virtual Standard.Agents.Models.Foundations.Usages.AgentUsage.Equals(Standard.Agents.Models.Foundations.Usages.AgentUsage? other) -> bool
+virtual Standard.Agents.Models.Foundations.Usages.AgentUsage.PrintMembers(System.Text.StringBuilder! builder) -> bool

@@ -59,7 +59,7 @@ public sealed class RetryingGeneratorBroker : IGeneratorBroker
         string systemPrompt,
         string userPrompt,
         ResolvedInference inference,
-        CancellationToken cancellationToken = default) =>
+        CancellationToken cancellationToken) =>
         this.generatorBroker.GenerateStreamAsync(
             systemPrompt, userPrompt, inference, cancellationToken);
 }

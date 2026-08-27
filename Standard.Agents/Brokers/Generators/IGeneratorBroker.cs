@@ -45,6 +45,6 @@ public interface IGeneratorBroker
         string systemPrompt,
         string userPrompt,
         ResolvedInference inference,
-        CancellationToken cancellationToken = default) =>
+        CancellationToken cancellationToken) =>
         GenerateStreamAsync(systemPrompt, userPrompt, cancellationToken);
 }

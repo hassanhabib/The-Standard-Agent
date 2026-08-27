@@ -5,6 +5,10 @@
 
 namespace Standard.Agents.Conformance;
 
+// A typo'd field must fail loudly, not silently delete the assertion or the input it
+// carried: a vector that asserts less than it appears to reads as coverage (SPEC.md §1.1).
+[System.Text.Json.Serialization.JsonUnmappedMemberHandling(
+    System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow)]
 public sealed record Vector(
     string Name,
     string? Description,
@@ -107,6 +111,29 @@ public sealed record Vector(
     // Tools this principal may not act with, refused by policy on the identity alone. This is a
     // scripted policy engine, not the allow-list: the allow-list cannot express "not for them".
     List<string>? DeniedForPrincipal = null,
+
+    // Memories the run recalls (SPEC.md §4.2) — which is also how a POISONED memory is
+    // certified: an injected instruction rides the same seam a remembered preference would,
+    // and the perimeter must hold whether or not the Brain is fooled by it.
+    List<string>? Memories = null,
+
+    // Plural integrations (SPEC.md §4.8 v1.5). McpServers scripts remote tool servers in
+    // REGISTRATION ORDER — each entry is that server's catalog, {toolName: reply} — because
+    // order is the contract: routing is by declared ownership, first registered wins a
+    // contested name. ExtraSkills adds skill sources after the harness's stub, in order,
+    // because accumulation is only observable with more than one source.
+    List<Dictionary<string, string>>? McpServers = null,
+    List<string>? ExtraSkills = null,
+
+    // Composition from data (SPEC.md §4.8 v1.4). When set, the vector certifies composition
+    // alone — the document must refuse with the named text and no run ever happens, so
+    // GeneratorReplies and Prompt are carried empty.
+    string? ConfigurationJson = null,
+
+    // The fleet (SPEC.md §4.8 v1.6). Each entry is a registered agent the outer agent may hand
+    // work to — or transfer the whole run to — with a scripted brain of its own, created once
+    // per vector so its script keeps its place across instance rebuilds.
+    List<FleetAgent>? Agents = null,
 
     // Per-request inference (docs/per-request-inference.md). Request carries what one caller
     // asked for; Requests drives one request per prompt, concurrently, against a single

@@ -48,6 +48,24 @@ public partial class DirectionCoordinationService
             return Denied(context, decision.Reason);
         }
 
+        // 1b — the mode's answer for an act nothing named, under Deny. It is decided here with
+        // authorization and not at the approval stage, because Deny asks nobody: the act is
+        // refused before its intent is recorded, exactly as a policy denial is — told,
+        // non-terminal, recoverable. An act RequireApproval names was mentioned, so it travels
+        // to its authority below; the mode speaks only for what no permission mentioned.
+        if (DeniedBecauseNothingPermitsIt(effect))
+        {
+            string denial =
+                $"tool '{effect.ToolName}' is not permitted: nothing explicitly permits it "
+                    + "and the permission mode is Deny";
+
+            await this.loggingBroker.LogProcessAsync(
+                "Direction",
+                $"Permissions → DENIED '{effect.ToolName}': nothing explicitly permits it");
+
+            return Denied(context, denial);
+        }
+
         // 2 — record the intent, and learn whether this act already happened
         string? priorOutcome = await this.perimeterService.ClaimAsync(effect);
 
@@ -71,7 +89,17 @@ public partial class DirectionCoordinationService
             // remembered for the tool AND the scope it was given for, exactly — approving a write
             // to one file is not approving writes to every file, and a broader grant is a
             // judgement only the authority can make.
-            if (AgentRun.Current?.WasGranted(effect.ToolName, effect.Scope) is true)
+            //
+            // Exactly, which is why an act with no named scope remembers nothing: a tool that
+            // does not say what it touches (ScopeOf unimplemented — every MCP tool among them)
+            // leaves nothing for a later act to match, and remembering the empty scope collapsed
+            // the key to the tool name — approving a $10 transfer silently approved the $10,000
+            // one. Each such act is its own question; an identical repeat is already replayed by
+            // run-once above, before approval is ever reached.
+            bool scopeIsNamed = string.IsNullOrEmpty(effect.Scope) is false;
+
+            if (scopeIsNamed
+                && AgentRun.Current?.WasGranted(effect.ToolName, effect.Scope) is true)
             {
                 await this.loggingBroker.LogProcessAsync(
                     "Direction",
@@ -87,7 +115,10 @@ public partial class DirectionCoordinationService
                     return await HandleUnapprovedAsync(context, effect, approval);
                 }
 
-                AgentRun.Current?.RememberGrant(effect.ToolName, effect.Scope);
+                if (scopeIsNamed)
+                {
+                    AgentRun.Current?.RememberGrant(effect.ToolName, effect.Scope);
+                }
 
                 await this.loggingBroker.LogProcessAsync(
                     "Direction", $"Approval → APPROVED '{effect.ToolName}'");
@@ -285,6 +316,14 @@ public partial class DirectionCoordinationService
     // framework cannot tell a considered yes from an incidental one.
     private bool AskBecauseNothingPermittedIt(AgentEffect effect) =>
         this.permissionMode is PermissionMode.Ask
+            && this.explicitlyPermits?.Invoke(effect) is not true;
+
+    // Deny's twin of the predicate above, sharing its reading of "explicitly permitted" so the
+    // two modes cannot drift: an allow-list entry names the act, and a RequireApproval name
+    // routes it to an authority instead. Everything else is refused.
+    private bool DeniedBecauseNothingPermitsIt(AgentEffect effect) =>
+        this.permissionMode is PermissionMode.Deny
+            && effect.ApprovalRequired is false
             && this.explicitlyPermits?.Invoke(effect) is not true;
 
     private bool RequiresApproval(string toolName) =>

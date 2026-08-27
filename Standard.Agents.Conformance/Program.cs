@@ -9,11 +9,13 @@ using Standard.Agents.Brokers.Approvals;
 using Standard.Agents.Brokers.Generators;
 using Standard.Agents.Brokers.Sessions;
 using Standard.Agents.Conformance;
+using Standard.Agents.Models.Brokers.Agents;
 using Standard.Agents.Models.Brokers.Audits;
 using Standard.Agents.Models.Brokers.Generators;
 using Standard.Agents.Models.Brokers.Generators.V1;
 using Standard.Agents.Models.Brokers.Sessions;
 using Standard.Agents.Models.Clients.Agents;
+using Standard.Agents.Models.Foundations.Skills;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Models.Orchestrations.Effects;
 
@@ -52,6 +54,46 @@ foreach (string vectorFile in
     Vector vector =
         JsonSerializer.Deserialize<Vector>(await File.ReadAllTextAsync(vectorFile), jsonOptions)!;
 
+    // Composition-from-data vectors certify the refusal itself: the document must not compose,
+    // and the refusal must name the offending entry (SPEC.md §4.8 v1.4). No run happens.
+    if (vector.ConfigurationJson is string configurationJson)
+    {
+        string? refusal = null;
+
+        try
+        {
+            StandardAgent.FromJson(configurationJson);
+        }
+        catch (Exception exception)
+        {
+            refusal = exception.Message;
+        }
+
+        string requiredNaming = vector.Expect.ConfigurationRefusalNames ?? string.Empty;
+
+        bool refusalConformant = refusal is not null
+            && refusal.Contains(requiredNaming, StringComparison.Ordinal);
+
+        if (refusalConformant)
+        {
+            Console.WriteLine($"PASS  {vector.Name}");
+            passed++;
+            passedVectors.Add(vector.Name);
+        }
+        else
+        {
+            Console.WriteLine($"FAIL  {vector.Name}");
+
+            Console.WriteLine(refusal is null
+                ? "        the document composed; it should have refused"
+                : $"        the refusal does not name {Show(requiredNaming)}: {Show(refusal)}");
+
+            failed++;
+        }
+
+        continue;
+    }
+
     VectorRun run = await RunVectorAsync(vector);
     string actualResult = run.Result;
     Dictionary<string, StubTool> stubTools = run.Tools;
@@ -60,6 +102,13 @@ foreach (string vectorFile in
         ? actualResult == vector.Expect.Result
         : vector.Expect.ResultContains is not null
             && actualResult.Contains(vector.Expect.ResultContains, StringComparison.Ordinal);
+
+    bool perPromptResultsConformant = vector.Expect.ResultsContain is null
+        || (run.PromptResults.Count == vector.Expect.ResultsContain.Count
+            && vector.Expect.ResultsContain
+                .Select((expected, index) =>
+                    run.PromptResults[index].Contains(expected, StringComparison.Ordinal))
+                .All(contained => contained));
 
     bool toolInputConformant = vector.Expect.ToolInput is null
         || vector.Expect.ToolInput.All(expected =>
@@ -78,12 +127,22 @@ foreach (string vectorFile in
     bool requestConformant =
         RequestConformant(vector, run, out string? requestFailure);
 
+    // The handoff's content, certified at the specialist: grounding is only real if the text
+    // actually arrived (SPEC.md §4.8 v1.6).
+    bool agentInputConformant = vector.Expect.AgentInput is null
+        || vector.Expect.AgentInput.All(expected =>
+            run.AgentInputs.TryGetValue(expected.Key, out List<string>? handed)
+                && handed.Any(input =>
+                    input.Contains(expected.Value, StringComparison.Ordinal)));
+
     if (resultConformant
+        && perPromptResultsConformant
         && toolInputConformant
         && rubricConformant
         && auditConformant
         && guardianInputConformant
-        && requestConformant)
+        && requestConformant
+        && agentInputConformant)
     {
         passed++;
         passedVectors.Add(vector.Name);
@@ -104,6 +163,17 @@ foreach (string vectorFile in
             Console.WriteLine($"        actual result:   {Show(actualResult)}");
         }
 
+        if (perPromptResultsConformant is false)
+        {
+            Console.WriteLine(
+                $"        expected per-prompt results containing: "
+                    + string.Join(" | ", vector.Expect.ResultsContain!));
+
+            Console.WriteLine(
+                $"        actual per-prompt results: "
+                    + string.Join(" | ", run.PromptResults.Select(Show)));
+        }
+
         if (toolInputConformant is false)
         {
             foreach (KeyValuePair<string, string> expected in vector.Expect.ToolInput!)
@@ -114,6 +184,25 @@ foreach (string vectorFile in
 
                 Console.WriteLine($"        tool '{expected.Key}' expected input: {Show(expected.Value)}");
                 Console.WriteLine($"        tool '{expected.Key}' actual inputs:  {actualInputs}");
+            }
+        }
+
+        if (agentInputConformant is false)
+        {
+            foreach (KeyValuePair<string, string> expected in vector.Expect.AgentInput!)
+            {
+                string actualHandoffs =
+                    run.AgentInputs.TryGetValue(expected.Key, out List<string>? handed)
+                        && handed.Count > 0
+                        ? string.Join(" | ", handed.Select(Show))
+                        : "(agent never ran)";
+
+                Console.WriteLine(
+                    $"        agent '{expected.Key}' expected handoff containing: "
+                        + Show(expected.Value));
+
+                Console.WriteLine(
+                    $"        agent '{expected.Key}' actually received: {actualHandoffs}");
             }
         }
 
@@ -199,6 +288,41 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         (vector.ApprovalDecisions ?? []).Select(decision =>
             Enum.Parse<ApprovalDecision>(decision, ignoreCase: true)));
 
+    // Created once per vector so call counts survive instance rebuilds, the way a real
+    // server's would.
+    List<ScriptedMcpServer> scriptedMcpServers =
+        [.. (vector.McpServers ?? []).Select(catalog => new ScriptedMcpServer(catalog))];
+
+    // The fleet (SPEC.md §4.8 v1.6): scripted specialists, created once per vector so their
+    // scripted brains keep their place across instance rebuilds, exactly as real endpoints
+    // would. What each was HANDED is recorded, because the grounded handoff — the user's
+    // actual ask crossing the seam — is the thing worth certifying.
+    Dictionary<string, List<string>> agentInputs = new(StringComparer.OrdinalIgnoreCase);
+    List<RegisteredAgent> fleet = [];
+    object fleetLock = new();
+
+    foreach (FleetAgent member in vector.Agents ?? [])
+    {
+        List<string> handed = [];
+        agentInputs[member.Name] = handed;
+
+        StandardAgent specialist = new StandardAgent()
+            .UseSkills(new StubSkillBroker())
+            .UseMemory(new StubMemoryBroker())
+            .UseKnowledge(new StubKnowledgeBroker())
+            .UseMcp(new NotConfiguredMcpBroker())
+            .UseGenerator(new RecordingGeneratorBroker(
+                new ScriptedGeneratorBroker(member.Replies),
+                input => { lock (fleetLock) { handed.Add(input); } }));
+
+        if (member.RuleGate is { Count: > 0 })
+        {
+            specialist.RuleGate([.. member.RuleGate]);
+        }
+
+        fleet.Add(new RegisteredAgent(member.Name, member.Description, specialist));
+    }
+
     Dictionary<string, StubTool> stubTools =
         (vector.Tools ?? []).ToDictionary(
             pair => pair.Key,
@@ -275,9 +399,35 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         StandardAgent agent = new StandardAgent()
             .UseSkills(new StubSkillBroker())
             .UseGenerator(recordingGenerator)
-            .UseMemory(new StubMemoryBroker())
+            .UseMemory(new StubMemoryBroker(vector.Memories))
             .UseMcp(new NotConfiguredMcpBroker())
-            .Tools(stubTools.Values)
+            .Tools(stubTools.Values);
+
+        // Plural integrations (SPEC.md §4.8 v1.5): scripted servers join in registration order —
+        // the order IS the contract under contention — and each extra skill source accumulates
+        // after the harness's stub through the same client verb a host would use.
+        foreach (ScriptedMcpServer scriptedServer in scriptedMcpServers)
+        {
+            agent.UseMcp(scriptedServer);
+        }
+
+        foreach (string extraSkill in vector.ExtraSkills ?? [])
+        {
+            string content = extraSkill;
+
+            agent.OnSkills(() => new ValueTask<IReadOnlyList<Skill>>(
+                [new Skill { Name = $"extra-{content.GetHashCode():x}", Content = content }]));
+        }
+
+        // The fleet registers through the same client verb a host would use, so what is
+        // certified is the registry path itself — materialization as tools, the grounded
+        // default handoff, and transfer semantics included.
+        if (fleet.Count > 0)
+        {
+            agent.OnAgents(() => new ValueTask<IReadOnlyList<RegisteredAgent>>(fleet));
+        }
+
+        agent
             .OnGate((rubric, prompt) =>
             {
                 gateRubric ??= rubric;
@@ -528,6 +678,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
 
     string result;
     AgentStatus? runStatus = null;
+    List<string> promptResults = [];
 
     PromptRequest ToRequest(string prompt, RequestSpec spec) => new()
     {
@@ -589,6 +740,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         string[] results = await Task.WhenAll(
             prompts.Select(prompt => agent.ProcessPromptAsync(prompt).AsTask()));
 
+        promptResults.AddRange(results);
         result = results[0];
     }
     else
@@ -606,6 +758,8 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
 
             result = await instance.ProcessPromptAsync(
                 prompt, vector.SessionId ?? string.Empty, runCancellation.Token);
+
+            promptResults.Add(result);
         }
     }
 
@@ -623,9 +777,10 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
     }
 
     return new VectorRun(
-        result, stubTools, gateRubric, judgeRubric, judgeInput, modelInputs, brainInputs,
-        promptScreenings, auditRecords, compensationOrder, nativeGenerator, policyPrincipals,
-        runStatus, pendingEffectTool, honoringGenerator?.Inferences ?? []);
+        result, promptResults, stubTools, gateRubric, judgeRubric, judgeInput, modelInputs,
+        brainInputs, promptScreenings, auditRecords, compensationOrder, nativeGenerator,
+        policyPrincipals, [.. scriptedMcpServers.Select(server => server.CallCount)],
+        agentInputs, runStatus, pendingEffectTool, honoringGenerator?.Inferences ?? []);
 }
 
 // The decision log's guarantees, certified from the records themselves: one run per prompt,
@@ -889,6 +1044,30 @@ static bool GuardianInputConformant(
         return false;
     }
 
+    // Accumulation is certified by every source's text arriving: a source silently replaced is
+    // a source whose text is absent (SPEC.md §4.8 v1.5).
+    foreach (string requiredFromEverySource in vector.Expect.BrainSeesEvery ?? [])
+    {
+        if (run.BrainInputs.Any(input =>
+            input.Contains(requiredFromEverySource, StringComparison.Ordinal)) is false)
+        {
+            failure = $"the Brain never saw {Show(requiredFromEverySource)} — a source was lost";
+
+            return false;
+        }
+    }
+
+    // Routing is certified by the owner being called and the bystander not (SPEC.md §4.8 v1.5).
+    if (vector.Expect.McpServerCalls is List<int> expectedServerCalls
+        && run.McpServerCalls.SequenceEqual(expectedServerCalls) is false)
+    {
+        failure =
+            $"server calls were [{string.Join(", ", run.McpServerCalls)}], "
+                + $"expected [{string.Join(", ", expectedServerCalls)}]";
+
+        return false;
+    }
+
     if (vector.Expect.GateScreenedPromptTimes is int expectedScreenings
         && run.PromptScreenings != expectedScreenings)
     {
@@ -1112,6 +1291,7 @@ static string FindRepositoryRoot()
 
 internal sealed record VectorRun(
     string Result,
+    List<string> PromptResults,
     Dictionary<string, StubTool> Tools,
     string? GateRubric,
     string? JudgeRubric,
@@ -1123,6 +1303,8 @@ internal sealed record VectorRun(
     List<string> CompensationOrder,
     ScriptedNativeGeneratorBroker? NativeGenerator,
     List<string?> PolicyPrincipals,
+    List<int> McpServerCalls,
+    Dictionary<string, List<string>> AgentInputs,
     AgentStatus? Status,
     string? PendingEffectTool,
     IReadOnlyList<ResolvedInference> BrokerInferences);
