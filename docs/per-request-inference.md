@@ -1,5 +1,15 @@
 # Per-Request Inference — The Missing Seam
 
+> **Status: implemented.** Every step of §9 shipped green; the §10 bar is met — ten conformance
+> vectors, each proven able to fail, and all four profiles certify. Three implementation notes
+> that refine (never contradict) the design: the §4.4 strip runs at the **boundary** as well as
+> at the built-in brokers, so a third-party broker can never even be handed a core-owned key;
+> `AgentContext.Inference` is nullable **in the type** for a context built by hand (tests), while
+> every run the entry starts seeds it — the tiers read null as "no opinions", which is exactly
+> what the entry would have seeded; and the entry also gained `RunAsync(PromptRequest)`, because
+> an exposer holding a caller's tool call needs how-the-run-ended, which the string alone cannot
+> say.
+
 How a single composed agent serves many callers, each asking for something different, without
 rebuilding itself and without any caller widening the boundary the deployment set.
 

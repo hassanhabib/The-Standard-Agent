@@ -1008,6 +1008,64 @@ often does better with the text one.
 
 ---
 
+## 16 · Per-request inference — one agent, many callers
+
+Everything so far configures the agent once and asks it many times. An agent you *expose* — an
+endpoint, an orchestrator serving many peers — needs each request to carry its own parameters.
+That is what `PromptRequest` is for:
+
+```csharp
+string answer = await agent.ProcessPromptAsync(new PromptRequest
+{
+    Prompt = "capital of France, as JSON",
+    Temperature = 0.2,
+    MaxTokens = 512,
+    ResponseSchemaJson = """{"type":"object","required":["city"]}"""
+});
+```
+
+One composed agent serves concurrent, heterogeneous requests: no rebuild per request, no shared
+state mutated mid-run, one `HttpClient`. The streamed twin is `StreamPromptAsync(request)`, and
+`RunAsync(request)` reports **how the run ended** as well as what it produced — which an exposer
+cannot do without.
+
+The rule that governs every field (docs/per-request-inference.md §4):
+
+> **What is established and hard-configured takes precedence, always.**
+
+Resolution order, per field: **configured → request → framework default.** If the deployment
+called `.Contract(schema)`, a request's `ResponseSchemaJson` is discarded — never merged — and
+the trace says so. If the deployment called `.Brain(url, key, model, temperature: 0.3)`, no
+request can move the temperature. If the deployment said nothing, the request speaks; if nobody
+spoke, the framework default (0.7 / 1024) applies. A caller can never widen the boundary the
+deployment set.
+
+A request schema seeds **both** the wire and the guardian: plenty of engines accept
+`response_format` and quietly ignore it, so the Contract guardian validates and revises the
+answer against the same schema regardless. A broker that has not opted into the request-carrying
+overloads degrades gracefully — the guardian still holds the shape, and the trace reports which
+of the two happened.
+
+Two more fields deserve a word:
+
+- **`ProviderOptionsJson`** — an opaque bag for what the core cannot model: vLLM's
+  `chat_template_kwargs`, llama.cpp's `grammar` (GBNF), a provider's `thinking`. It is
+  inference-shaping *only*: every core-owned key (`model`, `messages`, `tools`,
+  `response_format`, `temperature`, `max_tokens`, `seed`, `stop`, `stream`) is stripped at the
+  boundary and logged, so the bag cannot add a tool or beat a value precedence resolved.
+
+- **`CallerTools`** — tools the **caller** will execute, OpenAI-style. They are vocabulary for
+  the model, never capability for the agent: a call naming one ends the run `AwaitingInput` with
+  the call riding out as the session's pending effect — the same seam a held approval rides —
+  and the caller posts the result back on the session to resume. A caller tool sharing a
+  configured tool's name is dropped at the boundary: a caller cannot shadow the deployment's
+  own tool.
+
+Per-request tools-the-agent-executes, permissions, budgets and approvals are deliberately
+**absent** — a request has no field in which to ask for them. Configuration only, always.
+
+---
+
 ## Putting it together
 
 The builder composes cleanly — take only what you need:

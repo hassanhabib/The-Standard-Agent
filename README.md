@@ -151,6 +151,30 @@ method is not a control. Pass a session id to stream inside a conversation:
 No DI container. `Compose()` hand-wires the whole graph — SPEC.md §9: *"DI is OPTIONAL. A
 hand-wired composition root is fully conformant."*
 
+## Per-request inference — one agent, many callers
+
+An agent you *expose* serves callers who each want something different. A request carries its own
+inference options, and one composed agent serves them all concurrently — one composition, one
+`HttpClient`, every run keeping its own values:
+
+```csharp
+string answer = await agent.ProcessPromptAsync(new PromptRequest
+{
+    Prompt = "capital of France, as JSON",
+    Temperature = 0.2,
+    ResponseSchemaJson = """{"type":"object","required":["city"]}"""
+});
+```
+
+**What is established and hard-configured takes precedence, always** — configured → request →
+framework default, resolved once at the boundary. A caller can never widen the boundary the
+deployment set: a configured Contract discards the request's schema, a configured temperature
+cannot be moved, and the opaque `ProviderOptionsJson` passthrough is stripped of every core-owned
+key. Caller-declared tools (`CallerTools`) are vocabulary, not capability: a call naming one ends
+the run `AwaitingInput` with the call riding the session as a pending effect, for the caller to
+execute and answer. See
+[docs/per-request-inference.md](https://github.com/hassanhabib/The-Standard-Agent/blob/main/docs/per-request-inference.md) and how-to §16.
+
 ## Provider packages — swap any nature to a real backend
 
 The core [`Standard.Agents`](https://www.nuget.org/packages/Standard.Agents) is deliberately
@@ -329,7 +353,7 @@ dotnet run --project Standard.Agents.Conformance -- --profile Critical
 |---|---|
 | **Core** | conversation, skills, knowledge, memory, simple tools |
 | **Reliable** | guardians that see what they guard, durable decision log, run isolation, cancellation, timeouts |
-| **Enterprise** | identity-aware authorization, approval before irreversible acts, run-once effects, budgets, ranked retrieval |
+| **Enterprise** | identity-aware authorization, approval before irreversible acts, run-once effects, budgets, ranked retrieval, per-request inference |
 | **Critical** | conversation and effects that survive a process, compensation, native tool calls that round-trip |
 
 All four certify. Exit `0` means certified; the runner is the authority, not this table.
