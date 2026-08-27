@@ -446,7 +446,14 @@
          wins when both exist. Parallel caller calls stay one-per-run, recorded as a ruling.
          New routines and additively-widened models: segment 2 advances, 3/4 reset. Tracks
          SPEC.md v1.8. -->
-    <Version>1.12.0.0</Version>
+    <!-- 1.12.1.0 "The Wire Validates": the first production consumer found what no scripted
+         broker could - RememberTool's Parameters was example JSON, not a JSON Schema, and a
+         strict hosted provider (Azure OpenAI) rejects the WHOLE request over one bad tool
+         schema, failing every native run the moment memory was composed in. The tool now ships
+         a real schema, and GeneratorBrokerV1 degrades any non-object schema (salvaging a
+         type-less one with properties) so one bad tool can never take down the turn again.
+         Bug fix, no API change: segment 3 advances, 4 resets. -->
+    <Version>1.12.1.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>
