@@ -18,4 +18,14 @@ namespace Standard.Agents.Models.Clients.Agents;
 /// output as though it were an answer. A caller that cannot tell these apart will eventually report
 /// unfinished work as done.
 /// </param>
-public record AgentOutcome(string Result, AgentStatus Status);
+/// <param name="PendingEffect">
+/// The act the run is waiting on, when it ended waiting — a caller's tool call, or an act held
+/// for approval. It rides the session too (SPEC.md §4.11), but a stateless deployment has no
+/// session, and an exposer that cannot reach the pending call cannot yield it to the caller —
+/// which is the whole mechanism (docs/per-request-inference.md §6.2). Null when the run is not
+/// waiting on anything.
+/// </param>
+public record AgentOutcome(
+    string Result,
+    AgentStatus Status,
+    Standard.Agents.Models.Orchestrations.Effects.AgentEffect? PendingEffect = null);

@@ -231,4 +231,72 @@ public class CallerToolTests : IDisposable
         outcome.Status.Should().Be(AgentStatus.Responded);
         outcome.Result.Should().Be("4183");
     }
+
+    private sealed class YieldingNativeBroker : IGeneratorBrokerV1
+    {
+        public ValueTask<GenerationResult> GenerateAsync(
+            IReadOnlyList<ConversationMessage> messages,
+            IReadOnlyList<ToolDefinition> tools) =>
+            ValueTask.FromResult(new GenerationResult
+            {
+                ToolCalls =
+                [
+                    new ModelToolCall(
+                        Id: "call_9",
+                        Name: "send_email",
+                        ArgumentsJson: """{"to":"jane@acme.com"}""")
+                ]
+            });
+    }
+
+    // A stateless deployment has no session, and the client owns the transcript — the exposed
+    // protocol this seam exists for (docs/per-request-inference.md §6.2). The pending call must
+    // therefore reach the caller on the OUTCOME itself, carrying the id the model minted, or the
+    // exposer cannot render the yield at all.
+    [Fact]
+    public async Task ShouldHandTheCallerTheirCallOnTheOutcomeWithoutASessionAsync()
+    {
+        // given — no sessions configured, a native brain that wants the caller's tool
+        var skillBroker = new Mock<ISkillBroker>();
+
+        skillBroker.Setup(b => b.SelectSkillsAsync())
+            .ReturnsAsync(new List<Skill> { new() { Content = "You are a helpful agent." } });
+
+        var memoryBroker = new Mock<IMemoryBroker>();
+        memoryBroker.Setup(b => b.SelectMemoriesAsync()).ReturnsAsync([]);
+
+        var knowledgeBroker = new Mock<IKnowledgeBroker>();
+
+        knowledgeBroker.Setup(b => b.SelectKnowledgeAsync(It.IsAny<string>()))
+            .ReturnsAsync([]);
+
+        StandardAgent agent = new StandardAgent()
+            .UseSkills(skillBroker.Object)
+            .UseMemory(memoryBroker.Object)
+            .UseKnowledge(knowledgeBroker.Object)
+            .UseNativeBrain(new YieldingNativeBroker());
+
+        var request = new PromptRequest
+        {
+            Prompt = "email jane the report",
+
+            CallerTools =
+            [
+                new ToolDefinition(
+                    Name: "send_email",
+                    Description: "Sends an email from the caller's own outbox.",
+                    ParametersJson: "{}")
+            ]
+        };
+
+        // when
+        AgentOutcome outcome = await agent.RunAsync(request);
+
+        // then — the call itself, on the outcome, with the model's own id
+        outcome.Status.Should().Be(AgentStatus.AwaitingInput);
+        outcome.PendingEffect.Should().NotBeNull();
+        outcome.PendingEffect!.ToolName.Should().Be("send_email");
+        outcome.PendingEffect.CallId.Should().Be("call_9");
+        outcome.PendingEffect.Arguments.Should().Contain("jane@acme.com");
+    }
 }

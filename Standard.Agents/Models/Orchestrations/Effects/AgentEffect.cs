@@ -33,6 +33,14 @@ public sealed record AgentEffect
     public string Arguments { get; init; } = "";
 
     /// <summary>
+    /// The model-issued call id, when this effect is a caller's tool call being handed back
+    /// (docs/per-request-inference.md §6.2). An exposed protocol requires the result to answer
+    /// the id the model minted; an id the exposer invents is one the caller cannot match.
+    /// Empty for every other kind of effect, and on the text protocol, which has no ids.
+    /// </summary>
+    public string CallId { get; init; } = "";
+
+    /// <summary>
     /// What the act is about to touch — a path, a host, an account — as the tool named it
     /// (ITool.ScopeOf). Empty when the tool touches nothing addressable. Permission is not only
     /// what but where, and a policy that can only see a tool name cannot express the difference.
