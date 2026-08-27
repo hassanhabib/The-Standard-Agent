@@ -1,0 +1,21 @@
+{
+  "name": "the-callers-transcript-reaches-the-brain",
+  "description": "The exposed protocols are stateless: the client re-posts the conversation, and a run that cannot receive that transcript starts from nothing every time. A prior turn carried on the request must reach the Brain.",
+  "generatorReplies": [
+    "FINAL: ok"
+  ],
+  "tools": {},
+  "prompt": "and then?",
+  "request": {
+    "history": [
+      {
+        "prompt": "What is 2+2?",
+        "answer": "4"
+      }
+    ]
+  },
+  "expect": {
+    "result": "ok",
+    "brainSees": "What is 2+2?"
+  }
+}

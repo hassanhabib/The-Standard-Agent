@@ -678,6 +678,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
 
     string result;
     AgentStatus? runStatus = null;
+    string? outcomePendingEffectTool = null;
     List<string> promptResults = [];
 
     PromptRequest ToRequest(string prompt, RequestSpec spec) => new()
@@ -690,6 +691,10 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         Stop = spec.Stop ?? [],
         ResponseSchemaJson = spec.ResponseSchemaJson,
         ProviderOptionsJson = spec.ProviderOptionsJson,
+
+        History =
+            [.. (spec.History ?? []).Select(turn =>
+                new AgentTurn(turn.Prompt, turn.Answer))],
 
         CallerTools =
             [.. (spec.CallerTools ?? []).Select(tool =>
@@ -708,6 +713,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
 
         result = outcomes[0].Result;
         runStatus = outcomes[0].Status;
+        outcomePendingEffectTool = outcomes[0].PendingEffect?.ToolName;
     }
     else if (vector.Request is not null)
     {
@@ -733,6 +739,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
             AgentOutcome outcome = await agent.RunAsync(promptRequest, runCancellation.Token);
             result = outcome.Result;
             runStatus = outcome.Status;
+            outcomePendingEffectTool = outcome.PendingEffect?.ToolName;
         }
     }
     else if (vector.Concurrent)
@@ -763,11 +770,14 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         }
     }
 
-    // The pending effect rode out on the session, which is where a different process — and this
-    // harness — reads it (design §6.2).
-    string? pendingEffectTool = null;
+    // The pending effect rides the OUTCOME as well as the session (design §6.2): the outcome is
+    // what a stateless exposer reads, the session is what a different process reads. The harness
+    // prefers the outcome and falls back to the session, so a vector can certify either seam.
+    string? pendingEffectTool = outcomePendingEffectTool;
 
-    if (vector.SessionId is not null && vector.Expect.PendingEffectTool is not null)
+    if (pendingEffectTool is null
+        && vector.SessionId is not null
+        && vector.Expect.PendingEffectTool is not null)
     {
         AgentSession? session = await new FileSessionBroker(
             Path.Combine(AppContext.BaseDirectory, $"sessions-{vector.Name}"))
