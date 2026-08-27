@@ -37,6 +37,15 @@ public interface IRunManagementService
         string sessionId,
         CancellationToken cancellationToken);
 
+    /// <summary>
+    /// The run asked for by a request, reported with how it ended. An exposer cannot do without
+    /// this: a run that ended <c>AwaitingInput</c> holding a caller's tool call and a run that
+    /// answered read alike as strings.
+    /// </summary>
+    ValueTask<AgentOutcome> RunAsync(
+        PromptRequest request,
+        CancellationToken cancellationToken = default);
+
     IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
         string prompt,
         CancellationToken cancellationToken = default);

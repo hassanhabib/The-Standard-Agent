@@ -847,6 +847,19 @@ public sealed partial class StandardAgent : IAgent
         await ResolveAgent().RunAsync(prompt, string.Empty, CancellationToken.None);
 
     /// <summary>
+    /// Runs a caller's request and reports <b>how the run ended</b> as well as what it produced.
+    /// This is the exposer's read: a run that ended <c>AwaitingInput</c> holding a caller's tool
+    /// call and a run that answered read alike as strings, and only the status tells them apart.
+    /// </summary>
+    /// <param name="request">The caller's prompt and per-request inference options.</param>
+    /// <param name="cancellationToken">Token to stop the run.</param>
+    /// <returns>The answer, and how the run ended.</returns>
+    public async ValueTask<AgentOutcome> RunAsync(
+        PromptRequest request,
+        CancellationToken cancellationToken = default) =>
+        await ResolveAgent().RunAsync(request, cancellationToken);
+
+    /// <summary>
     /// Runs the agent on a prompt and stops when <paramref name="cancellationToken"/> is
     /// cancelled — at the next turn boundary at the latest, so no effect is left half-recorded
     /// (SPEC.md §4.10). A cancelled run returns a message saying so rather than an answer.

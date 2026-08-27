@@ -139,9 +139,9 @@ public partial class RunManagementService : IRunManagementService
             new PromptRequest { Prompt = prompt, SessionId = sessionId },
             cancellationToken);
 
-    private ValueTask<AgentOutcome> RunAsync(
+    public ValueTask<AgentOutcome> RunAsync(
         PromptRequest request,
-        CancellationToken cancellationToken) =>
+        CancellationToken cancellationToken = default) =>
     TryCatch(async () =>
     {
         ValidatePrompt(request.Prompt);
