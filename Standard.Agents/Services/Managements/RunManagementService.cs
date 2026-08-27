@@ -112,6 +112,47 @@ public partial class RunManagementService : IRunManagementService
             ProviderOptionsJson = ProviderOptions.Sanitize(request.ProviderOptionsJson).Json
         };
 
+    // Say so in the trace (docs/per-request-inference.md §4.3): a rejection the trace does not
+    // explain is a turn nobody can account for, and a caller whose schema was discarded or whose
+    // passthrough key was stripped deserves the same courtesy the guardians already extend.
+    private async ValueTask AnnounceResolutionAsync(PromptRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(this.contractSchema) is false
+            && string.IsNullOrWhiteSpace(request.ResponseSchemaJson) is false)
+        {
+            await this.loggingBroker.LogProcessAsync(
+                "Run",
+                "Contract → request schema discarded; the configured Contract wins");
+        }
+
+        SanitizedProviderOptions sanitized =
+            ProviderOptions.Sanitize(request.ProviderOptionsJson);
+
+        if (sanitized.Malformed)
+        {
+            await this.loggingBroker.LogProcessAsync(
+                "Run", "Provider options → ignored: not a JSON object");
+        }
+
+        if (sanitized.StrippedKeys.Count > 0)
+        {
+            await this.loggingBroker.LogProcessAsync(
+                "Run",
+                "Provider options → stripped core-owned key(s): "
+                    + string.Join(", ", sanitized.StrippedKeys));
+        }
+
+        foreach (ToolDefinition tool in request.CallerTools)
+        {
+            if (this.configuredToolNames.Contains(tool.Name))
+            {
+                await this.loggingBroker.LogProcessAsync(
+                    "Run",
+                    $"Caller tools → '{tool.Name}' dropped; a configured tool owns that name");
+            }
+        }
+    }
+
     // Name collision resolved by the perimeter rule (design §6.1): a caller tool that shares a
     // configured tool's name is dropped, so a tool_call carrying that name has exactly one
     // meaning — the configured tool, executed locally, under every configured control. Dropped
@@ -178,6 +219,7 @@ public partial class RunManagementService : IRunManagementService
         using IDisposable run = AgentRun.Begin(ResumedRunId(session));
 
         await this.loggingBroker.LogResetAsync();
+        await AnnounceResolutionAsync(request);
 
         // Precedence resolved once, at the top of the run, and never again below it: a loop that
         // can re-resolve is a loop where two turns of one run can disagree
@@ -321,6 +363,7 @@ public partial class RunManagementService : IRunManagementService
         using IDisposable run = AgentRun.Begin(ResumedRunId(session));
 
         await this.loggingBroker.LogResetAsync();
+        await AnnounceResolutionAsync(request);
 
         AgentContext context = new()
         {

@@ -51,10 +51,30 @@ public partial class BrainService : IBrainService
     {
         ValidateUserPrompt(userPrompt);
 
-        return inference is null
-            ? await this.generatorBroker.GenerateAsync(systemPrompt, userPrompt)
-            : await this.generatorBroker.GenerateAsync(systemPrompt, userPrompt, inference);
+        if (inference is null)
+        {
+            return await this.generatorBroker.GenerateAsync(systemPrompt, userPrompt);
+        }
+
+        await AnnounceDegradationAsync(this.generatorBroker.HonorsRequest);
+
+        return await this.generatorBroker.GenerateAsync(systemPrompt, userPrompt, inference);
     });
+
+    // HonorsRequest exists so the trace can say which of the two happened: options on the wire,
+    // or graceful degradation with shape still enforced by the guardian
+    // (docs/per-request-inference.md §5). Asked only when a run actually carries options — a
+    // plain run has nothing to degrade.
+    private async ValueTask AnnounceDegradationAsync(bool honorsRequest)
+    {
+        if (honorsRequest is false)
+        {
+            await this.loggingBroker.LogProcessAsync(
+                "Decision",
+                "Brain → broker does not honor requests; shape enforced by guardian only",
+                detail: true);
+        }
+    }
 
     public IAsyncEnumerable<string> GenerateStreamAsync(
         string systemPrompt,
@@ -73,6 +93,11 @@ public partial class BrainService : IBrainService
         try
         {
             ValidateUserPrompt(userPrompt);
+
+            if (inference is not null)
+            {
+                await AnnounceDegradationAsync(this.generatorBroker.HonorsRequest);
+            }
 
             IAsyncEnumerable<string> stream = inference is null
                 ? this.generatorBroker.GenerateStreamAsync(
