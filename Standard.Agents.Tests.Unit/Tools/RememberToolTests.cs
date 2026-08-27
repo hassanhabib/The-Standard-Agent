@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Text.Json;
 using FluentAssertions;
 using Moq;
 using Standard.Agents.Services.Foundations.Memorys;
@@ -75,5 +76,26 @@ public class RememberToolTests
         memoryService.Verify(service =>
             service.RememberAsync("a fact worth keeping"),
                 Times.Once);
+    }
+
+    // A tool's Parameters is a JSON SCHEMA the wire validates strictly — Azure OpenAI rejects
+    // the WHOLE request when any advertised tool's parameters is not a schema of type object.
+    // This tool shipped plain JSON ('{ "fact": "..." }') and production found it: every native
+    // run against a strict provider 400'd the moment memory was composed in.
+    [Fact]
+    public void ShouldDeclareParametersAsAJsonSchemaObject()
+    {
+        // given
+        var tool = new RememberTool(_ => ValueTask.CompletedTask);
+
+        // when
+        using JsonDocument schema = JsonDocument.Parse(tool.Parameters);
+
+        // then
+        schema.RootElement.GetProperty("type").GetString().Should().Be("object");
+
+        schema.RootElement.GetProperty("properties")
+            .GetProperty("fact")
+            .GetProperty("type").GetString().Should().Be("string");
     }
 }
