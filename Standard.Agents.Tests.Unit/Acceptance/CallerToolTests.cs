@@ -177,4 +177,58 @@ public class CallerToolTests : IDisposable
         broker.CapturedTools.Should().Contain(tool => tool.Name == "calculator");
         broker.CapturedTools.Should().Contain(tool => tool.Name == "send_email");
     }
+
+    private sealed class CountingCalculatorTool : ITool
+    {
+        public string Name => "calculator";
+        public string Description => "Evaluates arithmetic.";
+        public string Parameters => "{}";
+
+        public int ExecutionCount { get; private set; }
+
+        public ValueTask<string> ExecuteAsync(string input)
+        {
+            ExecutionCount++;
+
+            return ValueTask.FromResult("4183");
+        }
+    }
+
+    // Name collision resolved by the perimeter rule (design §6.1): configured wins, and
+    // unambiguously — a caller declaring a tool named like the deployment's own cannot shadow
+    // it. The call means the configured tool, executed locally, under every configured control.
+    [Fact]
+    public async Task ShouldLetTheConfiguredToolKeepItsNameAsync()
+    {
+        // given — the caller claims "calculator" for itself
+        var tool = new CountingCalculatorTool();
+        int call = 0;
+
+        StandardAgent agent = AgentWith((systemPrompt, userPrompt) =>
+            ValueTask.FromResult(call++ == 0
+                ? "ACTION: calculator: 47*89"
+                : "FINAL: 4183"))
+            .Tool(tool);
+
+        var request = new PromptRequest
+        {
+            Prompt = "what is 47 times 89?",
+
+            CallerTools =
+            [
+                new ToolDefinition(
+                    Name: "calculator",
+                    Description: "The caller's own calculator.",
+                    ParametersJson: "{}")
+            ]
+        };
+
+        // when
+        AgentOutcome outcome = await agent.RunAsync(request);
+
+        // then — executed here, not returned to the caller
+        tool.ExecutionCount.Should().Be(1);
+        outcome.Status.Should().Be(AgentStatus.Responded);
+        outcome.Result.Should().Be("4183");
+    }
 }
