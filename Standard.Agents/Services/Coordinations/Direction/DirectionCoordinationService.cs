@@ -114,7 +114,11 @@ public partial class DirectionCoordinationService : IDirectionCoordinationServic
             runId: AgentRun.Current?.Id ?? string.Empty,
             toolName: context.DirectionType,
             arguments: context.Payload,
-            principal: this.identityResolver?.Invoke());
+            principal: this.identityResolver?.Invoke()) with
+        {
+            // The id the model minted, preserved so the caller's result can answer it.
+            CallId = context.ToolCallId
+        };
 
         await this.loggingBroker.LogProcessAsync(
             "Direction",

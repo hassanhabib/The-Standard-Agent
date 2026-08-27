@@ -679,6 +679,9 @@ public partial class RunManagementService : IRunManagementService
         this.telemetryBroker.RecordRunOutcome(
             context.Status.ToString(), runPromptTokens, runCompletionTokens);
 
-        setOutcome(new AgentOutcome(context.Result, context.Status));
+        // The pending effect rides the outcome as well as the session (SPEC.md §4.11):
+        // a stateless deployment has no session, and an exposer that cannot reach the
+        // pending call cannot yield it to the caller (docs/per-request-inference.md §6.2).
+        setOutcome(new AgentOutcome(context.Result, context.Status, context.PendingEffect));
     }
 }
