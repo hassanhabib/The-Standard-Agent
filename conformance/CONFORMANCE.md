@@ -3,7 +3,7 @@
 A **language-neutral** set of behavioral test vectors that any Standard-Agents
 implementation runs to self-certify against
 [`SPEC.md`](https://github.com/hassanhabib/The-Standard-Agent-Specs/blob/main/SPEC.md).
-Sixty-one vectors, four readiness profiles, every vector proven able to fail.
+Sixty-three vectors, four readiness profiles, every vector proven able to fail.
 
 The vectors are the executable half of the specification. Prose can be read two ways; a vector
 cannot, which is why "conformant" here means *this suite passes* rather than *we believe we
@@ -69,6 +69,7 @@ capability it configures did not exist, which is why the early vectors still des
 | `allowTools`, `permissionMode` | the allow-list (`"tool"` or `"tool:scopePrefix"`) and the disposition toward acts nothing permitted |
 | `toolRisk`, `toolScopeFirstWord` | what a stub tool declares about itself: how consequential it is, and what it is about to touch |
 | `request`, `requests` | per-request inference options — one caller's ask, or one per prompt driven concurrently |
+| `request.history` | the caller-owned transcript, oldest first |
 | `contractSchema`, `configuredTemperature`, `configuredMaxTokens` | the deployment's side of precedence: hard configuration a request can never move |
 | `brokerHonorsRequest` | `false` swaps in the scripted Brain that never opted in, so degradation runs through the interface's real default members |
 | `streamed` | run the request through the streamed loop, which enforces every control the batched one does |
@@ -193,6 +194,8 @@ the deterministic core of the Standard.
 | `caller-tool-never-executes` | A caller's tool is vocabulary, never capability — the agent performs nothing |
 | `caller-tool-call-ends-run-as-pending-effect` | The caller's call rides the session out as a pending effect, `AwaitingInput` |
 | `caller-tool-name-collision-drops-caller-tool` | A caller cannot shadow the deployment's own tool; configured wins |
+| `pending-call-rides-the-outcome-without-a-session` | A stateless exposer reads the caller's call off the outcome itself |
+| `the-callers-transcript-reaches-the-brain` | A prior turn re-posted by the caller reaches the Brain; the run never starts from nothing |
 
 ## Readiness profiles
 
