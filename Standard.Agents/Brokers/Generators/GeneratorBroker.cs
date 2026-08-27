@@ -7,11 +7,16 @@ using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using RESTFulSense.Clients;
 using Standard.Agents.Models.Brokers.Generators;
 
 namespace Standard.Agents.Brokers.Generators;
 
+// The request is built as a JSON tree rather than through typed records — converged onto the
+// construction V1 already uses, for the reason V1 already documents: growing optional record
+// fields answers one request and re-opens the same question at the next one
+// (docs/per-request-inference.md §5.1).
 public sealed class GeneratorBroker : IGeneratorBroker
 {
     private const string ChatCompletionsRelativeUrl = "chat/completions";
@@ -55,44 +60,55 @@ public sealed class GeneratorBroker : IGeneratorBroker
         this.maxTokens = maxTokens;
     }
 
-    public async ValueTask<string> GenerateAsync(string systemPrompt, string userPrompt)
+    /// <summary>This broker puts resolved inference options on the wire.</summary>
+    public bool HonorsRequest => true;
+
+    public ValueTask<string> GenerateAsync(string systemPrompt, string userPrompt) =>
+        GenerateAsync(systemPrompt, userPrompt, inference: null);
+
+    ValueTask<string> IGeneratorBroker.GenerateAsync(
+        string systemPrompt,
+        string userPrompt,
+        ResolvedInference inference) =>
+        GenerateAsync(systemPrompt, userPrompt, inference);
+
+    private async ValueTask<string> GenerateAsync(
+        string systemPrompt,
+        string userPrompt,
+        ResolvedInference? inference)
     {
-        ChatCompletionRequest chatCompletionRequest = new(
-            Model: this.model,
-            Messages:
-            [
-                new ChatMessage(Role: "system", Content: systemPrompt),
-                new ChatMessage(Role: "user", Content: userPrompt)
-            ],
-            Stream: false,
-            Temperature: this.temperature,
-            MaxTokens: this.maxTokens);
+        JsonObject request = BuildRequest(systemPrompt, userPrompt, stream: false, inference);
 
         ChatCompletionResponse chatCompletionResponse =
-            await PostAsync<ChatCompletionRequest, ChatCompletionResponse>(
+            await PostAsync<JsonObject, ChatCompletionResponse>(
                 ChatCompletionsRelativeUrl,
-                chatCompletionRequest);
+                request);
 
         return chatCompletionResponse.Choices[0].Message.Content;
     }
 
-    public async IAsyncEnumerable<string> GenerateStreamAsync(
+    public IAsyncEnumerable<string> GenerateStreamAsync(
         string systemPrompt,
         string userPrompt,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
-    {
-        ChatCompletionRequest chatCompletionRequest = new(
-            Model: this.model,
-            Messages:
-            [
-                new ChatMessage(Role: "system", Content: systemPrompt),
-                new ChatMessage(Role: "user", Content: userPrompt)
-            ],
-            Stream: true,
-            Temperature: this.temperature,
-            MaxTokens: this.maxTokens);
+        CancellationToken cancellationToken = default) =>
+        GenerateStreamAsync(systemPrompt, userPrompt, inference: null, cancellationToken);
 
-        string requestJson = JsonSerializer.Serialize(chatCompletionRequest, jsonOptions);
+    IAsyncEnumerable<string> IGeneratorBroker.GenerateStreamAsync(
+        string systemPrompt,
+        string userPrompt,
+        ResolvedInference inference,
+        CancellationToken cancellationToken) =>
+        GenerateStreamAsync(systemPrompt, userPrompt, inference, cancellationToken);
+
+    private async IAsyncEnumerable<string> GenerateStreamAsync(
+        string systemPrompt,
+        string userPrompt,
+        ResolvedInference? inference,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        JsonObject request = BuildRequest(systemPrompt, userPrompt, stream: true, inference);
+
+        string requestJson = request.ToJsonString();
 
         using var httpRequest = new HttpRequestMessage(
             HttpMethod.Post,
@@ -148,6 +164,88 @@ public sealed class GeneratorBroker : IGeneratorBroker
         }
     }
 
+    private JsonObject BuildRequest(
+        string systemPrompt,
+        string userPrompt,
+        bool stream,
+        ResolvedInference? inference)
+    {
+        var request = new JsonObject
+        {
+            ["model"] = this.model,
+
+            ["messages"] = new JsonArray(
+                new JsonObject { ["role"] = "system", ["content"] = systemPrompt },
+                new JsonObject { ["role"] = "user", ["content"] = userPrompt }),
+
+            ["stream"] = stream,
+            ["temperature"] = inference?.Temperature ?? this.temperature,
+            ["max_tokens"] = inference?.MaxTokens ?? this.maxTokens
+        };
+
+        WriteInference(request, inference);
+
+        return request;
+    }
+
+    // The resolved options, written as the wire knows them. The values arrive already
+    // precedence-resolved at the boundary; this broker writes what it is given and decides
+    // nothing (docs/per-request-inference.md §4.2).
+    private static void WriteInference(JsonObject request, ResolvedInference? inference)
+    {
+        if (inference is null)
+        {
+            return;
+        }
+
+        if (inference.Seed is int seed)
+        {
+            request["seed"] = seed;
+        }
+
+        if (inference.Stop.Count > 0)
+        {
+            request["stop"] = new JsonArray([.. inference.Stop.Select(s => (JsonNode)s)]);
+        }
+
+        // The schema that survived precedence seeds the wire — and the guardian already holds
+        // the same schema, so an engine that quietly ignores response_format degrades to a
+        // guarantee rather than to nothing (§4.1).
+        if (string.IsNullOrWhiteSpace(inference.ResponseSchemaJson) is false)
+        {
+            JsonNode? schema = TryParse(inference.ResponseSchemaJson);
+
+            if (schema is not null)
+            {
+                request["response_format"] = new JsonObject
+                {
+                    ["type"] = "json_schema",
+                    ["json_schema"] = new JsonObject
+                    {
+                        ["name"] = "response",
+                        ["schema"] = schema
+                    }
+                };
+            }
+        }
+
+        // Already sanitized at the boundary; merged under the same rule again here, because
+        // this is the perimeter and one enforcement point is one forgotten call away from none.
+        ProviderOptions.MergeInto(request, inference.ProviderOptionsJson);
+    }
+
+    private static JsonNode? TryParse(string json)
+    {
+        try
+        {
+            return JsonNode.Parse(json);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
     private async ValueTask<TResult> PostAsync<TContent, TResult>(
         string relativeUrl,
         TContent content)
@@ -157,7 +255,9 @@ public sealed class GeneratorBroker : IGeneratorBroker
             content,
             mediaType: JsonMediaType,
             serializationFunction: async value =>
-                JsonSerializer.Serialize(value, jsonOptions),
+                value is JsonObject node
+                    ? node.ToJsonString()
+                    : JsonSerializer.Serialize(value, jsonOptions),
             deserializationFunction: async json =>
                 JsonSerializer.Deserialize<TResult>(json, jsonOptions)!);
     }
