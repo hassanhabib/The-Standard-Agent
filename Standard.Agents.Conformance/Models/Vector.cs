@@ -106,4 +106,19 @@ public sealed record Vector(
 
     // Tools this principal may not act with, refused by policy on the identity alone. This is a
     // scripted policy engine, not the allow-list: the allow-list cannot express "not for them".
-    List<string>? DeniedForPrincipal = null);
+    List<string>? DeniedForPrincipal = null,
+
+    // Per-request inference (docs/per-request-inference.md). Request carries what one caller
+    // asked for; Requests drives one request per prompt, concurrently, against a single
+    // composition. ContractSchema configures the deployment's Contract; ConfiguredTemperature /
+    // ConfiguredMaxTokens hard-configure the brain's knobs so "configured wins" is certifiable.
+    // BrokerHonorsRequest = false swaps in the scripted Brain that never opted in, so graceful
+    // degradation is certified against the interface's real default members. Streamed runs the
+    // request through the streamed loop, which enforces every control the batched one does.
+    RequestSpec? Request = null,
+    List<RequestSpec>? Requests = null,
+    string? ContractSchema = null,
+    double? ConfiguredTemperature = null,
+    int? ConfiguredMaxTokens = null,
+    bool BrokerHonorsRequest = true,
+    bool Streamed = false);

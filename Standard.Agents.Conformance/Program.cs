@@ -6,9 +6,15 @@
 using System.Text.Json;
 using Standard.Agents;
 using Standard.Agents.Brokers.Approvals;
+using Standard.Agents.Brokers.Generators;
+using Standard.Agents.Brokers.Sessions;
 using Standard.Agents.Conformance;
 using Standard.Agents.Models.Brokers.Audits;
+using Standard.Agents.Models.Brokers.Generators;
 using Standard.Agents.Models.Brokers.Generators.V1;
+using Standard.Agents.Models.Brokers.Sessions;
+using Standard.Agents.Models.Clients.Agents;
+using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Models.Orchestrations.Effects;
 
 string? profileName = ReadProfileArgument(args);
@@ -69,11 +75,15 @@ foreach (string vectorFile in
     bool guardianInputConformant =
         GuardianInputConformant(vector, run, actualResult, out string? guardianFailure);
 
+    bool requestConformant =
+        RequestConformant(vector, run, out string? requestFailure);
+
     if (resultConformant
         && toolInputConformant
         && rubricConformant
         && auditConformant
-        && guardianInputConformant)
+        && guardianInputConformant
+        && requestConformant)
     {
         passed++;
         passedVectors.Add(vector.Name);
@@ -127,6 +137,11 @@ foreach (string vectorFile in
             Console.WriteLine(
                 $"        records: {run.AuditRecords.Count} "
                     + $"across {run.AuditRecords.Select(record => record.RunId).Distinct().Count()} run(s)");
+        }
+
+        if (requestConformant is false)
+        {
+            Console.WriteLine($"        request: {requestFailure}");
         }
     }
 }
@@ -223,7 +238,16 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
     List<string> modelInputs = [];
     List<string> brainInputs = [];
     int promptScreenings = 0;
-    var scriptedGenerator = new ScriptedGeneratorBroker(vector.GeneratorReplies, vector.TransientFailures);
+
+    // The honoring Brain by default; the one that never opted in when the vector certifies
+    // degradation, so the interface's real default members are what degrade — not a simulation.
+    ScriptedHonoringGeneratorBroker? honoringGenerator = vector.BrokerHonorsRequest
+        ? new ScriptedHonoringGeneratorBroker(vector.GeneratorReplies, vector.TransientFailures)
+        : null;
+
+    IGeneratorBroker scriptedGenerator = honoringGenerator is not null
+        ? honoringGenerator
+        : new ScriptedGeneratorBroker(vector.GeneratorReplies, vector.TransientFailures);
 
     var recordingGenerator = new RecordingGeneratorBroker(
         scriptedGenerator,
@@ -358,6 +382,24 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
             agent.UseNativeBrain(nativeGenerator);
         }
 
+        // The deployment's side of precedence (docs/per-request-inference.md §4): a configured
+        // Contract, and hard-configured inference knobs. The URL is never dialed — the scripted
+        // generator replaces the broker; only the configured VALUES matter here.
+        if (vector.ContractSchema is not null)
+        {
+            agent.Contract(vector.ContractSchema);
+        }
+
+        if (vector.ConfiguredTemperature is not null || vector.ConfiguredMaxTokens is not null)
+        {
+            agent.Brain(
+                "http://scripted.invalid/",
+                apiKey: string.Empty,
+                model: "scripted",
+                temperature: vector.ConfiguredTemperature,
+                maxTokens: vector.ConfiguredMaxTokens);
+        }
+
         if (vector.Principal is not null)
         {
             agent.Principal(() => vector.Principal);
@@ -485,8 +527,64 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
     }
 
     string result;
+    AgentStatus? runStatus = null;
 
-    if (vector.Concurrent)
+    PromptRequest ToRequest(string prompt, RequestSpec spec) => new()
+    {
+        Prompt = prompt,
+        SessionId = vector.SessionId ?? string.Empty,
+        Temperature = spec.Temperature,
+        MaxTokens = spec.MaxTokens,
+        Seed = spec.Seed,
+        Stop = spec.Stop ?? [],
+        ResponseSchemaJson = spec.ResponseSchemaJson,
+        ProviderOptionsJson = spec.ProviderOptionsJson,
+
+        CallerTools =
+            [.. (spec.CallerTools ?? []).Select(tool =>
+                new ToolDefinition(tool.Name, tool.Description, tool.ParametersJson))]
+    };
+
+    if (vector.Requests is { Count: > 0 })
+    {
+        // One composition, many callers, all at once — the acceptance criterion itself
+        // (docs/per-request-inference.md §7).
+        AgentOutcome[] outcomes = await Task.WhenAll(
+            vector.Requests.Select((spec, index) =>
+                agent.RunAsync(
+                    ToRequest(prompts[Math.Min(index, prompts.Count - 1)], spec),
+                    runCancellation.Token).AsTask()));
+
+        result = outcomes[0].Result;
+        runStatus = outcomes[0].Status;
+    }
+    else if (vector.Request is not null)
+    {
+        PromptRequest promptRequest = ToRequest(vector.Prompt, vector.Request);
+
+        if (vector.Streamed)
+        {
+            List<string> responses = [];
+
+            await foreach (AgentStreamEvent streamEvent in
+                agent.StreamPromptAsync(promptRequest, runCancellation.Token))
+            {
+                if (streamEvent.Type is AgentStreamEventType.Response)
+                {
+                    responses.Add(streamEvent.Content);
+                }
+            }
+
+            result = string.Join(string.Empty, responses);
+        }
+        else
+        {
+            AgentOutcome outcome = await agent.RunAsync(promptRequest, runCancellation.Token);
+            result = outcome.Result;
+            runStatus = outcome.Status;
+        }
+    }
+    else if (vector.Concurrent)
     {
         string[] results = await Task.WhenAll(
             prompts.Select(prompt => agent.ProcessPromptAsync(prompt).AsTask()));
@@ -511,7 +609,23 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         }
     }
 
-    return new VectorRun(result, stubTools, gateRubric, judgeRubric, judgeInput, modelInputs, brainInputs, promptScreenings, auditRecords, compensationOrder, nativeGenerator, policyPrincipals);
+    // The pending effect rode out on the session, which is where a different process — and this
+    // harness — reads it (design §6.2).
+    string? pendingEffectTool = null;
+
+    if (vector.SessionId is not null && vector.Expect.PendingEffectTool is not null)
+    {
+        AgentSession? session = await new FileSessionBroker(
+            Path.Combine(AppContext.BaseDirectory, $"sessions-{vector.Name}"))
+                .SelectSessionAsync(vector.SessionId);
+
+        pendingEffectTool = session?.PendingEffect?.ToolName;
+    }
+
+    return new VectorRun(
+        result, stubTools, gateRubric, judgeRubric, judgeInput, modelInputs, brainInputs,
+        promptScreenings, auditRecords, compensationOrder, nativeGenerator, policyPrincipals,
+        runStatus, pendingEffectTool, honoringGenerator?.Inferences ?? []);
 }
 
 // The decision log's guarantees, certified from the records themselves: one run per prompt,
@@ -811,6 +925,116 @@ static bool GuardianInputConformant(
     return true;
 }
 
+// The request seam's guarantees, certified from what the run reported and what the scripted
+// Brain was actually handed (docs/per-request-inference.md §4, §5, §6).
+static bool RequestConformant(Vector vector, VectorRun run, out string? failure)
+{
+    failure = null;
+    Expectation expect = vector.Expect;
+
+    if (expect.Status is string expectedStatus)
+    {
+        string actualStatus = run.Status?.ToString() ?? "(not reported)";
+
+        if (actualStatus.Equals(expectedStatus, StringComparison.OrdinalIgnoreCase) is false)
+        {
+            failure = $"the run ended {actualStatus}, expected {expectedStatus}";
+
+            return false;
+        }
+    }
+
+    if (expect.PendingEffectTool is string expectedTool
+        && string.Equals(run.PendingEffectTool, expectedTool, StringComparison.Ordinal) is false)
+    {
+        failure = $"the pending effect carries '{run.PendingEffectTool ?? "(none)"}', "
+            + $"expected '{expectedTool}'";
+
+        return false;
+    }
+
+    bool asksAboutTheWire = expect.BrokerTemperature is not null
+        || expect.BrokerMaxTokens is not null
+        || expect.BrokerTemperatures is not null
+        || expect.BrokerSchemaContains is not null
+        || expect.BrokerOptionsInclude is not null
+        || expect.BrokerOptionsExclude is not null;
+
+    if (asksAboutTheWire is false)
+    {
+        return true;
+    }
+
+    if (run.BrokerInferences.Count == 0)
+    {
+        failure = "the broker was never handed resolved inference options";
+
+        return false;
+    }
+
+    ResolvedInference wire = run.BrokerInferences[^1];
+
+    if (expect.BrokerTemperature is double temperature && wire.Temperature != temperature)
+    {
+        failure = $"the broker was handed temperature {wire.Temperature}, expected {temperature}";
+
+        return false;
+    }
+
+    if (expect.BrokerMaxTokens is int maxTokens && wire.MaxTokens != maxTokens)
+    {
+        failure = $"the broker was handed max tokens {wire.MaxTokens}, expected {maxTokens}";
+
+        return false;
+    }
+
+    foreach (double expected in expect.BrokerTemperatures ?? [])
+    {
+        if (run.BrokerInferences.Any(inference => inference.Temperature == expected) is false)
+        {
+            failure = $"no broker call carried temperature {expected}";
+
+            return false;
+        }
+    }
+
+    if (expect.BrokerSchemaContains is string schemaNeedle
+        && (wire.ResponseSchemaJson ?? string.Empty)
+            .Contains(schemaNeedle, StringComparison.Ordinal) is false)
+    {
+        failure = $"the schema on the wire never contained {Show(schemaNeedle)}; "
+            + $"it was {Show(wire.ResponseSchemaJson ?? "(null)")}";
+
+        return false;
+    }
+
+    foreach (string needle in expect.BrokerOptionsInclude ?? [])
+    {
+        if ((wire.ProviderOptionsJson ?? string.Empty)
+            .Contains(needle, StringComparison.Ordinal) is false)
+        {
+            failure = $"provider options on the wire lost {Show(needle)}; "
+                + $"they were {Show(wire.ProviderOptionsJson ?? "(null)")}";
+
+            return false;
+        }
+    }
+
+    foreach (string needle in expect.BrokerOptionsExclude ?? [])
+    {
+        if ((wire.ProviderOptionsJson ?? string.Empty)
+            .Contains(needle, StringComparison.Ordinal))
+        {
+            failure = $"provider options on the wire still carry the core-owned {Show(needle)}: "
+                + $"{Show(wire.ProviderOptionsJson!)}";
+
+            return false;
+        }
+    }
+
+    return true;
+}
+
 static string? ReadProfileArgument(string[] args)
 {
     int index = Array.FindIndex(args, argument =>
@@ -898,4 +1122,7 @@ internal sealed record VectorRun(
     List<AuditRecord> AuditRecords,
     List<string> CompensationOrder,
     ScriptedNativeGeneratorBroker? NativeGenerator,
-    List<string?> PolicyPrincipals);
+    List<string?> PolicyPrincipals,
+    AgentStatus? Status,
+    string? PendingEffectTool,
+    IReadOnlyList<ResolvedInference> BrokerInferences);

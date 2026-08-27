@@ -15,6 +15,16 @@
     "budget-bounds-cost-on-any-protocol",
     "guardian-screens-once-per-prompt",
     "open-circuit-falls-back-to-secondary",
-    "knowledge-retrieves-by-relevance"
+    "knowledge-retrieves-by-relevance",
+    "request-schema-applies-when-unconfigured",
+    "configured-contract-overrides-request-schema",
+    "request-schema-seeds-guardian-not-only-wire",
+    "broker-without-request-support-degrades-to-guardian",
+    "concurrent-heterogeneous-requests-share-one-composition",
+    "streamed-request-honors-resolved-inference",
+    "provider-options-cannot-touch-core-owned-keys",
+    "caller-tool-never-executes",
+    "caller-tool-call-ends-run-as-pending-effect",
+    "caller-tool-name-collision-drops-caller-tool"
   ]
 }

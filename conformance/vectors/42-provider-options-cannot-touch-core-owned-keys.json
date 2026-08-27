@@ -1,0 +1,23 @@
+{
+  "name": "provider-options-cannot-touch-core-owned-keys",
+  "description": "The opaque bag is inference-shaping only, and the bound is real: every core-owned key in the passthrough is stripped at the boundary, so no broker in any language can be handed a bag that adds a tool, swaps the messages, or beats a value precedence already resolved. What survives merges whole.",
+  "generatorReplies": [
+    "FINAL: ok"
+  ],
+  "tools": {},
+  "prompt": "hello",
+  "request": {
+    "providerOptionsJson": "{\"tools\":[{\"type\":\"function\"}],\"max_tokens\":999999,\"chat_template_kwargs\":{\"enable_thinking\":false}}"
+  },
+  "expect": {
+    "result": "ok",
+    "brokerMaxTokens": 1024,
+    "brokerOptionsInclude": [
+      "chat_template_kwargs"
+    ],
+    "brokerOptionsExclude": [
+      "tools",
+      "max_tokens"
+    ]
+  }
+}

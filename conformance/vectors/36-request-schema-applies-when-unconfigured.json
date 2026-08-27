@@ -1,0 +1,17 @@
+{
+  "name": "request-schema-applies-when-unconfigured",
+  "description": "No Contract is configured, so the request's schema is the survivor: it seeds the guardian, and a draft that breaks it is revised.",
+  "generatorReplies": [
+    "FINAL: Paris",
+    "FINAL: {\"city\":\"Paris\"}"
+  ],
+  "tools": {},
+  "prompt": "capital of France, as JSON",
+  "request": {
+    "responseSchemaJson": "{\"type\":\"object\",\"required\":[\"city\"]}"
+  },
+  "expect": {
+    "result": "{\"city\":\"Paris\"}",
+    "brokerSchemaContains": "\"city\""
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "concurrent-heterogeneous-requests-share-one-composition",
+  "description": "The acceptance criterion: N concurrent requests with N different temperatures against ONE agent instance - one composition, one broker - and every run keeps its own caller's value. Rebuilding per request and mutating shared state both fail this.",
+  "generatorReplies": [
+    "FINAL: ok"
+  ],
+  "tools": {},
+  "prompt": "task",
+  "prompts": [
+    "task-one",
+    "task-two",
+    "task-three"
+  ],
+  "requests": [
+    {
+      "temperature": 0.1
+    },
+    {
+      "temperature": 0.5
+    },
+    {
+      "temperature": 0.9
+    }
+  ],
+  "expect": {
+    "result": "ok",
+    "brokerTemperatures": [
+      0.1,
+      0.5,
+      0.9
+    ]
+  }
+}

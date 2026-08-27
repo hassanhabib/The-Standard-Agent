@@ -1,0 +1,19 @@
+{
+  "name": "streamed-request-honors-resolved-inference",
+  "description": "The streamed loop carries the same resolved options the batched one does. A request whose temperature applied on the batched call and vanished on the streamed one would make the stream the way to step around the seam - and a control a caller can step around by changing method is not a control.",
+  "generatorReplies": [
+    "FINAL: ok"
+  ],
+  "tools": {},
+  "prompt": "hello",
+  "streamed": true,
+  "request": {
+    "temperature": 0.2,
+    "maxTokens": 64
+  },
+  "expect": {
+    "result": "ok",
+    "brokerTemperature": 0.2,
+    "brokerMaxTokens": 64
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "caller-tool-never-executes",
+  "description": "A caller tool is vocabulary, never capability: there is no code path from the request's tool list to the execution registry. The model names the caller's tool and the agent performs nothing - the run pauses instead of chasing an unknown word or running something the deployment never configured.",
+  "generatorReplies": [
+    "ACTION: send_email: {\"to\":\"jane@acme.com\"}"
+  ],
+  "tools": {},
+  "prompt": "email jane the report",
+  "maxTurns": 2,
+  "request": {
+    "callerTools": [
+      {
+        "name": "send_email",
+        "description": "Sends an email from the caller's own outbox."
+      }
+    ]
+  },
+  "expect": {
+    "resultContains": "send_email",
+    "status": "AwaitingInput",
+    "toolNeverRan": [
+      "send_email"
+    ]
+  }
+}

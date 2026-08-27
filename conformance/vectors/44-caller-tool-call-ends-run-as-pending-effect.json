@@ -1,0 +1,24 @@
+{
+  "name": "caller-tool-call-ends-run-as-pending-effect",
+  "description": "A call naming a caller tool is a terminal answer addressed to the caller, riding the same pending-effect seam a held approval rides: the run ends AwaitingInput and the call itself travels out on the session, so a different process can hand the caller the act rather than only the news that something is waiting.",
+  "generatorReplies": [
+    "ACTION: send_email: {\"to\":\"jane@acme.com\"}"
+  ],
+  "tools": {},
+  "prompt": "email jane the report",
+  "maxTurns": 2,
+  "sessionId": "caller-session-1",
+  "request": {
+    "callerTools": [
+      {
+        "name": "send_email",
+        "description": "Sends an email from the caller's own outbox."
+      }
+    ]
+  },
+  "expect": {
+    "resultContains": "send_email",
+    "status": "AwaitingInput",
+    "pendingEffectTool": "send_email"
+  }
+}

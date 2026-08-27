@@ -1,0 +1,17 @@
+{
+  "name": "request-schema-seeds-guardian-not-only-wire",
+  "description": "The broker honors requests and the schema reached the wire - and the engine quietly ignored it, as local engines do. The guardian holds the answer to the same schema, so the misshapen draft is revised anyway: a schema that only reached the wire would be weaker than a configured one for no reason.",
+  "generatorReplies": [
+    "FINAL: Paris",
+    "FINAL: {\"city\":\"Paris\"}"
+  ],
+  "tools": {},
+  "prompt": "capital of France, as JSON",
+  "request": {
+    "responseSchemaJson": "{\"type\":\"object\",\"required\":[\"city\"]}"
+  },
+  "expect": {
+    "result": "{\"city\":\"Paris\"}",
+    "brokerSchemaContains": "required"
+  }
+}
