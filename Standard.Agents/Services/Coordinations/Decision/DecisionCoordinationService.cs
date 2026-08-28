@@ -461,7 +461,11 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
 
             PromptTokens = 0,
             CompletionTokens = 0,
-            UsageIsEstimated = false
+            UsageIsEstimated = false,
+
+            // Narration is a turn's output too: a refusal or conflict path below bypasses
+            // Interpret, and last turn's prose leaking out would be voiced over this turn.
+            Narration = ""
         };
 
     private async ValueTask<(AgentContext Context, bool IsTerminal)> ResolveSkillConflictAsync(
