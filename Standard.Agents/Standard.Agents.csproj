@@ -473,7 +473,18 @@
          AgentRunStream is the decision tier's stream-plus-result shape one tier up; the IAgent
          default adapts StreamPromptAsync with RunAsync's documented assumption. Spec-first:
          tracks SPEC.md v1.10 (SS4.14). New routines and models: segment 2 advances, 3/4 reset. -->
-    <Version>1.14.0.0</Version>
+    <!-- 1.15.0.0 "Selection": what an agent carries and what a run is offered are different
+         things. OnSelectTools names, per run, the subset of described tools the run is offered
+         - the text catalog and the native tool list render only that subset - so a greeting is
+         offered nothing and a twenty-server agent never puts twenty catalogs in front of
+         "Hello" (the motivating production finding: a greeting ran a web search six times the
+         day live narration shipped). Selection narrows the offering, never the perimeter: an
+         unselected tool stays callable-by-name under the same governance; caller tools are
+         never selected away; unknown names are ignored and the trace records the truth of the
+         offering; identical on all three doors. ToolSelector carries the delegate per the tier
+         discipline; AgentRun.OfferedTools carries the offering per run. Spec-first: tracks
+         SPEC.md v1.11 (SS4.15). New routines and models: segment 2 advances, 3/4 reset. -->
+    <Version>1.15.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>
