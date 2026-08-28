@@ -25,18 +25,25 @@ public partial class RetrievalOrchestrationService : IRetrievalOrchestrationServ
     // not. Null when there is nothing remote to advertise.
     private readonly ExternalToolCatalog? externalToolCatalog;
 
+    // The catalog per tool (name → its rendered line), so a run under selection (SPEC.md
+    // §4.15) can be shown only what it was offered. Null keeps the whole-string catalog the
+    // only source — the pre-selection behavior, byte for byte.
+    private readonly IReadOnlyDictionary<string, string>? toolCatalogEntries;
+
     public RetrievalOrchestrationService(
         ISkillService skillService,
         IKnowledgeService knowledgeService,
         string toolCatalog,
         ILoggingBroker loggingBroker,
-        ExternalToolCatalog? externalToolCatalog = null)
+        ExternalToolCatalog? externalToolCatalog = null,
+        IReadOnlyDictionary<string, string>? toolCatalogEntries = null)
     {
         this.skillService = skillService;
         this.knowledgeService = knowledgeService;
         this.toolCatalog = toolCatalog;
         this.loggingBroker = loggingBroker;
         this.externalToolCatalog = externalToolCatalog;
+        this.toolCatalogEntries = toolCatalogEntries;
     }
 
     // The catalogs are expanded here rather than in a skill file, because which tools a Brain may
@@ -56,25 +63,43 @@ public partial class RetrievalOrchestrationService : IRetrievalOrchestrationServ
         return instructions;
     });
 
+    // Selection (SPEC.md §4.15): a run under selection is shown only the offered tools' lines.
+    // Read off the ambient run for the same reason the run's identity is — two tiers below the
+    // loop, and no renderer should gain a parameter for it. Absent a selection (or absent the
+    // per-tool entries an older composition never passed), the whole catalog renders unchanged.
+    private string SelectedToolCatalog()
+    {
+        if (Models.Loggings.AgentRun.Current?.OfferedTools is not { } offered
+            || this.toolCatalogEntries is null)
+        {
+            return this.toolCatalog;
+        }
+
+        return string.Join("\n", this.toolCatalogEntries
+            .Where(entry => offered.Contains(entry.Key, StringComparer.OrdinalIgnoreCase))
+            .Select(entry => entry.Value));
+    }
+
     // Remote tools join the catalog under the same opt-in as local ones — and only when the
     // marker is present, so an agent that never advertises never pays a discovery call.
     private async ValueTask<string> RenderToolCatalogAsync(string skills)
     {
         if (this.externalToolCatalog is null || skills.Contains(ToolsMarker) is false)
         {
-            return this.toolCatalog;
+            return SelectedToolCatalog();
         }
 
         string externalCatalog = await this.externalToolCatalog.DiscoverAsync();
+        string localCatalog = SelectedToolCatalog();
 
         if (string.IsNullOrEmpty(externalCatalog))
         {
-            return this.toolCatalog;
+            return localCatalog;
         }
 
-        return string.IsNullOrEmpty(this.toolCatalog)
+        return string.IsNullOrEmpty(localCatalog)
             ? externalCatalog
-            : $"{this.toolCatalog}\n{externalCatalog}";
+            : $"{localCatalog}\n{externalCatalog}";
     }
 
     public ValueTask<IReadOnlyList<string>> RetrieveGroundingAsync(string query) =>

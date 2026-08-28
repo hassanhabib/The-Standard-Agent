@@ -286,6 +286,26 @@ public sealed partial class StandardAgent : IAgent
     public StandardAgent OnGate(Func<string, string, ValueTask<string>> screen) =>
         Set(() => this.localGateScreen = screen);
 
+    // The host's selection judgment (SPEC.md §4.15), held until composition hands it to the loop.
+    private Func<string, IReadOnlyList<string>, ValueTask<IReadOnlyList<string>>>? localToolSelector;
+
+    /// <summary>
+    /// Turns on per-run tool <b>selection</b> (SPEC.md §4.15): before each run,
+    /// <paramref name="selector"/> receives the run's task and the described tool names, and
+    /// returns the subset this run is <b>offered</b>. What an agent carries and what a run is
+    /// offered are different things — a greeting should be offered nothing, and a model cannot
+    /// over-call a tool it was never shown. Selection narrows the offering only: an unselected
+    /// tool behaves exactly like an undescribed one — reachable if the Brain names it, governed
+    /// by the same perimeter, never offered. An empty selection offers nothing; names the agent
+    /// does not carry are ignored; caller-declared tools (per-request inference) are the
+    /// caller's own vocabulary and are never selected away.
+    /// </summary>
+    /// <param name="selector">A <c>(task, describedToolNames) =&gt; offeredToolNames</c> delegate.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent OnSelectTools(
+        Func<string, IReadOnlyList<string>, ValueTask<IReadOnlyList<string>>> selector) =>
+        Set(() => this.localToolSelector = selector);
+
     /// <summary>
     /// Turns on the Judge using an in-process model — the local counterpart to <see cref="Judge"/>,
     /// with no API calls. The delegate receives the built-in judge rubric as the system prompt and
@@ -1745,7 +1765,8 @@ public sealed partial class StandardAgent : IAgent
         DataCoordinationService data = new(
             new RetrievalOrchestrationService(
                 skillService, knowledgeService, RenderToolCatalog(allTools), logging,
-                externalToolCatalog),
+                externalToolCatalog,
+                RenderToolCatalogEntries(allTools)),
             new RecollectionOrchestrationService(
                 memoryService,
                 new SessionService(
@@ -1861,7 +1882,9 @@ public sealed partial class StandardAgent : IAgent
             this.maxHistoryTurns, this.compensateOnFailure, this.screenToolOutput,
             this.telemetryBroker, this.contractSchema, brain?.Temperature, brain?.MaxTokens,
             allTools.Select(tool => tool.Name),
-            RenderToolNarrations(allTools));
+            RenderToolNarrations(allTools),
+            this.localToolSelector is null ? null : new ToolSelector(this.localToolSelector),
+            Advertised(allTools).Select(tool => tool.Name));
     }
 
     // The catalog a "{{tools}}" marker in the agent's Data expands into. Only tools that
@@ -1895,6 +1918,16 @@ public sealed partial class StandardAgent : IAgent
 
         return string.Join("\n", describedTools);
     }
+
+    // The same catalog, per tool, so a run under selection (SPEC.md §4.15) can be shown only
+    // what it was offered. Derived from the same rendering as the whole-string catalog, so the
+    // two can never disagree about a tool's line.
+    private static IReadOnlyDictionary<string, string> RenderToolCatalogEntries(
+        IEnumerable<ITool> tools) =>
+        Advertised(tools).ToDictionary(
+            tool => tool.Name,
+            tool => $"- {tool.Name} — {tool.Description} parameters: {tool.Parameters}",
+            StringComparer.OrdinalIgnoreCase);
 
     // What the model may be told about, in ONE place. The rule (SPEC.md §6.1: a description is
     // the opt-in, and a tool without one stays callable but unadvertised) was written out twice —

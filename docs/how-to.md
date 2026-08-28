@@ -1506,6 +1506,50 @@ or a `tool_calls` yield carrying the pending call.
 
 ---
 
+## 21 · Selection — offer a run only what its task needs
+
+What an agent **carries** and what a run is **offered** are different things (SPEC.md §4.15).
+Without selection, every described tool reaches every run: an agent with twenty MCP servers
+puts twenty catalogs in front of "Hello", the token cost scales with the catalog, and a model
+offered a tool will sometimes act on it because it was shown, not because the task needs it —
+the day narration went live, production watched a greeting run a web search six times.
+
+```csharp
+StandardAgent agent = new StandardAgent()
+    .Skills(path: "Skills")
+    .Brain(url, key, model)
+    .Tool(new WebSearchTool())
+    .Tool(new CodeSearchTool())
+    .OnSelectTools((task, described) =>
+        new ValueTask<IReadOnlyList<string>>(
+            LooksLikeItNeedsTheWeb(task) ? new[] { "web_search" } : Array.Empty<string>()));
+```
+
+Before each run, the selector receives the run's task and the described tool names, and
+returns the subset this run is **offered** — the text catalog (`{{tools}}`) and the native
+tool list alike render only that subset. The selector is the host's judgment: a rule, a
+keyword table, an embedding index, a cheap classifier. Its output is read only as names.
+
+The boundaries, each pinned by tests and by conformance vector 69:
+
+- **Selection narrows the offering, never the perimeter.** An unselected tool behaves exactly
+  like an undescribed one: reachable if the Brain names it, governed by the same permission,
+  approval and run-once rules, never offered. The callable surface does not shrink per run.
+- **An empty selection offers nothing** — the greeting case — and the run still answers.
+- **Names the agent does not carry are ignored**, and the decision log records the truth:
+  `Selection → offered [web_search]; withheld [code_search, remember]`. Note the built-in
+  `remember` tool is described too — a selector that never includes it withholds memory
+  writes, which may be exactly what a stateless deployment wants, but is a choice to make
+  knowingly.
+- **Caller tools are never selected away** (§4.13): they are the caller's own vocabulary.
+- **Both doors, identical** — selection resolves once per run inside the loop, so the batched,
+  streamed and streamed-outcome doors carry the same offering and the same trace.
+
+Absent a selector, every described tool is offered — exactly the behavior every existing
+composition has today.
+
+---
+
 ## Putting it together
 
 The builder composes cleanly — take only what you need:

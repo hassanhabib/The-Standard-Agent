@@ -33,7 +33,8 @@ public sealed class StubTool : ITool
         RiskLevel risk = RiskLevel.Safe,
         bool scopeIsFirstWord = false,
         string narrationStarting = "",
-        string narrationObserved = "")
+        string narrationObserved = "",
+        string description = "")
     {
         this.Name = name;
         this.output = output;
@@ -43,7 +44,13 @@ public sealed class StubTool : ITool
         this.scopeIsFirstWord = scopeIsFirstWord;
         this.NarrationStarting = narrationStarting;
         this.NarrationObserved = narrationObserved;
+        this.Description = description;
     }
+
+    // Empty by default — a stub is callable but unadvertised, exactly as before. A vector that
+    // needs the ADVERTISEMENT observable (selection, §4.15) declares a description, because a
+    // description is the opt-in (§6.1).
+    public string Description { get; }
 
     // Declared, like risk and scope: the tool is what knows what its act means in the
     // user's language (SPEC.md §6.0).

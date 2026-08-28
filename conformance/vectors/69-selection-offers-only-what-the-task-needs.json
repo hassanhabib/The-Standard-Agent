@@ -1,0 +1,26 @@
+{
+  "name": "selection-offers-only-what-the-task-needs",
+  "description": "SPEC.md 4.15: what an agent carries and what a run is offered are different things. A selector names the offered subset; the withheld tool's catalog line never reaches any model, and the withheld tool never runs - because a model offered a tool will sometimes act on it because it was shown, not because the task needs it (the motivating production finding: a greeting ran a web search six times). Selection narrows the offering only: the run still answers, and the offered tool works exactly as before.",
+  "generatorReplies": [
+    "ACTION: calculator: 47*89",
+    "FINAL: 4183"
+  ],
+  "tools": {
+    "calculator": "4183",
+    "almanac": "never needed"
+  },
+  "toolDescriptions": {
+    "calculator": "Evaluates arithmetic expressions.",
+    "almanac": "Consults the stars for planting seasons."
+  },
+  "extraSkills": [ "Available tools:\n{{tools}}" ],
+  "prompt": "what is 47 times 89?",
+  "selectTools": [ "calculator" ],
+  "expect": {
+    "result": "4183",
+    "toolRunCount": { "calculator": 1 },
+    "toolNeverRan": [ "almanac" ],
+    "brainSees": "Evaluates arithmetic expressions.",
+    "brainNeverSees": "Consults the stars"
+  }
+}

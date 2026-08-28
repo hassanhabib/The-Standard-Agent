@@ -74,6 +74,8 @@ capability it configures did not exist, which is why the early vectors still des
 | `brokerHonorsRequest` | `false` swaps in the scripted Brain that never opted in, so degradation runs through the interface's real default members |
 | `streamed` | run the request through the streamed loop, which enforces every control the batched one does |
 | `streamedOutcome` | run the request through the third door (§4.14): the enumeration's events AND the structured outcome its completion carries, so `status` / `pendingEffectTool` certify on the streamed door too |
+| `selectTools` | a scripted selector (§4.15) returning this fixed set whatever the task; an empty list is the valid offered-nothing selection |
+| `toolDescriptions` | gives stub tools descriptions — the advertisement opt-in (§6.1) — so what a run was OFFERED is observable in the catalog the Brain reads |
 | `toolNarrations` | a stub tool's declared narration templates, `{tool: {starting, observed}}` — `{tool}` and `{payload}` slots interpolate |
 | `gateVerdictOnNarration` | the verdict the scripted Gate returns for model narration — screened text that is neither the prompt nor a tool's output |
 | `nativeReplies[].narration` | the SAY line's native twin: narration riding the structured result |
@@ -206,6 +208,7 @@ the deterministic core of the Standard.
 | `a-tool-narrates-and-the-model-says-nothing` | A tool's declared templates are the floor: the run never goes silent because the model was terse (§6.0) |
 | `native-narration-rides-the-result` | A V1 result's narration flows through the same loop seam, and model prose beats the template (§6.0, §6.2) |
 | `the-streamed-outcome-carries-the-pending-call` | The streamed run's completion carries the batched door's outcome — pending call included — while narration flows live (§4.14) |
+| `selection-offers-only-what-the-task-needs` | A run is offered the selected subset; the withheld tool's line reaches no model, and it never runs (§4.15) |
 
 ## Readiness profiles
 
