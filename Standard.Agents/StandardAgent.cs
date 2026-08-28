@@ -1765,7 +1765,8 @@ public sealed partial class StandardAgent : IAgent
         DataCoordinationService data = new(
             new RetrievalOrchestrationService(
                 skillService, knowledgeService, RenderToolCatalog(allTools), logging,
-                externalToolCatalog),
+                externalToolCatalog,
+                RenderToolCatalogEntries(allTools)),
             new RecollectionOrchestrationService(
                 memoryService,
                 new SessionService(
@@ -1917,6 +1918,16 @@ public sealed partial class StandardAgent : IAgent
 
         return string.Join("\n", describedTools);
     }
+
+    // The same catalog, per tool, so a run under selection (SPEC.md §4.15) can be shown only
+    // what it was offered. Derived from the same rendering as the whole-string catalog, so the
+    // two can never disagree about a tool's line.
+    private static IReadOnlyDictionary<string, string> RenderToolCatalogEntries(
+        IEnumerable<ITool> tools) =>
+        Advertised(tools).ToDictionary(
+            tool => tool.Name,
+            tool => $"- {tool.Name} — {tool.Description} parameters: {tool.Parameters}",
+            StringComparer.OrdinalIgnoreCase);
 
     // What the model may be told about, in ONE place. The rule (SPEC.md §6.1: a description is
     // the opt-in, and a tool without one stays callable but unadvertised) was written out twice —
