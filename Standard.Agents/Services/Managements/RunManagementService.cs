@@ -463,12 +463,17 @@ public partial class RunManagementService : IRunManagementService
             IReadOnlyList<string> chosen =
                 await this.toolSelector.SelectAsync(prompt, this.describedToolNames);
 
-            selectingRun.OfferedTools = chosen;
+            // Names the agent does not carry are ignored, and the record below states the
+            // TRUTH of the offering — never the selector's claim (SPEC.md §4.15).
+            IReadOnlyList<string> offered = [.. this.describedToolNames
+                .Where(name => chosen.Contains(name, StringComparer.OrdinalIgnoreCase))];
+
+            selectingRun.OfferedTools = offered;
 
             await this.loggingBroker.LogProcessAsync(
                 "Run",
-                $"Selection → offered [{string.Join(", ", chosen)}]; withheld "
-                    + $"[{string.Join(", ", this.describedToolNames.Except(chosen, StringComparer.OrdinalIgnoreCase))}]");
+                $"Selection → offered [{string.Join(", ", offered)}]; withheld "
+                    + $"[{string.Join(", ", this.describedToolNames.Except(offered, StringComparer.OrdinalIgnoreCase))}]");
         }
 
         // Precedence resolved once, at the top of the run, and never again below it: a loop

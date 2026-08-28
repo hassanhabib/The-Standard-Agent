@@ -158,9 +158,10 @@ public class SelectionTests
         // when
         await agent.ProcessPromptAsync("look something up");
 
-        // then
+        // then — the built-in remember tool is described too, and the trace says so: the
+        // record states the truth of the whole offering, the framework's own tools included
         trace.Should().Contain(record =>
-            record.Message == "Selection → offered [web_search]; withheld [code_search]");
+            record.Message == "Selection → offered [web_search]; withheld [code_search, remember]");
     }
 
     [Fact]
