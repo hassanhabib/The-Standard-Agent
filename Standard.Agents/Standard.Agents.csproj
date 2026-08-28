@@ -463,7 +463,17 @@
          recorded as WITHHELD. The prose never enters the answer, observations, or history.
          New routines and additively-widened models: segment 2 advances, 3/4 reset. Tracks
          SPEC.md v1.9. -->
-    <Version>1.13.0.0</Version>
+    <!-- 1.14.0.0 "The Streamed Outcome": the loop's third reading. RunStreamAsync yields every
+         event live and its completion carries the same structured outcome RunAsync returns -
+         status, result, the pending effect with its model-minted call id - because a caller
+         should never choose between the answer's structure and the run's story (the first
+         consumer, needing the pending call, ran batched and watched its narration land in one
+         lump with the answer). The loop always computed the outcome on the streamed door;
+         ProcessPromptStreamAsync discarded it, and this release stops discarding it.
+         AgentRunStream is the decision tier's stream-plus-result shape one tier up; the IAgent
+         default adapts StreamPromptAsync with RunAsync's documented assumption. Spec-first:
+         tracks SPEC.md v1.10 (SS4.14). New routines and models: segment 2 advances, 3/4 reset. -->
+    <Version>1.14.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>

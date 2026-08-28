@@ -336,6 +336,7 @@ Standard.Agents.IAgent
 Standard.Agents.IAgent.ProcessPromptAsync(string! prompt) -> System.Threading.Tasks.ValueTask<string!>
 Standard.Agents.IAgent.RunAsync(string! prompt) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
 Standard.Agents.IAgent.RunAsync(string! prompt, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
+Standard.Agents.IAgent.RunStreamAsync(string! prompt, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> Standard.Agents.Models.Clients.Agents.AgentRunStream!
 Standard.Agents.IAgent.StreamPromptAsync(string! prompt, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<Standard.Agents.Models.Clients.Agents.AgentStreamEvent!>!
 Standard.Agents.Models.Brokers.Agents.RegisteredAgent
 Standard.Agents.Models.Brokers.Agents.RegisteredAgent.<Clone>$() -> Standard.Agents.Models.Brokers.Agents.RegisteredAgent!
@@ -505,6 +506,10 @@ Standard.Agents.Models.Clients.Agents.AgentOutcome.Result.get -> string!
 Standard.Agents.Models.Clients.Agents.AgentOutcome.Result.init -> void
 Standard.Agents.Models.Clients.Agents.AgentOutcome.Status.get -> Standard.Agents.Models.Orchestrations.Agents.AgentStatus
 Standard.Agents.Models.Clients.Agents.AgentOutcome.Status.init -> void
+Standard.Agents.Models.Clients.Agents.AgentRunStream
+Standard.Agents.Models.Clients.Agents.AgentRunStream.AgentRunStream(System.Func<System.Action<Standard.Agents.Models.Clients.Agents.AgentOutcome!>!, System.Collections.Generic.IAsyncEnumerable<Standard.Agents.Models.Clients.Agents.AgentStreamEvent!>!>! build) -> void
+Standard.Agents.Models.Clients.Agents.AgentRunStream.GetAsyncEnumerator(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerator<Standard.Agents.Models.Clients.Agents.AgentStreamEvent!>!
+Standard.Agents.Models.Clients.Agents.AgentRunStream.Outcome.get -> Standard.Agents.Models.Clients.Agents.AgentOutcome!
 Standard.Agents.Models.Clients.Agents.AgentStreamEvent
 Standard.Agents.Models.Clients.Agents.AgentStreamEvent.<Clone>$() -> Standard.Agents.Models.Clients.Agents.AgentStreamEvent!
 Standard.Agents.Models.Clients.Agents.AgentStreamEvent.AgentStreamEvent(Standard.Agents.Models.Clients.Agents.AgentStreamEventType Type, string! Content) -> void
@@ -1184,6 +1189,8 @@ Standard.Agents.Services.Managements.IRunManagementService.ProcessPromptStreamAs
 Standard.Agents.Services.Managements.IRunManagementService.RunAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
 Standard.Agents.Services.Managements.IRunManagementService.RunAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
 Standard.Agents.Services.Managements.IRunManagementService.RunAsync(string! prompt, string! sessionId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
+Standard.Agents.Services.Managements.IRunManagementService.RunStreamAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request) -> Standard.Agents.Models.Clients.Agents.AgentRunStream!
+Standard.Agents.Services.Managements.IRunManagementService.RunStreamAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request, System.Threading.CancellationToken cancellationToken) -> Standard.Agents.Models.Clients.Agents.AgentRunStream!
 Standard.Agents.Services.Managements.RunManagementService
 Standard.Agents.Services.Managements.RunManagementService.ProcessPromptAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request) -> System.Threading.Tasks.ValueTask<string!>
 Standard.Agents.Services.Managements.RunManagementService.ProcessPromptAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<string!>
@@ -1198,6 +1205,8 @@ Standard.Agents.Services.Managements.RunManagementService.RunAsync(Standard.Agen
 Standard.Agents.Services.Managements.RunManagementService.RunAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
 Standard.Agents.Services.Managements.RunManagementService.RunAsync(string! prompt, string! sessionId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
 Standard.Agents.Services.Managements.RunManagementService.RunManagementService(Standard.Agents.Services.Coordinations.Data.IDataCoordinationService! dataCoordinationService, Standard.Agents.Services.Coordinations.Decision.IDecisionCoordinationService! decisionCoordinationService, Standard.Agents.Services.Coordinations.Direction.IDirectionCoordinationService! directionCoordinationService, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, int maxTurns = 7, Standard.Agents.Brokers.Times.ITimeBroker? timeBroker = null, Standard.Agents.Models.Coordinations.Agents.AgentBudget? budget = null, int maxHistoryTurns = 20, bool compensateOnFailure = false, bool screenToolOutput = false, Standard.Agents.Brokers.Telemetries.ITelemetryBroker? telemetryBroker = null, string? contractSchema = null, double? configuredTemperature = null, int? configuredMaxTokens = null, System.Collections.Generic.IEnumerable<string!>? configuredToolNames = null, System.Collections.Generic.IReadOnlyDictionary<string!, Standard.Agents.Models.Coordinations.Agents.ToolNarration!>? toolNarrations = null) -> void
+Standard.Agents.Services.Managements.RunManagementService.RunStreamAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request) -> Standard.Agents.Models.Clients.Agents.AgentRunStream!
+Standard.Agents.Services.Managements.RunManagementService.RunStreamAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request, System.Threading.CancellationToken cancellationToken) -> Standard.Agents.Models.Clients.Agents.AgentRunStream!
 Standard.Agents.Services.Orchestrations.Data.Recollections.IRecollectionOrchestrationService
 Standard.Agents.Services.Orchestrations.Data.Recollections.IRecollectionOrchestrationService.RecallMemoriesAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
 Standard.Agents.Services.Orchestrations.Data.Recollections.IRecollectionOrchestrationService.RecallSessionAsync(string! sessionId) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Sessions.AgentSession?>
@@ -1322,6 +1331,11 @@ Standard.Agents.StandardAgent.RunAsync(Standard.Agents.Models.Clients.Agents.Pro
 Standard.Agents.StandardAgent.RunAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
 Standard.Agents.StandardAgent.RunAsync(string! prompt) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
 Standard.Agents.StandardAgent.RunAsync(string! prompt, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
+Standard.Agents.StandardAgent.RunStreamAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request) -> Standard.Agents.Models.Clients.Agents.AgentRunStream!
+Standard.Agents.StandardAgent.RunStreamAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request, System.Threading.CancellationToken cancellationToken) -> Standard.Agents.Models.Clients.Agents.AgentRunStream!
+Standard.Agents.StandardAgent.RunStreamAsync(string! prompt, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> Standard.Agents.Models.Clients.Agents.AgentRunStream!
+Standard.Agents.StandardAgent.RunStreamAsync(string! prompt, string! sessionId) -> Standard.Agents.Models.Clients.Agents.AgentRunStream!
+Standard.Agents.StandardAgent.RunStreamAsync(string! prompt, string! sessionId, System.Threading.CancellationToken cancellationToken) -> Standard.Agents.Models.Clients.Agents.AgentRunStream!
 Standard.Agents.StandardAgent.ScreenToolOutput() -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Sessions(string! path, int maxHistoryTurns = 20) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Skills(string! path) -> Standard.Agents.StandardAgent!

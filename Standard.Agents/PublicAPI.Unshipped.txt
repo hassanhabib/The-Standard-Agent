@@ -1,15 +1,1 @@
 #nullable enable
-Standard.Agents.IAgent.RunStreamAsync(string! prompt, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> Standard.Agents.Models.Clients.Agents.AgentRunStream!
-Standard.Agents.Models.Clients.Agents.AgentRunStream
-Standard.Agents.Models.Clients.Agents.AgentRunStream.AgentRunStream(System.Func<System.Action<Standard.Agents.Models.Clients.Agents.AgentOutcome!>!, System.Collections.Generic.IAsyncEnumerable<Standard.Agents.Models.Clients.Agents.AgentStreamEvent!>!>! build) -> void
-Standard.Agents.Models.Clients.Agents.AgentRunStream.GetAsyncEnumerator(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerator<Standard.Agents.Models.Clients.Agents.AgentStreamEvent!>!
-Standard.Agents.Models.Clients.Agents.AgentRunStream.Outcome.get -> Standard.Agents.Models.Clients.Agents.AgentOutcome!
-Standard.Agents.Services.Managements.IRunManagementService.RunStreamAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request) -> Standard.Agents.Models.Clients.Agents.AgentRunStream!
-Standard.Agents.Services.Managements.IRunManagementService.RunStreamAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request, System.Threading.CancellationToken cancellationToken) -> Standard.Agents.Models.Clients.Agents.AgentRunStream!
-Standard.Agents.Services.Managements.RunManagementService.RunStreamAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request) -> Standard.Agents.Models.Clients.Agents.AgentRunStream!
-Standard.Agents.Services.Managements.RunManagementService.RunStreamAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request, System.Threading.CancellationToken cancellationToken) -> Standard.Agents.Models.Clients.Agents.AgentRunStream!
-Standard.Agents.StandardAgent.RunStreamAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request) -> Standard.Agents.Models.Clients.Agents.AgentRunStream!
-Standard.Agents.StandardAgent.RunStreamAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request, System.Threading.CancellationToken cancellationToken) -> Standard.Agents.Models.Clients.Agents.AgentRunStream!
-Standard.Agents.StandardAgent.RunStreamAsync(string! prompt, string! sessionId) -> Standard.Agents.Models.Clients.Agents.AgentRunStream!
-Standard.Agents.StandardAgent.RunStreamAsync(string! prompt, string! sessionId, System.Threading.CancellationToken cancellationToken) -> Standard.Agents.Models.Clients.Agents.AgentRunStream!
-Standard.Agents.StandardAgent.RunStreamAsync(string! prompt, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> Standard.Agents.Models.Clients.Agents.AgentRunStream!
