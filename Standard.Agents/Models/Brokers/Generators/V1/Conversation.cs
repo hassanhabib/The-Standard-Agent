@@ -57,6 +57,13 @@ public sealed record GenerationResult
     public string Content { get; init; } = "";
     public IReadOnlyList<ModelToolCall> ToolCalls { get; init; } = [];
 
+    /// <summary>
+    /// User-voiced progress prose the model offered alongside its choice ("Let me check the
+    /// web..."). Optional — a provider that reports none leaves the default, and the text
+    /// protocol's <c>SAY:</c> line is this field's V0 twin.
+    /// </summary>
+    public string Narration { get; init; } = "";
+
     public int PromptTokens { get; init; }
     public int CompletionTokens { get; init; }
 

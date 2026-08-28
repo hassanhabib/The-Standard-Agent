@@ -50,6 +50,11 @@ public sealed record AgentContext
     public string Payload { get; init; } = "";
     public string RawReply { get; init; } = "";
 
+    // This turn's user-voiced progress prose, peeled off the reply (SAY:) or carried by a native
+    // result. Never part of the answer, the observations, or the session history — the loop
+    // screens it and voices it, then it dies with the turn.
+    public string Narration { get; init; } = "";
+
     // What the turn's model calls cost. The provider's own report when there is one, counted by
     // the Usage foundation when there is not — because a provider that reports nothing used to
     // leave these at zero, and a budget bounding zero is not a budget (SPEC.md §3.4).

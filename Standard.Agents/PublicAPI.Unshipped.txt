@@ -1,1 +1,20 @@
 #nullable enable
+Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.Narration.get -> string!
+Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.Narration.init -> void
+Standard.Agents.Models.Clients.Agents.AgentStreamEventType.Narration = 4 -> Standard.Agents.Models.Clients.Agents.AgentStreamEventType
+Standard.Agents.Models.Coordinations.Agents.ToolNarration
+Standard.Agents.Models.Coordinations.Agents.ToolNarration.<Clone>$() -> Standard.Agents.Models.Coordinations.Agents.ToolNarration!
+Standard.Agents.Models.Coordinations.Agents.ToolNarration.Deconstruct(out string! Starting, out string! Observed) -> void
+Standard.Agents.Models.Coordinations.Agents.ToolNarration.Equals(Standard.Agents.Models.Coordinations.Agents.ToolNarration? other) -> bool
+Standard.Agents.Models.Coordinations.Agents.ToolNarration.Observed.get -> string!
+Standard.Agents.Models.Coordinations.Agents.ToolNarration.Observed.init -> void
+Standard.Agents.Models.Coordinations.Agents.ToolNarration.Starting.get -> string!
+Standard.Agents.Models.Coordinations.Agents.ToolNarration.Starting.init -> void
+Standard.Agents.Models.Coordinations.Agents.ToolNarration.ToolNarration(string! Starting, string! Observed) -> void
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Narration.get -> string!
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Narration.init -> void
+override Standard.Agents.Models.Coordinations.Agents.ToolNarration.Equals(object? obj) -> bool
+override Standard.Agents.Models.Coordinations.Agents.ToolNarration.GetHashCode() -> int
+override Standard.Agents.Models.Coordinations.Agents.ToolNarration.ToString() -> string!
+static Standard.Agents.Models.Coordinations.Agents.ToolNarration.operator !=(Standard.Agents.Models.Coordinations.Agents.ToolNarration? left, Standard.Agents.Models.Coordinations.Agents.ToolNarration? right) -> bool
+static Standard.Agents.Models.Coordinations.Agents.ToolNarration.operator ==(Standard.Agents.Models.Coordinations.Agents.ToolNarration? left, Standard.Agents.Models.Coordinations.Agents.ToolNarration? right) -> bool
