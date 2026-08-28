@@ -150,6 +150,11 @@ public sealed record Vector(
     bool BrokerHonorsRequest = true,
     bool Streamed = false,
 
+    // The streamed outcome (SPEC.md §4.14): run the request through the third door — the
+    // enumeration's events AND the structured outcome its completion carries, so status and
+    // pending-effect expectations certify on the streamed door too.
+    bool StreamedOutcome = false,
+
     // Narration (SPEC.md §6.0). ToolNarrations gives a stub tool its declared templates;
     // GateVerdictOnNarration is the verdict the scripted Gate returns for model narration —
     // screened text that is neither the prompt nor a tool's output.
