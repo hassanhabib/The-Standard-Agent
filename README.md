@@ -193,6 +193,22 @@ hold here exactly as they do on `ProcessPromptAsync` — a control you can step 
 method is not a control. Pass a session id to stream inside a conversation:
 `agent.StreamPromptAsync(prompt, sessionId, cancellationToken)`.
 
+And when you need the events **and** how the run ended — every exposer that yields a pending
+tool call back to its own caller does — the **streamed outcome** (SPEC.md §4.14) ends the
+choice between them:
+
+```csharp
+AgentRunStream run = agent.RunStreamAsync(request, cancellationToken);
+
+await foreach (AgentStreamEvent streamEvent in run)
+{
+    /* every event, live — narration included */
+}
+
+AgentOutcome outcome = run.Outcome; // the same outcome RunAsync returns: status,
+                                    // result, pending effect with its call id
+```
+
 No DI container. `Compose()` hand-wires the whole graph — SPEC.md §9: *"DI is OPTIONAL. A
 hand-wired composition root is fully conformant."*
 

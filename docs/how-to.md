@@ -1458,6 +1458,54 @@ native carry — each proven able to fail.
 
 ---
 
+## 20 · The streamed outcome — events that end in an answer's structure
+
+The loop has always had two doors: `RunAsync` returns the structured outcome — status, result,
+any pending effect with its model-minted call id — and discards the run's events;
+`StreamPromptAsync` yields the events and loses the outcome. Every *control* held on both
+(§7.6), but the *capabilities* split consumers: an exposer that yields a pending call to its own
+caller needs the outcome, so it ran batched — and watched the run's narration land in one lump
+with the answer. The streamed outcome (SPEC.md §4.14) is the third reading that ends the choice:
+
+```csharp
+AgentRunStream run = agent.RunStreamAsync(request, cancellationToken);
+
+await foreach (AgentStreamEvent streamEvent in run)
+{
+    // Status, Thinking, Narration, Tool, Response — live, exactly as StreamPromptAsync
+    // yields them, with every control and every screening intact.
+}
+
+AgentOutcome outcome = run.Outcome;
+// The SAME outcome RunAsync returns for this run: outcome.Status, outcome.Result,
+// outcome.PendingEffect (tool name, arguments, the model-minted CallId).
+```
+
+Three guarantees, each pinned by `LoopParityTests`' derived third-door theory and by
+conformance vector 68 (`the-streamed-outcome-carries-the-pending-call`):
+
+- **The outcome is the batched door's.** Status, result and the pending act's identity are
+  identical to what `RunAsync` returns for the same scenario — a caller-tool yield arrives
+  as `AwaitingInput` with the call id the model minted, ready to hand back to the caller.
+- **The stream and the outcome are two readings of one run.** Concatenating the `Response`
+  events equals `Outcome.Result`; the decision-log trace is record-for-record identical to
+  the batched door's. The streamed outcome adds a reading, not a path — the loop is still
+  the only copy.
+- **`Outcome` is a completion product.** It is defined once the enumeration ends; before
+  that it reads as a failed run, exactly the seed the batched door starts from.
+
+`RunStreamAsync` is also on `IAgent`, with an honest default for implementations that do not
+run the loop: it adapts `StreamPromptAsync` and assumes the run answered — the same assumption
+`RunAsync`'s default documents — so an implementation that knows how its run ended should
+override it, and every implementation that runs the loop does.
+
+For a host bridging this to an OpenAI-style SSE endpoint, the shape is now one enumeration:
+forward each event as it arrives (narration as its own delta field, §19), and when the
+enumeration completes read `Outcome` to decide the terminal frame — a `stop` with the answer,
+or a `tool_calls` yield carrying the pending call.
+
+---
+
 ## Putting it together
 
 The builder composes cleanly — take only what you need:
