@@ -58,6 +58,11 @@ public partial class RunManagementService : IRunManagementService
     // derived data, like risk and scope, so the loop can voice acts without holding the tools.
     private readonly IReadOnlyDictionary<string, ToolNarration> toolNarrations;
 
+    // Selection (SPEC.md §4.15): the host's judgment of what a run is OFFERED, and the described
+    // names it judges over. Null selector = no selection = every described tool offered.
+    private readonly ToolSelector? toolSelector;
+    private readonly IReadOnlyList<string> describedToolNames;
+
     public RunManagementService(
         IDataCoordinationService dataCoordinationService,
         IDecisionCoordinationService decisionCoordinationService,
@@ -74,7 +79,9 @@ public partial class RunManagementService : IRunManagementService
         double? configuredTemperature = null,
         int? configuredMaxTokens = null,
         IEnumerable<string>? configuredToolNames = null,
-        IReadOnlyDictionary<string, ToolNarration>? toolNarrations = null)
+        IReadOnlyDictionary<string, ToolNarration>? toolNarrations = null,
+        ToolSelector? toolSelector = null,
+        IEnumerable<string>? describedToolNames = null)
     {
         this.compensateOnFailure = compensateOnFailure;
         this.dataCoordinationService = dataCoordinationService;
@@ -96,6 +103,9 @@ public partial class RunManagementService : IRunManagementService
 
         this.toolNarrations = toolNarrations
             ?? new Dictionary<string, ToolNarration>(StringComparer.OrdinalIgnoreCase);
+
+        this.toolSelector = toolSelector;
+        this.describedToolNames = [.. describedToolNames ?? []];
     }
 
     // Precedence, per field: configured → request → framework default
@@ -442,6 +452,24 @@ public partial class RunManagementService : IRunManagementService
 
         await this.loggingBroker.LogResetAsync();
         await AnnounceResolutionAsync(request);
+
+        // Selection (SPEC.md §4.15): what this run is OFFERED, resolved once at the top and
+        // carried on the run — the offering is rendered two tiers below (the text catalog and
+        // the native tool list), and neither renderer should gain a parameter for it. Recorded,
+        // because a review of a run that lacked a capability must see that it was withheld by
+        // selection rather than missing from the agent.
+        if (this.toolSelector is not null && AgentRun.Current is AgentRun selectingRun)
+        {
+            IReadOnlyList<string> chosen =
+                await this.toolSelector.SelectAsync(prompt, this.describedToolNames);
+
+            selectingRun.OfferedTools = chosen;
+
+            await this.loggingBroker.LogProcessAsync(
+                "Run",
+                $"Selection → offered [{string.Join(", ", chosen)}]; withheld "
+                    + $"[{string.Join(", ", this.describedToolNames.Except(chosen, StringComparer.OrdinalIgnoreCase))}]");
+        }
 
         // Precedence resolved once, at the top of the run, and never again below it: a loop
         // that can re-resolve is a loop where two turns of one run can disagree

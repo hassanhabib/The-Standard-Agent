@@ -1881,7 +1881,9 @@ public sealed partial class StandardAgent : IAgent
             this.maxHistoryTurns, this.compensateOnFailure, this.screenToolOutput,
             this.telemetryBroker, this.contractSchema, brain?.Temperature, brain?.MaxTokens,
             allTools.Select(tool => tool.Name),
-            RenderToolNarrations(allTools));
+            RenderToolNarrations(allTools),
+            this.localToolSelector is null ? null : new ToolSelector(this.localToolSelector),
+            Advertised(allTools).Select(tool => tool.Name));
     }
 
     // The catalog a "{{tools}}" marker in the agent's Data expands into. Only tools that

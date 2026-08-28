@@ -85,10 +85,20 @@ public partial class InferenceOrchestrationService
     // is safe — and only Direction knows which words are whose.
     private IReadOnlyList<ToolDefinition> MergedTools(AgentContext context)
     {
+        IReadOnlyList<ToolDefinition> configured = this.toolDefinitions;
+
+        // Selection (SPEC.md §4.15): the run is offered the selected subset of the agent's own
+        // tools. Caller tools are the caller's vocabulary and are never selected away.
+        if (Models.Loggings.AgentRun.Current?.OfferedTools is { } offered)
+        {
+            configured = [.. configured.Where(tool =>
+                offered.Contains(tool.Name, StringComparer.OrdinalIgnoreCase))];
+        }
+
         IReadOnlyList<ToolDefinition> callerTools = context.Inference?.CallerTools ?? [];
 
         return callerTools.Count == 0
-            ? this.toolDefinitions
-            : [.. this.toolDefinitions, .. callerTools];
+            ? configured
+            : [.. configured, .. callerTools];
     }
 }
