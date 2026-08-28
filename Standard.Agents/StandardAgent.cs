@@ -1792,7 +1792,8 @@ public sealed partial class StandardAgent : IAgent
             data, decision, direction, logging, this.maxTurns, new TimeBroker(), this.budget,
             this.maxHistoryTurns, this.compensateOnFailure, this.screenToolOutput,
             this.telemetryBroker, this.contractSchema, brain?.Temperature, brain?.MaxTokens,
-            allTools.Select(tool => tool.Name));
+            allTools.Select(tool => tool.Name),
+            RenderToolNarrations(allTools));
     }
 
     // The catalog a "{{tools}}" marker in the agent's Data expands into. Only tools that
@@ -1805,6 +1806,19 @@ public sealed partial class StandardAgent : IAgent
     private static IReadOnlyList<ToolDefinition> RenderToolDefinitions(IEnumerable<ITool> tools) =>
         [.. Advertised(tools)
             .Select(tool => new ToolDefinition(tool.Name, tool.Description, tool.Parameters))];
+
+    // Narration templates, derived from the tools exactly as risk and scope are — the tool is
+    // what knows what its act means in the user's language, and derived data cannot drift.
+    private static IReadOnlyDictionary<string, ToolNarration> RenderToolNarrations(
+        IEnumerable<ITool> tools) =>
+        tools
+            .Where(tool =>
+                string.IsNullOrWhiteSpace(tool.NarrationStarting) is false
+                    || string.IsNullOrWhiteSpace(tool.NarrationObserved) is false)
+            .ToDictionary(
+                tool => tool.Name,
+                tool => new ToolNarration(tool.NarrationStarting, tool.NarrationObserved),
+                StringComparer.OrdinalIgnoreCase);
 
     private static string RenderToolCatalog(IEnumerable<ITool> tools)
     {

@@ -5,6 +5,7 @@
 
 using System.Threading.Channels;
 using Standard.Agents.Models.Clients.Agents;
+using Standard.Agents.Models.Coordinations.Agents;
 using Standard.Agents.Models.Orchestrations.Agents;
 
 namespace Standard.Agents.Services.Managements;
@@ -25,6 +26,24 @@ public partial class RunManagementService
     {
         if (string.IsNullOrWhiteSpace(context.Narration))
         {
+            // The floor: a tool that declared its narration is voiced even when the model said
+            // nothing. Host-authored frame on a framework-known slot, so no gate call — the
+            // only foreign content, the payload, already streamed verbatim inside Thinking.
+            if (this.toolNarrations.TryGetValue(
+                context.DirectionType, out ToolNarration? declared)
+                    && string.IsNullOrWhiteSpace(declared.Starting) is false)
+            {
+                string prose = declared.Starting
+                    .Replace("{tool}", context.DirectionType, StringComparison.Ordinal)
+                    .Replace("{payload}", context.Payload, StringComparison.Ordinal);
+
+                await this.loggingBroker.LogProcessAsync(
+                    "Direction", $"Narration → {prose}", detail: true);
+
+                await events.WriteAsync(
+                    new AgentStreamEvent(AgentStreamEventType.Narration, prose), abandoned);
+            }
+
             return;
         }
 
@@ -48,5 +67,27 @@ public partial class RunManagementService
         await events.WriteAsync(
             new AgentStreamEvent(AgentStreamEventType.Narration, context.Narration),
             abandoned);
+    }
+
+    // The observed slot: voiced after the result has been screened, immediately before the Tool
+    // event that carries the data — the narration announces, the Tool event delivers. Never
+    // overridden by model narration; a SAY line speaks for the act, not for its outcome.
+    private async ValueTask VoiceObservedNarrationAsync(
+        AgentContext context,
+        ChannelWriter<AgentStreamEvent> events,
+        CancellationToken abandoned)
+    {
+        if (this.toolNarrations.TryGetValue(context.DirectionType, out ToolNarration? declared)
+            && string.IsNullOrWhiteSpace(declared.Observed) is false)
+        {
+            string prose = declared.Observed
+                .Replace("{tool}", context.DirectionType, StringComparison.Ordinal);
+
+            await this.loggingBroker.LogProcessAsync(
+                "Direction", $"Narration → {prose}", detail: true);
+
+            await events.WriteAsync(
+                new AgentStreamEvent(AgentStreamEventType.Narration, prose), abandoned);
+        }
     }
 }

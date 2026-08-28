@@ -54,6 +54,10 @@ public partial class RunManagementService : IRunManagementService
     private readonly int? configuredMaxTokens;
     private readonly HashSet<string> configuredToolNames;
 
+    // What the tools declared they say (ITool.NarrationStarting/Observed), keyed by tool name —
+    // derived data, like risk and scope, so the loop can voice acts without holding the tools.
+    private readonly IReadOnlyDictionary<string, ToolNarration> toolNarrations;
+
     public RunManagementService(
         IDataCoordinationService dataCoordinationService,
         IDecisionCoordinationService decisionCoordinationService,
@@ -69,7 +73,8 @@ public partial class RunManagementService : IRunManagementService
         string? contractSchema = null,
         double? configuredTemperature = null,
         int? configuredMaxTokens = null,
-        IEnumerable<string>? configuredToolNames = null)
+        IEnumerable<string>? configuredToolNames = null,
+        IReadOnlyDictionary<string, ToolNarration>? toolNarrations = null)
     {
         this.compensateOnFailure = compensateOnFailure;
         this.dataCoordinationService = dataCoordinationService;
@@ -88,6 +93,9 @@ public partial class RunManagementService : IRunManagementService
 
         this.configuredToolNames = new HashSet<string>(
             configuredToolNames ?? [], StringComparer.OrdinalIgnoreCase);
+
+        this.toolNarrations = toolNarrations
+            ?? new Dictionary<string, ToolNarration>(StringComparer.OrdinalIgnoreCase);
     }
 
     // Precedence, per field: configured → request → framework default
@@ -547,6 +555,8 @@ public partial class RunManagementService : IRunManagementService
             if (context.Status is AgentStatus.Working
                 && string.IsNullOrEmpty(context.Result) is false)
             {
+                await VoiceObservedNarrationAsync(context, events, abandoned);
+
                 await events.WriteAsync(
                     new AgentStreamEvent(
                         AgentStreamEventType.Tool,
