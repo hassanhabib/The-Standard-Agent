@@ -276,6 +276,31 @@ public partial class DecisionCoordinationServiceTests
         actualContext.Narration.Should().Be("Checking the numbers...");
     }
 
+    // At most one SAY per turn (SPEC.md §6.0): only the FIRST leading line is narration. A
+    // second one is not — it is part of the reply, exactly as a non-supporting implementation
+    // would have read it.
+    [Fact]
+    public async Task ShouldPeelOnlyTheFirstSayLineOnThinkAsync()
+    {
+        // given
+        AgentContext inputContext = CreateRandomAgentContext();
+        SetupGateAllows();
+        SetupJudgeApproves();
+
+        this.brainServiceMock.Setup(service =>
+            service.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync("SAY: one\nSAY: two\nACTION: calculator: 2+2");
+
+        // when
+        AgentContext actualContext =
+            await this.decisionCoordinationService.ThinkAsync(inputContext);
+
+        // then
+        actualContext.Narration.Should().Be("one");
+        actualContext.DirectionType.Should().Be("ReturnResponse");
+        actualContext.Payload.Should().Contain("SAY: two");
+    }
+
     [Fact]
     public async Task ShouldCarryNativeNarrationOnThinkAsync()
     {

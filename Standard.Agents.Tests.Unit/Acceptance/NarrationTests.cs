@@ -211,4 +211,93 @@ public class NarrationTests
         observedIndex.Should().BeGreaterThan(startingIndex);
         toolIndex.Should().BeGreaterThan(observedIndex);
     }
+
+    // Model narration beats the template for the pre-act slot: the model's grounded prose is
+    // the ceiling, the tool's template only the floor. The observed slot is never overridden —
+    // a SAY line speaks for the act, not for its outcome.
+    [Fact]
+    public async Task ShouldPreferModelNarrationOverToolTemplateOnStreamAsync()
+    {
+        // given
+        int calls = 0;
+
+        StandardAgent agent = BareAgent((_, _) => ValueTask.FromResult(++calls == 1
+            ? "SAY: Let me check the calculator...\nACTION: calculator: 2+2"
+            : "FINAL: 4"))
+            .Tool(new NarratingTool());
+
+        // when
+        List<AgentStreamEvent> events = await DrainAsync(agent, "what is 2+2?");
+
+        // then
+        events.Should().Contain(streamEvent =>
+            streamEvent.Type == AgentStreamEventType.Narration
+                && streamEvent.Content == "Let me check the calculator...");
+
+        events.Should().NotContain(streamEvent =>
+            streamEvent.Content.Contains("Searching with"));
+
+        events.Should().Contain(streamEvent =>
+            streamEvent.Type == AgentStreamEventType.Narration
+                && streamEvent.Content == "Got results from calculator.");
+    }
+
+    // Narration dies with its turn: it never enters the answer, the observations, or the
+    // session's history — the next turn's brain input and the saved conversation carry none
+    // of it (SPEC.md §4.11).
+    [Fact]
+    public async Task ShouldKeepNarrationOutOfTheSessionAndTheNextBrainInputAsync()
+    {
+        // given
+        var tool = new ScriptedTool("calculator", "4");
+        int calls = 0;
+        List<string> brainInputs = [];
+        List<Models.Brokers.Sessions.AgentSession> savedSessions = [];
+
+        var sessionBroker = new Mock<Brokers.Sessions.ISessionBroker>();
+
+        sessionBroker.Setup(broker => broker.SelectSessionAsync(It.IsAny<string>()))
+            .ReturnsAsync((Models.Brokers.Sessions.AgentSession?)null);
+
+        sessionBroker.Setup(broker =>
+            broker.UpsertSessionAsync(It.IsAny<Models.Brokers.Sessions.AgentSession>()))
+                .Callback((Models.Brokers.Sessions.AgentSession session) =>
+                {
+                    lock (savedSessions)
+                    {
+                        savedSessions.Add(session);
+                    }
+                })
+                .Returns(ValueTask.CompletedTask);
+
+        StandardAgent agent = BareAgent((_, userMessage) =>
+        {
+            lock (brainInputs)
+            {
+                brainInputs.Add(userMessage);
+            }
+
+            return ValueTask.FromResult(++calls == 1
+                ? "SAY: Checking the calculator...\nACTION: calculator: 2+2"
+                : "FINAL: 4");
+        })
+            .Tool(tool)
+            .UseSessions(sessionBroker.Object);
+
+        var request = new PromptRequest { Prompt = "what is 2+2?", SessionId = "session-1" };
+
+        // when
+        await foreach (AgentStreamEvent _ in agent.StreamPromptAsync(request))
+        {
+        }
+
+        // then
+        brainInputs.Should().OnlyContain(input =>
+            input.Contains("Checking the calculator") == false);
+
+        savedSessions.Should().OnlyContain(session =>
+            session.History.All(turn =>
+                turn.Prompt.Contains("Checking the calculator") == false
+                    && turn.Answer.Contains("Checking the calculator") == false));
+    }
 }

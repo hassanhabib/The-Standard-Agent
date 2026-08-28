@@ -92,6 +92,8 @@ public class LoopParityTests
 
         public string Name { get; }
         public string Description => "A scripted tool.";
+        public string NarrationStarting { get; init; } = "";
+        public string NarrationObserved { get; init; } = "";
         public int Executions { get; private set; }
 
         public ValueTask<string> ExecuteAsync(string input)
@@ -315,6 +317,27 @@ public class LoopParityTests
                 Agent = Bare((_, _) => ValueTask.FromResult("FINAL: 42"))
                     .OnGate((_, _) => ValueTask.FromResult("route: arithmetic")),
                 Prompt = "what is 6 times 7"
+            },
+
+            ["a narrated tool call"] = () =>
+            {
+                var tool = new ScriptedTool("calculator", "4183")
+                {
+                    NarrationStarting = "Searching with {tool} for {payload}...",
+                    NarrationObserved = "Got results from {tool}."
+                };
+
+                int calls = 0;
+
+                return new Rig
+                {
+                    Agent = Bare((_, _) => ValueTask.FromResult(++calls == 1
+                        ? "SAY: Let me check the calculator...\nACTION: calculator: 47*89"
+                        : "FINAL: 4183"))
+                        .Tool(tool),
+                    Prompt = "what is 47*89",
+                    ToolExecutions = () => tool.Executions
+                };
             }
         };
 

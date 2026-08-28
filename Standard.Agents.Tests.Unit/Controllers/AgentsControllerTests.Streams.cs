@@ -21,6 +21,7 @@ public partial class AgentsControllerTests
         await Task.CompletedTask;
 
         yield return new AgentStreamEvent(AgentStreamEventType.Thinking, "considering");
+        yield return new AgentStreamEvent(AgentStreamEventType.Narration, "let me check...");
         yield return new AgentStreamEvent(AgentStreamEventType.Response, "the answer");
     }
 
@@ -55,6 +56,8 @@ public partial class AgentsControllerTests
 
         streamed.Should().Contain("event: Thinking");
         streamed.Should().Contain("data: considering");
+        streamed.Should().Contain("event: Narration");
+        streamed.Should().Contain("data: let me check...");
         streamed.Should().Contain("event: Response");
         streamed.Should().Contain("data: the answer");
     }
