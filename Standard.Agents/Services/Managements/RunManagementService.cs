@@ -510,6 +510,10 @@ public partial class RunManagementService : IRunManagementService
 
             await this.loggingBroker.LogStepAsync(AgentStep.Direction);
 
+            // Voiced before the act it announces, screened first (SPEC.md Invariant 5) — see
+            // RunManagementService.Narration.cs.
+            await VoiceNarrationAsync(context, events, abandoned);
+
             // Cleared before the act, so a transfer below reads how THIS act ended and never a
             // handoff from an earlier turn.
             if (AgentRun.Current is AgentRun actingRun)
