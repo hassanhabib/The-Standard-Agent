@@ -1403,6 +1403,61 @@ Per-request tools-the-agent-executes, permissions, budgets and approvals are del
 
 ---
 
+## 19 · Narration — the agent says what it is doing
+
+A run that goes silent for eight seconds while it searches, judges and revises *feels* broken.
+Narration is the remedy: a fifth stream event kind, `AgentStreamEventType.Narration`, carrying
+user-voiced progress prose — "Let me check the web…" — distinct from `Status` (machine-voiced
+lifecycle) and from `Thinking` (unvetted draft). Two authors, one channel:
+
+**The model narrates** with an optional `SAY:` line before its choice (SPEC.md §6.0):
+
+```
+SAY: Let me check the calculator...
+ACTION: calculator: 47*89
+```
+
+At most one leading `SAY:` line is peeled — the first-line rule then applies to what follows, so
+the act still runs. On the native V1 contract the same prose rides `GenerationResult.Narration`.
+The prose never enters the answer, the observations, or the session's history: it is voiced,
+then it dies with its turn.
+
+**Tools narrate as the floor**, so the run never goes silent just because the model was terse:
+
+```csharp
+public sealed class WebSearchTool : ITool
+{
+    public string NarrationStarting => "Searching the web for {payload}...";
+    public string NarrationObserved => "Got results from {tool}.";
+    // ...
+}
+```
+
+`{tool}` interpolates the tool's name, `{payload}` the act's input (pre-act only; there is
+deliberately no `{result}` slot — the `Tool` event carries the result). A model-authored `SAY:`
+overrides the tool's `Starting` template for that turn; `Observed` always voices, after the
+result has been screened, immediately before the `Tool` event. To add narration to a tool you
+did not write, wrap it: implement `ITool` around the inner tool and declare the templates on the
+wrapper.
+
+**Screening.** Model-authored narration is model output crossing to the user with no Judge and
+no Contract between them, so it passes the Gate before it is voiced — unconditionally, not
+behind `ScreenToolOutput()`, which governs model *input*. A refused narration is withheld from
+every channel and recorded in the decision log (`Narration → WITHHELD: …`); the run itself
+proceeds, because narration is decoration, never the work. Template narration is host-authored
+text on a framework-known frame and is voiced without a gate call — the only foreign content,
+the payload, already streamed verbatim inside `Thinking`.
+
+Both doors run the same seam: a batched `ProcessPromptAsync` run makes the identical gate calls
+and log lines and simply discards the events, so the decision-log trace never depends on which
+door was used. Filtering a stream to `Response` still equals the batched answer — narration adds
+a channel, it moves nothing between channels.
+
+Certified by conformance vectors 64–67: the peel, the withhold, the template floor, and the
+native carry — each proven able to fail.
+
+---
+
 ## Putting it together
 
 The builder composes cleanly — take only what you need:

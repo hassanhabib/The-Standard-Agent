@@ -18,6 +18,16 @@ ACTION: calculator: 47*89
 FINAL: 4183
 ```
 
+Optionally, at most one `SAY:` line may precede the choice — user-voiced progress narration
+("Let me check the calculator…"). It is peeled before the first-line rule applies, screened by
+the Gate, and voiced on the stream's `Narration` channel; it is never the act and never the
+answer (SPEC.md §6.0):
+
+```
+SAY: Let me check the calculator...
+ACTION: calculator: 47*89
+```
+
 `IGeneratorBroker`, reached through `.Brain(url, key, model)` or `.UseGenerator(broker)`.
 
 **V1 — native tool calling.** A conversation of typed messages in; a structured choice out. The
@@ -114,6 +124,11 @@ Translate `messages` into your provider's request shape, translate its tool call
 `ModelToolCall(Id, Name, ArgumentsJson)`, and report `PromptTokens` / `CompletionTokens` if the
 provider tells you. Report zero rather than an estimate: a budget that bounds a guess is not a
 budget.
+
+A broker MAY also populate `GenerationResult.Narration` — the `SAY:` line's native twin: one
+line of user-voiced progress prose riding the structured result. The default is empty and
+nothing requires it; when present it is screened and voiced through the same loop seam the text
+protocol's narration uses. Certified by conformance vector `67-native-narration-rides-the-result`.
 
 For a one-off, `.OnNativeBrain((messages, tools) => …)` takes the same shape as a delegate.
 
