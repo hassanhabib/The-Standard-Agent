@@ -73,6 +73,9 @@ capability it configures did not exist, which is why the early vectors still des
 | `contractSchema`, `configuredTemperature`, `configuredMaxTokens` | the deployment's side of precedence: hard configuration a request can never move |
 | `brokerHonorsRequest` | `false` swaps in the scripted Brain that never opted in, so degradation runs through the interface's real default members |
 | `streamed` | run the request through the streamed loop, which enforces every control the batched one does |
+| `toolNarrations` | a stub tool's declared narration templates, `{tool: {starting, observed}}` — `{tool}` and `{payload}` slots interpolate |
+| `gateVerdictOnNarration` | the verdict the scripted Gate returns for model narration — screened text that is neither the prompt nor a tool's output |
+| `nativeReplies[].narration` | the SAY line's native twin: narration riding the structured result |
 
 ### Expectations — what must be true afterwards
 
@@ -90,6 +93,7 @@ capability it configures did not exist, which is why the early vectors still des
 | `status`, `pendingEffectTool` | how the run ended, and the caller's call riding the session as a pending effect |
 | `brokerTemperature`, `brokerMaxTokens`, `brokerTemperatures` | what the Brain was handed, after precedence resolved at the boundary |
 | `brokerSchemaContains`, `brokerOptionsInclude`, `brokerOptionsExclude` | the surviving schema on the wire, and the passthrough after the core-owned-keys strip |
+| `narrationsContain`, `narrationsExclude` | what the Narration channel carried, in order — and what appeared on **no** stream event at all, which is what proves a withheld narration was withheld rather than rerouted. Requires `"streamed": true`: the batched door produces and discards its events |
 
 Two of those are worth singling out, because they are the difference between checking a control and
 checking the *report* of one. `policySawPrincipal` reads the decision's input rather than the audit
@@ -196,6 +200,10 @@ the deterministic core of the Standard.
 | `caller-tool-name-collision-drops-caller-tool` | A caller cannot shadow the deployment's own tool; configured wins |
 | `pending-call-rides-the-outcome-without-a-session` | A stateless exposer reads the caller's call off the outcome itself |
 | `the-callers-transcript-reaches-the-brain` | A prior turn re-posted by the caller reaches the Brain; the run never starts from nothing |
+| `a-model-narrates-before-acting` | A leading SAY: line is narration — peeled, screened, voiced; never the act, never the answer (§6.0) |
+| `a-refused-narration-is-withheld` | A refused narration reaches no channel at all, and the run is unharmed (Invariant 5, §4.9) |
+| `a-tool-narrates-and-the-model-says-nothing` | A tool's declared templates are the floor: the run never goes silent because the model was terse (§6.0) |
+| `native-narration-rides-the-result` | A V1 result's narration flows through the same loop seam, and model prose beats the template (§6.0, §6.2) |
 
 ## Readiness profiles
 

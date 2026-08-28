@@ -41,6 +41,7 @@ public sealed class ScriptedNativeGeneratorBroker : IGeneratorBrokerV1
         return new GenerationResult
         {
             Content = reply.Content ?? string.Empty,
+            Narration = reply.Narration ?? string.Empty,
 
             ToolCalls =
             [
@@ -63,6 +64,7 @@ public sealed record NativeReply(
     string? Content = null,
     List<NativeToolCall>? ToolCalls = null,
     int PromptTokens = 0,
-    int CompletionTokens = 0);
+    int CompletionTokens = 0,
+    string? Narration = null);
 
 public sealed record NativeToolCall(string Id, string Name, string ArgumentsJson);

@@ -13,6 +13,8 @@
     "redaction-covers-every-model-call",
     "guardian-overreach-is-neutralized",
     "cancellation-stops-the-loop",
-    "transient-failure-recovers"
+    "transient-failure-recovers",
+    "a-model-narrates-before-acting",
+    "a-refused-narration-is-withheld"
   ]
 }

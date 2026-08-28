@@ -1,0 +1,25 @@
+{
+  "name": "a-tool-narrates-and-the-model-says-nothing",
+  "description": "SPEC.md 6.0: tools MAY declare narration templates as a floor. When the model offers no SAY line, the declared Starting and Observed templates are voiced - interpolated with the tool's name and the act's input - the announcement before the act, the observation after the screened result. The run never goes silent just because the model was terse, and the two narrations arrive in the story's order.",
+  "generatorReplies": [
+    "ACTION: calculator: 47*89",
+    "FINAL: 4183"
+  ],
+  "tools": { "calculator": "4183" },
+  "toolNarrations": {
+    "calculator": {
+      "starting": "Searching with {tool} for {payload}...",
+      "observed": "Got results from {tool}."
+    }
+  },
+  "prompt": "what is 47 times 89?",
+  "streamed": true,
+  "request": {},
+  "expect": {
+    "result": "4183",
+    "narrationsContain": [
+      "Searching with calculator for 47*89...",
+      "Got results from calculator."
+    ]
+  }
+}

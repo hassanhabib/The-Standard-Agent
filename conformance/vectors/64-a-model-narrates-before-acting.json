@@ -1,0 +1,18 @@
+{
+  "name": "a-model-narrates-before-acting",
+  "description": "SPEC.md 6.0: at most one leading SAY: line is narration - peeled before the first-line rule applies, voiced on the Narration channel, never the act and never the answer. An implementation that reads the SAY line as the reply's first line turns the whole reply into an answer: the tool never runs and the user's progress note arrives as the result. The prefix itself must never reach the stream: the prose is screened before it is voiced (Invariant 5), so nothing streams token by token while the verdict is pending.",
+  "generatorReplies": [
+    "SAY: Let me check the calculator...\nACTION: calculator: 47*89",
+    "FINAL: 4183"
+  ],
+  "tools": { "calculator": "4183" },
+  "prompt": "what is 47 times 89?",
+  "streamed": true,
+  "request": {},
+  "expect": {
+    "result": "4183",
+    "toolRunCount": { "calculator": 1 },
+    "narrationsContain": [ "Let me check the calculator..." ],
+    "narrationsExclude": [ "SAY:" ]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "native-narration-rides-the-result",
+  "description": "SPEC.md 6.0, 6.2: a V1 provider carries narration as a field on the structured result - the SAY line's native twin - and it is screened and voiced through the same loop seam the text protocol uses, because adopting native calls changes how a choice is read, not what the agent is. Model narration takes precedence over the tool's declared Starting template on the native path exactly as on the text path.",
+  "generatorReplies": [],
+  "nativeReplies": [
+    {
+      "narration": "Let me check the calculator...",
+      "toolCalls": [
+        { "id": "call_1", "name": "calculator", "argumentsJson": "{\"expression\":\"47*89\"}" }
+      ]
+    },
+    { "content": "4183" }
+  ],
+  "tools": { "calculator": "4183" },
+  "toolNarrations": {
+    "calculator": { "starting": "Searching with {tool}..." }
+  },
+  "prompt": "what is 47 times 89?",
+  "streamed": true,
+  "request": {},
+  "expect": {
+    "result": "4183",
+    "narrationsContain": [ "Let me check the calculator..." ],
+    "narrationsExclude": [ "Searching with" ]
+  }
+}
