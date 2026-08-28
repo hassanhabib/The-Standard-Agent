@@ -5,6 +5,7 @@
 
 using FluentAssertions;
 using Moq;
+using Standard.Agents.Models.Brokers.Generators.V1;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Xunit;
 
@@ -273,6 +274,34 @@ public partial class DecisionCoordinationServiceTests
         actualContext.DirectionType.Should().Be("calculator");
         actualContext.Payload.Should().Be("2+2");
         actualContext.Narration.Should().Be("Checking the numbers...");
+    }
+
+    [Fact]
+    public async Task ShouldCarryNativeNarrationOnThinkAsync()
+    {
+        // given
+        AgentContext inputContext = CreateRandomAgentContext();
+        SetupGateAllows();
+
+        this.brainServiceMock.Setup(service => service.SpeaksNatively)
+            .Returns(true);
+
+        this.brainServiceMock.Setup(service =>
+            service.GenerateAsync(
+                It.IsAny<AgentContext>(), It.IsAny<IReadOnlyList<ToolDefinition>>()))
+                    .ReturnsAsync(new GenerationResult
+                    {
+                        Narration = "Let me check...",
+                        ToolCalls = [new ModelToolCall("call_1", "calculator", "{}")]
+                    });
+
+        // when
+        AgentContext actualContext =
+            await this.decisionCoordinationService.ThinkAsync(inputContext);
+
+        // then
+        actualContext.DirectionType.Should().Be("calculator");
+        actualContext.Narration.Should().Be("Let me check...");
     }
 
     [Fact]
