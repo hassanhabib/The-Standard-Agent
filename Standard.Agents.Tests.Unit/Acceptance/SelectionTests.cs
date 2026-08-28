@@ -69,6 +69,66 @@ public class SelectionTests
         return agent;
     }
 
+    private static StandardAgent TextAgentWith(
+        Func<string, string, ValueTask<string>> brain,
+        params ITool[] tools)
+    {
+        var skillBroker = new Mock<ISkillBroker>();
+
+        skillBroker.Setup(broker => broker.SelectSkillsAsync())
+            .ReturnsAsync(new List<Skill>
+            {
+                new() { Content = "You are an assistant.\n\nTools:\n{{tools}}" },
+            });
+
+        var memoryBroker = new Mock<IMemoryBroker>();
+        memoryBroker.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
+
+        var knowledgeBroker = new Mock<IKnowledgeBroker>();
+
+        knowledgeBroker.Setup(broker => broker.SelectKnowledgeAsync(It.IsAny<string>()))
+            .ReturnsAsync([]);
+
+        StandardAgent agent = new StandardAgent()
+            .UseSkills(skillBroker.Object)
+            .UseMemory(memoryBroker.Object)
+            .UseKnowledge(knowledgeBroker.Object)
+            .OnBrain(brain);
+
+        foreach (ITool tool in tools)
+        {
+            agent = agent.Tool(tool);
+        }
+
+        return agent;
+    }
+
+    [Fact]
+    public async Task ShouldExpandTheToolsMarkerWithOnlyTheSelectedToolsAsync()
+    {
+        // given — a text-protocol agent advertising through the {{tools}} marker
+        string seenSystemPrompt = null!;
+
+        StandardAgent agent = TextAgentWith(
+            (systemPrompt, _) =>
+            {
+                seenSystemPrompt = systemPrompt;
+
+                return ValueTask.FromResult("FINAL: ok");
+            },
+            new NamedTool("web_search"),
+            new NamedTool("code_search"))
+            .OnSelectTools((task, described) =>
+                new ValueTask<IReadOnlyList<string>>(new[] { "web_search" }));
+
+        // when
+        await agent.ProcessPromptAsync("look something up");
+
+        // then — the catalog the Brain reads lists the offered tool and nothing else
+        seenSystemPrompt.Should().Contain("web_search");
+        seenSystemPrompt.Should().NotContain("code_search");
+    }
+
     [Fact]
     public async Task ShouldOfferTheNativeBrainOnlyWhatTheSelectorNamedAsync()
     {
