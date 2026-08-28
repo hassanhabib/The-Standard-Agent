@@ -166,4 +166,49 @@ public class NarrationTests
         trace.Should().Contain(record =>
             record.Message.Contains("Narration") && record.Message.Contains("WITHHELD"));
     }
+
+    private sealed class NarratingTool : ITool
+    {
+        public string Name => "calculator";
+        public string Description => "A scripted tool.";
+        public string NarrationStarting => "Searching with {tool} for {payload}...";
+        public string NarrationObserved => "Got results from {tool}.";
+
+        public ValueTask<string> ExecuteAsync(string input) =>
+            ValueTask.FromResult("4");
+    }
+
+    // The floor: a tool that declared its narration is voiced even when the model said nothing —
+    // the run never goes silent just because the model was terse.
+    [Fact]
+    public async Task ShouldVoiceToolNarrationFloorWhenModelSaysNothingOnStreamAsync()
+    {
+        // given
+        int calls = 0;
+
+        StandardAgent agent = BareAgent((_, _) => ValueTask.FromResult(++calls == 1
+            ? "ACTION: calculator: 2+2"
+            : "FINAL: 4"))
+            .Tool(new NarratingTool());
+
+        // when
+        List<AgentStreamEvent> events = await DrainAsync(agent, "what is 2+2?");
+
+        // then — both slots voiced, interpolated, and in the story's order: the announcement,
+        // the observation, then the Tool event carrying the data
+        int startingIndex = events.FindIndex(streamEvent =>
+            streamEvent.Type == AgentStreamEventType.Narration
+                && streamEvent.Content == "Searching with calculator for 2+2...");
+
+        int observedIndex = events.FindIndex(streamEvent =>
+            streamEvent.Type == AgentStreamEventType.Narration
+                && streamEvent.Content == "Got results from calculator.");
+
+        int toolIndex = events.FindIndex(streamEvent =>
+            streamEvent.Type == AgentStreamEventType.Tool);
+
+        startingIndex.Should().BeGreaterThan(-1);
+        observedIndex.Should().BeGreaterThan(startingIndex);
+        toolIndex.Should().BeGreaterThan(observedIndex);
+    }
 }

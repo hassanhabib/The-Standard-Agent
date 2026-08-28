@@ -13,6 +13,8 @@ Standard.Agents.Models.Coordinations.Agents.ToolNarration.Starting.init -> void
 Standard.Agents.Models.Coordinations.Agents.ToolNarration.ToolNarration(string! Starting, string! Observed) -> void
 Standard.Agents.Models.Orchestrations.Agents.AgentContext.Narration.get -> string!
 Standard.Agents.Models.Orchestrations.Agents.AgentContext.Narration.init -> void
+Standard.Agents.Tools.ITool.NarrationObserved.get -> string!
+Standard.Agents.Tools.ITool.NarrationStarting.get -> string!
 override Standard.Agents.Models.Coordinations.Agents.ToolNarration.Equals(object? obj) -> bool
 override Standard.Agents.Models.Coordinations.Agents.ToolNarration.GetHashCode() -> int
 override Standard.Agents.Models.Coordinations.Agents.ToolNarration.ToString() -> string!
