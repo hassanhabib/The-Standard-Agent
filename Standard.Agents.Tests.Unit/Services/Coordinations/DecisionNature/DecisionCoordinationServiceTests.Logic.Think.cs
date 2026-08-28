@@ -255,6 +255,27 @@ public partial class DecisionCoordinationServiceTests
     }
 
     [Fact]
+    public async Task ShouldPeelNarrationBeforeInterpretingOnThinkAsync()
+    {
+        // given
+        AgentContext inputContext = CreateRandomAgentContext();
+        SetupGateAllows();
+
+        this.brainServiceMock.Setup(service =>
+            service.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync("SAY: Checking the numbers...\nACTION: calculator: 2+2");
+
+        // when
+        AgentContext actualContext =
+            await this.decisionCoordinationService.ThinkAsync(inputContext);
+
+        // then
+        actualContext.DirectionType.Should().Be("calculator");
+        actualContext.Payload.Should().Be("2+2");
+        actualContext.Narration.Should().Be("Checking the numbers...");
+    }
+
+    [Fact]
     public async Task ShouldReturnEmptyAnswerWithoutJudgingOnThinkAsync()
     {
         // given
