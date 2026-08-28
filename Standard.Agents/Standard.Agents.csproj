@@ -453,7 +453,17 @@
          a real schema, and GeneratorBrokerV1 degrades any non-object schema (salvaging a
          type-less one with properties) so one bad tool can never take down the turn again.
          Bug fix, no API change: segment 3 advances, 4 resets. -->
-    <Version>1.12.1.0</Version>
+    <!-- 1.13.0.0 "The Agent Speaks": the run gains a voice. A fifth stream event kind,
+         Narration - user-voiced progress prose, distinct from machine-voiced Status and the
+         unvetted Thinking draft. The model narrates with a SAY: pre-line (peeled before the
+         first-line rule; carried natively as GenerationResult.Narration), tools declare
+         templates as the floor (ITool.NarrationStarting/Observed, {tool}/{payload} slots),
+         and the loop - the single copy both doors share - screens every model-authored line
+         through the Gate before voicing it: a refused narration is withheld everywhere and
+         recorded as WITHHELD. The prose never enters the answer, observations, or history.
+         New routines and additively-widened models: segment 2 advances, 3/4 reset. Tracks
+         SPEC.md v1.9. -->
+    <Version>1.13.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>

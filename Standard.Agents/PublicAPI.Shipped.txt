@@ -428,6 +428,8 @@ Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.Content.init -> vo
 Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.Equals(Standard.Agents.Models.Brokers.Generators.V1.GenerationResult? other) -> bool
 Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.GenerationResult() -> void
 Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.HasToolCalls.get -> bool
+Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.Narration.get -> string!
+Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.Narration.init -> void
 Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.PromptTokens.get -> int
 Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.PromptTokens.init -> void
 Standard.Agents.Models.Brokers.Generators.V1.GenerationResult.ToolCalls.get -> System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ModelToolCall!>!
@@ -513,6 +515,7 @@ Standard.Agents.Models.Clients.Agents.AgentStreamEvent.Equals(Standard.Agents.Mo
 Standard.Agents.Models.Clients.Agents.AgentStreamEvent.Type.get -> Standard.Agents.Models.Clients.Agents.AgentStreamEventType
 Standard.Agents.Models.Clients.Agents.AgentStreamEvent.Type.init -> void
 Standard.Agents.Models.Clients.Agents.AgentStreamEventType
+Standard.Agents.Models.Clients.Agents.AgentStreamEventType.Narration = 4 -> Standard.Agents.Models.Clients.Agents.AgentStreamEventType
 Standard.Agents.Models.Clients.Agents.AgentStreamEventType.Response = 3 -> Standard.Agents.Models.Clients.Agents.AgentStreamEventType
 Standard.Agents.Models.Clients.Agents.AgentStreamEventType.Status = 0 -> Standard.Agents.Models.Clients.Agents.AgentStreamEventType
 Standard.Agents.Models.Clients.Agents.AgentStreamEventType.Thinking = 1 -> Standard.Agents.Models.Clients.Agents.AgentStreamEventType
@@ -577,6 +580,15 @@ Standard.Agents.Models.Coordinations.Agents.Exceptions.InvalidAgentException
 Standard.Agents.Models.Coordinations.Agents.Exceptions.InvalidAgentException.InvalidAgentException(string! message) -> void
 Standard.Agents.Models.Coordinations.Agents.Exceptions.RunManagementServiceException
 Standard.Agents.Models.Coordinations.Agents.Exceptions.RunManagementServiceException.RunManagementServiceException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Coordinations.Agents.ToolNarration
+Standard.Agents.Models.Coordinations.Agents.ToolNarration.<Clone>$() -> Standard.Agents.Models.Coordinations.Agents.ToolNarration!
+Standard.Agents.Models.Coordinations.Agents.ToolNarration.Deconstruct(out string! Starting, out string! Observed) -> void
+Standard.Agents.Models.Coordinations.Agents.ToolNarration.Equals(Standard.Agents.Models.Coordinations.Agents.ToolNarration? other) -> bool
+Standard.Agents.Models.Coordinations.Agents.ToolNarration.Observed.get -> string!
+Standard.Agents.Models.Coordinations.Agents.ToolNarration.Observed.init -> void
+Standard.Agents.Models.Coordinations.Agents.ToolNarration.Starting.get -> string!
+Standard.Agents.Models.Coordinations.Agents.ToolNarration.Starting.init -> void
+Standard.Agents.Models.Coordinations.Agents.ToolNarration.ToolNarration(string! Starting, string! Observed) -> void
 Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy
 Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.<Clone>$() -> Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy!
 Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.DeclaredRisk.get -> System.Collections.Generic.IReadOnlyDictionary<string!, Standard.Agents.Models.Orchestrations.Effects.RiskLevel>!
@@ -889,6 +901,8 @@ Standard.Agents.Models.Orchestrations.Agents.AgentContext.Inference.get -> Stand
 Standard.Agents.Models.Orchestrations.Agents.AgentContext.Inference.init -> void
 Standard.Agents.Models.Orchestrations.Agents.AgentContext.Intent.get -> string!
 Standard.Agents.Models.Orchestrations.Agents.AgentContext.Intent.init -> void
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Narration.get -> string!
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.Narration.init -> void
 Standard.Agents.Models.Orchestrations.Agents.AgentContext.Observations.get -> System.Collections.Generic.IReadOnlyList<string!>!
 Standard.Agents.Models.Orchestrations.Agents.AgentContext.Observations.init -> void
 Standard.Agents.Models.Orchestrations.Agents.AgentContext.Payload.get -> string!
@@ -1183,7 +1197,7 @@ Standard.Agents.Services.Managements.RunManagementService.ProcessPromptStreamAsy
 Standard.Agents.Services.Managements.RunManagementService.RunAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
 Standard.Agents.Services.Managements.RunManagementService.RunAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
 Standard.Agents.Services.Managements.RunManagementService.RunAsync(string! prompt, string! sessionId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
-Standard.Agents.Services.Managements.RunManagementService.RunManagementService(Standard.Agents.Services.Coordinations.Data.IDataCoordinationService! dataCoordinationService, Standard.Agents.Services.Coordinations.Decision.IDecisionCoordinationService! decisionCoordinationService, Standard.Agents.Services.Coordinations.Direction.IDirectionCoordinationService! directionCoordinationService, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, int maxTurns = 7, Standard.Agents.Brokers.Times.ITimeBroker? timeBroker = null, Standard.Agents.Models.Coordinations.Agents.AgentBudget? budget = null, int maxHistoryTurns = 20, bool compensateOnFailure = false, bool screenToolOutput = false, Standard.Agents.Brokers.Telemetries.ITelemetryBroker? telemetryBroker = null, string? contractSchema = null, double? configuredTemperature = null, int? configuredMaxTokens = null, System.Collections.Generic.IEnumerable<string!>? configuredToolNames = null) -> void
+Standard.Agents.Services.Managements.RunManagementService.RunManagementService(Standard.Agents.Services.Coordinations.Data.IDataCoordinationService! dataCoordinationService, Standard.Agents.Services.Coordinations.Decision.IDecisionCoordinationService! decisionCoordinationService, Standard.Agents.Services.Coordinations.Direction.IDirectionCoordinationService! directionCoordinationService, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, int maxTurns = 7, Standard.Agents.Brokers.Times.ITimeBroker? timeBroker = null, Standard.Agents.Models.Coordinations.Agents.AgentBudget? budget = null, int maxHistoryTurns = 20, bool compensateOnFailure = false, bool screenToolOutput = false, Standard.Agents.Brokers.Telemetries.ITelemetryBroker? telemetryBroker = null, string? contractSchema = null, double? configuredTemperature = null, int? configuredMaxTokens = null, System.Collections.Generic.IEnumerable<string!>? configuredToolNames = null, System.Collections.Generic.IReadOnlyDictionary<string!, Standard.Agents.Models.Coordinations.Agents.ToolNarration!>? toolNarrations = null) -> void
 Standard.Agents.Services.Orchestrations.Data.Recollections.IRecollectionOrchestrationService
 Standard.Agents.Services.Orchestrations.Data.Recollections.IRecollectionOrchestrationService.RecallMemoriesAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
 Standard.Agents.Services.Orchestrations.Data.Recollections.IRecollectionOrchestrationService.RecallSessionAsync(string! sessionId) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Sessions.AgentSession?>
@@ -1352,6 +1366,8 @@ Standard.Agents.Tools.ITool.CompensateAsync(string! input, string! outcome) -> S
 Standard.Agents.Tools.ITool.Description.get -> string!
 Standard.Agents.Tools.ITool.ExecuteAsync(string! input) -> System.Threading.Tasks.ValueTask<string!>
 Standard.Agents.Tools.ITool.Name.get -> string!
+Standard.Agents.Tools.ITool.NarrationObserved.get -> string!
+Standard.Agents.Tools.ITool.NarrationStarting.get -> string!
 Standard.Agents.Tools.ITool.Parameters.get -> string!
 Standard.Agents.Tools.ITool.Risk.get -> Standard.Agents.Models.Orchestrations.Effects.RiskLevel
 Standard.Agents.Tools.ITool.ScopeOf(string! input) -> string!
@@ -1411,6 +1427,9 @@ override Standard.Agents.Models.Clients.Agents.PromptRequest.ToString() -> strin
 override Standard.Agents.Models.Coordinations.Agents.AgentBudget.Equals(object? obj) -> bool
 override Standard.Agents.Models.Coordinations.Agents.AgentBudget.GetHashCode() -> int
 override Standard.Agents.Models.Coordinations.Agents.AgentBudget.ToString() -> string!
+override Standard.Agents.Models.Coordinations.Agents.ToolNarration.Equals(object? obj) -> bool
+override Standard.Agents.Models.Coordinations.Agents.ToolNarration.GetHashCode() -> int
+override Standard.Agents.Models.Coordinations.Agents.ToolNarration.ToString() -> string!
 override Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.Equals(object? obj) -> bool
 override Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.GetHashCode() -> int
 override Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.ToString() -> string!
@@ -1492,6 +1511,8 @@ static Standard.Agents.Models.Clients.Agents.PromptRequest.operator !=(Standard.
 static Standard.Agents.Models.Clients.Agents.PromptRequest.operator ==(Standard.Agents.Models.Clients.Agents.PromptRequest? left, Standard.Agents.Models.Clients.Agents.PromptRequest? right) -> bool
 static Standard.Agents.Models.Coordinations.Agents.AgentBudget.operator !=(Standard.Agents.Models.Coordinations.Agents.AgentBudget? left, Standard.Agents.Models.Coordinations.Agents.AgentBudget? right) -> bool
 static Standard.Agents.Models.Coordinations.Agents.AgentBudget.operator ==(Standard.Agents.Models.Coordinations.Agents.AgentBudget? left, Standard.Agents.Models.Coordinations.Agents.AgentBudget? right) -> bool
+static Standard.Agents.Models.Coordinations.Agents.ToolNarration.operator !=(Standard.Agents.Models.Coordinations.Agents.ToolNarration? left, Standard.Agents.Models.Coordinations.Agents.ToolNarration? right) -> bool
+static Standard.Agents.Models.Coordinations.Agents.ToolNarration.operator ==(Standard.Agents.Models.Coordinations.Agents.ToolNarration? left, Standard.Agents.Models.Coordinations.Agents.ToolNarration? right) -> bool
 static Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.operator !=(Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy? left, Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy? right) -> bool
 static Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.operator ==(Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy? left, Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy? right) -> bool
 static Standard.Agents.Models.Foundations.Brains.RedactionRule.operator !=(Standard.Agents.Models.Foundations.Brains.RedactionRule? left, Standard.Agents.Models.Foundations.Brains.RedactionRule? right) -> bool
