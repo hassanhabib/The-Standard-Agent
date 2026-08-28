@@ -1,3 +1,4 @@
 #nullable enable
 Standard.Agents.Models.Loggings.AgentRun.OfferedTools.get -> System.Collections.Generic.IReadOnlyList<string!>?
 Standard.Agents.Models.Loggings.AgentRun.OfferedTools.set -> void
+Standard.Agents.StandardAgent.OnSelectTools(System.Func<string!, System.Collections.Generic.IReadOnlyList<string!>!, System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>>! selector) -> Standard.Agents.StandardAgent!

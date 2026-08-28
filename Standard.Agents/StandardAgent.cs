@@ -286,6 +286,26 @@ public sealed partial class StandardAgent : IAgent
     public StandardAgent OnGate(Func<string, string, ValueTask<string>> screen) =>
         Set(() => this.localGateScreen = screen);
 
+    // The host's selection judgment (SPEC.md §4.15), held until composition hands it to the loop.
+    private Func<string, IReadOnlyList<string>, ValueTask<IReadOnlyList<string>>>? localToolSelector;
+
+    /// <summary>
+    /// Turns on per-run tool <b>selection</b> (SPEC.md §4.15): before each run,
+    /// <paramref name="selector"/> receives the run's task and the described tool names, and
+    /// returns the subset this run is <b>offered</b>. What an agent carries and what a run is
+    /// offered are different things — a greeting should be offered nothing, and a model cannot
+    /// over-call a tool it was never shown. Selection narrows the offering only: an unselected
+    /// tool behaves exactly like an undescribed one — reachable if the Brain names it, governed
+    /// by the same perimeter, never offered. An empty selection offers nothing; names the agent
+    /// does not carry are ignored; caller-declared tools (per-request inference) are the
+    /// caller's own vocabulary and are never selected away.
+    /// </summary>
+    /// <param name="selector">A <c>(task, describedToolNames) =&gt; offeredToolNames</c> delegate.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent OnSelectTools(
+        Func<string, IReadOnlyList<string>, ValueTask<IReadOnlyList<string>>> selector) =>
+        Set(() => this.localToolSelector = selector);
+
     /// <summary>
     /// Turns on the Judge using an in-process model — the local counterpart to <see cref="Judge"/>,
     /// with no API calls. The delegate receives the built-in judge rubric as the system prompt and
