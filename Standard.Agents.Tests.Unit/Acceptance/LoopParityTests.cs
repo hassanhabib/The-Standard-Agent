@@ -319,6 +319,26 @@ public class LoopParityTests
                 Prompt = "what is 6 times 7"
             },
 
+            ["a selected tool among two"] = () =>
+            {
+                var offered = new ScriptedTool("calculator", "4183");
+                var withheld = new ScriptedTool("almanac", "unused");
+                int calls = 0;
+
+                return new Rig
+                {
+                    Agent = Bare((_, _) => ValueTask.FromResult(++calls == 1
+                        ? "ACTION: calculator: 47*89"
+                        : "FINAL: 4183"))
+                        .Tool(offered)
+                        .Tool(withheld)
+                        .OnSelectTools((task, described) =>
+                            new ValueTask<IReadOnlyList<string>>(new[] { "calculator" })),
+                    Prompt = "what is 47*89",
+                    ToolExecutions = () => offered.Executions
+                };
+            },
+
             ["a narrated tool call"] = () =>
             {
                 var tool = new ScriptedTool("calculator", "4183")

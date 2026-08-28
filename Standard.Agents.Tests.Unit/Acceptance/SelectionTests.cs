@@ -164,6 +164,96 @@ public class SelectionTests
             record.Message == "Selection → offered [web_search]; withheld [code_search, remember]");
     }
 
+    // An empty selection is a valid selection: the run is offered nothing — the greeting case.
+    [Fact]
+    public async Task ShouldOfferNothingOnAnEmptySelectionAsync()
+    {
+        // given
+        IReadOnlyList<ToolDefinition> shown = [];
+
+        StandardAgent agent = AgentWith(
+            tools =>
+            {
+                shown = tools;
+
+                return new GenerationResult { Content = "hello!" };
+            },
+            new NamedTool("web_search"),
+            new NamedTool("code_search"))
+            .OnSelectTools((task, described) =>
+                new ValueTask<IReadOnlyList<string>>(Array.Empty<string>()));
+
+        // when
+        string answer = await agent.ProcessPromptAsync("hi there");
+
+        // then
+        answer.Should().Be("hello!");
+        shown.Should().BeEmpty();
+    }
+
+    // Caller tools are the caller's own vocabulary (SPEC.md §4.13); selection governs the
+    // agent's tools and never the caller's — an empty selection still advertises them.
+    [Fact]
+    public async Task ShouldNeverSelectAwayTheCallersToolsAsync()
+    {
+        // given
+        IReadOnlyList<ToolDefinition> shown = [];
+
+        StandardAgent agent = AgentWith(
+            tools =>
+            {
+                shown = tools;
+
+                return new GenerationResult { Content = "done" };
+            },
+            new NamedTool("web_search"))
+            .OnSelectTools((task, described) =>
+                new ValueTask<IReadOnlyList<string>>(Array.Empty<string>()));
+
+        var request = new Models.Clients.Agents.PromptRequest
+        {
+            Prompt = "read a file",
+            CallerTools = [new ToolDefinition("read_file", "Reads a file.", "{}")],
+        };
+
+        // when
+        await agent.ProcessPromptAsync(request);
+
+        // then
+        shown.Should().Contain(definition => definition.Name == "read_file");
+        shown.Should().NotContain(definition => definition.Name == "web_search");
+    }
+
+    // Selection narrows the OFFERING only (SPEC.md §4.15): an unselected tool behaves exactly
+    // like an undescribed one — reachable if the Brain names it, governed by the same
+    // perimeter, never offered. The callable surface never shrinks per run.
+    [Fact]
+    public async Task ShouldKeepAnUnselectedToolCallableByNameAsync()
+    {
+        // given — the selection offers web_search only, but the Brain names code_search anyway
+        var codeSearch = new NamedTool("code_search");
+        int calls = 0;
+
+        StandardAgent agent = AgentWith(
+            tools => ++calls == 1
+                ? new GenerationResult
+                {
+                    ToolCalls = [new ModelToolCall("call_1", "code_search", "{}")],
+                }
+                : new GenerationResult { Content = "done" },
+            new NamedTool("web_search"),
+            codeSearch)
+            .OnSelectTools((task, described) =>
+                new ValueTask<IReadOnlyList<string>>(new[] { "web_search" }));
+
+        // when
+        string answer = await agent.ProcessPromptAsync("search the code");
+
+        // then
+        answer.Should().Be("done");
+        codeSearch.Executions.Should().Be(1);
+    }
+
     [Fact]
     public async Task ShouldOfferTheNativeBrainOnlyWhatTheSelectorNamedAsync()
     {
