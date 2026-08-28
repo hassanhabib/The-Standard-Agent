@@ -73,4 +73,16 @@ public interface IRunManagementService
     IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
         PromptRequest request,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The streamed outcome (SPEC.md §4.14): the same loop, every event live, and — once the
+    /// enumeration completes — the same structured outcome <see cref="RunAsync(PromptRequest)"/>
+    /// returns. One run, two readings; never a choice between the answer's structure and the
+    /// run's story.
+    /// </summary>
+    AgentRunStream RunStreamAsync(PromptRequest request);
+
+    AgentRunStream RunStreamAsync(
+        PromptRequest request,
+        CancellationToken cancellationToken);
 }

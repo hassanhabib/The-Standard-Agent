@@ -262,15 +262,33 @@ public partial class RunManagementService : IRunManagementService
         PromptRequest request) =>
         ProcessPromptStreamAsync(request, CancellationToken.None);
 
-    public async IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
+    public IAsyncEnumerable<AgentStreamEvent> ProcessPromptStreamAsync(
         PromptRequest request,
+        CancellationToken cancellationToken) =>
+        MappedStreamAsync(request, setOutcome: _ => { }, cancellationToken);
+
+    // The third reading of the one loop (SPEC.md §4.14): every event live, and the outcome the
+    // batched door returns. RunCoreAsync has always computed it on this door too — this routine
+    // simply stops discarding it, so a caller never chooses between the answer's structure and
+    // the run's story.
+    public AgentRunStream RunStreamAsync(PromptRequest request) =>
+        RunStreamAsync(request, CancellationToken.None);
+
+    public AgentRunStream RunStreamAsync(
+        PromptRequest request,
+        CancellationToken cancellationToken) =>
+        new(setOutcome => MappedStreamAsync(request, setOutcome, cancellationToken));
+
+    private async IAsyncEnumerable<AgentStreamEvent> MappedStreamAsync(
+        PromptRequest request,
+        Action<AgentOutcome> setOutcome,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         await using IAsyncEnumerator<AgentStreamEvent> events =
             RunCoreAsync(
                 request,
                 streaming: true,
-                setOutcome: _ => { },
+                setOutcome,
                 cancellationToken)
                     .GetAsyncEnumerator(cancellationToken);
 

@@ -1432,6 +1432,74 @@ public sealed partial class StandardAgent : IAgent
         }
     }
 
+    /// <summary>
+    /// The streamed outcome (SPEC.md §4.14): the same run as <see cref="StreamPromptAsync(string, CancellationToken)"/>,
+    /// whose enumeration also carries — once it completes — the same structured outcome
+    /// <see cref="RunAsync(PromptRequest, CancellationToken)"/> returns: status, result, and any
+    /// pending effect with its model-minted call id. One run, two readings; a caller never
+    /// chooses between the answer's structure and the run's story.
+    /// </summary>
+    /// <param name="prompt">The user's prompt.</param>
+    /// <param name="cancellationToken">Token to stop the run at its next turn boundary.</param>
+    /// <returns>The run's events, carrying its outcome at completion.</returns>
+    public AgentRunStream RunStreamAsync(
+        string prompt,
+        CancellationToken cancellationToken = default) =>
+        RunStreamAsync(new PromptRequest { Prompt = prompt }, cancellationToken);
+
+    /// <summary>The same streamed outcome, inside a conversation.</summary>
+    /// <param name="prompt">The user's prompt.</param>
+    /// <param name="sessionId">Which conversation this belongs to.</param>
+    /// <returns>The run's events, carrying its outcome at completion.</returns>
+    public AgentRunStream RunStreamAsync(string prompt, string sessionId) =>
+        RunStreamAsync(prompt, sessionId, CancellationToken.None);
+
+    /// <summary>The same conversation-carrying streamed outcome, cancellable.</summary>
+    /// <param name="prompt">The user's prompt.</param>
+    /// <param name="sessionId">Which conversation this belongs to.</param>
+    /// <param name="cancellationToken">Token to stop the run at its next turn boundary.</param>
+    /// <returns>The run's events, carrying its outcome at completion.</returns>
+    public AgentRunStream RunStreamAsync(
+        string prompt,
+        string sessionId,
+        CancellationToken cancellationToken) =>
+        RunStreamAsync(
+            new PromptRequest { Prompt = prompt, SessionId = sessionId },
+            cancellationToken);
+
+    /// <summary>The same streamed outcome, asked for by a caller's request.</summary>
+    /// <param name="request">The caller's prompt and per-request inference options.</param>
+    /// <returns>The run's events, carrying its outcome at completion.</returns>
+    public AgentRunStream RunStreamAsync(PromptRequest request) =>
+        RunStreamAsync(request, CancellationToken.None);
+
+    /// <summary>The same request-carrying streamed outcome, cancellable.</summary>
+    /// <param name="request">The caller's prompt and per-request inference options.</param>
+    /// <param name="cancellationToken">Token to stop the run at its next turn boundary.</param>
+    /// <returns>The run's events, carrying its outcome at completion.</returns>
+    public AgentRunStream RunStreamAsync(
+        PromptRequest request,
+        CancellationToken cancellationToken) =>
+        new(setOutcome => ResolvedRunStreamAsync(request, setOutcome, cancellationToken));
+
+    // The inner stream's outcome is handed outward when the enumeration ends, so the wrapper
+    // the caller holds carries what the composed agent's run concluded — same seam, one tier up.
+    private async IAsyncEnumerable<AgentStreamEvent> ResolvedRunStreamAsync(
+        PromptRequest request,
+        Action<AgentOutcome> setOutcome,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        AgentRunStream events =
+            (await ResolveAgentAsync()).RunStreamAsync(request, cancellationToken);
+
+        await foreach (AgentStreamEvent streamEvent in events.WithCancellation(cancellationToken))
+        {
+            yield return streamEvent;
+        }
+
+        setOutcome(events.Outcome);
+    }
+
     // Composes once and reuses. Guarded because one agent serves prompts concurrently
     // (SPEC.md §4.4) and an unguarded `??=` lets two arriving prompts each build a graph —
     // two brokers over one audit sink, two of everything, one silently discarded.
