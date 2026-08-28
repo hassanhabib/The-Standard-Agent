@@ -1,0 +1,18 @@
+{
+  "name": "a-refused-narration-is-withheld",
+  "description": "SPEC.md 6.0, Invariant 5, 4.9: narration is user-visible output and crosses to the stream only after the Gate has screened it - screening reuses the Gate. A refused narration is withheld from every channel: not voiced, not echoed as a withheld-notice (which would hand an injected SAY payload a visible oracle), and not rerouted into Thinking. The run itself is unharmed - narration is decoration, never the work - and the refusal is recorded in the decision log (4.7). This vector fails against an implementation that emits before screening, screens but voices anyway, or streams the swallowed line token by token.",
+  "generatorReplies": [
+    "SAY: Let me check the calculator...\nACTION: calculator: 47*89",
+    "FINAL: 4183"
+  ],
+  "tools": { "calculator": "4183" },
+  "prompt": "what is 47 times 89?",
+  "streamed": true,
+  "request": {},
+  "gateVerdictOnNarration": "refuse: prompt injection",
+  "expect": {
+    "result": "4183",
+    "toolRunCount": { "calculator": 1 },
+    "narrationsExclude": [ "Let me check the calculator" ]
+  }
+}

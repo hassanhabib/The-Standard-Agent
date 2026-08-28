@@ -38,7 +38,11 @@ public partial class InferenceOrchestrationService
             context with
             {
                 PromptTokens = result.PromptTokens,
-                CompletionTokens = result.CompletionTokens
+                CompletionTokens = result.CompletionTokens,
+
+                // The SAY: line's V1 twin: whichever branch below returns, the prose rides the
+                // context for the loop to screen and voice.
+                Narration = result.Narration
             },
             sent: context.SystemPrompt + BuildUserMessage(context),
             received: result.Content);

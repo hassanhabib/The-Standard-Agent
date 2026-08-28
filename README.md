@@ -179,10 +179,11 @@ await foreach (AgentStreamEvent streamEvent in agent.StreamPromptAsync("What is 
 {
     switch (streamEvent.Type)
     {
-        case AgentStreamEventType.Thinking: /* the model deliberating / tool reasoning */ break;
-        case AgentStreamEventType.Response: /* the answer, token by token */              break;
-        case AgentStreamEventType.Tool:     /* a tool ran, and its result */              break;
-        case AgentStreamEventType.Status:   /* lifecycle: turns, gate, judge */           break;
+        case AgentStreamEventType.Thinking:  /* the model deliberating / tool reasoning */  break;
+        case AgentStreamEventType.Narration: /* "Let me check..." — screened, user-voiced */ break;
+        case AgentStreamEventType.Response:  /* the answer, token by token */               break;
+        case AgentStreamEventType.Tool:      /* a tool ran, and its result */               break;
+        case AgentStreamEventType.Status:    /* lifecycle: turns, gate, judge */            break;
     }
 }
 ```

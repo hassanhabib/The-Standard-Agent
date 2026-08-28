@@ -127,6 +127,9 @@ foreach (string vectorFile in
     bool requestConformant =
         RequestConformant(vector, run, out string? requestFailure);
 
+    bool narrationConformant =
+        NarrationConformant(vector, run, out string? narrationFailure);
+
     // The handoff's content, certified at the specialist: grounding is only real if the text
     // actually arrived (SPEC.md §4.8 v1.6).
     bool agentInputConformant = vector.Expect.AgentInput is null
@@ -142,7 +145,8 @@ foreach (string vectorFile in
         && auditConformant
         && guardianInputConformant
         && requestConformant
-        && agentInputConformant)
+        && agentInputConformant
+        && narrationConformant)
     {
         passed++;
         passedVectors.Add(vector.Name);
@@ -231,6 +235,11 @@ foreach (string vectorFile in
         if (requestConformant is false)
         {
             Console.WriteLine($"        request: {requestFailure}");
+        }
+
+        if (narrationConformant is false)
+        {
+            Console.WriteLine($"        narration: {narrationFailure}");
         }
     }
 }
@@ -339,7 +348,18 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
                         ? Enum.Parse<RiskLevel>(level, ignoreCase: true)
                         : RiskLevel.Safe,
 
-                scopeIsFirstWord: vector.ToolScopeFirstWord?.Contains(pair.Key) is true));
+                scopeIsFirstWord: vector.ToolScopeFirstWord?.Contains(pair.Key) is true,
+
+                narrationStarting: vector.ToolNarrations is not null
+                    && vector.ToolNarrations.TryGetValue(pair.Key, out ToolNarrationSpec? spec)
+                        ? spec.Starting ?? string.Empty
+                        : string.Empty,
+
+                narrationObserved: vector.ToolNarrations is not null
+                    && vector.ToolNarrations.TryGetValue(
+                        pair.Key, out ToolNarrationSpec? observedSpec)
+                            ? observedSpec.Observed ?? string.Empty
+                            : string.Empty));
 
     // The guardians run through the real composition (OnGate / OnJudge), so each is handed
     // the rubric the framework composed — constitution, then policy (or the consumption skill),
@@ -448,9 +468,18 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
                 bool isToolOutput = vector.ScreenToolOutput
                     && prompt.Equals(vector.Prompt, StringComparison.Ordinal) is false;
 
-                string verdict = isToolOutput && vector.GateVerdictOnToolOutput is not null
-                    ? vector.GateVerdictOnToolOutput
-                    : vector.GateVerdict ?? "allow";
+                // Narration is the third thing the Gate screens (SPEC.md §6.0): text that is
+                // neither the prompt nor any tool's scripted output.
+                bool isNarration =
+                    prompt.Equals(vector.Prompt, StringComparison.Ordinal) is false
+                        && (vector.Tools?.ContainsValue(prompt) ?? false) is false;
+
+                string verdict =
+                    isNarration && vector.GateVerdictOnNarration is not null
+                        ? vector.GateVerdictOnNarration
+                        : isToolOutput && vector.GateVerdictOnToolOutput is not null
+                            ? vector.GateVerdictOnToolOutput
+                            : vector.GateVerdict ?? "allow";
 
                 return new ValueTask<string>(verdict);
             })
@@ -681,6 +710,10 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
     string? outcomePendingEffectTool = null;
     List<string> promptResults = [];
 
+    // Every event a streamed run produced, so a vector can certify the Narration channel —
+    // what it carried, and what never appeared on any channel at all.
+    List<AgentStreamEvent> streamedEvents = [];
+
     PromptRequest ToRequest(string prompt, RequestSpec spec) => new()
     {
         Prompt = prompt,
@@ -726,6 +759,8 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
             await foreach (AgentStreamEvent streamEvent in
                 agent.StreamPromptAsync(promptRequest, runCancellation.Token))
             {
+                streamedEvents.Add(streamEvent);
+
                 if (streamEvent.Type is AgentStreamEventType.Response)
                 {
                     responses.Add(streamEvent.Content);
@@ -790,7 +825,8 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         result, promptResults, stubTools, gateRubric, judgeRubric, judgeInput, modelInputs,
         brainInputs, promptScreenings, auditRecords, compensationOrder, nativeGenerator,
         policyPrincipals, [.. scriptedMcpServers.Select(server => server.CallCount)],
-        agentInputs, runStatus, pendingEffectTool, honoringGenerator?.Inferences ?? []);
+        agentInputs, runStatus, pendingEffectTool, honoringGenerator?.Inferences ?? [],
+        streamedEvents);
 }
 
 // The decision log's guarantees, certified from the records themselves: one run per prompt,
@@ -1224,6 +1260,68 @@ static bool RequestConformant(Vector vector, VectorRun run, out string? failure)
     return true;
 }
 
+// The Narration channel, certified from the streamed events themselves (SPEC.md §6.0):
+// what it carried, in order — and what never appeared on any channel at all, which is what
+// proves a withheld narration was withheld rather than rerouted.
+static bool NarrationConformant(Vector vector, VectorRun run, out string? failure)
+{
+    failure = null;
+
+    Expectation expect = vector.Expect;
+
+    if (expect.NarrationsContain is null && expect.NarrationsExclude is null)
+    {
+        return true;
+    }
+
+    if (vector.Streamed is false)
+    {
+        failure = "narration expectations require \"streamed\": true — "
+            + "the batched door produces and discards its events";
+
+        return false;
+    }
+
+    List<string> narrations =
+        [.. run.StreamedEvents
+            .Where(streamEvent => streamEvent.Type is AgentStreamEventType.Narration)
+            .Select(streamEvent => streamEvent.Content)];
+
+    int cursor = 0;
+
+    foreach (string expected in expect.NarrationsContain ?? [])
+    {
+        int found = narrations.FindIndex(cursor, narration =>
+            narration.Contains(expected, StringComparison.Ordinal));
+
+        if (found < 0)
+        {
+            failure = $"no Narration event carried {Show(expected)} in order; "
+                + $"narrations were [{string.Join(" | ", narrations.Select(Show))}]";
+
+            return false;
+        }
+
+        cursor = found + 1;
+    }
+
+    foreach (string excluded in expect.NarrationsExclude ?? [])
+    {
+        AgentStreamEvent? leaked = run.StreamedEvents.FirstOrDefault(streamEvent =>
+            streamEvent.Content.Contains(excluded, StringComparison.Ordinal));
+
+        if (leaked is not null)
+        {
+            failure = $"{Show(excluded)} appeared on the stream as a "
+                + $"{leaked.Type} event: {Show(leaked.Content)}";
+
+            return false;
+        }
+    }
+
+    return true;
+}
+
 static string? ReadProfileArgument(string[] args)
 {
     int index = Array.FindIndex(args, argument =>
@@ -1317,4 +1415,5 @@ internal sealed record VectorRun(
     Dictionary<string, List<string>> AgentInputs,
     AgentStatus? Status,
     string? PendingEffectTool,
-    IReadOnlyList<ResolvedInference> BrokerInferences);
+    IReadOnlyList<ResolvedInference> BrokerInferences,
+    List<AgentStreamEvent> StreamedEvents);

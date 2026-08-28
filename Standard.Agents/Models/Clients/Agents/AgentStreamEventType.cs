@@ -10,5 +10,9 @@ public enum AgentStreamEventType
     Status,
     Thinking,
     Tool,
-    Response
+    Response,
+
+    // User-voiced progress prose ("Let me check the web..."), screened before it is emitted.
+    // Distinct from Status, which is machine-voiced, and from Thinking, which is unvetted draft.
+    Narration
 }

@@ -41,6 +41,27 @@ public interface ITool
     /// </remarks>
     string ScopeOf(string input) => string.Empty;
 
+    /// <summary>
+    /// What the agent says to the user before performing this tool's act — a user-voiced floor
+    /// for turns where the model offered no narration of its own; a model-authored narration
+    /// takes precedence. Supports <c>{tool}</c> (the tool's name) and <c>{payload}</c> (the
+    /// act's input) slots. Empty means no narration, which is exactly today's behavior.
+    /// </summary>
+    /// <remarks>
+    /// Declared by the tool, like <see cref="Risk"/>, because the tool is what knows what its
+    /// act means in the user's language. Host-authored text on a framework-known frame, so it is
+    /// voiced without a gate call — the only foreign content, the payload, already streamed
+    /// verbatim inside the Thinking channel.
+    /// </remarks>
+    string NarrationStarting => string.Empty;
+
+    /// <summary>
+    /// What the agent says to the user after this tool's result has been observed and screened.
+    /// Supports the <c>{tool}</c> slot; never overridden by model narration. Empty means no
+    /// narration.
+    /// </summary>
+    string NarrationObserved => string.Empty;
+
     ValueTask<string> ExecuteAsync(string input);
 
     /// <summary>

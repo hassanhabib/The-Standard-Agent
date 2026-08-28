@@ -31,7 +31,9 @@ public sealed class StubTool : ITool
         bool reversible = false,
         List<string>? compensationOrder = null,
         RiskLevel risk = RiskLevel.Safe,
-        bool scopeIsFirstWord = false)
+        bool scopeIsFirstWord = false,
+        string narrationStarting = "",
+        string narrationObserved = "")
     {
         this.Name = name;
         this.output = output;
@@ -39,7 +41,15 @@ public sealed class StubTool : ITool
         this.compensationOrder = compensationOrder;
         this.risk = risk;
         this.scopeIsFirstWord = scopeIsFirstWord;
+        this.NarrationStarting = narrationStarting;
+        this.NarrationObserved = narrationObserved;
     }
+
+    // Declared, like risk and scope: the tool is what knows what its act means in the
+    // user's language (SPEC.md §6.0).
+    public string NarrationStarting { get; }
+
+    public string NarrationObserved { get; }
 
     // Declared, because permission is what AND where and only the tool knows either.
     public RiskLevel Risk => this.risk;

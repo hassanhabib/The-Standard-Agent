@@ -148,4 +148,17 @@ public sealed record Vector(
     double? ConfiguredTemperature = null,
     int? ConfiguredMaxTokens = null,
     bool BrokerHonorsRequest = true,
-    bool Streamed = false);
+    bool Streamed = false,
+
+    // Narration (SPEC.md §6.0). ToolNarrations gives a stub tool its declared templates;
+    // GateVerdictOnNarration is the verdict the scripted Gate returns for model narration —
+    // screened text that is neither the prompt nor a tool's output.
+    Dictionary<string, ToolNarrationSpec>? ToolNarrations = null,
+    string? GateVerdictOnNarration = null);
+
+/// <summary>A stub tool's declared narration templates, as a vector writes them.</summary>
+// A typo'd field must fail loudly, not silently delete the assertion or the input it
+// carried: a vector that asserts less than it appears to reads as coverage (SPEC.md §1.1).
+[System.Text.Json.Serialization.JsonUnmappedMemberHandling(
+    System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow)]
+public sealed record ToolNarrationSpec(string? Starting = null, string? Observed = null);

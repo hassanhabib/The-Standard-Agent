@@ -5,6 +5,7 @@
 
 using FluentAssertions;
 using Moq;
+using Standard.Agents.Models.Brokers.Generators.V1;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Xunit;
 
@@ -252,6 +253,80 @@ public partial class DecisionCoordinationServiceTests
 
         // then
         actualContext.DirectionType.Should().Be("ReturnResponse");
+    }
+
+    [Fact]
+    public async Task ShouldPeelNarrationBeforeInterpretingOnThinkAsync()
+    {
+        // given
+        AgentContext inputContext = CreateRandomAgentContext();
+        SetupGateAllows();
+
+        this.brainServiceMock.Setup(service =>
+            service.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync("SAY: Checking the numbers...\nACTION: calculator: 2+2");
+
+        // when
+        AgentContext actualContext =
+            await this.decisionCoordinationService.ThinkAsync(inputContext);
+
+        // then
+        actualContext.DirectionType.Should().Be("calculator");
+        actualContext.Payload.Should().Be("2+2");
+        actualContext.Narration.Should().Be("Checking the numbers...");
+    }
+
+    // At most one SAY per turn (SPEC.md §6.0): only the FIRST leading line is narration. A
+    // second one is not — it is part of the reply, exactly as a non-supporting implementation
+    // would have read it.
+    [Fact]
+    public async Task ShouldPeelOnlyTheFirstSayLineOnThinkAsync()
+    {
+        // given
+        AgentContext inputContext = CreateRandomAgentContext();
+        SetupGateAllows();
+        SetupJudgeApproves();
+
+        this.brainServiceMock.Setup(service =>
+            service.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync("SAY: one\nSAY: two\nACTION: calculator: 2+2");
+
+        // when
+        AgentContext actualContext =
+            await this.decisionCoordinationService.ThinkAsync(inputContext);
+
+        // then
+        actualContext.Narration.Should().Be("one");
+        actualContext.DirectionType.Should().Be("ReturnResponse");
+        actualContext.Payload.Should().Contain("SAY: two");
+    }
+
+    [Fact]
+    public async Task ShouldCarryNativeNarrationOnThinkAsync()
+    {
+        // given
+        AgentContext inputContext = CreateRandomAgentContext();
+        SetupGateAllows();
+
+        this.brainServiceMock.Setup(service => service.SpeaksNatively)
+            .Returns(true);
+
+        this.brainServiceMock.Setup(service =>
+            service.GenerateAsync(
+                It.IsAny<AgentContext>(), It.IsAny<IReadOnlyList<ToolDefinition>>()))
+                    .ReturnsAsync(new GenerationResult
+                    {
+                        Narration = "Let me check...",
+                        ToolCalls = [new ModelToolCall("call_1", "calculator", "{}")]
+                    });
+
+        // when
+        AgentContext actualContext =
+            await this.decisionCoordinationService.ThinkAsync(inputContext);
+
+        // then
+        actualContext.DirectionType.Should().Be("calculator");
+        actualContext.Narration.Should().Be("Let me check...");
     }
 
     [Fact]

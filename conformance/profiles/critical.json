@@ -6,6 +6,8 @@
     "conversation-carries-history",
     "failed-run-unwinds-in-reverse",
     "native-tool-call-round-trips",
+    "a-tool-narrates-and-the-model-says-nothing",
+    "native-narration-rides-the-result",
     "awaiting-approval-resumes-in-a-new-process",
     "effect-outcome-survives-a-crash",
     "injected-knowledge-cannot-widen-the-perimeter",

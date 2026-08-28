@@ -55,6 +55,30 @@ public partial class DecisionCoordinationServiceTests
         actualContext.RawReply.Should().Be(verdict);
     }
 
+    // Narration is a turn's OUTPUT, like Status and cost: the incoming context may still carry
+    // the previous turn's, and a refusal path that bypasses Interpret would hand it back out —
+    // the loop would voice last turn's prose over this turn's refusal.
+    [Fact]
+    public async Task ShouldNotCarryLastTurnsNarrationOnThinkIfGateRefusesAsync()
+    {
+        // given
+        AgentContext inputContext = CreateRandomAgentContext() with
+        {
+            Narration = "stale prose from last turn"
+        };
+
+        this.gateServiceMock.Setup(service =>
+            service.ScreenAsync(It.IsAny<string>()))
+                .ReturnsAsync("refuse");
+
+        // when
+        AgentContext actualContext =
+            await this.decisionCoordinationService.ThinkAsync(inputContext);
+
+        // then
+        actualContext.Narration.Should().BeEmpty();
+    }
+
     [Fact]
     public async Task ShouldNotCallBrainOnThinkIfGateRefusesAsync()
     {

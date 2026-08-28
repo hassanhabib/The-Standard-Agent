@@ -21,6 +21,7 @@ public partial class InferenceOrchestrationService : IInferenceOrchestrationServ
     private const string ToolPrefix = "TOOL:";
     private const string FinalPrefix = "FINAL:";
     private const string TransferPrefix = "TRANSFER:";
+    private const string SayPrefix = "SAY:";
     private const string ReturnResponseDirection = "ReturnResponse";
     private const string RespondIntent = "Respond";
 

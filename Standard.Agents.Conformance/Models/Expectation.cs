@@ -125,4 +125,15 @@ public sealed record Expectation(
     List<double>? BrokerTemperatures = null,
     string? BrokerSchemaContains = null,
     List<string>? BrokerOptionsInclude = null,
-    List<string>? BrokerOptionsExclude = null);
+    List<string>? BrokerOptionsExclude = null,
+
+    // Narration assertions (SPEC.md §6.0), observable only on a streamed run — the batched
+    // door produces and discards its events, so these require "streamed": true.
+    //
+    //   NarrationsContain — each entry must appear, in order, among the Narration events'
+    //                       contents.
+    //   NarrationsExclude — this text must appear in NO stream event of any kind, which is
+    //                       what proves a withheld narration was withheld and never leaked
+    //                       into Thinking on its way to the verdict.
+    List<string>? NarrationsContain = null,
+    List<string>? NarrationsExclude = null);

@@ -112,6 +112,67 @@ public partial class DecisionCoordinationServiceTests
     }
 
     [Fact]
+    public async Task ShouldSwallowSayLineFromThinkingStreamOnThinkStreamAsync()
+    {
+        // given
+        AgentContext inputContext = CreateRandomAgentContext();
+        SetupGateAllows();
+
+        // "SAY: Chec" is nine characters — exactly the length at which the classifier commits
+        // a channel today, so the narration line must be recognized before that commit.
+        this.brainServiceMock.Setup(service =>
+            service.GenerateStreamAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                    .Returns(ToAsyncStream("SAY: Chec", "king...\nACTION: calculator: 2+2"));
+
+        // when
+        IDecisionStream decisionStream =
+            this.decisionCoordinationService.ThinkStreamAsync(inputContext);
+
+        List<AgentStreamEvent> actualEvents = await DrainAsync(decisionStream);
+
+        // then
+        actualEvents.Should().NotContain(streamEvent =>
+            streamEvent.Content.Contains("Checking")
+                || streamEvent.Content.Contains("SAY:"));
+
+        decisionStream.Result.DirectionType.Should().Be("calculator");
+        decisionStream.Result.Payload.Should().Be("2+2");
+        decisionStream.Result.Narration.Should().Be("Checking...");
+    }
+
+    // The stream can end mid-narration: a SAY line with no newline ever. The prose is still
+    // swallowed — never leaked as Thinking — and still reaches the loop on the context, while
+    // the empty remainder closes the turn through the empty-answer path.
+    [Fact]
+    public async Task ShouldSwallowUnterminatedSayLineOnThinkStreamFlushAsync()
+    {
+        // given
+        AgentContext inputContext = CreateRandomAgentContext();
+        SetupGateAllows();
+
+        this.brainServiceMock.Setup(service =>
+            service.GenerateStreamAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                    .Returns(ToAsyncStream("SAY: Work", "ing on it"));
+
+        // when
+        IDecisionStream decisionStream =
+            this.decisionCoordinationService.ThinkStreamAsync(inputContext);
+
+        List<AgentStreamEvent> actualEvents = await DrainAsync(decisionStream);
+
+        // then
+        actualEvents.Should().NotContain(streamEvent =>
+            streamEvent.Content.Contains("Working on it")
+                || streamEvent.Content.Contains("SAY:"));
+
+        decisionStream.Result.Narration.Should().Be("Working on it");
+        decisionStream.Result.DirectionType.Should().Be("ReturnResponse");
+        decisionStream.Result.Payload.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task ShouldNotStreamResponseOnThinkStreamIfGateRefusesAsync()
     {
         // given

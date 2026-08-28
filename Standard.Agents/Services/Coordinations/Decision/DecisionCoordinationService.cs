@@ -30,6 +30,7 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
     private const string ToolPrefix = "TOOL:";
     private const string FinalPrefix = "FINAL:";
     private const string TransferPrefix = "TRANSFER:";
+    private const string SayPrefix = "SAY:";
 
     private const string RefuseVerdict = "refuse";
     private const string RouteVerdict = "route";
@@ -460,7 +461,11 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
 
             PromptTokens = 0,
             CompletionTokens = 0,
-            UsageIsEstimated = false
+            UsageIsEstimated = false,
+
+            // Narration is a turn's output too: a refusal or conflict path below bypasses
+            // Interpret, and last turn's prose leaking out would be voiced over this turn.
+            Narration = ""
         };
 
     private async ValueTask<(AgentContext Context, bool IsTerminal)> ResolveSkillConflictAsync(
@@ -594,11 +599,13 @@ verdict.TrimStart().StartsWith(RefuseVerdict, StringComparison.OrdinalIgnoreCase
                 + "neutralized and passed to the Brain "
                 + "(Invariant 6: a guardian is never the Brain)");
 
+    // SAY: belongs here too — narration is a voice, and a guardian is never a voice.
     private static bool IsGuardianOverreach(string verdict) =>
         verdict.Contains(FinalPrefix, StringComparison.OrdinalIgnoreCase)
             || verdict.Contains(ActionPrefix, StringComparison.OrdinalIgnoreCase)
             || verdict.Contains(ToolPrefix, StringComparison.OrdinalIgnoreCase)
-            || verdict.Contains(TransferPrefix, StringComparison.OrdinalIgnoreCase);
+            || verdict.Contains(TransferPrefix, StringComparison.OrdinalIgnoreCase)
+            || verdict.Contains(SayPrefix, StringComparison.OrdinalIgnoreCase);
 
     private static string ExtractRouteLabel(string verdict)
     {
