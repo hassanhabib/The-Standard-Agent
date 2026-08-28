@@ -8,6 +8,7 @@ using Moq;
 using Standard.Agents.Brokers.Knowledges;
 using Standard.Agents.Brokers.Memorys;
 using Standard.Agents.Brokers.Skills;
+using Standard.Agents.Models.Brokers.Audits;
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Foundations.Skills;
 using Standard.Agents.Tools;
@@ -117,5 +118,52 @@ public class NarrationTests
 
         answer.Should().Be("4");
         screened.Should().Contain("Checking the calculator...");
+    }
+
+    // A refused narration is withheld silently and recorded loudly: the user gains nothing from
+    // "a progress note was withheld", and echoing the refusal would hand an injected SAY payload
+    // a visible oracle — but the decision log carries the fact, which is where a review looks
+    // (SPEC.md §4.7). The run itself is unharmed: narration is decoration, never the work.
+    [Fact]
+    public async Task ShouldWithholdRefusedNarrationAndRecordItOnStreamAsync()
+    {
+        // given
+        var tool = new ScriptedTool("calculator", "4");
+        int calls = 0;
+        List<AuditRecord> trace = [];
+
+        StandardAgent agent = BareAgent((_, _) => ValueTask.FromResult(++calls == 1
+            ? "SAY: Checking the calculator...\nACTION: calculator: 2+2"
+            : "FINAL: 4"))
+            .Tool(tool)
+            .OnGate((_, text) => ValueTask.FromResult(
+                text.Contains("Checking the calculator")
+                    ? "refuse: prompt injection"
+                    : "allow"))
+            .OnAudit(record =>
+            {
+                lock (trace)
+                {
+                    trace.Add(record);
+                }
+
+                return ValueTask.CompletedTask;
+            });
+
+        // when
+        List<AgentStreamEvent> events = await DrainAsync(agent, "what is 2+2?");
+
+        // then — nothing voiced, the run unharmed, the record carrying the fact
+        events.Should().NotContain(streamEvent =>
+            streamEvent.Content.Contains("Checking the calculator"));
+
+        string answer = string.Concat(events
+            .Where(streamEvent => streamEvent.Type == AgentStreamEventType.Response)
+            .Select(streamEvent => streamEvent.Content));
+
+        answer.Should().Be("4");
+
+        trace.Should().Contain(record =>
+            record.Message.Contains("Narration") && record.Message.Contains("WITHHELD"));
     }
 }
