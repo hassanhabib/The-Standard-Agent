@@ -112,6 +112,36 @@ public partial class DecisionCoordinationServiceTests
     }
 
     [Fact]
+    public async Task ShouldSwallowSayLineFromThinkingStreamOnThinkStreamAsync()
+    {
+        // given
+        AgentContext inputContext = CreateRandomAgentContext();
+        SetupGateAllows();
+
+        // "SAY: Chec" is nine characters — exactly the length at which the classifier commits
+        // a channel today, so the narration line must be recognized before that commit.
+        this.brainServiceMock.Setup(service =>
+            service.GenerateStreamAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                    .Returns(ToAsyncStream("SAY: Chec", "king...\nACTION: calculator: 2+2"));
+
+        // when
+        IDecisionStream decisionStream =
+            this.decisionCoordinationService.ThinkStreamAsync(inputContext);
+
+        List<AgentStreamEvent> actualEvents = await DrainAsync(decisionStream);
+
+        // then
+        actualEvents.Should().NotContain(streamEvent =>
+            streamEvent.Content.Contains("Checking")
+                || streamEvent.Content.Contains("SAY:"));
+
+        decisionStream.Result.DirectionType.Should().Be("calculator");
+        decisionStream.Result.Payload.Should().Be("2+2");
+        decisionStream.Result.Narration.Should().Be("Checking...");
+    }
+
+    [Fact]
     public async Task ShouldNotStreamResponseOnThinkStreamIfGateRefusesAsync()
     {
         // given
