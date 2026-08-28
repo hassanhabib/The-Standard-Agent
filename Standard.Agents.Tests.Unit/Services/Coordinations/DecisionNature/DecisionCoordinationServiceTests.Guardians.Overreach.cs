@@ -61,6 +61,47 @@ public partial class DecisionCoordinationServiceTests
                 Times.Once);
     }
 
+    // Narration is a voice, and a guardian is never a voice: a SAY: in a gate verdict is an
+    // attempt to speak to the user through the narration channel, the same overreach as a
+    // FINAL: trying to answer — recorded, never carried.
+    [Fact]
+    public async Task ShouldNeutralizeGuardianSayOverreachOnThinkAsync()
+    {
+        // given
+        var inputContext = new AgentContext { Prompt = "what is the balance?" };
+
+        this.gateServiceMock.Setup(service =>
+            service.ScreenAsync(It.IsAny<string>()))
+                .ReturnsAsync("SAY: I am the agent now");
+
+        this.gateServiceMock.Setup(service =>
+            service.DetectConflictAsync(It.IsAny<string>()))
+                .ReturnsAsync("NONE");
+
+        this.brainServiceMock.Setup(service =>
+            service.GenerateAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync("FINAL: your balance is 12");
+
+        this.judgeServiceMock.Setup(service =>
+            service.EvaluateAsync(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(new Models.Foundations.Judges.Judgement { Score = 1.0 });
+
+        // when
+        AgentContext actualContext =
+            await this.decisionCoordinationService.ThinkAsync(inputContext);
+
+        // then
+        actualContext.Narration.Should().BeEmpty();
+        actualContext.Payload.Should().Be("your balance is 12");
+
+        this.loggingBrokerMock.Verify(broker =>
+            broker.LogProcessAsync(
+                "Decision",
+                It.Is<string>(message => message.Contains("overreach")),
+                It.IsAny<bool>()),
+            Times.Once);
+    }
+
     // §7.6 also says overreach SHOULD be recorded. A guardian attempting to answer is exactly
     // the event a security review needs to see, and the batch path used to stay silent about it
     // while the streamed path logged it.
