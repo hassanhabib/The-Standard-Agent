@@ -31,6 +31,7 @@
     "provider-options-cannot-touch-core-owned-keys",
     "caller-tool-never-executes",
     "caller-tool-call-ends-run-as-pending-effect",
+    "the-streamed-outcome-carries-the-pending-call",
     "caller-tool-name-collision-drops-caller-tool",
     "pending-call-rides-the-outcome-without-a-session",
     "the-callers-transcript-reaches-the-brain"

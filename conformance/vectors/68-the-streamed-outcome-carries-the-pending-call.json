@@ -1,0 +1,25 @@
+{
+  "name": "the-streamed-outcome-carries-the-pending-call",
+  "description": "SPEC.md 4.14: an implementation offering both doors MUST offer a streamed run whose enumeration yields every event live and whose completion carries the same structured outcome the batched door returns. This vector runs the seam's hardest case through the third door at once: a narrated caller-tool yield. The narration must flow on the stream (6.0), and the completion must carry AwaitingInput with the pending call - because an implementation that discards the outcome on the streamed door forces every outcome-needing exposer onto the batched door, where the run's story is produced and discarded, which is exactly how the first production consumer watched five narration lines land in one lump with the answer.",
+  "generatorReplies": [
+    "SAY: Asking your mail tool to send it...\nACTION: send_email: {\"to\":\"jane@acme.com\"}"
+  ],
+  "tools": {},
+  "prompt": "email jane the report",
+  "maxTurns": 2,
+  "streamedOutcome": true,
+  "request": {
+    "callerTools": [
+      {
+        "name": "send_email",
+        "description": "Sends an email from the caller's own outbox."
+      }
+    ]
+  },
+  "expect": {
+    "resultContains": "send_email",
+    "status": "AwaitingInput",
+    "pendingEffectTool": "send_email",
+    "narrationsContain": [ "Asking your mail tool to send it..." ]
+  }
+}

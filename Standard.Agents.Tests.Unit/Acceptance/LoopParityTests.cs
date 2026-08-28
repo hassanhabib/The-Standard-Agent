@@ -423,6 +423,103 @@ public class LoopParityTests
                 + "test ever having to name it");
     }
 
+    // The third door (SPEC.md §4.14): the streamed outcome must be the batched door's outcome —
+    // structure included — while the stream itself keeps every guarantee the second door has.
+    // Derived, not enumerated, exactly like the two-door theory above: outcome, answer, effects
+    // and the full trace, across every scenario this file will ever hold.
+    [Theory]
+    [MemberData(nameof(ScenarioNames))]
+    public async Task ShouldCarryTheBatchedOutcomeThroughTheStreamedDoorAsync(string scenario)
+    {
+        // given — one composition, built fresh for each door
+        Rig batched = Scenarios[scenario]();
+        Rig streamed = Scenarios[scenario]();
+
+        batched.Agent.OnAudit(record =>
+        {
+            lock (batched.Trace)
+            {
+                batched.Trace.Add(record);
+            }
+
+            return ValueTask.CompletedTask;
+        });
+
+        streamed.Agent.OnAudit(record =>
+        {
+            lock (streamed.Trace)
+            {
+                streamed.Trace.Add(record);
+            }
+
+            return ValueTask.CompletedTask;
+        });
+
+        // when
+        AgentOutcome batchedOutcome =
+            await batched.Agent.RunAsync(batched.Prompt, batched.Cancellation);
+
+        AgentRunStream runStream =
+            streamed.Agent.RunStreamAsync(streamed.Prompt, streamed.Cancellation);
+
+        List<AgentStreamEvent> streamedEvents = [];
+
+        await foreach (AgentStreamEvent streamEvent in runStream)
+        {
+            streamedEvents.Add(streamEvent);
+        }
+
+        // then — 1. the outcome, structure included. The effects of two separate runs carry
+        // run-scoped keys, so the comparison is the act's identity, not the record's.
+        runStream.Outcome.Status.Should().Be(
+            batchedOutcome.Status,
+            because: $"on {scenario}, how the run ended must not depend on the door");
+
+        runStream.Outcome.Result.Should().Be(
+            batchedOutcome.Result,
+            because: $"on {scenario}, what the run delivered must not depend on the door");
+
+        (runStream.Outcome.PendingEffect?.ToolName).Should().Be(
+            batchedOutcome.PendingEffect?.ToolName,
+            because: $"on {scenario}, a pending act must ride the streamed outcome exactly as "
+                + "it rides the batched one");
+
+        (runStream.Outcome.PendingEffect?.CallId).Should().Be(
+            batchedOutcome.PendingEffect?.CallId,
+            because: $"on {scenario}, the model-minted call id is the whole mechanism");
+
+        // then — 2. the stream and the outcome are two readings of one run
+        string responses = string.Concat(streamedEvents
+            .Where(streamEvent => streamEvent.Type == AgentStreamEventType.Response)
+            .Select(streamEvent => streamEvent.Content));
+
+        if (batched.DeliversAnswer)
+        {
+            responses.Should().Be(
+                runStream.Outcome.Result,
+                because: $"on {scenario}, concatenating the stream's answer events must equal "
+                    + "the outcome's result (SPEC.md §4.14)");
+        }
+
+        // then — 3. the effects
+        streamed.ToolExecutions().Should().Be(
+            batched.ToolExecutions(),
+            because: $"on {scenario}, the world must not be touched a different number of "
+                + "times depending on which door the prompt entered by");
+
+        // then — 4. the trace, in full
+        var batchedTrace = batched.Trace
+            .Select(record => (record.Kind, record.Actor, record.Message, record.Detail));
+
+        var streamedTrace = streamed.Trace
+            .Select(record => (record.Kind, record.Actor, record.Message, record.Detail));
+
+        streamedTrace.Should().Equal(
+            batchedTrace,
+            because: $"on {scenario}, the streamed outcome adds a reading, not a path — a "
+                + "forked loop diverges here without this test ever having to name it");
+    }
+
     private static StandardAgent BareShell()
     {
         var skillBroker = new Mock<ISkillBroker>();

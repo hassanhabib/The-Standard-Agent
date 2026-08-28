@@ -752,7 +752,28 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
     {
         PromptRequest promptRequest = ToRequest(vector.Prompt, vector.Request);
 
-        if (vector.Streamed)
+        if (vector.StreamedOutcome)
+        {
+            // The third door (SPEC.md §4.14): every event live, and the completion carrying
+            // the same structured outcome the batched door returns.
+            AgentRunStream runStream = agent.RunStreamAsync(promptRequest, runCancellation.Token);
+            List<string> responses = [];
+
+            await foreach (AgentStreamEvent streamEvent in runStream)
+            {
+                streamedEvents.Add(streamEvent);
+
+                if (streamEvent.Type is AgentStreamEventType.Response)
+                {
+                    responses.Add(streamEvent.Content);
+                }
+            }
+
+            result = string.Join(string.Empty, responses);
+            runStatus = runStream.Outcome.Status;
+            outcomePendingEffectTool = runStream.Outcome.PendingEffect?.ToolName;
+        }
+        else if (vector.Streamed)
         {
             List<string> responses = [];
 
@@ -1274,9 +1295,9 @@ static bool NarrationConformant(Vector vector, VectorRun run, out string? failur
         return true;
     }
 
-    if (vector.Streamed is false)
+    if (vector.Streamed is false && vector.StreamedOutcome is false)
     {
-        failure = "narration expectations require \"streamed\": true — "
+        failure = "narration expectations require \"streamed\" or \"streamedOutcome\": true — "
             + "the batched door produces and discards its events";
 
         return false;
