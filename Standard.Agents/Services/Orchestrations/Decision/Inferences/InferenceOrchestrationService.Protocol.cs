@@ -49,9 +49,35 @@ public partial class InferenceOrchestrationService
         return userMessage.ToString();
     }
 
+    // A leading SAY: line is narration, never the choice: at most one is peeled before the
+    // first-line rule applies (SPEC.md §6.0), so "SAY: ...\nACTION: ..." still acts. The prose
+    // rides the context for the loop to screen and voice; it never enters the answer.
+    private static (string Narration, string Choice) PeeledNarration(string reply)
+    {
+        string leading = reply.TrimStart();
+
+        if (leading.StartsWith(SayPrefix, StringComparison.OrdinalIgnoreCase) is false)
+        {
+            return (string.Empty, reply);
+        }
+
+        int newlineIndex = leading.IndexOf('\n');
+
+        string narration = newlineIndex < 0
+            ? leading[SayPrefix.Length..].Trim()
+            : leading[SayPrefix.Length..newlineIndex].Trim();
+
+        string choice = newlineIndex < 0
+            ? string.Empty
+            : leading[(newlineIndex + 1)..].Trim();
+
+        return (narration, choice);
+    }
+
     private static AgentContext Interpret(AgentContext context, string reply)
     {
-        string firstLine = reply.Split('\n')[0].Trim();
+        (string narration, string choice) = PeeledNarration(reply);
+        string firstLine = choice.Split('\n')[0].Trim();
 
         if (firstLine.StartsWith(ToolPrefix, StringComparison.OrdinalIgnoreCase)
             && TryParseToolCall(firstLine[ToolPrefix.Length..], out string calledTool, out string arguments))
@@ -62,6 +88,7 @@ public partial class InferenceOrchestrationService
                 DirectionType = calledTool,
                 Payload = arguments,
                 RawReply = reply,
+                Narration = narration,
                 Transferring = false
             };
         }
@@ -93,6 +120,7 @@ public partial class InferenceOrchestrationService
                     DirectionType = agentName,
                     Payload = task,
                     RawReply = reply,
+                    Narration = narration,
                     Transferring = true
                 };
             }
@@ -122,14 +150,15 @@ public partial class InferenceOrchestrationService
                     DirectionType = toolName,
                     Payload = toolInput,
                     RawReply = reply,
+                    Narration = narration,
                     Transferring = false
                 };
             }
         }
 
-        string answer = reply.StartsWith(FinalPrefix, StringComparison.OrdinalIgnoreCase)
-            ? reply[FinalPrefix.Length..].Trim()
-            : reply;
+        string answer = choice.StartsWith(FinalPrefix, StringComparison.OrdinalIgnoreCase)
+            ? choice[FinalPrefix.Length..].Trim()
+            : choice;
 
         return context with
         {
@@ -137,6 +166,7 @@ public partial class InferenceOrchestrationService
             DirectionType = ReturnResponseDirection,
             Payload = answer,
             RawReply = reply,
+            Narration = narration,
             Transferring = false
         };
     }
