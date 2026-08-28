@@ -45,4 +45,44 @@ public interface IAgent
     IAsyncEnumerable<AgentStreamEvent> StreamPromptAsync(
         string prompt,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The streamed run (SPEC.md §4.14): every event live, and — once the enumeration
+    /// completes — the same structured outcome <see cref="RunAsync(string)"/> returns. One
+    /// run, two readings; a caller never chooses between the answer's structure and the
+    /// run's story.
+    /// </summary>
+    /// <remarks>
+    /// The default adapts <see cref="StreamPromptAsync"/> and assumes the run answered —
+    /// exactly the assumption <see cref="RunAsync(string)"/>'s default documents, and no less
+    /// accurate than it was. It cannot know a pending effect or a refusal from the events
+    /// alone, so an implementation that runs the loop — and every implementation that runs the
+    /// loop knows how its run ended — should override it.
+    /// </remarks>
+    AgentRunStream RunStreamAsync(
+        string prompt,
+        CancellationToken cancellationToken = default) =>
+        new(setOutcome => AdaptedStreamAsync(prompt, setOutcome, cancellationToken));
+
+    private async IAsyncEnumerable<AgentStreamEvent> AdaptedStreamAsync(
+        string prompt,
+        Action<AgentOutcome> setOutcome,
+        [System.Runtime.CompilerServices.EnumeratorCancellation]
+        CancellationToken cancellationToken)
+    {
+        var answer = new System.Text.StringBuilder();
+
+        await foreach (AgentStreamEvent streamEvent in
+            StreamPromptAsync(prompt, cancellationToken))
+        {
+            if (streamEvent.Type is AgentStreamEventType.Response)
+            {
+                answer.Append(streamEvent.Content);
+            }
+
+            yield return streamEvent;
+        }
+
+        setOutcome(new AgentOutcome(answer.ToString(), AgentStatus.Responded));
+    }
 }
