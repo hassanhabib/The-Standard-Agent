@@ -28,7 +28,19 @@ public partial class RunManagementService
             return;
         }
 
-        await this.decisionCoordinationService.ScreenAsync(context.Narration);
+        string verdict = await this.decisionCoordinationService.ScreenAsync(context.Narration);
+
+        // Withheld silently, recorded loudly: the user gains nothing from "a progress note was
+        // withheld", and echoing the refusal would hand an injected SAY payload a visible
+        // oracle — but the record carries the fact, which is where a review looks (SPEC.md
+        // §4.7). The run itself proceeds: narration is decoration, never the work.
+        if (IsRefusal(verdict))
+        {
+            await this.loggingBroker.LogProcessAsync(
+                "Direction", $"Narration → WITHHELD: {verdict}");
+
+            return;
+        }
 
         await this.loggingBroker.LogProcessAsync(
             "Direction", $"Narration → {context.Narration}", detail: true);
