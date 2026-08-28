@@ -129,6 +129,40 @@ public class SelectionTests
         seenSystemPrompt.Should().NotContain("code_search");
     }
 
+    // A selector is configuration, and configuration can drift: a name the agent does not
+    // carry is ignored (SPEC.md §4.15), and the decision log records the TRUTH of what was
+    // offered — never the selector's claim.
+    [Fact]
+    public async Task ShouldIgnoreSelectorNamesTheAgentDoesNotCarryAsync()
+    {
+        // given
+        List<Models.Brokers.Audits.AuditRecord> trace = [];
+
+        StandardAgent agent = AgentWith(
+            _ => new GenerationResult { Content = "hello!" },
+            new NamedTool("web_search"),
+            new NamedTool("code_search"))
+            .OnSelectTools((task, described) =>
+                new ValueTask<IReadOnlyList<string>>(
+                    new[] { "a_tool_from_last_year", "web_search" }))
+            .OnAudit(record =>
+            {
+                lock (trace)
+                {
+                    trace.Add(record);
+                }
+
+                return ValueTask.CompletedTask;
+            });
+
+        // when
+        await agent.ProcessPromptAsync("look something up");
+
+        // then
+        trace.Should().Contain(record =>
+            record.Message == "Selection → offered [web_search]; withheld [code_search]");
+    }
+
     [Fact]
     public async Task ShouldOfferTheNativeBrainOnlyWhatTheSelectorNamedAsync()
     {
