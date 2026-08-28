@@ -159,7 +159,15 @@ public sealed record Vector(
     // GateVerdictOnNarration is the verdict the scripted Gate returns for model narration —
     // screened text that is neither the prompt nor a tool's output.
     Dictionary<string, ToolNarrationSpec>? ToolNarrations = null,
-    string? GateVerdictOnNarration = null);
+    string? GateVerdictOnNarration = null,
+
+    // Selection (SPEC.md §4.15): a scripted selector returning this fixed set, whatever the
+    // task. Null = no selector = every described tool offered. An empty list is a valid
+    // selection: the run is offered nothing. ToolDescriptions gives stub tools descriptions —
+    // the advertisement opt-in (§6.1) — so what a run was OFFERED becomes observable in the
+    // catalog the Brain reads.
+    List<string>? SelectTools = null,
+    Dictionary<string, string>? ToolDescriptions = null);
 
 /// <summary>A stub tool's declared narration templates, as a vector writes them.</summary>
 // A typo'd field must fail loudly, not silently delete the assertion or the input it

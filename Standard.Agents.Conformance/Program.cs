@@ -359,7 +359,12 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
                     && vector.ToolNarrations.TryGetValue(
                         pair.Key, out ToolNarrationSpec? observedSpec)
                             ? observedSpec.Observed ?? string.Empty
-                            : string.Empty));
+                            : string.Empty,
+
+                description: vector.ToolDescriptions is not null
+                    && vector.ToolDescriptions.TryGetValue(pair.Key, out string? described)
+                        ? described
+                        : string.Empty));
 
     // The guardians run through the real composition (OnGate / OnJudge), so each is handed
     // the rubric the framework composed — constitution, then policy (or the consumption skill),
@@ -422,6 +427,15 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
             .UseMemory(new StubMemoryBroker(vector.Memories))
             .UseMcp(new NotConfiguredMcpBroker())
             .Tools(stubTools.Values);
+
+        // Selection (SPEC.md §4.15): a scripted selector returning the vector's fixed set,
+        // whatever the task — how the harness certifies that a run is offered only what a
+        // selector named, with an empty list as the valid offered-nothing case.
+        if (vector.SelectTools is not null)
+        {
+            agent.OnSelectTools((task, described) =>
+                new ValueTask<IReadOnlyList<string>>(vector.SelectTools));
+        }
 
         // Plural integrations (SPEC.md §4.8 v1.5): scripted servers join in registration order —
         // the order IS the contract under contention — and each extra skill source accumulates
