@@ -209,6 +209,16 @@ AgentOutcome outcome = run.Outcome; // the same outcome RunAsync returns: status
                                     // result, pending effect with its call id
 ```
 
+And what an agent *carries* is not what every run is *offered*: a selector names the subset of
+tools each run's task actually needs, so a greeting is offered nothing and an agent with twenty
+tool servers never puts twenty catalogs in front of "Hello" (SPEC.md §4.15):
+
+```csharp
+agent.OnSelectTools((task, described) =>
+    new ValueTask<IReadOnlyList<string>>(
+        NeedsTheWeb(task) ? new[] { "web_search" } : Array.Empty<string>()));
+```
+
 No DI container. `Compose()` hand-wires the whole graph — SPEC.md §9: *"DI is OPTIONAL. A
 hand-wired composition root is fully conformant."*
 
