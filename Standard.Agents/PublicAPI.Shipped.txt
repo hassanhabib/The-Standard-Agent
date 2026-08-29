@@ -599,8 +599,12 @@ Standard.Agents.Models.Coordinations.Agents.ToolSelector.SelectAsync(string! tas
 Standard.Agents.Models.Coordinations.Agents.ToolSelector.ToolSelector(System.Func<string!, System.Collections.Generic.IReadOnlyList<string!>!, System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>>! select) -> void
 Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy
 Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.<Clone>$() -> Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy!
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.AdvertisedTools.get -> System.Collections.Generic.IReadOnlyCollection<string!>!
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.AdvertisedTools.init -> void
 Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.DeclaredRisk.get -> System.Collections.Generic.IReadOnlyDictionary<string!, Standard.Agents.Models.Orchestrations.Effects.RiskLevel>!
 Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.DeclaredRisk.init -> void
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.EnforceSelection.get -> bool
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.EnforceSelection.init -> void
 Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.Equals(Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy? other) -> bool
 Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.ExplicitlyPermits.get -> System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentEffect!, bool>?
 Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.ExplicitlyPermits.init -> void
@@ -1284,6 +1288,7 @@ Standard.Agents.StandardAgent.Consumption(string! path) -> Standard.Agents.Stand
 Standard.Agents.StandardAgent.Contract(string! jsonSchema) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Description.get -> string!
 Standard.Agents.StandardAgent.EffectLedger(string! path) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.EnforceSelection() -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Fallback(System.Func<System.Threading.Tasks.ValueTask<string!>>! fallback, int retries = 0, int failuresBeforeOpen = 3) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Gate(string! apiUrl, string! apiKey, string! model, double temperature = 0, int maxTokens = 16, int timeoutSeconds = 30) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Identity(string! name, string! description = "") -> Standard.Agents.StandardAgent!
