@@ -1,1 +1,5 @@
 #nullable enable
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.AdvertisedTools.get -> System.Collections.Generic.IReadOnlyCollection<string!>!
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.AdvertisedTools.init -> void
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.EnforceSelection.get -> bool
+Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.EnforceSelection.init -> void
