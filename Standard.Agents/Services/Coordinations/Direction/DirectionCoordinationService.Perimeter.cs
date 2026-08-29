@@ -22,6 +22,25 @@ public partial class DirectionCoordinationService
 {
     private async ValueTask<AgentContext> ActOnEffectAsync(AgentContext context)
     {
+        // 0 — the offering (SPEC.md §4.15, enforced). Selection narrows what a run is SHOWN;
+        // with enforcement on, the offering also binds here: an advertised tool the run was not
+        // offered is denied before it becomes an act, because a Brain outside this loop's
+        // mediation can carry side-channel knowledge of the catalog and name a tool the run was
+        // never shown. Caller tools never reach this method (classified before the perimeter),
+        // and an undescribed tool keeps its §6.1 treatment.
+        if (DeniedBecauseSelectionWithheldIt(context.DirectionType))
+        {
+            string withheld =
+                $"tool '{context.DirectionType}' was not offered to this run: selection "
+                    + "withheld it. Choose among the offered tools or answer directly.";
+
+            await this.loggingBroker.LogProcessAsync(
+                "Direction",
+                $"Selection → DENIED '{context.DirectionType}': not offered to this run");
+
+            return Denied(context, withheld);
+        }
+
         AgentEffect effect = AgentEffect.For(
             runId: AgentRun.Current?.Id ?? string.Empty,
             toolName: context.DirectionType,
@@ -328,4 +347,13 @@ public partial class DirectionCoordinationService
 
     private bool RequiresApproval(string toolName) =>
         this.irreversibleToolNames.Contains(toolName);
+
+    // Enforcement speaks only where selection spoke: a run with no recorded offering (no
+    // selector configured) has nothing to enforce, and a name selection never saw (undescribed,
+    // §6.1) is not selection's to withhold.
+    private bool DeniedBecauseSelectionWithheldIt(string toolName) =>
+        this.enforceSelection
+            && AgentRun.Current?.OfferedTools is { } offered
+            && this.advertisedToolNames.Contains(toolName)
+            && offered.Contains(toolName, StringComparer.OrdinalIgnoreCase) is false;
 }

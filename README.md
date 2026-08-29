@@ -219,6 +219,11 @@ agent.OnSelectTools((task, described) =>
         NeedsTheWeb(task) ? new[] { "web_search" } : Array.Empty<string>()));
 ```
 
+And when the Brain is not fully mediated by the loop — a custom brain, a gateway, a model
+router that could carry side-channel knowledge of the catalog — `.EnforceSelection()` makes
+the offering binding at the Direction perimeter: an unoffered tool is denied and the run
+recovers, exactly as a policy denial is handled.
+
 No DI container. `Compose()` hand-wires the whole graph — SPEC.md §9: *"DI is OPTIONAL. A
 hand-wired composition root is fully conformant."*
 

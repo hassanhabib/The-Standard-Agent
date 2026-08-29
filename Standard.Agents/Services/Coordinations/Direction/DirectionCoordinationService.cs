@@ -35,6 +35,8 @@ public partial class DirectionCoordinationService : IDirectionCoordinationServic
     private readonly IReadOnlyDictionary<string, RiskLevel> toolRisk;
     private readonly IReadOnlyDictionary<string, Func<string, string>> toolScope;
     private readonly Func<AgentEffect, bool>? explicitlyPermits;
+    private readonly bool enforceSelection;
+    private readonly HashSet<string> advertisedToolNames;
 
     // Asked once per act rather than captured once at composition, because who is acting can
     // change between prompts on the same agent — a singleton serving many callers is the shape
@@ -66,6 +68,11 @@ public partial class DirectionCoordinationService : IDirectionCoordinationServic
 
         this.irreversibleToolNames = new HashSet<string>(
             standingOrders.IrreversibleTools, StringComparer.OrdinalIgnoreCase);
+
+        this.enforceSelection = standingOrders.EnforceSelection;
+
+        this.advertisedToolNames = new HashSet<string>(
+            standingOrders.AdvertisedTools, StringComparer.OrdinalIgnoreCase);
     }
 
     public ValueTask<AgentContext> ActAsync(AgentContext context) =>

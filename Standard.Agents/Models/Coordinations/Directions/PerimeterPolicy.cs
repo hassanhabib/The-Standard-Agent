@@ -52,4 +52,21 @@ public sealed record PerimeterPolicy
     /// can change between prompts on a shared agent (SPEC.md §4.4).
     /// </summary>
     public Func<AgentPrincipal?>? IdentityResolver { get; init; }
+
+    /// <summary>
+    /// Whether the run's offering (SPEC.md §4.15) binds at the perimeter. Off by default: an
+    /// unoffered tool keeps its §6.1 treatment — callable if the Brain names it. On, an act
+    /// naming an advertised tool the run was not offered is denied — told, non-terminal,
+    /// recoverable — because a Brain outside this loop's mediation can carry side-channel
+    /// knowledge of the catalog and name a tool the run was never shown. Caller tools are never
+    /// subject to selection, and an undescribed tool keeps its §6.1 treatment either way.
+    /// </summary>
+    public bool EnforceSelection { get; init; }
+
+    /// <summary>
+    /// The advertised tool names — what selection could have offered — so the perimeter can
+    /// tell a withheld tool from an undescribed one. Derived at composition from the same
+    /// rendering the catalogs use, so the two can never disagree.
+    /// </summary>
+    public IReadOnlyCollection<string> AdvertisedTools { get; init; } = [];
 }
