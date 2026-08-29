@@ -1548,6 +1548,27 @@ The boundaries, each pinned by tests and by conformance vector 69:
 Absent a selector, every described tool is offered — exactly the behavior every existing
 composition has today.
 
+### Enforced selection — when the Brain is not fully mediated
+
+A brain the loop fully mediates can only call what it was shown. But a brain is
+configuration — a custom brain, a gateway, a model router — and configuration can carry
+side-channel knowledge of the catalog: production found this the day a custom routing brain
+handed its backend the full catalog and a greeting kept web-searching *after* selection was
+live. `EnforceSelection()` makes the offering **binding** at the Direction perimeter:
+
+```csharp
+agent
+    .OnSelectTools((task, described) => SelectFor(task, described))
+    .EnforceSelection();
+```
+
+An act naming an advertised tool the run was not offered is denied — told, non-terminal,
+recoverable, exactly as a policy denial is — and the agent chooses a permitted path on the
+next turn: `Selection → DENIED 'web_search': not offered to this run`. Off by default; the
+boundaries hold under enforcement too: caller tools are never denied (they are classified
+before the perimeter), an undescribed tool keeps its §6.1 treatment, and with no selector
+configured there is no offering to enforce, so nothing changes.
+
 ---
 
 ## Putting it together
