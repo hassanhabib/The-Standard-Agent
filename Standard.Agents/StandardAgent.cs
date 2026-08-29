@@ -306,6 +306,26 @@ public sealed partial class StandardAgent : IAgent
         Func<string, IReadOnlyList<string>, ValueTask<IReadOnlyList<string>>> selector) =>
         Set(() => this.localToolSelector = selector);
 
+    // Whether the offering binds at the Direction perimeter, held until composition hands it
+    // to the perimeter's standing orders.
+    private bool enforceSelection;
+
+    /// <summary>
+    /// Makes the run's offering <b>binding</b> at the Direction perimeter (SPEC.md §4.15): an
+    /// act naming an advertised tool the run was not offered is denied — told, non-terminal,
+    /// recoverable — exactly as a policy denial is, and the agent may choose a permitted path
+    /// on the next turn. Off by default: without it, an unoffered tool keeps its §6.1
+    /// treatment, reachable if the Brain names it. Turn it on when the Brain is not fully
+    /// mediated by this loop — a custom brain, a gateway, a model router — where side-channel
+    /// knowledge of the catalog can name tools the run was never shown. Caller-declared tools
+    /// are never subject to selection, and an undescribed tool keeps its §6.1 treatment
+    /// either way. Takes effect only when a selector is configured: with no offering recorded,
+    /// there is nothing to enforce.
+    /// </summary>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent EnforceSelection() =>
+        Set(() => this.enforceSelection = true);
+
     /// <summary>
     /// Turns on the Judge using an in-process model — the local counterpart to <see cref="Judge"/>,
     /// with no API calls. The delegate receives the built-in judge rubric as the system prompt and
@@ -1874,7 +1894,14 @@ public sealed partial class StandardAgent : IAgent
                 ExplicitlyPermits =
                     policy is AllowListPolicyBroker allowList ? allowList.Mentions : null,
 
-                IdentityResolver = this.identityResolver
+                IdentityResolver = this.identityResolver,
+
+                EnforceSelection = this.enforceSelection,
+
+                // What selection could have offered, from the same rendering the catalogs use
+                // (SPEC.md §6.1: a description is the opt-in), so the perimeter can tell a
+                // withheld tool from an undescribed one and the two can never disagree.
+                AdvertisedTools = [.. Advertised(allTools).Select(tool => tool.Name)]
             });
 
         return new RunManagementService(

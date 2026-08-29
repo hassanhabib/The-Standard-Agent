@@ -3,3 +3,4 @@ Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.AdvertisedTools.
 Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.AdvertisedTools.init -> void
 Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.EnforceSelection.get -> bool
 Standard.Agents.Models.Coordinations.Directions.PerimeterPolicy.EnforceSelection.init -> void
+Standard.Agents.StandardAgent.EnforceSelection() -> Standard.Agents.StandardAgent!
