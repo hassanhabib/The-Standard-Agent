@@ -132,4 +132,111 @@ public class SelectionEnforcementTests
         secondTurnMessages.Should().Contain(message =>
             message.Content != null && message.Content.Contains("not offered"));
     }
+
+    // Off by default: without enforcement, an unoffered tool keeps its §4.15 treatment —
+    // reachable if the Brain names it — so no existing deployment changes behavior.
+    [Fact]
+    public async Task ShouldKeepAnUnofferedToolReachableWithoutEnforcementAsync()
+    {
+        // given — the same disobedient brain, with no enforcement configured
+        var webSearch = new NamedTool("web_search");
+        var calculator = new NamedTool("calculator");
+
+        StandardAgent agent = AgentWith(
+            CallsThenAnswers("web_search", "done"),
+            webSearch, calculator)
+            .OnSelectTools((task, described) =>
+                new ValueTask<IReadOnlyList<string>>(new[] { "calculator" }));
+
+        // when
+        string result = await agent.ProcessPromptAsync("what is 2 + 2?");
+
+        // then — the unamended behavior: the named tool ran
+        webSearch.Executions.Should().Be(1);
+        result.Should().Be("done");
+    }
+
+    // Enforcement takes effect only when a selector recorded an offering: with no selector
+    // there is nothing to enforce, and every described tool remains offered and callable.
+    [Fact]
+    public async Task ShouldNotDenyAnythingWhenNoSelectorIsConfiguredAsync()
+    {
+        // given — enforcement on, but no selection judgment supplied
+        var webSearch = new NamedTool("web_search");
+
+        StandardAgent agent = AgentWith(
+            CallsThenAnswers("web_search", "done"),
+            webSearch)
+            .EnforceSelection();
+
+        // when
+        string result = await agent.ProcessPromptAsync("look something up");
+
+        // then
+        webSearch.Executions.Should().Be(1);
+        result.Should().Be("done");
+    }
+
+    // A name selection never saw is not selection's to withhold: an undescribed tool keeps its
+    // §6.1 treatment — callable if the Brain names it, never advertised — under enforcement too.
+    [Fact]
+    public async Task ShouldNotDenyAnUndescribedToolAsync()
+    {
+        // given — a tool with no description (selection operates over described names only) and
+        // a selector that offers nothing
+        var undescribed = new NamedTool("secret_helper", description: "");
+
+        StandardAgent agent = AgentWith(
+            CallsThenAnswers("secret_helper", "done"),
+            undescribed)
+            .OnSelectTools((task, described) =>
+                new ValueTask<IReadOnlyList<string>>(Array.Empty<string>()))
+            .EnforceSelection();
+
+        // when
+        string result = await agent.ProcessPromptAsync("hello");
+
+        // then
+        undescribed.Executions.Should().Be(1);
+        result.Should().Be("done");
+    }
+
+    // Caller tools are the caller's own vocabulary and are never subject to selection
+    // (SPEC.md §4.15): under enforcement, a call naming one still goes back to the caller as a
+    // pending effect — classified before the perimeter, so there is nothing here to deny.
+    [Fact]
+    public async Task ShouldNeverDenyACallerToolAsync()
+    {
+        // given — enforcement on and an offering of nothing; the brain names the CALLER's tool
+        StandardAgent agent = AgentWith(
+            (messages, tools) => new GenerationResult
+            {
+                Content = string.Empty,
+                ToolCalls = [new ModelToolCall("call_9", "send_email", """{"to":"jane"}""")],
+            })
+            .OnSelectTools((task, described) =>
+                new ValueTask<IReadOnlyList<string>>(Array.Empty<string>()))
+            .EnforceSelection();
+
+        var request = new PromptRequest
+        {
+            Prompt = "email jane the report",
+
+            CallerTools =
+            [
+                new ToolDefinition(
+                    Name: "send_email",
+                    Description: "Sends an email from the caller's own outbox.",
+                    ParametersJson: "{}")
+            ]
+        };
+
+        // when
+        AgentOutcome outcome = await agent.RunAsync(request);
+
+        // then — the run paused for the caller rather than denying or refusing
+        outcome.Status.Should().Be(AgentStatus.AwaitingInput);
+        outcome.PendingEffect.Should().NotBeNull();
+        outcome.PendingEffect!.ToolName.Should().Be("send_email");
+    }
 }
