@@ -9,7 +9,10 @@ Sections **0–10** build a working agent and swap the simple file/HTTP defaults
 a local GGUF model, Redis, PostgreSQL, SQL Server — one line at a time. Sections **11–15** are what
 a regulated deployment adds on top: conversation, the perimeter, resilience, compensation and
 native tool calls. Nothing in the second half changes anything in the first. Section **16** is
-the whole surface again, as a single JSON document — the agent as data.
+the whole surface again, as a single JSON document — the agent as data. Sections **17–22** are
+the agent in service: the fleet, one agent serving many callers, narration, the streamed
+outcome, and selection — offering each run only what its task needs, enforced at the perimeter
+when the Brain is not fully mediated.
 
 ```bash
 dotnet add package Standard.Agents
@@ -643,6 +646,17 @@ the `Standard.Agents` source and meter and the spans flow to your collector —
 `.OnTelemetry((eventName, attributes) => …)` hands every loop boundary — `run.start`,
 `turn.start`, `turn.usage`, `run.outcome`, `run.end` — to your own delegate, for a StatsD
 pipeline or a metrics API no ActivityListener reaches.
+
+**What the trace carries — and where it may go.** Know this before pointing any of these at a
+central sink: the trace and the audit carry message **content** — the received prompt, the
+returned answer, tool lines. For a SIEM inside a bank that is the point. For a deployment whose
+promise to its users is that no central party reads their messages, it is a broken promise in
+one config line — the reference deployment wired its audit stream to a cloud log store and
+un-wired it the same day, on exactly this ground. Until a content-free audit mode ships
+(structure only: kind, actor, outcome, timings — never message text), a privacy-first
+deployment should keep content-bearing sinks local and user-owned (`LogTo`/`Audit` to the
+user's own disk), or not wire them at all. Telemetry is the exception: its events carry counts
+and outcomes, never text.
 
 ---
 
@@ -1548,7 +1562,9 @@ The boundaries, each pinned by tests and by conformance vector 69:
 Absent a selector, every described tool is offered — exactly the behavior every existing
 composition has today.
 
-### Enforced selection — when the Brain is not fully mediated
+---
+
+## 22 · Enforced selection — when the Brain is not fully mediated
 
 A brain the loop fully mediates can only call what it was shown. But a brain is
 configuration — a custom brain, a gateway, a model router — and configuration can carry
@@ -1585,6 +1601,8 @@ var agent = new StandardAgent(url, key, "LLooMA2.0")      // 0 · talking
     .Gate(apiUrl: url, apiKey: key, model: "LLooMA2.0")   // 4 · screen requests
     .Judge(apiUrl: url, apiKey: key, model: "LLooMA2.0")  // 5 · review answers
     .AllowTools("calculator")                             // 6 · least privilege
+    .OnSelectTools((task, tools) => Offer(task, tools))   // 21 · offer what the task needs
+    .EnforceSelection()                                   // 22 · the offering binds
     .Redact()                                             // 6 · hide PII from the brain
     .MaxTurns(5)                                          // 6 · cap the turn budget
     .Memory("agent-memory.txt")                           // 8 · remember across restarts

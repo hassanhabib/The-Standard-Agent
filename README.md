@@ -34,12 +34,17 @@ grows all the way up, never a rewrite.**
 [![Create Your First AI Agent from Scratch — The Standard for Agents](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/the-standard-agent-video-thumbnail.jpg)](https://www.youtube.com/watch?v=UE6QcvQsOyU)
 
 The sessions are live and ongoing on
-[Hassan Habib's YouTube channel](https://www.youtube.com/c/hassanhabib): start with
-[**Create Your First AI Agent from Scratch**](https://www.youtube.com/watch?v=UE6QcvQsOyU)
-above, then the
-[**The-Standard sessions playlist**](https://www.youtube.com/playlist?list=PLG2w4duP-rS2adJjAs4QvYIuKriacLQBU)
-for the engineering discipline every line of this framework is built on — subscribe there for
-the sessions on each new capability as it ships.
+[Hassan Habib's YouTube channel](https://www.youtube.com/@HassanHabib):
+
+- [**Create Your First AI Agent from Scratch**](https://www.youtube.com/watch?v=UE6QcvQsOyU) —
+  start here: a working Tri-Nature agent, from nothing, in one sitting.
+- [**PeerLLM Skills: Build, Test & Optimize Agent Skills Across Any LLM**](https://www.youtube.com/watch?v=qgmrPaQSjRc) —
+  the Data nature in practice: skills as Markdown, evaluated across models.
+- [**The Standard sessions playlist**](https://www.youtube.com/playlist?list=PLan3SCnsISTQqmSTZHQbGxBmVDwQdrlub) —
+  the engineering discipline every line of this framework is built on, from brokers to
+  orchestration.
+
+Subscribe there for the sessions on each new capability as it ships.
 
 ## Install
 
