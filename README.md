@@ -46,21 +46,6 @@ The sessions are live and ongoing on
 
 Subscribe there for the sessions on each new capability as it ships.
 
-## Where's this framework being used today?
-
-### PeerLLM — the LLooMA 2.0 Model
-
-[![PeerLLM — People-First AI](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/peerllm-logo.png)](https://peerllm.com)
-
-**[PeerLLM](https://peerllm.com)**'s **LLooMA 2.0** — the network-native model of a people-first,
-decentralized AI network — runs its production agentic loop on this framework. Every tool
-decision a community of independent hosts makes flows through `StandardAgent.RunAsync`, with the
-framework's spec'd behavior, conformance vectors, and safety guarantees underneath — and the
-production learnings flow back into the framework, in the open.
-
-Read the story of the shift:
-[**LLooMA 2.0, Rebuilt on The Standard Agent**](https://blog.peerllm.com/peerllm/engineering/2026/08/30/llooma-2.0-on-the-standard-agent.html).
-
 ## Install
 
 ```bash
@@ -514,6 +499,21 @@ This repo follows [The Standard's practices](https://github.com/hassanhabib/The-
   failing*.
 - Brokers carry no unit tests — they are thin and hold no logic. Commit as `BROKERS: [Description]`.
 - PR title: `[CATEGORY]: [Description Of Work Completed]`.
+
+## Who's using the framework today?
+
+### PeerLLM — the LLooMA 2.0 Model
+
+[![PeerLLM — People-First AI](https://raw.githubusercontent.com/hassanhabib/The-Standard-Agent/main/assets/peerllm-logo.png)](https://peerllm.com)
+
+**[PeerLLM](https://peerllm.com)**'s **LLooMA 2.0** — the network-native model of a people-first,
+decentralized AI network — runs its production agentic loop on this framework. Every tool
+decision a community of independent hosts makes flows through `StandardAgent.RunAsync`, with the
+framework's spec'd behavior, conformance vectors, and safety guarantees underneath — and the
+production learnings flow back into the framework, in the open.
+
+Read the story of the shift:
+[**LLooMA 2.0, Rebuilt on The Standard Agent**](https://blog.peerllm.com/peerllm/engineering/2026/08/30/llooma-2.0-on-the-standard-agent.html).
 
 ## License
 
