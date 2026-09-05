@@ -1,8 +1,19 @@
 # Quality Evals
 
-Conformance pins **contracts** — does the framework behave to spec. The evals pin **quality** —
-does the agent do its job. Both certify on every build; both are deterministic, so a red run is
-a finding, never a flake.
+Conformance pins **contracts** — does the framework behave to spec. The evals pin **orchestration
+quality** — given what a Brain said, did the loop do its job: carry the facts, cite only what it
+was shown, retrieve what was relevant, run the tools the task needed, refuse what should be
+refused, and revise when the Judge said so. Both certify on every build; both are deterministic,
+so a red run is a finding, never a flake.
+
+**What they do not measure.** The Brain in these runs is scripted: it returns fixed replies and
+never reads a prompt or a skill. So the evals cannot detect a worse model, a worse prompt, a
+worse skill set, or a drift in a provider's behaviour; they detect the framework treating the
+same replies differently than it did yesterday. Model and skill quality is measured against a
+live provider, with pinned datasets, repeated samples and statistical thresholds, and that is
+opt-in and outside CI by design (principal review 2026-09-04, F-19): it costs money, it is not
+deterministic, and a flake in a required gate is a gate nobody trusts. Provider wire contracts
+are covered separately and deterministically by the wire-contract tests in the unit suite.
 
 ```bash
 dotnet run --project Standard.Agents.Evals                     # the framework's golden set
