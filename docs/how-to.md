@@ -568,6 +568,11 @@ the Custom mode for rules no pattern can express. Whichever supplies the redacto
 by decorating every model broker at composition — Brain, Gate and Judge alike — so a fourth model
 call added tomorrow cannot forget.
 
+On the native protocol the whole message is redacted, not only its prose. A tool call the model
+asked for is rehydrated so the tool receives the real value, and when that call is replayed to the
+model on the next turn its arguments go out tokenized again, alongside the tool's result. The
+model never sees the value in the clear on any turn; the tool and the caller always do.
+
 ```csharp
 var agent = new StandardAgent(url, key, "LLooMA2.0")
     .Redact();                         // ← new this section

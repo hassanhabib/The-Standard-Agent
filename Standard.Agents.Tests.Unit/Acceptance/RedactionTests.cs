@@ -10,8 +10,10 @@ using Standard.Agents.Brokers.Generators;
 using Standard.Agents.Brokers.Knowledges;
 using Standard.Agents.Brokers.Memorys;
 using Standard.Agents.Brokers.Skills;
+using Standard.Agents.Models.Brokers.Generators.V1;
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Foundations.Skills;
+using Standard.Agents.Tools;
 using Xunit;
 
 namespace Standard.Agents.Tests.Unit.Acceptance;
@@ -307,6 +309,107 @@ public class RedactionTests
         // then
         seenByBrain.Should().NotContain("INC-004512");
         seenByBrain.Should().Contain("{{TICKET_0}}");
+    }
+
+    private sealed class SendEmailTool : ITool
+    {
+        public string Name => "send_email";
+        public string Description => "Sends an email.";
+        public string ReceivedInput { get; private set; } = string.Empty;
+
+        public async ValueTask<string> ExecuteAsync(string input)
+        {
+            ReceivedInput = input;
+
+            return "sent";
+        }
+    }
+
+    // Found in the 2026-09-04 principal review (F-02): the native decorator redacted each
+    // message's Content and rehydrated the tool-call arguments coming BACK, but never redacted
+    // the arguments going OUT. A value the model echoed into an argument on turn one was
+    // rehydrated for the tool, recorded in the exchange, and replayed to the model in the clear
+    // on turn two. §4.6 says every model call, and a replayed tool call is part of a model call.
+    [Fact]
+    public async Task ShouldHideTheValueFromTheNativeBrainOnReplayedToolCallArgumentsAsync()
+    {
+        // given
+        var tool = new SendEmailTool();
+        List<string> seenByBrainOnSecondCall = [];
+        int brainCalls = 0;
+
+        StandardAgent agent = AgentBareNative(
+            tool,
+            async (messages, tools) =>
+            {
+                brainCalls++;
+
+                if (brainCalls == 1)
+                {
+                    return new GenerationResult
+                    {
+                        ToolCalls =
+                        [
+                            new ModelToolCall(
+                                Id: "call_1",
+                                Name: "send_email",
+                                ArgumentsJson: """{"to":"{{EMAIL_0}}","subject":"report"}""")
+                        ]
+                    };
+                }
+
+                seenByBrainOnSecondCall =
+                [
+                    .. messages.Select(message => message.Content),
+                    .. messages.SelectMany(message => message.ToolCalls)
+                        .Select(toolCall => toolCall.ArgumentsJson)
+                ];
+
+                return new GenerationResult { Content = "Sent the report to {{EMAIL_0}}." };
+            })
+            .Redact();
+
+        // when
+        string actualAnswer =
+            await agent.ProcessPromptAsync($"please email {SecretEmail} the report");
+
+        // then — the tool got the real address, the model never did, the caller got it back
+        tool.ReceivedInput.Should().Contain(SecretEmail);
+        seenByBrainOnSecondCall.Should().NotBeEmpty();
+
+        seenByBrainOnSecondCall.Should().NotContain(modelInput =>
+            modelInput.Contains(SecretEmail));
+
+        seenByBrainOnSecondCall.Should().Contain(modelInput =>
+            modelInput.Contains("{{EMAIL_0}}") && modelInput.Contains("\"to\""));
+
+        actualAnswer.Should().Be($"Sent the report to {SecretEmail}.");
+    }
+
+    private static StandardAgent AgentBareNative(
+        ITool tool,
+        Func<
+            IReadOnlyList<ConversationMessage>,
+            IReadOnlyList<ToolDefinition>,
+            ValueTask<GenerationResult>> brain)
+    {
+        var skillBroker = new Mock<ISkillBroker>();
+        skillBroker.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(new List<Skill>());
+
+        var memoryBroker = new Mock<IMemoryBroker>();
+        memoryBroker.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
+
+        var knowledgeBroker = new Mock<IKnowledgeBroker>();
+
+        knowledgeBroker.Setup(broker => broker.SelectKnowledgeAsync(It.IsAny<string>()))
+            .ReturnsAsync([]);
+
+        return new StandardAgent()
+            .UseSkills(skillBroker.Object)
+            .UseMemory(memoryBroker.Object)
+            .UseKnowledge(knowledgeBroker.Object)
+            .Tool(tool)
+            .OnNativeBrain(brain);
     }
 
     private static StandardAgent AgentBare(Func<string, string, ValueTask<string>> brain)

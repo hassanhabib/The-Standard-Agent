@@ -11,6 +11,7 @@
     "concurrent-runs-are-isolated",
     "judge-receives-the-task",
     "redaction-covers-every-model-call",
+    "native-tool-call-replay-never-leaks-a-redacted-value",
     "guardian-overreach-is-neutralized",
     "cancellation-stops-the-loop",
     "transient-failure-recovers",

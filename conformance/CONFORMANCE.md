@@ -3,7 +3,7 @@
 A **language-neutral** set of behavioral test vectors that any Standard-Agents
 implementation runs to self-certify against
 [`SPEC.md`](https://github.com/hassanhabib/The-Standard-Agent-Specs/blob/main/SPEC.md).
-Seventy vectors, four readiness profiles, every vector proven able to fail.
+Seventy-one vectors, four readiness profiles, every vector proven able to fail.
 
 The vectors are the executable half of the specification. Prose can be read two ways; a vector
 cannot, which is why "conformant" here means *this suite passes* rather than *we believe we
@@ -188,6 +188,7 @@ the deterministic core of the Standard.
 | `effect-outcome-survives-a-crash` | A new instance resumes and does not repeat the act (§4.9, §4.11) |
 | `awaiting-approval-resumes-in-a-new-process` | A held act runs once the authority says yes, elsewhere |
 | `native-tool-call-round-trips` | A result returns as a tool message naming its call (§6.2) |
+| `native-tool-call-replay-never-leaks-a-redacted-value` | A replayed tool call goes out tokenized; the tool got the value, the model never does (§4.6, §6) |
 | `policy-authorizes-on-identity` | The principal reaches the decision, not only the log (§3.3, §4.9) |
 | `injected-knowledge-cannot-widen-the-perimeter` | A poisoned passage fools the Brain; the fooled Brain still cannot act (§4.9) |
 | `poisoned-memory-cannot-widen-the-perimeter` | Data can never grant what policy did not, whichever seam it rode in on (§4.9) |

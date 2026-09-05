@@ -856,6 +856,8 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         pendingEffectTool = session?.PendingEffect?.ToolName;
     }
 
+    RecordNativeModelInputs(nativeGenerator, modelInputs, brainInputs);
+
     return new VectorRun(
         result, promptResults, stubTools, gateRubric, judgeRubric, judgeInput, modelInputs,
         brainInputs, promptScreenings, auditRecords, compensationOrder, nativeGenerator,
@@ -1183,6 +1185,36 @@ static bool GuardianInputConformant(
     }
 
     return true;
+}
+
+// A native conversation is a model call too (SPEC.md §4.6): everything the scripted V1 model
+// was shown joins what the text models saw — message content AND the arguments of every tool
+// call replayed to it — so a replayed call carrying a value in the clear is a leak this harness
+// can see. Without this, a native vector asserting NoModelSees certified nothing at all.
+static void RecordNativeModelInputs(
+    ScriptedNativeGeneratorBroker? nativeGenerator,
+    List<string> modelInputs,
+    List<string> brainInputs)
+{
+    if (nativeGenerator is null)
+    {
+        return;
+    }
+
+    foreach (IReadOnlyList<ConversationMessage> nativeConversation in nativeGenerator.Conversations)
+    {
+        foreach (ConversationMessage nativeMessage in nativeConversation)
+        {
+            modelInputs.Add(nativeMessage.Content);
+            brainInputs.Add(nativeMessage.Content);
+
+            foreach (ModelToolCall nativeToolCall in nativeMessage.ToolCalls)
+            {
+                modelInputs.Add(nativeToolCall.ArgumentsJson);
+                brainInputs.Add(nativeToolCall.ArgumentsJson);
+            }
+        }
+    }
 }
 
 // The request seam's guarantees, certified from what the run reported and what the scripted
