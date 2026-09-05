@@ -59,7 +59,7 @@ jobs:
     # completion, groundedness, retrieval precision and recall, tool selection, refusal
     # correctness and revision effectiveness, and fail the build under threshold.
     # Deterministic - scripted brains, no keys, no network.
-    - name: Evaluating Quality
+    - name: Evaluating Orchestration Quality (Deterministic)
       run: dotnet run --project Standard.Agents.Evals --no-build --configuration Release
 
   # The same gate on the other operating system the package is used on. What varies most
@@ -96,7 +96,7 @@ jobs:
         dotnet run --project Standard.Agents.Conformance --no-build --configuration Release
         -- --profile Critical
 
-    - name: Evaluating Quality
+    - name: Evaluating Orchestration Quality (Deterministic)
       run: dotnet run --project Standard.Agents.Evals --no-build --configuration Release
 
   supply-chain:

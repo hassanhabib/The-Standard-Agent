@@ -86,7 +86,7 @@ jobs:
         dotnet run --project Standard.Agents.Conformance --no-build --configuration Release
         -- --profile Critical
 
-    - name: Evaluating Quality
+    - name: Evaluating Orchestration Quality (Deterministic)
       run: dotnet run --project Standard.Agents.Evals --no-build --configuration Release
 
     - name: Packing Package
