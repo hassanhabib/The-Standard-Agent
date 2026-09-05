@@ -137,6 +137,12 @@ the file can recompute it. Treat the file as local, append-only, hash-linked evi
 deployment gets immutability from the store, not the file: append-only or WORM storage, a signed
 or keyed record, and the terminal hash anchored somewhere the writer cannot reach.
 
+What the records carry is policy, and the default is metadata: a process record whose event has a
+payload (the prompt, the system prompt, the Brain's reply, a tool's input or output) records the
+payload's length and SHA-256, never the payload. `.AuditPayloads()` opts into recording payloads,
+as the configured redaction leaves them, so a sink never holds what the Brain was not shown.
+The trace file (`.LogTo`) is a development aid and is not governed by this policy.
+
 ## Supply chain
 
 Every change on `main` and every pull request runs:
