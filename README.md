@@ -262,8 +262,8 @@ The core [`Standard.Agents`](https://www.nuget.org/packages/Standard.Agents) is 
 **provider-independent**: a hosted brain, and local-file skills, memory, and knowledge, with no
 provider SDK in the box. It is not literally package-free: it ships three runtime dependencies
 (`RESTFulSense` for the HTTP client, `Xeption` for exception data, and
-`Microsoft.Extensions.Logging.Abstractions`), and their transitive graph is inventoried and
-license-checked on every build. Reach further with an opt-in package — each one backs a single
+`Microsoft.Extensions.Logging.Abstractions`), and their transitive graph is inventoried,
+license-checked and held to a committed budget on every build, so it cannot grow unnoticed. Reach further with an opt-in package — each one backs a single
 nature with a real provider through the **same broker seam**, so it's *one line and nothing else
 about your agent changes*. Mix them freely: a local brain with cloud data, a registry of skills
 with a Redis memory.
