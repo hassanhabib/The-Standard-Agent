@@ -454,7 +454,11 @@ public sealed partial class StandardAgent : IAgent
     /// </summary>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent WithoutMemory() =>
-        Set(() => this.memoryBroker = new NotConfiguredMemoryBroker());
+        Set(() => this.memoryDisabled = true);
+
+    // Whether memory is composed at all, held until composition. A flag rather than a broker
+    // swap so the opt-out wins whatever order the memory verbs were called in.
+    private bool memoryDisabled;
 
     /// <summary>
     /// Gives the agent a knowledge base — a folder of reference files searched each turn, with the
@@ -1697,11 +1701,18 @@ public sealed partial class StandardAgent : IAgent
                         brain.MaxTokens ?? ResolvedInference.DefaultMaxTokens,
                         brain.TimeoutSeconds));
 
-        IMemoryService memoryService = this.memoryBroker is null
-            ? new MemoryService(file, Path.GetFullPath(this.memoryPath), logging)
-            : new MemoryService(this.memoryBroker, logging);
+        // Without memory there is nothing to recall and no way to store: the foundation reads a
+        // not-configured broker, and the remember tool is never registered, so the model is not
+        // offered it (principal review 2026-09-04, F-05).
+        IMemoryService memoryService = this.memoryDisabled
+            ? new MemoryService(new NotConfiguredMemoryBroker(), logging)
+            : this.memoryBroker is null
+                ? new MemoryService(file, Path.GetFullPath(this.memoryPath), logging)
+                : new MemoryService(this.memoryBroker, logging);
 
-        List<ITool> allTools = [.. this.tools, new RememberTool(memoryService.RememberAsync)];
+        List<ITool> allTools = this.memoryDisabled
+            ? [.. this.tools]
+            : [.. this.tools, new RememberTool(memoryService.RememberAsync)];
 
         // The fleet materializes as tools — which is the whole design: a handoff is an act, so
         // the advertisement opt-in, the perimeter, the audit and cancellation across the seam
