@@ -16,6 +16,7 @@ using Standard.Agents.Models.Coordinations.Agents;
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Loggings;
 using Standard.Agents.Models.Orchestrations.Agents;
+using Standard.Agents.Models.Orchestrations.Effects;
 using Standard.Agents.Services.Coordinations.Data;
 using Standard.Agents.Services.Coordinations.Decision;
 using Standard.Agents.Services.Coordinations.Direction;
@@ -64,6 +65,10 @@ public partial class RunManagementService : IRunManagementService
     private readonly ToolSelector? toolSelector;
     private readonly IReadOnlyList<string> describedToolNames;
 
+    // Who is acting, when the host says (SPEC.md §4.9): what a session records as its owner,
+    // and what a session another principal opened is refused against.
+    private readonly PrincipalResolver? principalResolver;
+
     public RunManagementService(
         IDataCoordinationService dataCoordinationService,
         IDecisionCoordinationService decisionCoordinationService,
@@ -82,7 +87,8 @@ public partial class RunManagementService : IRunManagementService
         IEnumerable<string>? configuredToolNames = null,
         IReadOnlyDictionary<string, ToolNarration>? toolNarrations = null,
         ToolSelector? toolSelector = null,
-        IEnumerable<string>? describedToolNames = null)
+        IEnumerable<string>? describedToolNames = null,
+        PrincipalResolver? principalResolver = null)
     {
         this.compensateOnFailure = compensateOnFailure;
         this.dataCoordinationService = dataCoordinationService;
@@ -107,6 +113,7 @@ public partial class RunManagementService : IRunManagementService
 
         this.toolSelector = toolSelector;
         this.describedToolNames = [.. describedToolNames ?? []];
+        this.principalResolver = principalResolver;
     }
 
     // The described names selection judges over: the agent's own, then its servers' — a
@@ -523,7 +530,7 @@ public partial class RunManagementService : IRunManagementService
 
         // The start-of-run checkpoint, written before any work is done (SPEC.md §4.11), and the
         // conversation so far, loaded before Decision runs so the Brain sees it.
-        await BeginSessionAsync(context, session);
+        await BeginSessionAsync(context);
         context = await LoadSessionAsync(context, session);
 
         // Budgets and cancellation are both checked at the turn boundary (SPEC.md §4.10): a turn

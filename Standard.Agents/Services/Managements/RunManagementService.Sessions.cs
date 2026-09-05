@@ -16,12 +16,27 @@ namespace Standard.Agents.Services.Managements;
 // a different process, long after the instance that created it is gone.
 public partial class RunManagementService
 {
+    // Bounded, because a store that refuses every write is an outage, not contention.
+    private const int MaxSessionWriteAttempts = 16;
+
     // Read before the run begins, because a resumed run must keep the identity the interrupted
-    // one had. Nothing is logged here: there is no run yet to credit the record to.
-    private async ValueTask<AgentSession?> PeekSessionAsync(string sessionId) =>
-        string.IsNullOrEmpty(sessionId)
-            ? null
-            : await this.dataCoordinationService.RecallSessionAsync(sessionId);
+    // one had. Nothing is logged here: there is no run yet to credit the record to. A session
+    // another principal opened is refused here, before a line of their conversation is read.
+    private async ValueTask<AgentSession?> PeekSessionAsync(string sessionId)
+    {
+        if (string.IsNullOrEmpty(sessionId))
+        {
+            return null;
+        }
+
+        AgentSession? session = await this.dataCoordinationService.RecallSessionAsync(sessionId);
+        ValidateSessionOwner(session, CurrentPrincipal());
+
+        return session;
+    }
+
+    private string CurrentPrincipal() =>
+        this.principalResolver?.Resolve()?.Id ?? string.Empty;
 
     // A session that never delivered an answer was interrupted — killed, cancelled, out of turns,
     // or waiting on an authority. The next prompt in that session continues that run rather than
@@ -42,7 +57,7 @@ public partial class RunManagementService
     // The start-of-run checkpoint. Written before any work, because a crash means nothing at the
     // end runs at all — and an identity recorded only on success is an identity the failure case
     // can never use.
-    private async ValueTask BeginSessionAsync(AgentContext context, AgentSession? session)
+    private async ValueTask BeginSessionAsync(AgentContext context)
     {
         if (string.IsNullOrEmpty(context.SessionId))
         {
@@ -52,15 +67,67 @@ public partial class RunManagementService
         // History is carried through untouched. The checkpoint records who is working the
         // session, not what was said — this prompt has no answer yet, and writing one here
         // would tell the next prompt the agent said something it never said.
-        await this.dataCoordinationService.RecordSessionAsync(
+        await RecordSessionWithRetryAsync(context.SessionId, existing =>
             new AgentSession
             {
                 Id = context.SessionId,
-                History = session?.History ?? [],
+                History = existing?.History ?? [],
                 Status = AgentStatus.Working,
-                PendingQuestion = session?.PendingQuestion ?? string.Empty,
+                PendingQuestion = existing?.PendingQuestion ?? string.Empty,
                 RunId = AgentRun.Current?.Id ?? string.Empty
             });
+    }
+
+    // Every write is based on a fresh read and says so: the version it was read at plus one,
+    // and the owner the record already had or the principal writing it now. A store that honors
+    // versions refuses a write based on a read that is no longer current — another prompt in
+    // the same session wrote first — and the loop reads again and tries again, so no completed
+    // turn is erased by a slower writer (SPEC.md §4.11; principal review 2026-09-04, F-06).
+    private async ValueTask RecordSessionWithRetryAsync(
+        string sessionId,
+        Func<AgentSession?, AgentSession> compose)
+    {
+        for (int attempt = 1; ; attempt++)
+        {
+            AgentSession? existing =
+                await this.dataCoordinationService.RecallSessionAsync(sessionId);
+
+            AgentSession session = compose(existing) with
+            {
+                Owner = existing is { Owner.Length: > 0 } ? existing.Owner : CurrentPrincipal(),
+                Version = (existing?.Version ?? 0) + 1
+            };
+
+            try
+            {
+                await this.dataCoordinationService.RecordSessionAsync(session);
+
+                return;
+            }
+            catch (Exception exception)
+                when (IsStaleSessionWrite(exception) && attempt < MaxSessionWriteAttempts)
+            {
+                await this.loggingBroker.LogProcessAsync(
+                    "Run",
+                    $"Session '{sessionId}' moved on since it was read; reading it again "
+                        + $"(attempt {attempt})",
+                    detail: true);
+            }
+        }
+    }
+
+    // The refusal arrives wrapped by every tier it crossed; what it IS sits at the bottom.
+    private static bool IsStaleSessionWrite(Exception exception)
+    {
+        for (Exception? current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is Models.Foundations.Sessions.Exceptions.StaleSessionException)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private async ValueTask<AgentContext> LoadSessionAsync(
@@ -94,31 +161,25 @@ public partial class RunManagementService
             return;
         }
 
-        AgentSession? existing =
-            await this.dataCoordinationService.RecallSessionAsync(context.SessionId);
+        await RecordSessionWithRetryAsync(context.SessionId, existing =>
+            new AgentSession
+            {
+                Id = context.SessionId,
+                History = [.. existing?.History ?? [], new AgentTurn(context.Prompt, context.Result)],
+                Status = context.Status,
+                RunId = AgentRun.Current?.Id ?? string.Empty,
 
-        IReadOnlyList<AgentTurn> history = existing?.History ?? [];
+                // What the agent is waiting on, so a later prompt can see it was mid-question
+                // rather than mid-nothing.
+                PendingQuestion = context.Status is AgentStatus.AwaitingInput
+                    or AgentStatus.AwaitingApproval
+                        ? context.Result
+                        : string.Empty,
 
-        var session = new AgentSession
-        {
-            Id = context.SessionId,
-            History = [.. history, new AgentTurn(context.Prompt, context.Result)],
-            Status = context.Status,
-            RunId = AgentRun.Current?.Id ?? string.Empty,
-
-            // What the agent is waiting on, so a later prompt can see it was mid-question
-            // rather than mid-nothing.
-            PendingQuestion = context.Status is AgentStatus.AwaitingInput
-                or AgentStatus.AwaitingApproval
-                    ? context.Result
-                    : string.Empty,
-
-            // Set only by the branch that holds an act, and the context belongs to this run
-            // alone — so a run that did not hold anything carries nothing, and the session
-            // stops advertising a held act as soon as one is permitted and performed.
-            PendingEffect = context.PendingEffect
-        };
-
-        await this.dataCoordinationService.RecordSessionAsync(session);
+                // Set only by the branch that holds an act, and the context belongs to this run
+                // alone — so a run that did not hold anything carries nothing, and the session
+                // stops advertising a held act as soon as one is permitted and performed.
+                PendingEffect = context.PendingEffect
+            });
     }
 }

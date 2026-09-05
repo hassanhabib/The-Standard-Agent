@@ -3,7 +3,7 @@
 A **language-neutral** set of behavioral test vectors that any Standard-Agents
 implementation runs to self-certify against
 [`SPEC.md`](https://github.com/hassanhabib/The-Standard-Agent-Specs/blob/main/SPEC.md).
-Seventy-six vectors, four readiness profiles, every vector proven able to fail.
+Seventy-seven vectors, four readiness profiles, every vector proven able to fail.
 
 The vectors are the executable half of the specification. Prose can be read two ways; a vector
 cannot, which is why "conformant" here means *this suite passes* rather than *we believe we
@@ -96,6 +96,7 @@ capability it configures did not exist, which is why the early vectors still des
 | `toolResultAnswersCall` | the call id was replayed and answered |
 | `policySawPrincipal` | the identity the policy broker was **handed when it decided** |
 | `status`, `pendingEffectTool` | how the run ended, and the caller's call riding the session as a pending effect |
+| `sessionTurnCount` | how many turns the session holds once every prompt has run, read from the store afterwards (§4.11) |
 | `brokerTemperature`, `brokerMaxTokens`, `brokerTemperatures` | what the Brain was handed, after precedence resolved at the boundary |
 | `brokerSchemaContains`, `brokerOptionsInclude`, `brokerOptionsExclude` | the surviving schema on the wire, and the passthrough after the core-owned-keys strip |
 | `narrationsContain`, `narrationsExclude` | what the Narration channel carried, in order — and what appeared on **no** stream event at all, which is what proves a withheld narration was withheld rather than rerouted. Requires `"streamed": true`: the batched door produces and discards its events |
@@ -179,6 +180,7 @@ the deterministic core of the Standard.
 | `a-remote-tools-schema-reaches-the-catalog` | A server's declared inputSchema rides the catalog line as the tool's parameters; the Brain is told how to call it, not only that it exists (§6.1) |
 | `a-selector-can-withhold-a-remote-tool` | Remote tools are discovered before selection and judged with the local ones; the withheld remote line reaches no model (§4.15) |
 | `an-enforced-offering-binds-a-remote-tool` | With enforcement on, an unoffered remote tool is denied at the perimeter, its server never called, and the run recovers (§4.15) |
+| `concurrent-turns-in-one-session-all-survive` | Four prompts in one session at once leave four turns; a versioned write is refused when stale and retried, never erased by a slower writer (§4.11) |
 | `a-repeat-in-a-session-is-a-new-act` | Run-once is scoped to a run; a repeat in a later run performs (§4.9) |
 | `an-allow-list-can-say-where` | Permission is what **and where**; the tool names the scope (§4.9) |
 | `ask-first-covers-what-nothing-permitted` | A mode answers for the acts no permission mentioned (§4.9) |

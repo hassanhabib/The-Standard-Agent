@@ -24,7 +24,8 @@ public partial class RecollectionOrchestrationService
         }
         catch (Exception exception) when (exception is MemoryValidationException
             or KnowledgeValidationException
-            or SessionValidationException)
+            or SessionValidationException
+            or SessionDependencyValidationException)
         {
             throw await CreateAndLogDependencyValidationExceptionAsync(
                 (exception as Xeption)?.InnerException as Xeption);

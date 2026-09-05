@@ -821,7 +821,8 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
     else if (vector.Concurrent)
     {
         string[] results = await Task.WhenAll(
-            prompts.Select(prompt => agent.ProcessPromptAsync(prompt).AsTask()));
+            prompts.Select(prompt =>
+                agent.ProcessPromptAsync(prompt, vector.SessionId ?? string.Empty).AsTask()));
 
         promptResults.AddRange(results);
         result = results[0];
@@ -864,12 +865,25 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
 
     RecordNativeModelInputs(nativeGenerator, modelInputs, brainInputs);
 
+    // What the session holds once every prompt has run, read from the store the agent wrote to,
+    // so a turn a concurrent save erased is a turn this harness can miss (SPEC.md §4.11).
+    int? sessionTurnCount = null;
+
+    if (vector.SessionId is not null && vector.Expect.SessionTurnCount is not null)
+    {
+        AgentSession? recordedSession = await new FileSessionBroker(
+            Path.Combine(AppContext.BaseDirectory, $"sessions-{vector.Name}"))
+                .SelectSessionAsync(vector.SessionId);
+
+        sessionTurnCount = recordedSession?.History.Count;
+    }
+
     return new VectorRun(
         result, promptResults, stubTools, gateRubric, judgeRubric, judgeInput, modelInputs,
         brainInputs, promptScreenings, auditRecords, compensationOrder, nativeGenerator,
         policyPrincipals, [.. scriptedMcpServers.Select(server => server.CallCount)],
         agentInputs, runStatus, pendingEffectTool, honoringGenerator?.Inferences ?? [],
-        streamedEvents);
+        streamedEvents, sessionTurnCount);
 }
 
 // The decision log's guarantees, certified from the records themselves: one run per prompt,
@@ -1230,6 +1244,19 @@ static bool RequestConformant(Vector vector, VectorRun run, out string? failure)
     failure = null;
     Expectation expect = vector.Expect;
 
+    // The history a session holds once every prompt has run, read from the store afterwards:
+    // under concurrent prompts, a save that read, appended and wrote the whole record leaves
+    // fewer turns than prompts (SPEC.md §4.11).
+    if (expect.SessionTurnCount is int expectedTurnCount
+        && run.SessionTurnCount != expectedTurnCount)
+    {
+        failure =
+            $"the session holds {run.SessionTurnCount?.ToString() ?? "no"} turn(s), "
+                + $"expected {expectedTurnCount}";
+
+        return false;
+    }
+
     if (expect.Status is string expectedStatus)
     {
         string actualStatus = run.Status?.ToString() ?? "(not reported)";
@@ -1489,4 +1516,5 @@ internal sealed record VectorRun(
     AgentStatus? Status,
     string? PendingEffectTool,
     IReadOnlyList<ResolvedInference> BrokerInferences,
-    List<AgentStreamEvent> StreamedEvents);
+    List<AgentStreamEvent> StreamedEvents,
+    int? SessionTurnCount);

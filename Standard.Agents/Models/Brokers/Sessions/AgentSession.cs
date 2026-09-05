@@ -52,6 +52,22 @@ public sealed record AgentSession
     /// out is replayed rather than performed a second time.
     /// </remarks>
     public string RunId { get; init; } = "";
+
+    /// <summary>
+    /// The principal that opened this session, stamped on the first write and kept. A session
+    /// id is caller-provided, so without an owner two callers sharing or guessing one id share
+    /// one history; with one, a different principal is refused. Empty when no principal was
+    /// configured, which is the anonymous, shared-by-id behavior that existed before.
+    /// </summary>
+    public string Owner { get; init; } = "";
+
+    /// <summary>
+    /// The version this record was written as, one more than the version it was read at. A
+    /// store that honors it refuses a write based on a stale read, so two prompts in one session
+    /// at once cannot erase each other's completed turn; the loop re-reads and tries again.
+    /// Zero for a record written before versions existed.
+    /// </summary>
+    public long Version { get; init; }
 }
 
 /// <summary>One exchange: what was asked, and what came back.</summary>
