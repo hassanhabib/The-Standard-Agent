@@ -28,6 +28,7 @@ public partial class DataCoordinationServiceTests
     private readonly Mock<ISkillService> skillServiceMock;
     private readonly Mock<IMemoryService> memoryServiceMock;
     private readonly Mock<IKnowledgeService> knowledgeServiceMock;
+    private readonly Mock<IExternalToolService> externalToolServiceMock;
     private readonly Mock<ILoggingBroker> loggingBrokerMock;
     private readonly IDataCoordinationService dataCoordinationService;
 
@@ -36,10 +37,17 @@ public partial class DataCoordinationServiceTests
         this.skillServiceMock = new Mock<ISkillService>();
         this.memoryServiceMock = new Mock<IMemoryService>();
         this.knowledgeServiceMock = new Mock<IKnowledgeService>();
+        this.externalToolServiceMock = new Mock<IExternalToolService>();
         this.loggingBrokerMock = new Mock<ILoggingBroker>();
 
         this.knowledgeServiceMock.Setup(service =>
             service.RetrieveKnowledgeAsync(It.IsAny<string>()))
+                .ReturnsAsync([]);
+
+        // No remote servers in these tests: the foundation answers with an empty catalog, the
+        // same answer the not-configured broker gives a real composition.
+        this.externalToolServiceMock.Setup(service =>
+            service.RetrieveToolsAsync())
                 .ReturnsAsync([]);
 
         // The regions are real; the mocks stay at the FOUNDATION level, which is where they
@@ -50,7 +58,7 @@ public partial class DataCoordinationServiceTests
                 knowledgeService: this.knowledgeServiceMock.Object,
                 toolCatalog: ToolCatalog,
                 loggingBroker: this.loggingBrokerMock.Object,
-                externalToolService: new Mock<IExternalToolService>().Object),
+                externalToolService: this.externalToolServiceMock.Object),
             recollectionService: new RecollectionOrchestrationService(
                 memoryService: this.memoryServiceMock.Object,
                 sessionService: new Mock<ISessionService>().Object,
