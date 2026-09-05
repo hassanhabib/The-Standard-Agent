@@ -1243,22 +1243,35 @@ public sealed partial class StandardAgent : IAgent
     /// provider volunteered its numbers was not a bound.
     /// </summary>
     /// <param name="maxTokens">Total tokens across the run.</param>
-    /// <param name="maxCostUsd">Total cost, priced by <paramref name="costPerThousandTokens"/>.</param>
+    /// <param name="maxCostUsd">
+    /// Total cost, priced by <paramref name="costPerThousandTokens"/>. A cost bound requires a
+    /// positive rate: the framework cannot know what a model costs, and a dollar bound priced at
+    /// zero is zero dollars forever — a guardrail that looks armed and never trips. That
+    /// contradiction refuses rather than composing silently.
+    /// </param>
     /// <param name="maxWallClock">Total elapsed time.</param>
-    /// <param name="costPerThousandTokens">Your rate, when bounding by cost.</param>
+    /// <param name="costPerThousandTokens">Your rate, required when bounding by cost.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
+    /// <exception cref="Models.Clients.Agents.Exceptions.InvalidAgentBudgetException">
+    /// <paramref name="maxCostUsd"/> is set and <paramref name="costPerThousandTokens"/> is not
+    /// positive.
+    /// </exception>
     public StandardAgent Budget(
         int? maxTokens = null,
         decimal? maxCostUsd = null,
         TimeSpan? maxWallClock = null,
-        decimal costPerThousandTokens = 0m) =>
-        Set(() => this.budget = new AgentBudget
+        decimal costPerThousandTokens = 0m)
+    {
+        ValidateBudget(maxCostUsd, costPerThousandTokens);
+
+        return Set(() => this.budget = new AgentBudget
         {
             MaxTokens = maxTokens,
             MaxCostUsd = maxCostUsd,
             MaxWallClock = maxWallClock,
             CostPerThousandTokens = costPerThousandTokens
         });
+    }
 
     /// <summary>
     /// Counts tokens in the box — the <b>Local</b> mode, and the default. Every run is measured

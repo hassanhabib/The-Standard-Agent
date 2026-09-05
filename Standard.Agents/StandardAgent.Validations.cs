@@ -27,4 +27,21 @@ public sealed partial class StandardAgent
                         + "before processing a prompt.");
         }
     }
+
+    // Spend is the token count times the rate, so a cost bound with no positive rate computes
+    // zero forever and never trips. The framework cannot know what a model costs and so cannot
+    // fill the rate in; it can refuse the contradiction of a dollar bound on a model declared
+    // free. Token and wall-clock bounds need no price and are not checked here.
+    private static void ValidateBudget(decimal? maxCostUsd, decimal costPerThousandTokens)
+    {
+        if (maxCostUsd is not null && costPerThousandTokens <= 0m)
+        {
+            throw new InvalidAgentBudgetException(
+                message:
+                    "Invalid agent budget: a cost bound (maxCostUsd) needs a positive "
+                        + "costPerThousandTokens. Cost is the token count times that rate, so at "
+                        + "zero the bound can never trip. Pass your model's rate, or bound by "
+                        + "maxTokens instead.");
+        }
+    }
 }
