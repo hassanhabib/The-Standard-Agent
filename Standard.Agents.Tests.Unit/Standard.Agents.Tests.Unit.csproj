@@ -19,6 +19,12 @@
     <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="Tynamix.ObjectFiller" Version="1.5.9" />
     <PackageReference Include="Xeption" Version="2.9.0" />
+    <!-- The host under test through real HTTP: routing, JSON binding, the API-key middleware
+         and the SSE wire, not a controller called by hand (principal review 2026-09-04, F-20).
+         One line per target, because the testing host must match the ASP.NET Core runtime it
+         exercises. -->
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.30" Condition="'$(TargetFramework)' == 'net8.0'" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.11" Condition="'$(TargetFramework)' == 'net10.0'" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="4.0.0" />
   </ItemGroup>

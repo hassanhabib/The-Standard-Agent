@@ -156,3 +156,7 @@ app.Use(async (context, next) =>
 app.MapControllers();
 
 app.Run();
+
+// Top-level statements compile to an internal Program; the acceptance tests stand the host up
+// through WebApplicationFactory<Program>, which needs to see it (F-20).
+public partial class Program { }
