@@ -38,17 +38,15 @@ public interface IAgent
 
     /// <summary>The one-line door: a prompt in, the answer's text out.</summary>
     async ValueTask<string> ProcessPromptAsync(string prompt) =>
-        (await RunAsync(new PromptRequest { Prompt = prompt }, CancellationToken.None)).Result;
+        (await RunAsync(prompt)).Result;
 
     /// <summary>
     /// The same run, reported with <b>how it ended</b> as well as what it produced. A run can end
     /// answered, refused, held on an authority, or out of turns, and only the first makes the
     /// result an answer — a caller given nothing but the string cannot tell them apart.
     /// </summary>
-    async ValueTask<AgentOutcome> RunAsync(string prompt) =>
-        new AgentOutcome(
-            Result: await ProcessPromptAsync(prompt),
-            Status: AgentStatus.Responded);
+    ValueTask<AgentOutcome> RunAsync(string prompt) =>
+        RunAsync(new PromptRequest { Prompt = prompt }, CancellationToken.None);
 
     /// <summary>
     /// The same run, stoppable: cancellation stops it at the next turn boundary, so no effect
@@ -56,7 +54,7 @@ public interface IAgent
     /// the outer run's token here, so cancelling an outer run stops the whole tree.
     /// </summary>
     ValueTask<AgentOutcome> RunAsync(string prompt, CancellationToken cancellationToken) =>
-        RunAsync(prompt);
+        RunAsync(new PromptRequest { Prompt = prompt }, cancellationToken);
 
     /// <summary>The streamed run for a bare prompt, riding the request-rich stream.</summary>
     IAsyncEnumerable<AgentStreamEvent> StreamPromptAsync(
