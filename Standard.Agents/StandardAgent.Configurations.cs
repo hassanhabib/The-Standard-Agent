@@ -32,10 +32,29 @@ public partial class StandardAgent
 
         foreach ((string key, JsonNode? value) in document)
         {
-            Apply(agent, key, value);
+            ApplyEntry(agent, key, value);
         }
 
         return agent;
+    }
+
+    // The document reaches the same verbs code does, so a verb's refusal is rewrapped into the
+    // document's own exception naming the entry the author must fix — they are looking at a JSON
+    // file, not a stack trace — with the verb's refusal preserved beneath it.
+    private static void ApplyEntry(StandardAgent agent, string key, JsonNode? value)
+    {
+        try
+        {
+            Apply(agent, key, value);
+        }
+        catch (InvalidAgentApiUrlException invalidAgentApiUrlException)
+        {
+            throw new InvalidAgentConfigurationException(
+                message:
+                    $"The '{key}' entry's 'apiUrl' is not an endpoint base the route can be "
+                        + "appended to. " + invalidAgentApiUrlException.Message,
+                innerException: invalidAgentApiUrlException);
+        }
     }
 
     /// <summary>Reads <paramref name="path"/> and composes the agent from its JSON.</summary>

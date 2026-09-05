@@ -229,9 +229,13 @@ public sealed partial class StandardAgent : IAgent
         string model,
         double? temperature = null,
         int? maxTokens = null,
-        int timeoutSeconds = 120) =>
-        Set(() => this.brainSettings =
+        int timeoutSeconds = 120)
+    {
+        ValidateApiUrl(apiUrl);
+
+        return Set(() => this.brainSettings =
             new InferenceSettings(apiUrl, apiKey, model, temperature, maxTokens, timeoutSeconds));
+    }
 
     /// <summary>
     /// Supplies an in-process brain as a delegate, so the agent makes no API calls — the
@@ -371,9 +375,13 @@ public sealed partial class StandardAgent : IAgent
         string model,
         double temperature = 0.0,
         int maxTokens = 16,
-        int timeoutSeconds = 30) =>
-        Set(() => this.gateSettings =
+        int timeoutSeconds = 30)
+    {
+        ValidateApiUrl(apiUrl);
+
+        return Set(() => this.gateSettings =
             new InferenceSettings(apiUrl, apiKey, model, temperature, maxTokens, timeoutSeconds));
+    }
 
     /// <summary>
     /// Turns on the Judge: an opt-in guardian that scores the brain's draft answer and sends it
@@ -394,9 +402,13 @@ public sealed partial class StandardAgent : IAgent
         string model,
         double temperature = 0.0,
         int maxTokens = 16,
-        int timeoutSeconds = 30) =>
-        Set(() => this.judgeSettings =
+        int timeoutSeconds = 30)
+    {
+        ValidateApiUrl(apiUrl);
+
+        return Set(() => this.judgeSettings =
             new InferenceSettings(apiUrl, apiKey, model, temperature, maxTokens, timeoutSeconds));
+    }
 
     /// <summary>
     /// Turns on a <b>deterministic</b> Gate: a guardian backed by a rule, not a model. It refuses
@@ -918,9 +930,13 @@ public sealed partial class StandardAgent : IAgent
         string apiKey,
         string model,
         double temperature = 0.7,
-        int maxTokens = 1024) =>
-        Set(() => this.generatorBrokerV1 =
+        int maxTokens = 1024)
+    {
+        ValidateApiUrl(apiUrl);
+
+        return Set(() => this.generatorBrokerV1 =
             new GeneratorBrokerV1(apiUrl, apiKey, model, temperature, maxTokens));
+    }
 
     /// <summary>
     /// Gives the agent a native tool-calling brain on the <b>Anthropic Messages API</b> — the
