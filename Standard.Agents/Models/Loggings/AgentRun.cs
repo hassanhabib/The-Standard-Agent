@@ -84,6 +84,15 @@ public sealed class AgentRun
     public IReadOnlyList<string>? OfferedTools { get; set; }
 
     /// <summary>
+    /// The remote tools this run discovered on its servers, set by the loop once per run before
+    /// selection and read wherever the offering is rendered or bound: the text catalog, the
+    /// native tool list, and the perimeter's notion of what is advertised. Empty when there are
+    /// none. Riding the run for the same reason the offering does — the readers sit two tiers
+    /// below the loop, and none should gain a parameter for it.
+    /// </summary>
+    public IReadOnlyList<Brokers.Mcps.McpTool> RemoteTools { get; set; } = [];
+
+    /// <summary>
     /// Starts a run on the calling flow and returns the scope that ends it. Call it from the
     /// coordination loop, before anything the run should be credited with.
     /// </summary>

@@ -157,6 +157,14 @@ public partial class RetrievalOrchestrationService : IRetrievalOrchestrationServ
         return string.Join("\n", catalogLines);
     }
 
+    public ValueTask<IReadOnlyList<McpTool>> RetrieveRemoteToolsAsync() =>
+    TryCatch(async () =>
+    {
+        await ValueTask.CompletedTask;
+
+        return (IReadOnlyList<McpTool>)[];
+    });
+
     public ValueTask<IReadOnlyList<string>> RetrieveGroundingAsync(string query) =>
     TryCatch(async () =>
     {

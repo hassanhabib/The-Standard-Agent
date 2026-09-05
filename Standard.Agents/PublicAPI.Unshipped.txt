@@ -35,3 +35,9 @@ Standard.Agents.Models.Brokers.Mcps.McpTool.Deconstruct(out string! Name, out st
 Standard.Agents.Models.Brokers.Mcps.McpTool.McpTool(string! Name, string! Description, string! InputSchemaJson = "{}") -> void
 Standard.Agents.Models.Brokers.Mcps.McpTool.InputSchemaJson.get -> string!
 Standard.Agents.Models.Brokers.Mcps.McpTool.InputSchemaJson.init -> void
+Standard.Agents.Services.Orchestrations.Data.Retrievals.IRetrievalOrchestrationService.RetrieveRemoteToolsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Mcps.McpTool!>!>
+Standard.Agents.Services.Orchestrations.Data.Retrievals.RetrievalOrchestrationService.RetrieveRemoteToolsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Mcps.McpTool!>!>
+Standard.Agents.Services.Coordinations.Data.IDataCoordinationService.RetrieveRemoteToolsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Mcps.McpTool!>!>
+Standard.Agents.Services.Coordinations.Data.DataCoordinationService.RetrieveRemoteToolsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Mcps.McpTool!>!>
+Standard.Agents.Models.Loggings.AgentRun.RemoteTools.get -> System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Mcps.McpTool!>!
+Standard.Agents.Models.Loggings.AgentRun.RemoteTools.set -> void
