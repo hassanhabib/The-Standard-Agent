@@ -160,7 +160,7 @@ public sealed partial class StandardAgent : IAgent
     /// the same as <c>new StandardAgent().Brain(apiUrl, apiKey, model)</c>. Chain further builder
     /// methods afterward to add skills, tools, guardians, memory or knowledge.
     /// </summary>
-    /// <param name="apiUrl">Base URL of the OpenAI-compatible endpoint.</param>
+    /// <param name="apiUrl">Base URL of the OpenAI-compatible endpoint, ending with <c>/</c>; the chat/completions route is appended.</param>
     /// <param name="apiKey">API key for the endpoint (empty string if none is needed).</param>
     /// <param name="model">Model name to request from the endpoint.</param>
     public StandardAgent(string apiUrl, string apiKey, string model) =>
@@ -209,7 +209,7 @@ public sealed partial class StandardAgent : IAgent
     /// agent's reasoning. Required unless you supply an in-process brain via
     /// <see cref="LocalBrain"/> or <see cref="UseGenerator"/>.
     /// </summary>
-    /// <param name="apiUrl">Base URL of the OpenAI-compatible endpoint.</param>
+    /// <param name="apiUrl">Base URL of the OpenAI-compatible endpoint, ending with <c>/</c>; the chat/completions route is appended.</param>
     /// <param name="apiKey">API key for the endpoint (empty string if none is needed).</param>
     /// <param name="model">Model name to request from the endpoint.</param>
     /// <param name="temperature">
@@ -362,7 +362,7 @@ public sealed partial class StandardAgent : IAgent
     /// way the Gate is never the brain — it runs its own screening rubric (Data), honouring
     /// SPEC.md invariant 6.
     /// </summary>
-    /// <param name="apiUrl">Base URL of the OpenAI-compatible endpoint for the Gate.</param>
+    /// <param name="apiUrl">Base URL of the OpenAI-compatible endpoint for the Gate, ending with <c>/</c>; the chat/completions route is appended.</param>
     /// <param name="apiKey">API key for the endpoint (empty string if none is needed).</param>
     /// <param name="model">Model name to request for screening.</param>
     /// <param name="temperature">Sampling temperature; kept at 0.0 for a deterministic verdict.</param>
@@ -389,7 +389,7 @@ public sealed partial class StandardAgent : IAgent
     /// the brain's endpoint or a different model, and never acts as the brain — it applies its own
     /// evaluation rubric (Data), honouring SPEC.md invariant 6.
     /// </summary>
-    /// <param name="apiUrl">Base URL of the OpenAI-compatible endpoint for the Judge.</param>
+    /// <param name="apiUrl">Base URL of the OpenAI-compatible endpoint for the Judge, ending with <c>/</c>; the chat/completions route is appended.</param>
     /// <param name="apiKey">API key for the endpoint (empty string if none is needed).</param>
     /// <param name="model">Model name to request for evaluation.</param>
     /// <param name="temperature">Sampling temperature; kept at 0.0 for a deterministic score.</param>
@@ -919,7 +919,7 @@ public sealed partial class StandardAgent : IAgent
     /// has to imitate. Frontier models are trained on this; the text protocol remains the default
     /// because it works against any endpoint and small local models often do better with it.
     /// </summary>
-    /// <param name="apiUrl">Base URL of the OpenAI-compatible endpoint.</param>
+    /// <param name="apiUrl">Base URL of the OpenAI-compatible endpoint, ending with <c>/</c>; the chat/completions route is appended.</param>
     /// <param name="apiKey">API key for the endpoint (empty string if none is needed).</param>
     /// <param name="model">Model name to request.</param>
     /// <param name="temperature">Sampling temperature. Defaults to 0.7.</param>
