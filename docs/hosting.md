@@ -198,3 +198,21 @@ Set the endpoint and traces and metrics leave over OTLP for your collector; leav
 nothing is wired at all. The exporter lives here rather than in the library deliberately: the
 core emits through the BCL's `ActivitySource` with zero dependencies, and shipping spans
 somewhere is a deployment concern — exactly what a host is for.
+
+## HTTP out
+
+The agent's own HTTP traffic (the brain, the native brain, every MCP server) rides handlers the
+host owns. The host registers one named client, `standard-agent`, with `IHttpClientFactory` and
+hands the agent its handlers through `.Http(...)`, so connections are pooled and DNS-refreshing
+the way every other outbound call in an ASP.NET Core process is, and there is one place to put
+a proxy, a certificate, a resilience handler or an observer under all of it:
+
+```csharp
+builder.Services.AddHttpClient("standard-agent")
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { Proxy = corporateProxy });
+```
+
+Ownership is explicit ([support.md](support.md)): handlers from the factory are the factory's,
+the agent wraps them in clients that hold nothing of their own and never disposes them. The
+library needs no package for this; the seam takes a `Func<HttpMessageHandler>`, and
+`IHttpMessageHandlerFactory` is what the host passes.

@@ -38,13 +38,38 @@ public sealed class McpBroker : IMcpBroker
         string? apiKey = null,
         string apiKeyHeader = "X-Api-Key",
         Func<ValueTask<string>>? bearerTokenProvider = null)
+        : this(
+            new HttpClientHandler(),
+            endpointUrl,
+            relativeUrl,
+            timeoutSeconds,
+            bearerToken,
+            apiKey,
+            apiKeyHeader,
+            bearerTokenProvider)
     {
-        // A dynamic token rides a handler so every request asks the provider — that is what an
-        // OAuth access token needs, because the one from composition time expires. Static
-        // credentials ride the default headers; the provider, when present, wins over both.
+    }
+
+    // The host's handler under this broker's traffic (F-23). The handler is the host's: the
+    // client around it holds nothing of its own and never disposes it. A dynamic token rides a
+    // handler of its own on top, so every request asks the provider — that is what an OAuth
+    // access token needs, because the one from composition time expires. Static credentials
+    // ride the default headers; the provider, when present, wins over both.
+    public McpBroker(
+        HttpMessageHandler handler,
+        string endpointUrl,
+        string relativeUrl,
+        int timeoutSeconds,
+        string? bearerToken,
+        string? apiKey,
+        string apiKeyHeader,
+        Func<ValueTask<string>>? bearerTokenProvider)
+    {
         var httpClient = bearerTokenProvider is null
-            ? new HttpClient()
-            : new HttpClient(new BearerTokenHandler(bearerTokenProvider));
+            ? new HttpClient(handler, disposeHandler: false)
+            : new HttpClient(
+                new BearerTokenHandler(bearerTokenProvider, handler),
+                disposeHandler: false);
 
         httpClient.BaseAddress = new Uri(endpointUrl);
         httpClient.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
@@ -68,8 +93,10 @@ public sealed class McpBroker : IMcpBroker
     {
         private readonly Func<ValueTask<string>> provideToken;
 
-        public BearerTokenHandler(Func<ValueTask<string>> provideToken)
-            : base(new HttpClientHandler()) =>
+        public BearerTokenHandler(
+            Func<ValueTask<string>> provideToken,
+            HttpMessageHandler innerHandler)
+            : base(innerHandler) =>
             this.provideToken = provideToken;
 
         protected override async Task<HttpResponseMessage> SendAsync(

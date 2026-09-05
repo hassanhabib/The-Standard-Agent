@@ -16,7 +16,8 @@ public sealed partial class StandardAgent
         bool hasBrain =
             this.generatorBroker is not null
                 || this.brainSettings is not null
-                || this.generatorBrokerV1 is not null;
+                || this.generatorBrokerV1 is not null
+                || this.nativeBrainSource is not null;
 
         if (hasBrain is false)
         {

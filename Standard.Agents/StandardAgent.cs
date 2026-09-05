@@ -82,7 +82,10 @@ public sealed partial class StandardAgent : IAgent
     // Integrations accumulate, never replace: a second skill source or MCP server adds to the
     // agent the way a second .Tool() always has.
     private readonly List<ISkillBroker> skillSources = [];
-    private readonly List<IMcpBroker> mcpSources = [];
+    // Sources, not brokers: an HTTP broker is created at composition so the host's handler
+    // (Http) reaches it whatever the order of the chain, and a broker handed in whole is
+    // simply returned (F-23).
+    private readonly List<Func<IMcpBroker>> mcpSources = [];
 
     // The fleet accumulates too: each registry is one more place agents come from, and every
     // registered agent materializes as a tool at composition.
@@ -143,6 +146,13 @@ public sealed partial class StandardAgent : IAgent
         new(StringComparer.OrdinalIgnoreCase);
     private int maxHistoryTurns = 20;
     private Func<AgentPrincipal?>? identityResolver;
+    private Func<HttpMessageHandler>? httpHandlerSource;
+    private Func<IGeneratorBrokerV1>? nativeBrainSource;
+
+    // Handlers this composition created for itself, released when the next composition
+    // replaces them: an agent recomposed by the dozen must not keep a dozen connection pools
+    // alive until finalization (F-23). Handlers the host supplied are never in this list.
+    private readonly List<HttpMessageHandler> ownedHttpHandlers = [];
 
     private IRunManagementService? agent;
 
@@ -511,7 +521,8 @@ public sealed partial class StandardAgent : IAgent
         string? apiKey = null,
         string apiKeyHeader = "X-Api-Key",
         Func<ValueTask<string>>? bearerTokenProvider = null) =>
-        Set(() => this.mcpSources.Add(new McpBroker(
+        Set(() => this.mcpSources.Add(() => new McpBroker(
+            CreateHttpHandler(),
             endpointUrl,
             relativeUrl,
             timeoutSeconds,
@@ -951,8 +962,19 @@ public sealed partial class StandardAgent : IAgent
     {
         ValidateApiUrl(apiUrl);
 
-        return Set(() => this.generatorBrokerV1 =
-            new GeneratorBrokerV1(apiUrl, apiKey, model, temperature, maxTokens));
+        return Set(() =>
+        {
+            this.generatorBrokerV1 = null;
+
+            this.nativeBrainSource = () => new GeneratorBrokerV1(
+                CreateHttpHandler(),
+                apiUrl,
+                apiKey,
+                model,
+                temperature,
+                maxTokens,
+                timeoutSeconds: 120);
+        });
     }
 
     /// <summary>
@@ -971,8 +993,19 @@ public sealed partial class StandardAgent : IAgent
         string model,
         double temperature = 0.7,
         int maxTokens = 1024) =>
-        Set(() => this.generatorBrokerV1 =
-            new AnthropicGeneratorBrokerV1(apiKey, model, temperature, maxTokens));
+        Set(() =>
+        {
+            this.generatorBrokerV1 = null;
+
+            this.nativeBrainSource = () => new AnthropicGeneratorBrokerV1(
+                CreateHttpHandler(),
+                apiKey,
+                model,
+                temperature,
+                maxTokens,
+                timeoutSeconds: 120,
+                apiUrl: "https://api.anthropic.com/");
+        });
 
     /// <summary>
     /// Swaps in a custom native-brain broker — the <b>External</b> seam for a provider package
@@ -981,7 +1014,11 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="broker">The V1 generator broker to use.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent UseNativeBrain(IGeneratorBrokerV1 broker) =>
-        Set(() => this.generatorBrokerV1 = broker);
+        Set(() =>
+        {
+            this.nativeBrainSource = null;
+            this.generatorBrokerV1 = broker;
+        });
 
     /// <summary>
     /// Supplies your own native brain as a delegate — the <b>Custom</b> mode of the V1 seam.
@@ -993,7 +1030,11 @@ public sealed partial class StandardAgent : IAgent
             IReadOnlyList<ConversationMessage>,
             IReadOnlyList<ToolDefinition>,
             ValueTask<GenerationResult>> generate) =>
-        Set(() => this.generatorBrokerV1 = new FunctionGeneratorBrokerV1(generate));
+        Set(() =>
+        {
+            this.nativeBrainSource = null;
+            this.generatorBrokerV1 = new FunctionGeneratorBrokerV1(generate);
+        });
 
     /// <summary>
     /// Swaps in a custom memory broker, replacing the default file-backed one set up by
@@ -1058,7 +1099,7 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="broker">The MCP broker to add.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent UseMcp(IMcpBroker broker) =>
-        Set(() => this.mcpSources.Add(broker));
+        Set(() => this.mcpSources.Add(() => broker));
 
     /// <summary>
     /// Swaps in a custom logging broker for the agent's internal diagnostic logging.
@@ -1628,6 +1669,27 @@ public sealed partial class StandardAgent : IAgent
     // Every builder method drops the cached composition, so configuration set after a
     // prompt still takes effect. Returning `this` without doing that would silently
     // ignore the change.
+    /// <summary>
+    /// Puts the host's HTTP handler chain under every HTTP broker the agent composes: the brain,
+    /// the native brain, and MCP servers. The <b>External</b> seam for HTTP itself — pooled and
+    /// DNS-refreshing connections from <c>IHttpClientFactory</c>
+    /// (<c>IHttpMessageHandlerFactory.CreateHandler</c>), a proxy, a certificate, a resilience
+    /// handler, an observer — where a broker that built its own client could reach none of them
+    /// (principal review 2026-09-04, F-23).
+    /// </summary>
+    /// <remarks>
+    /// Ownership is explicit. A handler this delegate returns is yours: the broker wraps it in a
+    /// client that holds nothing of its own and never disposes it. Without this call every HTTP
+    /// broker creates its own handler, owned by the composition and released on the next one, so
+    /// a single long-lived agent holds one set for its life; short-lived agents composed by the
+    /// dozen should supply handlers from a factory instead. Order does not matter: brokers are
+    /// created at composition, so the handler reaches a brain or server registered before it.
+    /// </remarks>
+    /// <param name="handlers">Returns a handler for one broker; called once per HTTP broker.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent Http(Func<HttpMessageHandler> handlers) =>
+        Set(() => this.httpHandlerSource = handlers);
+
     private StandardAgent Set(Action configure)
     {
         lock (this.compositionLock)
@@ -1663,9 +1725,35 @@ public sealed partial class StandardAgent : IAgent
     private static string ComposeGuardianRubric(params string[] parts) =>
         string.Join("\n\n", parts.Where(part => string.IsNullOrWhiteSpace(part) is false));
 
+    // One handler per HTTP broker: the host's when Http(...) was called, otherwise one this
+    // composition owns and the next composition releases.
+    private HttpMessageHandler CreateHttpHandler()
+    {
+        if (this.httpHandlerSource is not null)
+        {
+            return this.httpHandlerSource();
+        }
+
+        var handler = new HttpClientHandler();
+        this.ownedHttpHandlers.Add(handler);
+
+        return handler;
+    }
+
+    private void ReleaseOwnedHttpHandlers()
+    {
+        foreach (HttpMessageHandler handler in this.ownedHttpHandlers)
+        {
+            handler.Dispose();
+        }
+
+        this.ownedHttpHandlers.Clear();
+    }
+
     private IRunManagementService Compose(IReadOnlyList<RegisteredAgent> registeredAgents)
     {
         ValidateComposition();
+        ReleaseOwnedHttpHandlers();
 
         InferenceSettings? brain = this.brainSettings;
 
@@ -1696,6 +1784,7 @@ public sealed partial class StandardAgent : IAgent
                     // composition. A per-request value arrives on the request-carrying overload
                     // and never through here.
                     : new GeneratorBroker(
+                        CreateHttpHandler(),
                         brain.ApiUrl, brain.ApiKey, brain.Model,
                         brain.Temperature ?? ResolvedInference.DefaultTemperature,
                         brain.MaxTokens ?? ResolvedInference.DefaultMaxTokens,
@@ -1778,11 +1867,13 @@ public sealed partial class StandardAgent : IAgent
 
         // One source composes as itself; several compose behind the same seam the service
         // already speaks — the tier above never learns how many integrations answered.
-        IMcpBroker mcp = this.mcpSources.Count switch
+        List<IMcpBroker> mcpBrokers = [.. this.mcpSources.Select(source => source())];
+
+        IMcpBroker mcp = mcpBrokers.Count switch
         {
             0 => new NotConfiguredMcpBroker(),
-            1 => this.mcpSources[0],
-            _ => new CompositeMcpBroker(this.mcpSources)
+            1 => mcpBrokers[0],
+            _ => new CompositeMcpBroker(mcpBrokers)
         };
 
         ISkillBroker skills = this.skillSources.Count switch
@@ -1845,10 +1936,13 @@ public sealed partial class StandardAgent : IAgent
             new RetryingGeneratorBroker(generator, resilience),
             redaction);
 
-        IGeneratorBrokerV1? nativeAtTheWire = this.generatorBrokerV1 is null
+        IGeneratorBrokerV1? nativeBrain =
+            this.generatorBrokerV1 ?? this.nativeBrainSource?.Invoke();
+
+        IGeneratorBrokerV1? nativeAtTheWire = nativeBrain is null
             ? null
             : new RedactingGeneratorBrokerV1(
-                new RetryingGeneratorBrokerV1(this.generatorBrokerV1, resilience),
+                new RetryingGeneratorBrokerV1(nativeBrain, resilience),
                 redaction);
 
         GateService gate = new(new RedactingClassifierBroker(classifier, redaction), logging);

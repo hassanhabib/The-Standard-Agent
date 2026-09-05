@@ -14,9 +14,17 @@ using Standard.Agents;
 using Standard.Agents.Brokers.Telemetries;
 using Standard.Agents.Host.Security;
 
+const string AgentHttpClientName = "standard-agent";
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+
+// The agent's HTTP traffic - brain, native brain, MCP servers - rides handlers the host owns,
+// pooled and DNS-refreshing through IHttpClientFactory rather than clients each broker built
+// for itself (principal review 2026-09-04, F-23). One named registration is the one place to
+// put a proxy, a certificate, a resilience handler or an observer under all of it.
+builder.Services.AddHttpClient(AgentHttpClientName);
 
 // Exporting is opt-in by the standard OTel switch: set OTEL_EXPORTER_OTLP_ENDPOINT and the
 // agent's spans and metrics (plus the HTTP server's) leave for your collector; leave it unset
@@ -44,6 +52,9 @@ if (string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT
 builder.Services.AddSingleton<IAgent>(provider =>
 {
     IConfiguration configuration = provider.GetRequiredService<IConfiguration>();
+
+    IHttpMessageHandlerFactory httpHandlers =
+        provider.GetRequiredService<IHttpMessageHandlerFactory>();
 
     // The agent as data: Agent:Config names a JSON document, or an agent.json beside the
     // executable is picked up on its own — a low-code platform writes a file and has an agent,
@@ -89,7 +100,7 @@ builder.Services.AddSingleton<IAgent>(provider =>
                     + "\"nativeBrainAnthropic\" to agent.json, then restart the host.");
         }
 
-        return configured;
+        return configured.Http(() => httpHandlers.CreateHandler(AgentHttpClientName));
     }
 
     string? url = configuration["Agent:Url"];
@@ -127,7 +138,7 @@ builder.Services.AddSingleton<IAgent>(provider =>
     // laptop and load-bearing behind a collector.
     agent.Telemetry(configuration["Agent:Name"] ?? "standard-agent");
 
-    return agent;
+    return agent.Http(() => httpHandlers.CreateHandler(AgentHttpClientName));
 });
 
 var app = builder.Build();
