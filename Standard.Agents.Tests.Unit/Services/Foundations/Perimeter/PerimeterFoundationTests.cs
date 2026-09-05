@@ -9,6 +9,7 @@ using Standard.Agents.Brokers.Approvals;
 using Standard.Agents.Brokers.Effects;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Brokers.Policies;
+using Standard.Agents.Brokers.Times;
 using Standard.Agents.Models.Orchestrations.Effects;
 using Standard.Agents.Services.Foundations.Approvals;
 using Standard.Agents.Services.Foundations.EffectLedgers;
@@ -26,6 +27,7 @@ public partial class PerimeterFoundationTests
     private readonly Mock<IPolicyBroker> policyBrokerMock;
     private readonly Mock<IApprovalBroker> approvalBrokerMock;
     private readonly Mock<IEffectLedgerBroker> effectLedgerBrokerMock;
+    private readonly Mock<ITimeBroker> timeBrokerMock;
     private readonly Mock<ILoggingBroker> loggingBrokerMock;
 
     private readonly IPolicyService policyService;
@@ -37,6 +39,7 @@ public partial class PerimeterFoundationTests
         this.policyBrokerMock = new Mock<IPolicyBroker>();
         this.approvalBrokerMock = new Mock<IApprovalBroker>();
         this.effectLedgerBrokerMock = new Mock<IEffectLedgerBroker>();
+        this.timeBrokerMock = new Mock<ITimeBroker>();
         this.loggingBrokerMock = new Mock<ILoggingBroker>();
 
         this.policyService = new PolicyService(
@@ -49,6 +52,7 @@ public partial class PerimeterFoundationTests
 
         this.effectLedgerService = new EffectLedgerService(
             effectLedgerBroker: this.effectLedgerBrokerMock.Object,
+            timeBroker: this.timeBrokerMock.Object,
             loggingBroker: this.loggingBrokerMock.Object);
     }
 

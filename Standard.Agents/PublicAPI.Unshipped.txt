@@ -106,3 +106,115 @@ override Standard.Agents.Models.Brokers.Audits.AuditPolicy.GetHashCode() -> int
 override Standard.Agents.Models.Brokers.Audits.AuditPolicy.ToString() -> string!
 static Standard.Agents.Models.Brokers.Audits.AuditPolicy.operator !=(Standard.Agents.Models.Brokers.Audits.AuditPolicy? left, Standard.Agents.Models.Brokers.Audits.AuditPolicy? right) -> bool
 static Standard.Agents.Models.Brokers.Audits.AuditPolicy.operator ==(Standard.Agents.Models.Brokers.Audits.AuditPolicy? left, Standard.Agents.Models.Brokers.Audits.AuditPolicy? right) -> bool
+*REMOVED*Standard.Agents.Brokers.Effects.FileEffectLedgerBroker.DeleteClaimAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask
+*REMOVED*Standard.Agents.Brokers.Effects.FileEffectLedgerBroker.InsertOutcomeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect, string! outcome) -> System.Threading.Tasks.ValueTask
+*REMOVED*Standard.Agents.Brokers.Effects.FileEffectLedgerBroker.SelectOutcomeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<string?>
+*REMOVED*Standard.Agents.Brokers.Effects.FunctionEffectLedgerBroker.DeleteClaimAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask
+*REMOVED*Standard.Agents.Brokers.Effects.FunctionEffectLedgerBroker.FunctionEffectLedgerBroker(System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentEffect!, System.Threading.Tasks.ValueTask<string?>>! claim, System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentEffect!, string!, System.Threading.Tasks.ValueTask>! record, System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentEffect!, System.Threading.Tasks.ValueTask>! release) -> void
+*REMOVED*Standard.Agents.Brokers.Effects.FunctionEffectLedgerBroker.InsertOutcomeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect, string! outcome) -> System.Threading.Tasks.ValueTask
+*REMOVED*Standard.Agents.Brokers.Effects.FunctionEffectLedgerBroker.SelectOutcomeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<string?>
+*REMOVED*Standard.Agents.Brokers.Effects.IEffectLedgerBroker.DeleteClaimAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask
+*REMOVED*Standard.Agents.Brokers.Effects.IEffectLedgerBroker.InsertOutcomeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect, string! outcome) -> System.Threading.Tasks.ValueTask
+*REMOVED*Standard.Agents.Brokers.Effects.IEffectLedgerBroker.SelectOutcomeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<string?>
+*REMOVED*Standard.Agents.Brokers.Effects.InMemoryEffectLedgerBroker.DeleteClaimAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask
+*REMOVED*Standard.Agents.Brokers.Effects.InMemoryEffectLedgerBroker.InsertOutcomeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect, string! outcome) -> System.Threading.Tasks.ValueTask
+*REMOVED*Standard.Agents.Brokers.Effects.InMemoryEffectLedgerBroker.SelectOutcomeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<string?>
+*REMOVED*Standard.Agents.Services.Foundations.EffectLedgers.EffectLedgerService.EffectLedgerService(Standard.Agents.Brokers.Effects.IEffectLedgerBroker! effectLedgerBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+*REMOVED*Standard.Agents.Services.Foundations.EffectLedgers.EffectLedgerService.RetrieveOutcomeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<string?>
+*REMOVED*Standard.Agents.Services.Foundations.EffectLedgers.IEffectLedgerService.RetrieveOutcomeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<string?>
+*REMOVED*Standard.Agents.Services.Orchestrations.Direction.Perimeters.IPerimeterOrchestrationService.ClaimAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<string?>
+*REMOVED*Standard.Agents.Services.Orchestrations.Direction.Perimeters.PerimeterOrchestrationService.ClaimAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<string?>
+*REMOVED*Standard.Agents.Services.Orchestrations.Direction.Perimeters.PerimeterOrchestrationService.PerimeterOrchestrationService(Standard.Agents.Services.Foundations.Policys.IPolicyService! policyService, Standard.Agents.Services.Foundations.Approvals.IApprovalService! approvalService, Standard.Agents.Services.Foundations.EffectLedgers.IEffectLedgerService! effectLedgerService, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+*REMOVED*Standard.Agents.StandardAgent.OnEffectLedger(System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentEffect!, System.Threading.Tasks.ValueTask<string?>>! claim, System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentEffect!, string!, System.Threading.Tasks.ValueTask>! record, System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentEffect!, System.Threading.Tasks.ValueTask>! release) -> Standard.Agents.StandardAgent!
+Standard.Agents.Brokers.Effects.FileEffectLedgerBroker.DeleteRecordAsync(string! idempotencyKey) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Effects.FileEffectLedgerBroker.InsertClaimAsync(Standard.Agents.Models.Brokers.Effects.EffectRecord! claim) -> System.Threading.Tasks.ValueTask<bool>
+Standard.Agents.Brokers.Effects.FileEffectLedgerBroker.SelectRecordAsync(string! idempotencyKey) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Effects.EffectRecord?>
+Standard.Agents.Brokers.Effects.FileEffectLedgerBroker.UpdateRecordAsync(Standard.Agents.Models.Brokers.Effects.EffectRecord! record) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Effects.FunctionEffectLedgerBroker.DeleteRecordAsync(string! idempotencyKey) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Effects.FunctionEffectLedgerBroker.FunctionEffectLedgerBroker(System.Func<Standard.Agents.Models.Brokers.Effects.EffectRecord!, System.Threading.Tasks.ValueTask<bool>>! insertClaim, System.Func<string!, System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Effects.EffectRecord?>>! selectRecord, System.Func<Standard.Agents.Models.Brokers.Effects.EffectRecord!, System.Threading.Tasks.ValueTask>! updateRecord, System.Func<string!, System.Threading.Tasks.ValueTask>! deleteRecord) -> void
+Standard.Agents.Brokers.Effects.FunctionEffectLedgerBroker.InsertClaimAsync(Standard.Agents.Models.Brokers.Effects.EffectRecord! claim) -> System.Threading.Tasks.ValueTask<bool>
+Standard.Agents.Brokers.Effects.FunctionEffectLedgerBroker.SelectRecordAsync(string! idempotencyKey) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Effects.EffectRecord?>
+Standard.Agents.Brokers.Effects.FunctionEffectLedgerBroker.UpdateRecordAsync(Standard.Agents.Models.Brokers.Effects.EffectRecord! record) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Effects.IEffectLedgerBroker.DeleteRecordAsync(string! idempotencyKey) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Effects.IEffectLedgerBroker.InsertClaimAsync(Standard.Agents.Models.Brokers.Effects.EffectRecord! claim) -> System.Threading.Tasks.ValueTask<bool>
+Standard.Agents.Brokers.Effects.IEffectLedgerBroker.SelectRecordAsync(string! idempotencyKey) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Effects.EffectRecord?>
+Standard.Agents.Brokers.Effects.IEffectLedgerBroker.UpdateRecordAsync(Standard.Agents.Models.Brokers.Effects.EffectRecord! record) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Effects.InMemoryEffectLedgerBroker.DeleteRecordAsync(string! idempotencyKey) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Effects.InMemoryEffectLedgerBroker.InsertClaimAsync(Standard.Agents.Models.Brokers.Effects.EffectRecord! claim) -> System.Threading.Tasks.ValueTask<bool>
+Standard.Agents.Brokers.Effects.InMemoryEffectLedgerBroker.SelectRecordAsync(string! idempotencyKey) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Effects.EffectRecord?>
+Standard.Agents.Brokers.Effects.InMemoryEffectLedgerBroker.UpdateRecordAsync(Standard.Agents.Models.Brokers.Effects.EffectRecord! record) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Models.Brokers.Effects.EffectRecord
+Standard.Agents.Models.Brokers.Effects.EffectRecord.<Clone>$() -> Standard.Agents.Models.Brokers.Effects.EffectRecord!
+Standard.Agents.Models.Brokers.Effects.EffectRecord.ClaimedOn.get -> System.DateTimeOffset
+Standard.Agents.Models.Brokers.Effects.EffectRecord.ClaimedOn.init -> void
+Standard.Agents.Models.Brokers.Effects.EffectRecord.Detail.get -> string?
+Standard.Agents.Models.Brokers.Effects.EffectRecord.Detail.init -> void
+Standard.Agents.Models.Brokers.Effects.EffectRecord.EffectRecord() -> void
+Standard.Agents.Models.Brokers.Effects.EffectRecord.Equals(Standard.Agents.Models.Brokers.Effects.EffectRecord? other) -> bool
+Standard.Agents.Models.Brokers.Effects.EffectRecord.IdempotencyKey.get -> string!
+Standard.Agents.Models.Brokers.Effects.EffectRecord.IdempotencyKey.init -> void
+Standard.Agents.Models.Brokers.Effects.EffectRecord.LeaseUntil.get -> System.DateTimeOffset
+Standard.Agents.Models.Brokers.Effects.EffectRecord.LeaseUntil.init -> void
+Standard.Agents.Models.Brokers.Effects.EffectRecord.Outcome.get -> string?
+Standard.Agents.Models.Brokers.Effects.EffectRecord.Outcome.init -> void
+Standard.Agents.Models.Brokers.Effects.EffectRecord.Owner.get -> string!
+Standard.Agents.Models.Brokers.Effects.EffectRecord.Owner.init -> void
+Standard.Agents.Models.Brokers.Effects.EffectRecord.RecordedOn.get -> System.DateTimeOffset?
+Standard.Agents.Models.Brokers.Effects.EffectRecord.RecordedOn.init -> void
+Standard.Agents.Models.Brokers.Effects.EffectRecord.State.get -> Standard.Agents.Models.Brokers.Effects.EffectState
+Standard.Agents.Models.Brokers.Effects.EffectRecord.State.init -> void
+Standard.Agents.Models.Brokers.Effects.EffectRecord.ToolName.get -> string!
+Standard.Agents.Models.Brokers.Effects.EffectRecord.ToolName.init -> void
+Standard.Agents.Models.Brokers.Effects.EffectState
+Standard.Agents.Models.Brokers.Effects.EffectState.Compensated = 4 -> Standard.Agents.Models.Brokers.Effects.EffectState
+Standard.Agents.Models.Brokers.Effects.EffectState.CompensationPending = 3 -> Standard.Agents.Models.Brokers.Effects.EffectState
+Standard.Agents.Models.Brokers.Effects.EffectState.Completed = 1 -> Standard.Agents.Models.Brokers.Effects.EffectState
+Standard.Agents.Models.Brokers.Effects.EffectState.Failed = 2 -> Standard.Agents.Models.Brokers.Effects.EffectState
+Standard.Agents.Models.Brokers.Effects.EffectState.InFlight = 0 -> Standard.Agents.Models.Brokers.Effects.EffectState
+Standard.Agents.Models.Loggings.PerformedEffect.IdempotencyKey.get -> string!
+Standard.Agents.Models.Loggings.PerformedEffect.IdempotencyKey.init -> void
+Standard.Agents.Models.Orchestrations.Effects.EffectClaim
+Standard.Agents.Models.Orchestrations.Effects.EffectClaim.<Clone>$() -> Standard.Agents.Models.Orchestrations.Effects.EffectClaim!
+Standard.Agents.Models.Orchestrations.Effects.EffectClaim.Deconstruct(out Standard.Agents.Models.Orchestrations.Effects.EffectClaimVerdict Verdict, out string? Outcome, out Standard.Agents.Models.Brokers.Effects.EffectRecord? Record) -> void
+Standard.Agents.Models.Orchestrations.Effects.EffectClaim.EffectClaim(Standard.Agents.Models.Orchestrations.Effects.EffectClaimVerdict Verdict, string? Outcome, Standard.Agents.Models.Brokers.Effects.EffectRecord? Record) -> void
+Standard.Agents.Models.Orchestrations.Effects.EffectClaim.Equals(Standard.Agents.Models.Orchestrations.Effects.EffectClaim? other) -> bool
+Standard.Agents.Models.Orchestrations.Effects.EffectClaim.Outcome.get -> string?
+Standard.Agents.Models.Orchestrations.Effects.EffectClaim.Outcome.init -> void
+Standard.Agents.Models.Orchestrations.Effects.EffectClaim.Record.get -> Standard.Agents.Models.Brokers.Effects.EffectRecord?
+Standard.Agents.Models.Orchestrations.Effects.EffectClaim.Record.init -> void
+Standard.Agents.Models.Orchestrations.Effects.EffectClaim.Verdict.get -> Standard.Agents.Models.Orchestrations.Effects.EffectClaimVerdict
+Standard.Agents.Models.Orchestrations.Effects.EffectClaim.Verdict.init -> void
+Standard.Agents.Models.Orchestrations.Effects.EffectClaimVerdict
+Standard.Agents.Models.Orchestrations.Effects.EffectClaimVerdict.InProgress = 2 -> Standard.Agents.Models.Orchestrations.Effects.EffectClaimVerdict
+Standard.Agents.Models.Orchestrations.Effects.EffectClaimVerdict.Proceed = 0 -> Standard.Agents.Models.Orchestrations.Effects.EffectClaimVerdict
+Standard.Agents.Models.Orchestrations.Effects.EffectClaimVerdict.Replay = 1 -> Standard.Agents.Models.Orchestrations.Effects.EffectClaimVerdict
+Standard.Agents.Models.Orchestrations.Effects.EffectClaimVerdict.Unreconciled = 3 -> Standard.Agents.Models.Orchestrations.Effects.EffectClaimVerdict
+Standard.Agents.Services.Foundations.EffectLedgers.EffectLedgerService.ClaimEffectAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Effects.EffectRecord?>
+Standard.Agents.Services.Foundations.EffectLedgers.EffectLedgerService.EffectLedgerService(Standard.Agents.Brokers.Effects.IEffectLedgerBroker! effectLedgerBroker, Standard.Agents.Brokers.Times.ITimeBroker! timeBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+Standard.Agents.Services.Foundations.EffectLedgers.EffectLedgerService.RecordCompensationAsync(string! idempotencyKey, string! detail) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Foundations.EffectLedgers.EffectLedgerService.RecordCompensationIntentAsync(string! idempotencyKey) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Foundations.EffectLedgers.EffectLedgerService.RecordFailureAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect, string! detail) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Foundations.EffectLedgers.IEffectLedgerService.ClaimEffectAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Effects.EffectRecord?>
+Standard.Agents.Services.Foundations.EffectLedgers.IEffectLedgerService.RecordCompensationAsync(string! idempotencyKey, string! detail) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Foundations.EffectLedgers.IEffectLedgerService.RecordCompensationIntentAsync(string! idempotencyKey) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Foundations.EffectLedgers.IEffectLedgerService.RecordFailureAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect, string! detail) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Orchestrations.Direction.Perimeters.IPerimeterOrchestrationService.ClaimAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Orchestrations.Effects.EffectClaim!>
+Standard.Agents.Services.Orchestrations.Direction.Perimeters.IPerimeterOrchestrationService.RecordCompensationAsync(string! idempotencyKey, string! detail) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Orchestrations.Direction.Perimeters.IPerimeterOrchestrationService.RecordCompensationIntentAsync(string! idempotencyKey) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Orchestrations.Direction.Perimeters.IPerimeterOrchestrationService.RecordFailureAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect, string! detail) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Orchestrations.Direction.Perimeters.PerimeterOrchestrationService.ClaimAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Orchestrations.Effects.EffectClaim!>
+Standard.Agents.Services.Orchestrations.Direction.Perimeters.PerimeterOrchestrationService.PerimeterOrchestrationService(Standard.Agents.Services.Foundations.Policys.IPolicyService! policyService, Standard.Agents.Services.Foundations.Approvals.IApprovalService! approvalService, Standard.Agents.Services.Foundations.EffectLedgers.IEffectLedgerService! effectLedgerService, Standard.Agents.Brokers.Times.ITimeBroker! timeBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+Standard.Agents.Services.Orchestrations.Direction.Perimeters.PerimeterOrchestrationService.RecordCompensationAsync(string! idempotencyKey, string! detail) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Orchestrations.Direction.Perimeters.PerimeterOrchestrationService.RecordCompensationIntentAsync(string! idempotencyKey) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Services.Orchestrations.Direction.Perimeters.PerimeterOrchestrationService.RecordFailureAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect, string! detail) -> System.Threading.Tasks.ValueTask
+Standard.Agents.StandardAgent.OnEffectLedger(System.Func<Standard.Agents.Models.Brokers.Effects.EffectRecord!, System.Threading.Tasks.ValueTask<bool>>! insertClaim, System.Func<string!, System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Effects.EffectRecord?>>! selectRecord, System.Func<Standard.Agents.Models.Brokers.Effects.EffectRecord!, System.Threading.Tasks.ValueTask>! updateRecord, System.Func<string!, System.Threading.Tasks.ValueTask>! deleteRecord) -> Standard.Agents.StandardAgent!
+override Standard.Agents.Models.Brokers.Effects.EffectRecord.Equals(object? obj) -> bool
+override Standard.Agents.Models.Brokers.Effects.EffectRecord.GetHashCode() -> int
+override Standard.Agents.Models.Brokers.Effects.EffectRecord.ToString() -> string!
+override Standard.Agents.Models.Orchestrations.Effects.EffectClaim.Equals(object? obj) -> bool
+override Standard.Agents.Models.Orchestrations.Effects.EffectClaim.GetHashCode() -> int
+override Standard.Agents.Models.Orchestrations.Effects.EffectClaim.ToString() -> string!
+static Standard.Agents.Models.Brokers.Effects.EffectRecord.operator !=(Standard.Agents.Models.Brokers.Effects.EffectRecord? left, Standard.Agents.Models.Brokers.Effects.EffectRecord? right) -> bool
+static Standard.Agents.Models.Brokers.Effects.EffectRecord.operator ==(Standard.Agents.Models.Brokers.Effects.EffectRecord? left, Standard.Agents.Models.Brokers.Effects.EffectRecord? right) -> bool
+static Standard.Agents.Models.Orchestrations.Effects.EffectClaim.operator !=(Standard.Agents.Models.Orchestrations.Effects.EffectClaim? left, Standard.Agents.Models.Orchestrations.Effects.EffectClaim? right) -> bool
+static Standard.Agents.Models.Orchestrations.Effects.EffectClaim.operator ==(Standard.Agents.Models.Orchestrations.Effects.EffectClaim? left, Standard.Agents.Models.Orchestrations.Effects.EffectClaim? right) -> bool

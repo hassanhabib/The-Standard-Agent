@@ -3,33 +3,29 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
-using Standard.Agents.Models.Orchestrations.Effects;
+using Standard.Agents.Models.Brokers.Effects;
 
 namespace Standard.Agents.Brokers.Effects;
 
+/// <summary>
+/// The store of which acts have run (SPEC.md §4.9), as four primitives over typed records. What a
+/// record means, and what to do about one that is already there, is the foundation's judgment
+/// (principal review 2026-09-04, F-08); this broker only keeps the records.
+/// </summary>
 public interface IEffectLedgerBroker
 {
     /// <summary>
-    /// Records that this effect is about to run, and reports whether it already has. Intent is
-    /// written <b>before</b> the act, never after: an effect that executed but was never
-    /// recorded is indistinguishable from one that never ran (SPEC.md §4.9).
+    /// Writes the claim if, and only if, no record exists for its key — atomically, so two runs
+    /// proposing the same act cannot both decide they are the first. Intent is written before
+    /// the act, never after.
     /// </summary>
-    /// <returns>
-    /// The outcome of the first execution when this key has run before; <c>null</c> when this is
-    /// the first time and the caller should proceed.
-    /// </returns>
-    ValueTask<string?> SelectOutcomeAsync(AgentEffect effect);
+    /// <returns><c>true</c> when the claim was written; <c>false</c> when the key already had a record.</returns>
+    ValueTask<bool> InsertClaimAsync(EffectRecord claim);
 
-    /// <summary>Records what the effect produced, before the loop advances.</summary>
-    ValueTask InsertOutcomeAsync(AgentEffect effect, string outcome);
+    ValueTask<EffectRecord?> SelectRecordAsync(string idempotencyKey);
 
-    /// <summary>
-    /// Gives back a claim on an act that was held rather than performed (SPEC.md §4.9).
-    /// </summary>
-    /// <remarks>
-    /// A held act is one that still has to be able to happen. Leaving its claim standing builds
-    /// an approval that can only ever be granted too late: the authority says yes, the resumed
-    /// run proposes the act, and the ledger reports it as already done.
-    /// </remarks>
-    ValueTask DeleteClaimAsync(AgentEffect effect);
+    /// <summary>Replaces the key's record with this one: the act's outcome, its failure, its compensation.</summary>
+    ValueTask UpdateRecordAsync(EffectRecord record);
+
+    ValueTask DeleteRecordAsync(string idempotencyKey);
 }

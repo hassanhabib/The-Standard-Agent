@@ -32,6 +32,7 @@ using Standard.Agents.Brokers.Telemetries;
 using Standard.Agents.Brokers.Times;
 using Standard.Agents.Brokers.Tools;
 using Standard.Agents.Brokers.Verifiers;
+using Standard.Agents.Models.Brokers.Effects;
 using Standard.Agents.Models.Brokers.Agents;
 using Standard.Agents.Models.Brokers.Audits;
 using Standard.Agents.Models.Brokers.Generators;
@@ -807,29 +808,32 @@ public sealed partial class StandardAgent : IAgent
     /// transactions already commit to, since an act and the note that it happened want to commit
     /// together.
     /// </summary>
-    /// <param name="claim">
-    /// An <c>effect =&gt; outcome</c> delegate. Return <c>null</c> when this act has not run
-    /// before and the agent should proceed; return the first outcome when it has. Claiming and
-    /// reporting must happen in one step, or two runs proposing the same act can both decide
-    /// they are the first.
+    /// <param name="insertClaim">
+    /// A <c>record =&gt; bool</c> delegate: write the in-flight claim if, and only if, no record
+    /// exists for its key, atomically, and say whether it was written. Two runs proposing the
+    /// same act must not both be told they are the first.
     /// </param>
-    /// <param name="record">
-    /// An <c>(effect, outcome) =&gt; ...</c> delegate, called once the act has been performed.
+    /// <param name="selectRecord">A <c>key =&gt; record</c> delegate; <c>null</c> when the key has none.</param>
+    /// <param name="updateRecord">
+    /// A <c>record =&gt; ...</c> delegate: replace the key's record — completed with its outcome,
+    /// failed, compensation pending, compensated. The state is on the record; write it whole.
     /// </param>
-    /// <param name="release">
-    /// An <c>effect =&gt; ...</c> delegate, called when the act was <i>held</i> rather than
-    /// performed — denied, or waiting on an authority. Give the claim back: a held act is one
-    /// that still has to be able to happen, and a claim left standing makes the approval
-    /// unusable when it finally arrives. Release only an unfinished claim; a key that already
-    /// carries an outcome names an act that happened.
+    /// <param name="deleteRecord">
+    /// A <c>key =&gt; ...</c> delegate, called only for an in-flight claim on an act that was held
+    /// rather than performed — the foundation checks the state before asking.
     /// </param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent OnEffectLedger(
-        Func<AgentEffect, ValueTask<string?>> claim,
-        Func<AgentEffect, string, ValueTask> record,
-        Func<AgentEffect, ValueTask> release) =>
+        Func<EffectRecord, ValueTask<bool>> insertClaim,
+        Func<string, ValueTask<EffectRecord?>> selectRecord,
+        Func<EffectRecord, ValueTask> updateRecord,
+        Func<string, ValueTask> deleteRecord) =>
         Set(() =>
-            this.effectLedgerBroker = new FunctionEffectLedgerBroker(claim, record, release));
+            this.effectLedgerBroker = new FunctionEffectLedgerBroker(
+                insertClaim,
+                selectRecord,
+                updateRecord,
+                deleteRecord));
 
     /// <summary>
     /// Screens what tools hand back before the Brain reads it (SPEC.md §4.9). A tool result is
@@ -2009,7 +2013,10 @@ public sealed partial class StandardAgent : IAgent
                 new PolicyService(policy, logging),
                 new ApprovalService(approvals, logging),
                 new EffectLedgerService(
-                    this.effectLedgerBroker ?? new InMemoryEffectLedgerBroker(), logging),
+                    this.effectLedgerBroker ?? new InMemoryEffectLedgerBroker(),
+                    new TimeBroker(),
+                    logging),
+                new TimeBroker(),
                 logging),
             new ExecutionOrchestrationService(
                 new InternalToolService(toolBroker, logging),

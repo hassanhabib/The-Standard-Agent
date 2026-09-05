@@ -128,6 +128,19 @@ The release workflow refuses to build a tag whose first three segments differ fr
 file, and refuses to publish a package whose file name is not the tag's version, so the three
 cannot drift apart on the way out (F-17, F-29).
 
+## Effect ledger
+
+The ledger keeps one typed record per act: in flight (with the owning run, the claim time and a
+lease), completed with its outcome, failed, compensation pending, compensated. A repeat of a
+completed act is replayed; a repeat of an act another run is still on is told so; a repeat of an
+act whose fate is unknown holds the run `AwaitingInput` with the act as its pending effect until
+a person reconciles the record against the world (how-to.md §12). The built-in ledger lives in
+memory and dies with the instance; `.EffectLedger(path)` is local and single-process, because its
+atomic claim is the file system's create-new; a fleet shares a ledger through `UseEffectLedger`
+over a store whose insert is atomic. The exactly-once boundary is stated in how-to.md §12: intent
+before, outcome after, no guessing in between, and no knowledge of what a remote system did
+while the process was down.
+
 ## Audit sink
 
 `.Audit(path)` writes one JSON record per line, each carrying the SHA-256 of the line before it.

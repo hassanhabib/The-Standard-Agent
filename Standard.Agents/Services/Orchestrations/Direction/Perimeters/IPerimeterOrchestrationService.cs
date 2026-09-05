@@ -8,25 +8,27 @@ using Standard.Agents.Models.Orchestrations.Effects;
 
 namespace Standard.Agents.Services.Orchestrations.Direction.Perimeters;
 
-// May this act happen, and has it already?
-//
-// Three foundations, one question asked in three parts: is the principal permitted, does an
-// authority consent, and did this exact act already run. The ORDER they are asked in belongs to
-// Direction, not here — this region answers, it does not sequence (SPEC.md §4.9).
 public interface IPerimeterOrchestrationService
 {
     ValueTask<AuthorizationDecision> AuthorizeAsync(AgentEffect effect);
 
     /// <summary>
-    /// Claims the act and reports the outcome of the first execution, or <c>null</c> when this is
-    /// the first time and the caller should proceed.
+    /// Claims the act and says what the ledger knows about it: proceed, replay a recorded
+    /// outcome, another run is on it, or an earlier attempt needs reconciling (SPEC.md §4.9).
     /// </summary>
-    ValueTask<string?> ClaimAsync(AgentEffect effect);
+    ValueTask<EffectClaim> ClaimAsync(AgentEffect effect);
 
     ValueTask<ApprovalDecision> RequestApprovalAsync(AgentEffect effect);
 
     ValueTask RecordOutcomeAsync(AgentEffect effect, string outcome);
 
+    /// <summary>Records that the tool threw, so the act's unknown fate is on the record.</summary>
+    ValueTask RecordFailureAsync(AgentEffect effect, string detail);
+
     /// <summary>Gives back the claim on an act that was held rather than performed.</summary>
     ValueTask ReleaseClaimAsync(AgentEffect effect);
+
+    ValueTask RecordCompensationIntentAsync(string idempotencyKey);
+
+    ValueTask RecordCompensationAsync(string idempotencyKey, string detail);
 }
