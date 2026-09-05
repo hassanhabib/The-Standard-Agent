@@ -68,10 +68,26 @@ public partial class MemoryService : IMemoryService
         return await fileBroker.ReadAllLinesAsync(this.memoryPath);
     }
 
+    // Appends are serialized: two callers remembering at once open the file at the same moment
+    // and one of them fails with a sharing violation, which the review predicted and a
+    // thirty-two-writer test reproduced two runs in three (principal review 2026-09-04, F-05).
+    // Per instance, because the file is per instance; a store shared across processes is a
+    // memory broker's job, not this file's.
+    private readonly SemaphoreSlim memoryFileLock = new(initialCount: 1, maxCount: 1);
+
     private async ValueTask InsertMemoryIntoFileAsync(IFileBroker fileBroker, string memory)
     {
-        fileBroker.CreateDirectory(Path.GetDirectoryName(this.memoryPath)!);
+        await this.memoryFileLock.WaitAsync();
 
-        await fileBroker.AppendAllLinesAsync(this.memoryPath, [memory]);
+        try
+        {
+            fileBroker.CreateDirectory(Path.GetDirectoryName(this.memoryPath)!);
+
+            await fileBroker.AppendAllLinesAsync(this.memoryPath, [memory]);
+        }
+        finally
+        {
+            this.memoryFileLock.Release();
+        }
     }
 }
