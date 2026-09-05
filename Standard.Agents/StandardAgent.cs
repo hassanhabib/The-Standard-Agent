@@ -1759,16 +1759,25 @@ public sealed partial class StandardAgent : IAgent
 
         IFileBroker file = new FileBroker();
 
-        ILoggingBroker logging =
+        // The log is one broker; the decision log is another, applied over it by decoration
+        // when an audit sink is configured - over the built-in trace or a host's own logging
+        // broker alike, so .UseLogging(...) and .Audit(...) compose rather than compete (F-16).
+        ILoggingBroker trace =
             this.loggingBroker ?? new LoggingBroker(
                 new NullLogger<LoggingBroker>(),
-                new TimeBroker(),
                 this.traceVerbosity,
-                string.IsNullOrEmpty(this.logPath) ? null : this.logPath,
-                this.auditBroker
-                    ?? (string.IsNullOrEmpty(this.auditPath)
-                        ? new NotConfiguredAuditBroker()
-                        : new FileAuditBroker(this.auditPath)),
+                string.IsNullOrEmpty(this.logPath) ? null : this.logPath);
+
+        IAuditBroker? audit =
+            this.auditBroker
+                ?? (string.IsNullOrEmpty(this.auditPath) ? null : new FileAuditBroker(this.auditPath));
+
+        ILoggingBroker logging = audit is null
+            ? trace
+            : new AuditingLoggingBroker(
+                trace,
+                audit,
+                new TimeBroker(),
                 () => this.identityResolver?.Invoke()?.Id);
 
         // With only a native brain configured there is no V0 generator to build, and none is

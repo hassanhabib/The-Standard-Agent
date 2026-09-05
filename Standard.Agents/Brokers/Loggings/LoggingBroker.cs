@@ -4,24 +4,23 @@
 // ---------------------------------------------------------------
 
 using Microsoft.Extensions.Logging;
-using Standard.Agents.Brokers.Audits;
-using Standard.Agents.Brokers.Times;
-using Standard.Agents.Models.Brokers.Audits;
 using Standard.Agents.Models.Loggings;
 
 namespace Standard.Agents.Brokers.Loggings;
 
+// One resource, wrapped: the log. Both of its faces are the same sink - the ILogger the host
+// gave us, and the human-readable trace file that is that log written to disk. Nothing else
+// lives here. The decision log is another resource with another broker, and the two meet only
+// by decoration at composition (AuditingLoggingBroker), never by this broker holding that one
+// (principal review 2026-09-04, F-16).
 public sealed class LoggingBroker : ILoggingBroker
 {
     private readonly ILogger<LoggingBroker> logger;
-    private readonly ITimeBroker timeBroker;
-    private readonly IAuditBroker auditBroker;
     private readonly TraceVerbosity verbosity;
     private readonly string? logPath;
-    private readonly Func<string?>? principal;
 
     // No run state lives here. SPEC.md §4.4: run identity and counters are per invocation,
-    // never per instance — one broker serves every concurrent run, so a field here would let
+    // never per instance - one broker serves every concurrent run, so a field here would let
     // one prompt overwrite another's record. The run is read from the ambient AgentRun that
     // Coordination begins; the fallback run covers a broker driven outside the loop.
     private readonly AgentRun fallbackRun = AgentRun.Detached();
@@ -31,18 +30,12 @@ public sealed class LoggingBroker : ILoggingBroker
 
     public LoggingBroker(
         ILogger<LoggingBroker> logger,
-        ITimeBroker timeBroker,
         TraceVerbosity verbosity = TraceVerbosity.Full,
-        string? logPath = null,
-        IAuditBroker? auditBroker = null,
-        Func<string?>? principal = null)
+        string? logPath = null)
     {
         this.logger = logger;
-        this.timeBroker = timeBroker;
-        this.auditBroker = auditBroker ?? new NotConfiguredAuditBroker();
         this.verbosity = verbosity;
         this.logPath = logPath is null ? null : Path.GetFullPath(logPath);
-        this.principal = principal;
     }
 
     public async ValueTask LogInformationAsync(string message) =>
@@ -60,26 +53,21 @@ public sealed class LoggingBroker : ILoggingBroker
     public async ValueTask LogErrorAsync(Exception exception)
     {
         this.logger.LogError(exception, exception.Message);
-
-        await AuditAsync(AuditKind.Error, actor: "Agent", message: exception.Message);
         await EmitAsync($"  → ERROR: {exception.Message.ReplaceLineEndings(" ")}");
     }
 
     public async ValueTask LogCriticalAsync(Exception exception)
     {
         this.logger.LogCritical(exception, exception.Message);
-
-        await AuditAsync(AuditKind.Error, actor: "Agent", message: exception.Message);
         await EmitAsync($"  → CRITICAL: {exception.Message.ReplaceLineEndings(" ")}");
     }
 
-    // Starts a run. The human-readable trace is transient and is reset here; the decision
-    // log is durable and MUST NOT be — SPEC.md §4.7 is explicit that this reset does not
-    // propagate to it. Truncating the audit here is exactly the defect this release fixes.
+    // Starts a run. The human-readable trace is transient and is reset here; the decision log
+    // is durable and is not touched by this broker at all (SPEC.md §4.7).
     public async ValueTask LogResetAsync()
     {
         this.Run.ResetProcessIndex();
-        this.Run.StartedOn = this.timeBroker.GetCurrentDateTimeOffset();
+        this.Run.StartedOn = DateTimeOffset.UtcNow;
 
         if (this.logPath is not null)
         {
@@ -94,31 +82,20 @@ public sealed class LoggingBroker : ILoggingBroker
                 this.traceLock.Release();
             }
         }
-
-        await AuditAsync(AuditKind.Run, actor: "Agent", message: "run started");
     }
 
-    public async ValueTask LogTurnAsync(int turn)
-    {
-        await AuditAsync(AuditKind.Turn, actor: "Agent", message: $"turn {turn}");
-
+    public async ValueTask LogTurnAsync(int turn) =>
         await EmitAsync($"{Environment.NewLine}Turn {turn}");
-    }
 
     public async ValueTask LogOutcomeAsync(string message)
     {
-        TimeSpan elapsed = this.timeBroker.GetCurrentDateTimeOffset() - this.Run.StartedOn;
-
-        await AuditAsync(AuditKind.Outcome, actor: "Agent", message: message);
-
+        TimeSpan elapsed = DateTimeOffset.UtcNow - this.Run.StartedOn;
         await EmitAsync($"  → {message} ({elapsed.TotalMilliseconds:F0}ms)");
     }
 
     public async ValueTask LogStepAsync(AgentStep step)
     {
         this.Run.ResetProcessIndex();
-
-        await AuditAsync(AuditKind.Step, actor: step.ToString(), message: step.ToString());
 
         if (TraceVerbosity.Natures <= this.verbosity)
         {
@@ -128,20 +105,17 @@ public sealed class LoggingBroker : ILoggingBroker
 
     public async ValueTask LogProcessAsync(string actor, string message, bool detail = false)
     {
-        await AuditAsync(AuditKind.Process, actor, message, detail);
-
         TraceVerbosity level = detail ? TraceVerbosity.Full : TraceVerbosity.Natures;
 
         if (level <= this.verbosity)
         {
             string indented = message.ReplaceLineEndings($"{Environment.NewLine}      ");
-
             await EmitAsync($"    Process {this.Run.NextProcessIndex()}: {actor}: {indented}");
         }
     }
 
     // The trace is a shared file and one broker serves every concurrent run, so writes are
-    // serialized — without this, sixty-four prompts in flight collide on the handle and most
+    // serialized - without this, sixty-four prompts in flight collide on the handle and most
     // of them fail with an IOException rather than an answer.
     //
     // Concurrent runs interleave in the trace, and each run's reset truncates it. That is the
@@ -167,28 +141,5 @@ public sealed class LoggingBroker : ILoggingBroker
         {
             this.traceLock.Release();
         }
-    }
-
-    private async ValueTask AuditAsync(
-        AuditKind kind,
-        string actor,
-        string message,
-        bool detail = false)
-    {
-        AgentRun run = this.Run;
-
-        var record = new AuditRecord
-        {
-            RunId = run.Id,
-            Sequence = run.NextSequence(),
-            Timestamp = this.timeBroker.GetCurrentDateTimeOffset(),
-            Kind = kind,
-            Actor = actor,
-            Message = message,
-            Detail = detail,
-            Principal = this.principal?.Invoke()
-        };
-
-        await this.auditBroker.WriteAsync(record);
     }
 }
