@@ -9,6 +9,8 @@
 using Lock = System.Object;
 #endif
 
+using Standard.Agents.Models.Brokers.Generators.V1;
+
 namespace Standard.Agents.Brokers.Resiliences;
 
 // Degradation before failure (SPEC.md §4.10). After enough consecutive failures the primary is
@@ -129,6 +131,29 @@ public sealed class FallbackResilienceBroker : IResilienceBroker
 
         string answer = await this.alternative();
 
-        return (T)(object)answer;
+        return Degrade<T>(answer);
+    }
+
+    // The alternative is text — what a host can write without knowing which protocol will ask
+    // for it — so each protocol's result is shaped from that text explicitly: the text seam
+    // takes it as the reply, the native seam takes it as a final answer with no tool calls. A
+    // bare cast to T held on the first and threw on the second, at the exact moment the control
+    // was meant to work (principal review 2026-09-04, F-07). A T this broker has not been taught
+    // is named rather than guessed at.
+    private static T Degrade<T>(string answer)
+    {
+        if (typeof(T) == typeof(string))
+        {
+            return (T)(object)answer;
+        }
+
+        if (typeof(T) == typeof(GenerationResult))
+        {
+            return (T)(object)new GenerationResult { Content = answer };
+        }
+
+        throw new InvalidOperationException(
+            $"No degraded {typeof(T).Name} can be shaped from a text fallback. Supply a "
+                + "resilience broker that understands this result type (UseResilience).");
     }
 }
