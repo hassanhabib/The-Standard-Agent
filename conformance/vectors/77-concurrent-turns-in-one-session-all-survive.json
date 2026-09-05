@@ -1,0 +1,14 @@
+{
+  "name": "concurrent-turns-in-one-session-all-survive",
+  "description": "SPEC.md 4.11 under contention: prompts in one session at once MUST all land in its history. A save that reads, appends and writes the whole record lets the last writer erase another prompt's completed turn - the 2026-09-04 principal review (F-06) found exactly that read, append, upsert sequence. Every write carries the version it was based on, the store refuses a stale one, and the loop re-reads and tries again, so four concurrent prompts leave four turns.",
+  "generatorReplies": [ "FINAL: noted" ],
+  "tools": {},
+  "prompt": "first fact",
+  "prompts": [ "first fact", "second fact", "third fact", "fourth fact" ],
+  "concurrent": true,
+  "sessionId": "busy-session",
+  "expect": {
+    "resultContains": "noted",
+    "sessionTurnCount": 4
+  }
+}

@@ -120,6 +120,11 @@ public sealed record Expectation(
     //                       have survived the core-owned-keys strip (design §4.4).
     string? Status = null,
     string? PendingEffectTool = null,
+
+    //   SessionTurnCount  — how many turns the session's history holds once every prompt has
+    //                       run, read from the store afterwards. Under concurrent prompts this
+    //                       is what fails when the last writer erases another's turn (§4.11).
+    int? SessionTurnCount = null,
     double? BrokerTemperature = null,
     int? BrokerMaxTokens = null,
     List<double>? BrokerTemperatures = null,
