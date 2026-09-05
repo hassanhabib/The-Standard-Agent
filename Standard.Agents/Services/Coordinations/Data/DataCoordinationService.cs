@@ -39,7 +39,8 @@ public partial class DataCoordinationService : IDataCoordinationService
         ValidateContext(context);
 
         // Announced before anything is fetched, so the trace reads in the order things happened.
-        await this.loggingBroker.LogProcessAsync("Data", $"Received prompt: \"{context.Prompt}\"");
+        await this.loggingBroker.LogPayloadAsync(
+            "Data", "Received prompt", context.Prompt, detail: false);
 
         string systemPrompt = await this.retrievalService.RetrieveInstructionsAsync(context.Route);
 
@@ -54,10 +55,8 @@ public partial class DataCoordinationService : IDataCoordinationService
         IReadOnlyList<string> knowledge =
             await this.retrievalService.RetrieveGroundingAsync(context.Prompt);
 
-        await this.loggingBroker.LogProcessAsync(
-            "Data",
-            $"System prompt sent to Decision →{Environment.NewLine}{systemPrompt}",
-            detail: true);
+        await this.loggingBroker.LogPayloadAsync(
+            "Data", "System prompt sent to Decision", systemPrompt, detail: true);
 
         return context with
         {

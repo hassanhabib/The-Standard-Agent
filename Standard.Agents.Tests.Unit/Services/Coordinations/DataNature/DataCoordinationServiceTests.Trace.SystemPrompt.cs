@@ -30,10 +30,10 @@ public partial class DataCoordinationServiceTests
 
         // then
         this.loggingBrokerMock.Verify(broker =>
-            broker.LogProcessAsync(
+            broker.LogPayloadAsync(
                 "Data",
-                It.Is<string>(message =>
-                    message.Contains("System prompt") && message.Contains("SKILL-MARKER-XYZ")),
+                It.Is<string>(summary => summary.Contains("System prompt")),
+                It.Is<string>(payload => payload.Contains("SKILL-MARKER-XYZ")),
                 It.IsAny<bool>()),
                     Times.Once);
     }

@@ -64,14 +64,21 @@ public class DecisionLogTests : IDisposable
         await agent.ProcessPromptAsync(prompt: "the ALPHA question");
         await agent.ProcessPromptAsync(prompt: "the BRAVO question");
 
-        // then
+        // then — evidence of each prompt is its record's payload hash: the decision log is
+        // metadata by default (F-14), so the prompt itself never travels to the sink
         string[] actualLines = await File.ReadAllLinesAsync(this.auditPath);
 
-        actualLines.Should().Contain(line => line.Contains("ALPHA"));
-        actualLines.Should().Contain(line => line.Contains("BRAVO"));
+        actualLines.Should().Contain(line => line.Contains(Sha256Hex("the ALPHA question")));
+        actualLines.Should().Contain(line => line.Contains(Sha256Hex("the BRAVO question")));
+        actualLines.Should().NotContain(line => line.Contains("ALPHA"));
 
         actualLines.Select(RunIdOf).Distinct().Should().HaveCount(2);
     }
+
+    private static string Sha256Hex(string value) =>
+        Convert.ToHexString(
+            System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(value)))
+                .ToLowerInvariant();
 
     [Fact]
     public async Task ShouldNumberEachRunFromZeroInTheDecisionLogOnProcessPromptAsync()

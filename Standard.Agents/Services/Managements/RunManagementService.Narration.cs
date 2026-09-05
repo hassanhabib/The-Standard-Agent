@@ -37,8 +37,8 @@ public partial class RunManagementService
                     .Replace("{tool}", context.DirectionType, StringComparison.Ordinal)
                     .Replace("{payload}", context.Payload, StringComparison.Ordinal);
 
-                await this.loggingBroker.LogProcessAsync(
-                    "Direction", $"Narration → {prose}", detail: true);
+                await this.loggingBroker.LogPayloadAsync(
+                    "Direction", "Narration", prose, detail: true);
 
                 await events.WriteAsync(
                     new AgentStreamEvent(AgentStreamEventType.Narration, prose), abandoned);
@@ -61,8 +61,8 @@ public partial class RunManagementService
             return;
         }
 
-        await this.loggingBroker.LogProcessAsync(
-            "Direction", $"Narration → {context.Narration}", detail: true);
+        await this.loggingBroker.LogPayloadAsync(
+            "Direction", "Narration", context.Narration, detail: true);
 
         await events.WriteAsync(
             new AgentStreamEvent(AgentStreamEventType.Narration, context.Narration),

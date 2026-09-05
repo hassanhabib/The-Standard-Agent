@@ -35,10 +35,10 @@ public partial class DecisionCoordinationServiceTests
 
         // then
         this.loggingBrokerMock.Verify(broker =>
-            broker.LogProcessAsync(
+            broker.LogPayloadAsync(
                 "Decision",
-                It.Is<string>(message =>
-                    message.Contains("Brain") && message.Contains("my-secret-answer")),
+                It.Is<string>(summary => summary.Contains("Brain")),
+                It.Is<string>(payload => payload.Contains("my-secret-answer")),
                 It.IsAny<bool>()),
                     Times.Once);
     }

@@ -91,8 +91,8 @@ Xeption foundationException)
         // The prompt is announced before anything is fetched, so a failure still says which
         // prompt Data was working on.
         this.loggingBrokerMock.Verify(broker =>
-            broker.LogProcessAsync(
-                "Data", $"Received prompt: \"{inputContext.Prompt}\"", false),
+            broker.LogPayloadAsync(
+                "Data", "Received prompt", inputContext.Prompt, false),
                     Times.Once);
 
         this.loggingBrokerMock.VerifyNoOtherCalls();
@@ -133,8 +133,8 @@ Xeption foundationException)
         // The prompt is announced before anything is fetched, so a failure still says which
         // prompt Data was working on.
         this.loggingBrokerMock.Verify(broker =>
-            broker.LogProcessAsync(
-                "Data", $"Received prompt: \"{inputContext.Prompt}\"", false),
+            broker.LogPayloadAsync(
+                "Data", "Received prompt", inputContext.Prompt, false),
                     Times.Once);
 
         this.loggingBrokerMock.VerifyNoOtherCalls();
@@ -179,8 +179,8 @@ Xeption foundationException)
         // The prompt is announced before anything is fetched, so a failure still says which
         // prompt Data was working on.
         this.loggingBrokerMock.Verify(broker =>
-            broker.LogProcessAsync(
-                "Data", $"Received prompt: \"{inputContext.Prompt}\"", false),
+            broker.LogPayloadAsync(
+                "Data", "Received prompt", inputContext.Prompt, false),
                     Times.Once);
 
         this.loggingBrokerMock.VerifyNoOtherCalls();

@@ -406,8 +406,8 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
             return null;
         }
 
-        await this.loggingBroker.LogProcessAsync(
-            "Decision", $"Gate → REFUSE: {verdict.ReplaceLineEndings(" ").Trim()}");
+        await this.loggingBroker.LogPayloadAsync(
+            "Decision", "Gate REFUSE", verdict.ReplaceLineEndings(" ").Trim(), detail: false);
 
         return context with
         {
@@ -432,11 +432,11 @@ public partial class DecisionCoordinationService : IDecisionCoordinationService
             await LogGuardianOverreachAsync();
         }
 
-        await this.loggingBroker.LogProcessAsync(
+        await this.loggingBroker.LogPayloadAsync(
             "Decision",
-            IsRoute(verdict)
-                ? $"Gate → ROUTE: {verdict.ReplaceLineEndings(" ").Trim()}"
-                : $"Gate → ACCEPT: {verdict.ReplaceLineEndings(" ").Trim()}");
+            IsRoute(verdict) ? "Gate ROUTE" : "Gate ACCEPT",
+            verdict.ReplaceLineEndings(" ").Trim(),
+            detail: false);
 
         return IsRoute(verdict)
             ? context with { Route = ExtractRouteLabel(verdict) }

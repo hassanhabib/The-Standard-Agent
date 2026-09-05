@@ -119,6 +119,7 @@ public sealed partial class StandardAgent : IAgent
     private Func<string, string, ValueTask<string>>? localJudgeEvaluate;
     private ILoggingBroker? loggingBroker;
     private IAuditBroker? auditBroker;
+    private bool auditPayloads;
     private ITelemetryBroker? telemetryBroker;
     private IPolicyBroker? policyBroker;
     private IApprovalBroker? approvalBroker;
@@ -578,6 +579,18 @@ public sealed partial class StandardAgent : IAgent
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent Audit(string path) =>
         Set(() => this.auditPath = path);
+
+    /// <summary>
+    /// Records payloads in the decision log — the prompt, the system prompt, the Brain's reply,
+    /// every tool's input and output — as the configured redaction leaves them. Off by default:
+    /// the log records that a payload existed, how large it was and which one it was (its hash),
+    /// never the payload, because an audit sink usually has broader access and a longer life
+    /// than anything at runtime (principal review 2026-09-04, F-14). Turn this on knowing that
+    /// whoever reads the sink reads the conversation.
+    /// </summary>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent AuditPayloads() =>
+        Set(() => this.auditPayloads = true);
 
     /// <summary>
     /// Sends the decision log to a provider — the <b>External</b> mode (SPEC.md §4.8). Install a
@@ -1772,12 +1785,22 @@ public sealed partial class StandardAgent : IAgent
             this.auditBroker
                 ?? (string.IsNullOrEmpty(this.auditPath) ? null : new FileAuditBroker(this.auditPath));
 
+        // Composed here, above the log, because the same redaction that guards the model
+        // boundary guards the audit boundary (F-14); the generators and guardians below take it
+        // by decoration as before.
+        IRedactionBroker redaction = this.redactionBroker
+            ?? (this.redactionRules is null
+                ? new NotConfiguredRedactionBroker()
+                : new RuleRedactionBroker(this.redactionRules));
+
         ILoggingBroker logging = audit is null
             ? trace
             : new AuditingLoggingBroker(
                 trace,
                 audit,
                 new TimeBroker(),
+                redaction,
+                new AuditPolicy(Payloads: this.auditPayloads),
                 () => this.identityResolver?.Invoke()?.Id);
 
         // With only a native brain configured there is no V0 generator to build, and none is
@@ -1931,11 +1954,6 @@ public sealed partial class StandardAgent : IAgent
         // service. That is what makes "every model call" structural: a foundation holds one
         // broker, knows nothing of redaction, and a fourth model call added tomorrow cannot
         // forget (docs/architecture-alignment.md).
-        IRedactionBroker redaction = this.redactionBroker
-            ?? (this.redactionRules is null
-                ? new NotConfiguredRedactionBroker()
-                : new RuleRedactionBroker(this.redactionRules));
-
         IResilienceBroker resilience =
             this.resilienceBroker ?? new NotConfiguredResilienceBroker();
 

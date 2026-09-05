@@ -42,10 +42,11 @@ public partial class RunManagementService
         string refusal =
             $"the result of '{acted.DirectionType}' was refused by screening and withheld";
 
-        await this.loggingBroker.LogProcessAsync(
+        await this.loggingBroker.LogPayloadAsync(
             "Direction",
-            $"Screening → REFUSED the result of '{acted.DirectionType}': "
-                + verdict.ReplaceLineEndings(" ").Trim());
+            $"Screening REFUSED the result of '{acted.DirectionType}'",
+            verdict.ReplaceLineEndings(" ").Trim(),
+            detail: false);
 
         return acted with
         {

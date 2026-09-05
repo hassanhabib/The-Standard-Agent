@@ -3,7 +3,10 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Security.Cryptography;
+using System.Text;
 using Standard.Agents.Brokers.Loggings;
+using Standard.Agents.Brokers.Redactions;
 using Standard.Agents.Brokers.Times;
 using Standard.Agents.Models.Brokers.Audits;
 using Standard.Agents.Models.Loggings;
@@ -17,11 +20,18 @@ namespace Standard.Agents.Brokers.Audits;
 // own; that is the one shape in which a broker may hold another (principal review 2026-09-04,
 // F-16). Composed at the facade only when an audit sink is configured, over whichever logging
 // broker the deployment chose - the built-in one or a host's own.
+//
+// What the record carries is policy (F-14): metadata by default - a payload's length and hash,
+// never the payload - and the payload itself only when the deployment opted in, as the
+// configured redaction leaves it. Redact protects the model boundary; this is the same rule at
+// the audit boundary.
 public sealed class AuditingLoggingBroker : ILoggingBroker
 {
     private readonly ILoggingBroker loggingBroker;
     private readonly IAuditBroker auditBroker;
     private readonly ITimeBroker timeBroker;
+    private readonly IRedactionBroker redactionBroker;
+    private readonly AuditPolicy policy;
     private readonly Func<string?>? principal;
 
     // The run is read from the ambient AgentRun that Coordination begins (SPEC.md §4.4); the
@@ -34,11 +44,15 @@ public sealed class AuditingLoggingBroker : ILoggingBroker
         ILoggingBroker loggingBroker,
         IAuditBroker auditBroker,
         ITimeBroker timeBroker,
+        IRedactionBroker redactionBroker,
+        AuditPolicy policy,
         Func<string?>? principal = null)
     {
         this.loggingBroker = loggingBroker;
         this.auditBroker = auditBroker;
         this.timeBroker = timeBroker;
+        this.redactionBroker = redactionBroker;
+        this.policy = policy;
         this.principal = principal;
     }
 
@@ -98,11 +112,34 @@ public sealed class AuditingLoggingBroker : ILoggingBroker
         await this.loggingBroker.LogProcessAsync(actor, message, detail);
     }
 
+    // The summary is the record; the payload is its length and its hash, and the payload
+    // itself only under a policy that asked for it - redacted, because the sink outlives the run.
+    public async ValueTask LogPayloadAsync(string actor, string summary, string payload, bool detail)
+    {
+        string? recorded = this.policy.Payloads
+            ? this.redactionBroker.Redact(payload, new Dictionary<string, string>())
+            : null;
+
+        await AuditAsync(
+            AuditKind.Process,
+            actor,
+            summary,
+            detail,
+            recorded,
+            payload.Length,
+            Hash(payload));
+
+        await this.loggingBroker.LogPayloadAsync(actor, summary, payload, detail);
+    }
+
     private async ValueTask AuditAsync(
         AuditKind kind,
         string actor,
         string message,
-        bool detail = false)
+        bool detail = false,
+        string? payload = null,
+        int? payloadLength = null,
+        string? payloadHash = null)
     {
         AgentRun run = this.Run;
 
@@ -115,9 +152,23 @@ public sealed class AuditingLoggingBroker : ILoggingBroker
             Actor = actor,
             Message = message,
             Detail = detail,
-            Principal = this.principal?.Invoke()
+            Principal = this.principal?.Invoke(),
+            Payload = payload,
+            PayloadLength = payloadLength,
+            PayloadHash = payloadHash
         };
 
         await this.auditBroker.WriteAsync(record);
+    }
+
+    // The same fingerprint on both targets: lowercase hex either way, so a hash written on one
+    // matches the same payload's hash on the other.
+    private static string Hash(string payload)
+    {
+#if NET9_0_OR_GREATER
+        return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(payload)));
+#else
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(payload))).ToLowerInvariant();
+#endif
     }
 }

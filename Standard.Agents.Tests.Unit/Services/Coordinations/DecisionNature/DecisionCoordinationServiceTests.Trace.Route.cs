@@ -41,10 +41,10 @@ public partial class DecisionCoordinationServiceTests
         decisionStream.Result.DirectionType.Should().Be("ReturnResponse");
 
         this.loggingBrokerMock.Verify(broker =>
-            broker.LogProcessAsync(
+            broker.LogPayloadAsync(
                 "Decision",
-                It.Is<string>(message =>
-                    message.Contains("ROUTE") && message.Contains("arithmetic")),
+                It.Is<string>(summary => summary.Contains("ROUTE")),
+                It.Is<string>(payload => payload.Contains("arithmetic")),
                 It.IsAny<bool>()),
                     Times.Once);
     }

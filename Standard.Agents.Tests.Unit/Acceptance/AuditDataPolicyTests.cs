@@ -8,7 +8,7 @@ using Moq;
 using Standard.Agents.Brokers.Knowledges;
 using Standard.Agents.Brokers.Memorys;
 using Standard.Agents.Brokers.Skills;
-using Standard.Agents.Models.Brokers.Redactions;
+using Standard.Agents.Models.Foundations.Brains;
 using Standard.Agents.Models.Foundations.Skills;
 using Standard.Agents.Tools;
 using Xunit;
@@ -36,6 +36,11 @@ public class AuditDataPolicyTests : IDisposable
             File.Delete(this.auditPath);
         }
     }
+
+    // The sink is JSON lines, and the serializer escapes an apostrophe as a ' sequence;
+    // read it the way a reader would, with the escape undone, so an assertion can name a tool.
+    private async Task<string> ReadDecisionLogAsync() =>
+        (await File.ReadAllTextAsync(this.auditPath)).Replace("\\u0027", "'");
 
     // A tool the Brain calls with the card number, so a tool payload and a tool result both
     // carry it; a Brain that echoes it back, so the reply carries it; a prompt that starts it.
@@ -88,7 +93,7 @@ public class AuditDataPolicyTests : IDisposable
 
         // when
         string answer = await agent.ProcessPromptAsync($"my card is {CardNumber}");
-        string decisionLog = await File.ReadAllTextAsync(this.auditPath);
+        string decisionLog = await ReadDecisionLogAsync();
 
         // then — the run happened and the answer carried the number; the log did not
         answer.Should().Contain(CardNumber);
@@ -119,7 +124,7 @@ public class AuditDataPolicyTests : IDisposable
 
         // when
         await agent.ProcessPromptAsync($"my card is {CardNumber}");
-        string decisionLog = await File.ReadAllTextAsync(this.auditPath);
+        string decisionLog = await ReadDecisionLogAsync();
 
         // then — the payloads are on the record, tokenized the way the Brain saw them
         decisionLog.Should().NotContain(CardNumber);

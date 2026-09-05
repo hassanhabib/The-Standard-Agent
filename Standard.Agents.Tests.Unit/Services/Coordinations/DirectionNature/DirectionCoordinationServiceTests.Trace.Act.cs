@@ -35,9 +35,10 @@ public partial class DirectionCoordinationServiceTests
 
         // then
         this.loggingBrokerMock.Verify(broker =>
-            broker.LogProcessAsync(
+            broker.LogPayloadAsync(
                 "Direction",
-                It.Is<string>(message => message.Contains("Tool") && message.Contains("2")),
+                It.Is<string>(summary => summary.Contains("Tool")),
+                It.Is<string>(payload => payload.Contains("2")),
                 It.IsAny<bool>()),
                     Times.Once);
     }
