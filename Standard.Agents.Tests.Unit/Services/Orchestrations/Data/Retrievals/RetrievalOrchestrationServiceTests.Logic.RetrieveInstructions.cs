@@ -25,16 +25,21 @@ public partial class RetrievalOrchestrationServiceTests
         string inputRoute = randomRoute;
         string skillsWithMarker = "Tools you may use:\n{{tools}}";
 
+        string weatherSchema = """{"type":"object","properties":{"city":{"type":"string"}}}""";
+
         IReadOnlyList<McpTool> remoteTools =
         [
-            new McpTool("weather", "answers weather questions"),
+            new McpTool("weather", "answers weather questions", weatherSchema),
             new McpTool("undocumented", "")
         ];
 
+        // What a tool takes is part of what advertises it (SPEC.md §6.1): the schema the server
+        // declared reaches the catalog line, not an empty object (principal review 2026-09-04,
+        // F-03).
         string expectedInstructions =
             "Tools you may use:\n"
                 + LocalToolCatalog + "\n"
-                + "- weather — answers weather questions parameters: {}";
+                + "- weather — answers weather questions parameters: " + weatherSchema;
 
         this.skillServiceMock.Setup(service =>
             service.RetrieveSkillsAsync(inputRoute))
