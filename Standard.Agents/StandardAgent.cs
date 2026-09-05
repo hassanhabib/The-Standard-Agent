@@ -143,6 +143,7 @@ public sealed partial class StandardAgent : IAgent
         new(StringComparer.OrdinalIgnoreCase);
     private int maxHistoryTurns = 20;
     private Func<AgentPrincipal?>? identityResolver;
+    private Func<HttpMessageHandler>? httpHandlerSource;
 
     private IRunManagementService? agent;
 
@@ -1628,6 +1629,27 @@ public sealed partial class StandardAgent : IAgent
     // Every builder method drops the cached composition, so configuration set after a
     // prompt still takes effect. Returning `this` without doing that would silently
     // ignore the change.
+    /// <summary>
+    /// Puts the host's HTTP handler chain under every HTTP broker the agent composes: the brain,
+    /// the native brain, and MCP servers. The <b>External</b> seam for HTTP itself — pooled and
+    /// DNS-refreshing connections from <c>IHttpClientFactory</c>
+    /// (<c>IHttpMessageHandlerFactory.CreateHandler</c>), a proxy, a certificate, a resilience
+    /// handler, an observer — where a broker that built its own client could reach none of them
+    /// (principal review 2026-09-04, F-23).
+    /// </summary>
+    /// <remarks>
+    /// Ownership is explicit. A handler this delegate returns is yours: the broker wraps it in a
+    /// client that holds nothing of its own and never disposes it. Without this call every HTTP
+    /// broker creates its own handler, owned by the composition and released on the next one, so
+    /// a single long-lived agent holds one set for its life; short-lived agents composed by the
+    /// dozen should supply handlers from a factory instead. Order does not matter: brokers are
+    /// created at composition, so the handler reaches a brain or server registered before it.
+    /// </remarks>
+    /// <param name="handlers">Returns a handler for one broker; called once per HTTP broker.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent Http(Func<HttpMessageHandler> handlers) =>
+        Set(() => this.httpHandlerSource = handlers);
+
     private StandardAgent Set(Action configure)
     {
         lock (this.compositionLock)
