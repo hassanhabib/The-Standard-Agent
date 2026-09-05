@@ -17,9 +17,93 @@ dotnet run --project Standard.Agents.Host
 | `GET api/home` | Aliveness, nothing else — no security, no dependencies. What a load balancer checks. |
 | `POST api/agents/runs` | `{ "prompt": "..." }` → `{ "result": "...", "status": "Responded" }`. Status travels beside result because only `Responded` makes the result an answer. An empty prompt is `400` before any run starts. |
 | `POST api/agents/streams` | The same run as server-sent events — each event's kind as the SSE event name (`Status`, `Thinking`, `Narration`, `Tool`, `Response`), its content as data, one `data:` line per line of content, which any SSE client joins back with a newline. Filtering to `Response` events equals what `runs` returns. |
+| `POST api/V1/agents/runs` | The whole run: version 1 of the wire carries everything `PromptRequest` carries and answers with everything `AgentOutcome` reports, the pending effect included. The enterprise door; see below. |
+| `POST api/V1/agents/streams` | The same V1 request, as server-sent events, framed exactly as `api/agents/streams`. |
 
 Closing the connection cancels the run at its next turn boundary — and, through the nesting
 seam, any sub-agents the run started.
+
+The prompt-only `api/agents` routes are the convenience door and stay as they are: a prompt in,
+a result and a status out. They are V0 of the wire and are not the enterprise API — a caller on
+them cannot name a session, hand back a tool result, or see what a held run is waiting on.
+
+## The whole run over the wire
+
+Version 1 of the wire is `PromptRequest` and `AgentOutcome` in JSON, field for field. Every
+field but `prompt` is optional; a list left out is empty, and a field set to `null` is refused
+as `400` naming the field.
+
+```json
+POST api/V1/agents/runs
+{
+  "prompt": "and how many people live there?",
+  "sessionId": "trip-3",
+  "history": [ { "prompt": "capital of France?", "answer": "Paris." } ],
+  "toolExchanges": [
+    { "callId": "call_8f2", "toolName": "lookup", "argumentsJson": "{\"city\":\"Paris\"}", "result": "2.1M" }
+  ],
+  "callerTools": [
+    { "name": "lookup", "description": "Looks a city up", "parametersJson": "{\"type\":\"object\"}" }
+  ],
+  "responseSchemaJson": null,
+  "temperature": 0.2,
+  "maxTokens": 400,
+  "seed": 7,
+  "stop": [],
+  "providerOptionsJson": null
+}
+```
+
+```json
+{
+  "result": "About 2.1 million.",
+  "status": "Responded",
+  "pendingEffect": null
+}
+```
+
+What each field means is what it means on the contract ([how-to.md §18](how-to.md)): a session
+wins over the caller's `history`; `callerTools` are vocabulary the model may name and never
+capability the agent runs; inference fields the deployment configured win over the caller's.
+Deliberately absent, as on the contract: executable tools, permissions, budget, redaction,
+approvals, principal. The wire has no field in which to ask for them.
+
+**The pending effect.** Only `Responded` makes the result an answer. A run that ends
+`AwaitingApproval` or `AwaitingInput` carries the act it is waiting on, so a stateless caller
+can see it, perform it, approve it, or answer it:
+
+```json
+{
+  "result": "Holding the transfer until an authority answers.",
+  "status": "AwaitingApproval",
+  "pendingEffect": {
+    "runId": "run-9",
+    "callId": "",
+    "toolName": "wire",
+    "arguments": "{\"amount\":100}",
+    "scope": "account:42",
+    "riskLevel": "Irreversible",
+    "approvalRequired": true,
+    "idempotencyKey": "5b1e…",
+    "principal": null
+  }
+}
+```
+
+**Continuing a held run is the same request.** Post the authority's decision, or the person's
+reply, as the `prompt` on the same `sessionId`; the run picks up where it stopped, and an act
+it already performed is recognised by its key and replayed rather than performed twice
+(SPEC.md §4.9, §4.11). **Completing a caller's tool call is the same request too**: the run
+ended `AwaitingInput` with the call as the pending effect, the caller ran it, and the result
+comes back in `toolExchanges` naming the `callId` the model minted. There is no separate resume
+route, because resuming is not a different operation; the session already holds everything.
+
+**Identity is not established by this door.** The `X-Api-Key` gate below authenticates
+possession of one shared secret and nothing more: it does not name a principal or a tenant, and
+the wire carries none. A deployment that needs identity in policy, sessions and audit puts an
+authenticating proxy or an ASP.NET authentication scheme in front of the host and resolves the
+principal where the agent is composed (`.Principal(...)`, [how-to.md §12](how-to.md)); the wire
+is deliberately not a place a caller can claim to be someone.
 
 ## Configuration
 
