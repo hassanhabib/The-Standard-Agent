@@ -26,13 +26,13 @@ public sealed class CompositeMcpBroker : IMcpBroker
         this.catalogs = new IReadOnlyList<McpTool>?[this.brokers.Count];
     }
 
-    public async ValueTask<string> CallAsync(string name, string input)
+    public async ValueTask<string> CallAsync(string name, string argumentsJson)
     {
         IMcpBroker? owner = await ResolveAsync(name);
 
         return owner is null
             ? $"[external '{name}' not configured]"
-            : await owner.CallAsync(name, input);
+            : await owner.CallAsync(name, argumentsJson);
     }
 
     public async ValueTask<IReadOnlyList<McpTool>> ListToolsAsync()

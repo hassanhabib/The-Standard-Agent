@@ -40,7 +40,7 @@ public sealed class CaseMemoryBroker : IMemoryBroker
 
 public sealed class NotConfiguredMcpBroker : IMcpBroker
 {
-    public async ValueTask<string> CallAsync(string name, string input) =>
+    public async ValueTask<string> CallAsync(string name, string argumentsJson) =>
         $"[external '{name}' not configured]";
 
     public async ValueTask<IReadOnlyList<Standard.Agents.Models.Brokers.Mcps.McpTool>>

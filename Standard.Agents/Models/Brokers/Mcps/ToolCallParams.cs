@@ -5,6 +5,8 @@
 
 namespace Standard.Agents.Models.Brokers.Mcps;
 
+// Arguments are whatever JSON object the caller shaped — a native call's own arguments, or
+// plain text wrapped upstream — carried as a node so the broker never interprets them.
 internal sealed record ToolCallParams(
     string Name,
-    IReadOnlyDictionary<string, string> Arguments);
+    System.Text.Json.Nodes.JsonNode? Arguments);

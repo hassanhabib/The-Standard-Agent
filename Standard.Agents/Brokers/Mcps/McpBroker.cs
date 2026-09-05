@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------
 
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using RESTFulSense.Clients;
 using Standard.Agents.Models.Brokers.Mcps;
@@ -16,7 +17,7 @@ public sealed class McpBroker : IMcpBroker
     private const string JsonRpcVersion = "2.0";
     private const string ToolsCallMethod = "tools/call";
     private const string ToolsListMethod = "tools/list";
-    private const string InputArgumentName = "input";
+    private const string OpenObjectSchema = "{}";
 
     private static readonly JsonSerializerOptions jsonOptions = new()
     {
@@ -83,7 +84,7 @@ public sealed class McpBroker : IMcpBroker
         }
     }
 
-    public async ValueTask<string> CallAsync(string name, string input)
+    public async ValueTask<string> CallAsync(string name, string argumentsJson)
     {
         JsonRpcRequest jsonRpcRequest = new(
             JsonRpc: JsonRpcVersion,
@@ -91,10 +92,7 @@ public sealed class McpBroker : IMcpBroker
             Method: ToolsCallMethod,
             Params: new ToolCallParams(
                 Name: name,
-                Arguments: new Dictionary<string, string>
-                {
-                    [InputArgumentName] = input
-                }));
+                Arguments: JsonNode.Parse(argumentsJson)));
 
         JsonRpcResponse jsonRpcResponse =
             await PostAsync<JsonRpcRequest, JsonRpcResponse>(
@@ -123,7 +121,10 @@ public sealed class McpBroker : IMcpBroker
         }
 
         return [.. (jsonRpcResponse.Result?.Tools ?? []).Select(tool =>
-            new McpTool(tool.Name, tool.Description ?? string.Empty))];
+            new McpTool(
+                tool.Name,
+                tool.Description ?? string.Empty,
+                tool.InputSchema?.GetRawText() ?? OpenObjectSchema))];
     }
 
     private static string ToText(JsonRpcResponse jsonRpcResponse)
