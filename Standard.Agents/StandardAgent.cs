@@ -1385,7 +1385,11 @@ public sealed partial class StandardAgent : IAgent
     /// to <paramref name="fallback"/>; it closes again after a cool-down, so a recovered provider
     /// is used again without a restart. With no fallback the agent fails rather than fabricating.
     /// </summary>
-    /// <param name="fallback">What to answer with while the primary is unhealthy.</param>
+    /// <param name="fallback">
+    /// What to answer with while the primary is unhealthy. Text, degrading whichever protocol
+    /// asked: the reply the text loop reads (so it carries <c>FINAL:</c>), or a final native
+    /// answer with no tool calls, returned as written.
+    /// </param>
     /// <param name="retries">Attempts against the primary before a call counts as failed.</param>
     /// <param name="failuresBeforeOpen">Consecutive failures that open the circuit.</param>
     /// <returns>The same agent, so calls can be chained.</returns>

@@ -19,9 +19,15 @@ public sealed class ScriptedNativeGeneratorBroker : IGeneratorBrokerV1
     private readonly IReadOnlyList<NativeReply> replies;
     private readonly List<IReadOnlyList<ConversationMessage>> conversations = [];
     private int index;
+    private int remainingTransientFailures;
 
-    public ScriptedNativeGeneratorBroker(IReadOnlyList<NativeReply> replies) =>
+    public ScriptedNativeGeneratorBroker(
+        IReadOnlyList<NativeReply> replies,
+        int transientFailures = 0)
+    {
         this.replies = replies;
+        this.remainingTransientFailures = transientFailures;
+    }
 
     public IReadOnlyList<IReadOnlyList<ConversationMessage>> Conversations => this.conversations;
 
@@ -33,6 +39,19 @@ public sealed class ScriptedNativeGeneratorBroker : IGeneratorBrokerV1
     {
         this.conversations.Add(messages);
         LastTools = tools;
+
+        // The same scripted transient failure the text-protocol Brain throws, so degradation is
+        // certified on the native seam against the category the framework actually localizes
+        // (SPEC.md §4.10) — a control that holds on one protocol only is not a control.
+        if (this.remainingTransientFailures > 0)
+        {
+            this.remainingTransientFailures--;
+
+            throw new HttpRequestException(
+                "scripted transient failure",
+                inner: null,
+                statusCode: System.Net.HttpStatusCode.ServiceUnavailable);
+        }
 
         NativeReply reply = this.index < this.replies.Count
             ? this.replies[this.index++]

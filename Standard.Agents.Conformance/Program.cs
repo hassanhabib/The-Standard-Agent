@@ -290,7 +290,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
     // One scripted native model for the whole vector, so its recorded conversations survive
     // across instances exactly as a real endpoint's would.
     ScriptedNativeGeneratorBroker? nativeGenerator = vector.NativeReplies is { Count: > 0 }
-        ? new ScriptedNativeGeneratorBroker(vector.NativeReplies)
+        ? new ScriptedNativeGeneratorBroker(vector.NativeReplies, vector.TransientFailures)
         : null;
 
     Queue<ApprovalDecision> approvalDecisions = new(

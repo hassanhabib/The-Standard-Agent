@@ -8,6 +8,7 @@ using Moq;
 using Standard.Agents.Brokers.Knowledges;
 using Standard.Agents.Brokers.Memorys;
 using Standard.Agents.Brokers.Skills;
+using Standard.Agents.Models.Brokers.Generators.V1;
 using Standard.Agents.Models.Foundations.Skills;
 using Xunit;
 
@@ -38,6 +39,52 @@ public class ResilienceTests
             .UseMemory(memoryBroker.Object)
             .UseKnowledge(knowledgeBroker.Object)
             .OnBrain(async (systemPrompt, userPrompt) => replyForTurn(turn++));
+    }
+
+    private static StandardAgent AgentWithNativeBrainThatAlwaysFails()
+    {
+        var skillBroker = new Mock<ISkillBroker>();
+        skillBroker.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(new List<Skill>());
+
+        var memoryBroker = new Mock<IMemoryBroker>();
+        memoryBroker.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
+
+        var knowledgeBroker = new Mock<IKnowledgeBroker>();
+
+        knowledgeBroker.Setup(broker => broker.SelectKnowledgeAsync(It.IsAny<string>()))
+            .ReturnsAsync([]);
+
+        return new StandardAgent()
+            .UseSkills(skillBroker.Object)
+            .UseMemory(memoryBroker.Object)
+            .UseKnowledge(knowledgeBroker.Object)
+            .OnNativeBrain((messages, tools) =>
+                throw new HttpRequestException(
+                    "the native provider is down",
+                    inner: null,
+                    statusCode: System.Net.HttpStatusCode.ServiceUnavailable));
+    }
+
+    // Found in the 2026-09-04 principal review (F-07): the fallback broker cast the configured
+    // string answer to whatever T the caller asked for. On the text protocol T is string and the
+    // cast is free; on the native protocol T is GenerationResult, so the moment the circuit
+    // opened — exactly when the control is supposed to work — the fallback threw
+    // InvalidCastException instead of degrading. A control that holds on one protocol and not
+    // the other is a control a caller can step around by changing configuration.
+    [Fact]
+    public async Task ShouldFallBackOnTheNativeProtocolWhenTheCircuitOpensAsync()
+    {
+        // given
+        StandardAgent agent = AgentWithNativeBrainThatAlwaysFails()
+            .Fallback(
+                fallback: async () => "Answering from the standby model.",
+                failuresBeforeOpen: 1);
+
+        // when
+        string actualAnswer = await agent.ProcessPromptAsync("what is the answer");
+
+        // then
+        actualAnswer.Should().Be("Answering from the standby model.");
     }
 
     [Fact]

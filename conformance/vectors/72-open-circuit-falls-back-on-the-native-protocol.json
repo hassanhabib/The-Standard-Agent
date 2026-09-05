@@ -1,0 +1,16 @@
+{
+  "name": "open-circuit-falls-back-on-the-native-protocol",
+  "description": "SPEC.md 4.10 on the native seam (SPEC.md 6): an unhealthy native provider degrades to the configured alternative exactly as the text-protocol Brain does. The native Brain fails repeatedly; once the circuit opens the agent answers from the fallback instead of throwing. The 2026-09-04 principal review (F-07) found the fallback cast its text answer to the native result type and threw InvalidCastException at the very moment the control was supposed to work. A control that holds on one protocol and not the other is a control a caller can step around by changing configuration, so the guarantee is certified on both.",
+  "generatorReplies": [],
+  "nativeReplies": [
+    { "content": "never reached" }
+  ],
+  "tools": {},
+  "prompt": "what is the answer",
+  "transientFailures": 99,
+  "fallbackReply": "Answering from the standby model",
+  "failuresBeforeOpen": 1,
+  "expect": {
+    "resultContains": "standby model"
+  }
+}
