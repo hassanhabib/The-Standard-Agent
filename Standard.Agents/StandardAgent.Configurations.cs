@@ -322,11 +322,7 @@ public partial class StandardAgent
                 break;
 
             case "budget":
-                agent.Budget(
-                    OptionalWhole(value, "maxTokens"),
-                    OptionalMoney(value, "maxCostUsd"),
-                    OptionalSeconds(value, "maxWallClockSeconds"),
-                    OptionalMoney(value, "costPerThousandTokens") ?? 0m);
+                ApplyBudget(agent, budgetNode: value);
 
                 break;
 
@@ -358,6 +354,32 @@ public partial class StandardAgent
                     $"Unknown configuration key '{key}'. A key this agent does not know is a "
                         + "control you believe is on and is not, so it refuses to compose. "
                         + "The keys are the builder verbs, camelCased — see docs/how-to.md.");
+        }
+    }
+
+    // The builder is the one place the budget's rules live; the document reaches it through the
+    // same verb code does. A refusal there is rewrapped into the document's own exception —
+    // naming the entries the author must fix, with the builder's refusal preserved beneath it —
+    // so a cost bound with no rate fails the way a typo'd key does: loudly, and by name.
+    private static void ApplyBudget(StandardAgent agent, JsonNode? budgetNode)
+    {
+        try
+        {
+            agent.Budget(
+                maxTokens: OptionalWhole(budgetNode, "maxTokens"),
+                maxCostUsd: OptionalMoney(budgetNode, "maxCostUsd"),
+                maxWallClock: OptionalSeconds(budgetNode, "maxWallClockSeconds"),
+                costPerThousandTokens: OptionalMoney(budgetNode, "costPerThousandTokens") ?? 0m);
+        }
+        catch (InvalidAgentBudgetException invalidAgentBudgetException)
+        {
+            throw new InvalidAgentConfigurationException(
+                message:
+                    "The 'budget' entry sets 'maxCostUsd' without a positive "
+                        + "'costPerThousandTokens'. Cost is priced off the token count times that "
+                        + "rate, so without it the spend is zero forever and the bound can never "
+                        + "trip. Add your model's rate, or bound by 'maxTokens' instead.",
+                innerException: invalidAgentBudgetException);
         }
     }
 
