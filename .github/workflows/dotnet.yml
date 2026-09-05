@@ -47,6 +47,14 @@ jobs:
         dotnet run --project Standard.Agents.Conformance --no-build --configuration Release
         -- --profile Enterprise
 
+    # The highest level the README claims, certified explicitly. Critical inherits Enterprise,
+    # so this transitively re-certifies every lower profile; running all vectors proves their
+    # current behavior but not that each profile's required set is still complete (F-18).
+    - name: Certifying Critical Profile
+      run: >
+        dotnet run --project Standard.Agents.Conformance --no-build --configuration Release
+        -- --profile Critical
+
     # Quality certification beside contract certification: the golden evals measure task
     # completion, groundedness, retrieval precision and recall, tool selection, refusal
     # correctness and revision effectiveness, and fail the build under threshold.
@@ -84,8 +92,30 @@ jobs:
           exit 1
         fi
 
-    - name: Listing Dependency Licenses
-      run: dotnet list package --include-transitive
+    # A license inventory with a policy, not a package listing: every package in the shipped
+    # graph, transitively, resolved to a license expression and checked against
+    # licenses/allowed-licenses.json. Packages that publish only a URL are mapped in
+    # licenses/license-url-mappings.json; the two that ship a bare License.txt are named in
+    # licenses/package-overrides.json. An unknown or disallowed license fails the build (F-26).
+    - name: Checking Dependency Licenses Against Policy
+      run: |
+        dotnet tool install --global nuget-license
+        nuget-license -i Standard.Agents/Standard.Agents.csproj -t \
+          -a licenses/allowed-licenses.json \
+          -mapping licenses/license-url-mappings.json \
+          -override licenses/package-overrides.json \
+          -o JsonPretty -fo licenses.json
+        nuget-license -i Standard.Agents/Standard.Agents.csproj -t \
+          -a licenses/allowed-licenses.json \
+          -mapping licenses/license-url-mappings.json \
+          -override licenses/package-overrides.json \
+          -err
+
+    - name: Publishing The License Inventory
+      uses: actions/upload-artifact@v4
+      with:
+        name: license-inventory
+        path: licenses.json
 
     # Secrets that reach a public repository are already leaked; the value of this check is
     # catching the commit that would have done it.
