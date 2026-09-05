@@ -1029,6 +1029,29 @@ replays its outcome instead of repeating it.
 .EffectLedger("ledger")            // survives the process; the built-in one lives in memory
 ```
 
+**What the ledger knows, and what it does when it does not know.** Every act is a typed record:
+claimed *in flight* (by which run, when, under a lease) before it runs, *completed* with its
+outcome after, *failed* when the tool threw, *compensation pending* before a reversal is
+attempted and *compensated* after. A repeat of a completed act replays its outcome. A repeat of
+an act another run is still on is told so and not performed. And a repeat of an act whose fate is
+unknown — a claim past its lease with no outcome, this run's own earlier attempt that never wrote
+one, a failed tool, a compensation under way — is neither performed blind nor presumed done: the
+run ends `AwaitingInput` with the act as its pending effect, key included, and says so:
+
+```text
+'wire_transfer' has an earlier attempt in the ledger with no usable outcome (state: InFlight,
+claimed 2026-09-05 16:55:41Z); reconcile the ledger against the world - record the real
+outcome, or release the claim - before this act can run again.
+```
+
+Reconciling is a person's act against the store you chose: read the record by the pending
+effect's `IdempotencyKey`, check the world, and either update it to `Completed` with the real
+outcome (the next run replays it) or delete the in-flight claim (the next run performs it). The
+`FileEffectLedgerBroker` and `InMemoryEffectLedgerBroker` expose the same four primitives your
+own ledger implements, so the same code reconciles either. This is the exactly-once boundary,
+stated honestly: the framework can record intent before an act and outcome after it, and can
+refuse to guess in between; it cannot know what a remote system did while the process was down.
+
 **The boundary, stated:** run-once is scoped to a **run**. A repeat of the same act in a later,
 completed conversation is a new act and performs again — and a delivery mechanism that may
 redeliver (an at-least-once queue, a retried webhook) starts a new run each time, so a caller
