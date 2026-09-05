@@ -1,0 +1,10 @@
+{
+  "name": "a-cost-budget-without-a-rate-refuses-to-compose",
+  "description": "SPEC.md 4.10: a cost bound is priced off the token count times a rate the host supplies, because no implementation can know what a model costs. A document that bounds dollars without pricing tokens has asked for a bound that computes zero forever and never trips - a guardrail the host believes is armed and is not. The document MUST refuse to compose and the refusal MUST name the missing rate. No run happens; the refusal is the certification.",
+  "configurationJson": "{ \"budget\": { \"maxCostUsd\": 0.25 } }",
+  "generatorReplies": [],
+  "prompt": "",
+  "expect": {
+    "configurationRefusalNames": "costPerThousandTokens"
+  }
+}
