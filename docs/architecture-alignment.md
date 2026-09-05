@@ -225,7 +225,17 @@ call, both of which the old code got right and which moving it had to preserve. 
 test that covers it was sabotage-verified after the move, not before: refusal detection was
 disabled and `ShouldWithholdAnInjectedToolResultFromTheBrainAsync` was watched failing.
 
-**No deviations remain.** The diagram says so without an asterisk.
+**No deviations remain** — with one correction, dated. When this document first said so, violation
+**A** had not in fact been closed: `LoggingBroker` still held `ITimeBroker` and `IAuditBroker`,
+built every audit record itself, and the sentence above was wrong (principal review 2026-09-04,
+F-16). Closed 2026-09-05, by the shape the resilience ruling already established: the logging
+broker wraps one resource, the log, and the decision log is applied over it by **decoration** —
+`AuditingLoggingBroker` implements `ILoggingBroker`, takes one, and adds the audit record to each
+call it forwards. Composed at the facade only when an audit sink is configured, over the built-in
+trace or a host's own logging broker alike, so `.UseLogging(...)` and `.Audit(...)` compose rather
+than compete. And the rule is now a test rather than a sentence: `TierDisciplineTests` reads every
+broker's constructors and fails on one that takes another broker without implementing the
+interface it takes — the dependency **flow**, not the folder a type sits in.
 
 **No public API change.** `docs/support.md` already states that service classes and their
 constructors are not a public contract, and the builder surface is untouched. This is `1.2.0.0` —

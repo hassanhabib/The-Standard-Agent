@@ -66,3 +66,18 @@ Standard.Agents.Brokers.Generators.AnthropicGeneratorBrokerV1.AnthropicGenerator
 Standard.Agents.Brokers.Generators.GeneratorBroker.GeneratorBroker(System.Net.Http.HttpMessageHandler! handler, string! apiUrl, string! apiKey, string! model, double temperature, int maxTokens, int timeoutSeconds) -> void
 Standard.Agents.Brokers.Generators.GeneratorBrokerV1.GeneratorBrokerV1(System.Net.Http.HttpMessageHandler! handler, string! apiUrl, string! apiKey, string! model, double temperature, int maxTokens, int timeoutSeconds) -> void
 Standard.Agents.Brokers.Mcps.McpBroker.McpBroker(System.Net.Http.HttpMessageHandler! handler, string! endpointUrl, string! relativeUrl, int timeoutSeconds, string? bearerToken, string? apiKey, string! apiKeyHeader, System.Func<System.Threading.Tasks.ValueTask<string!>>? bearerTokenProvider) -> void
+*REMOVED*Standard.Agents.Brokers.Loggings.LoggingBroker.LoggingBroker(Microsoft.Extensions.Logging.ILogger<Standard.Agents.Brokers.Loggings.LoggingBroker!>! logger, Standard.Agents.Brokers.Times.ITimeBroker! timeBroker, Standard.Agents.Models.Loggings.TraceVerbosity verbosity = Standard.Agents.Models.Loggings.TraceVerbosity.Full, string? logPath = null, Standard.Agents.Brokers.Audits.IAuditBroker? auditBroker = null, System.Func<string?>? principal = null) -> void
+Standard.Agents.Brokers.Loggings.LoggingBroker.LoggingBroker(Microsoft.Extensions.Logging.ILogger<Standard.Agents.Brokers.Loggings.LoggingBroker!>! logger, Standard.Agents.Models.Loggings.TraceVerbosity verbosity = Standard.Agents.Models.Loggings.TraceVerbosity.Full, string? logPath = null) -> void
+Standard.Agents.Brokers.Audits.AuditingLoggingBroker
+Standard.Agents.Brokers.Audits.AuditingLoggingBroker.AuditingLoggingBroker(Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, Standard.Agents.Brokers.Audits.IAuditBroker! auditBroker, Standard.Agents.Brokers.Times.ITimeBroker! timeBroker, System.Func<string?>? principal = null) -> void
+Standard.Agents.Brokers.Audits.AuditingLoggingBroker.LogCriticalAsync(System.Exception! exception) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Audits.AuditingLoggingBroker.LogDebugAsync(string! message) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Audits.AuditingLoggingBroker.LogErrorAsync(System.Exception! exception) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Audits.AuditingLoggingBroker.LogInformationAsync(string! message) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Audits.AuditingLoggingBroker.LogOutcomeAsync(string! message) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Audits.AuditingLoggingBroker.LogProcessAsync(string! actor, string! message, bool detail = false) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Audits.AuditingLoggingBroker.LogResetAsync() -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Audits.AuditingLoggingBroker.LogStepAsync(Standard.Agents.Models.Loggings.AgentStep step) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Audits.AuditingLoggingBroker.LogTraceAsync(string! message) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Audits.AuditingLoggingBroker.LogTurnAsync(int turn) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Audits.AuditingLoggingBroker.LogWarningAsync(string! message) -> System.Threading.Tasks.ValueTask

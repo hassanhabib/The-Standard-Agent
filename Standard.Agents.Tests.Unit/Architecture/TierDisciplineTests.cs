@@ -19,7 +19,7 @@ namespace Standard.Agents.Tests.Unit.Architecture;
 // So: a foundation wraps ONE nature broker. Anything above the foundation tier holds no broker at
 // all. Utility brokers are the documented exception, and the list of them is short and named here
 // so that adding a sixth is a reviewed decision rather than an omission nobody sees.
-public class TierDisciplineTests
+public partial class TierDisciplineTests
 {
     // Observability, plus the clock. None backs a nature; none can change what the agent decides.
     // Telemetry earns the same exemption the same way: spans and metrics observe the loop and
