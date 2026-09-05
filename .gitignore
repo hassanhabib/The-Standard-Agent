@@ -31,3 +31,6 @@ Thumbs.db
 memory.txt
 log.txt
 Knowledge/
+
+# The packed package, when packed locally for the consumer smoke test (scripts/package-smoke.sh).
+artifacts/
