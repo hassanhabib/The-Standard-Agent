@@ -12,7 +12,7 @@ namespace Standard.Agents.Tests.Unit.Clients;
 // The whole configurable surface as data (SPEC.md §4.8's three verbs, reached a fourth way):
 // one JSON key per capability, the same names as the builder verbs, composing the same agent
 // the fluent code composes. Tools and delegates stay code; JSON reaches everything that is data.
-public class StandardAgentFromJsonTests
+public partial class StandardAgentFromJsonTests
 {
     [Fact]
     public async Task ShouldComposeAnAgentFromJsonAsync()

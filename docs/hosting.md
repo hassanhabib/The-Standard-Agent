@@ -126,6 +126,16 @@ A document that refuses to compose (an unknown key, a cost budget with no rate) 
 differently from a missing brain: the agent is composed on the first request, not at startup,
 so the host still stands and heartbeats, and every prompt is a 500 whose log line names the
 offending entry. A green heartbeat is not proof the document composed; the first prompt is.
+So a pipeline asks before it deploys:
+
+```bash
+dotnet run --project Standard.Agents.Host -- --validate path/to/agent.json
+```
+
+Exit `0` and "composes", or exit `1` and the entry that does not: an unknown key at any depth,
+a value of the wrong type, a limit that is not positive, a section of the wrong shape, or a
+control that lists nothing. Every rule the document refuses is the same rule the builder verb
+refuses; the document only names the entry (how-to.md §16).
 
 The agent is registered as a **singleton**, which is the intended shape
 ([support.md](support.md)): one instance serves prompts concurrently, and run state is per

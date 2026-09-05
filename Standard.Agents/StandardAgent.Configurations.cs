@@ -102,37 +102,43 @@ public partial class StandardAgent
                 break;
 
             case "brain":
+                Shaped(value, key, "apiUrl", "apiKey", "model", "temperature", "maxTokens", "timeoutSeconds");
+
                 agent.Brain(
                     Text(value, key, "apiUrl"),
                     Text(value, key, "apiKey", fallback: string.Empty),
                     Text(value, key, "model"),
-                    Number(value, "temperature", fallback: 0.7),
-                    Whole(value, "maxTokens", fallback: 1024),
-                    Whole(value, "timeoutSeconds", fallback: 120));
+                    Number(value, key, "temperature", fallback: 0.7),
+                    PositiveWhole(value, key, "maxTokens", fallback: 1024),
+                    PositiveWhole(value, key, "timeoutSeconds", fallback: 120));
 
                 break;
 
             case "nativeBrain":
+                Shaped(value, key, "apiUrl", "apiKey", "model", "temperature", "maxTokens");
+
                 agent.NativeBrain(
                     Text(value, key, "apiUrl"),
                     Text(value, key, "apiKey", fallback: string.Empty),
                     Text(value, key, "model"),
-                    Number(value, "temperature", fallback: 0.7),
-                    Whole(value, "maxTokens", fallback: 1024));
+                    Number(value, key, "temperature", fallback: 0.7),
+                    PositiveWhole(value, key, "maxTokens", fallback: 1024));
 
                 break;
 
             case "nativeBrainAnthropic":
+                Shaped(value, key, "apiKey", "model", "temperature", "maxTokens");
+
                 agent.NativeBrainAnthropic(
                     Text(value, key, "apiKey"),
                     Text(value, key, "model"),
-                    Number(value, "temperature", fallback: 0.7),
-                    Whole(value, "maxTokens", fallback: 1024));
+                    Number(value, key, "temperature", fallback: 0.7),
+                    PositiveWhole(value, key, "maxTokens", fallback: 1024));
 
                 break;
 
-            case "skills" when value is JsonArray sources:
-                foreach (JsonNode? source in sources)
+            case "skills" when value is JsonArray:
+                foreach (JsonNode? source in Listed(value, key))
                 {
                     agent.Skills(Text(source, key));
                 }
@@ -145,11 +151,13 @@ public partial class StandardAgent
                 break;
 
             case "knowledge" when value is JsonObject:
+                Shaped(value, key, "path", "pattern", "maxResults", "minScore");
+
                 agent.Knowledge(
                     Text(value, key, "path"),
                     Text(value, key, "pattern", fallback: "*.md"),
-                    Whole(value, "maxResults", fallback: 3),
-                    Number(value, "minScore", fallback: 0.0));
+                    PositiveWhole(value, key, "maxResults", fallback: 3),
+                    Number(value, key, "minScore", fallback: 0.0));
 
                 break;
 
@@ -174,8 +182,8 @@ public partial class StandardAgent
 
                 break;
 
-            case "mcp" when value is JsonArray servers:
-                foreach (JsonNode? server in servers)
+            case "mcp" when value is JsonArray:
+                foreach (JsonNode? server in Listed(value, key))
                 {
                     ApplyMcpServer(agent, server, key);
                 }
@@ -187,8 +195,8 @@ public partial class StandardAgent
 
                 break;
 
-            case "agents" when value is JsonArray fleet:
-                foreach (JsonNode? member in fleet)
+            case "agents" when value is JsonArray:
+                foreach (JsonNode? member in Listed(value, key))
                 {
                     ApplyFleetMember(agent, member, key);
                 }
@@ -201,34 +209,38 @@ public partial class StandardAgent
                 break;
 
             case "gate":
+                Shaped(value, key, "apiUrl", "apiKey", "model", "temperature", "maxTokens", "timeoutSeconds");
+
                 agent.Gate(
                     Text(value, key, "apiUrl"),
                     Text(value, key, "apiKey", fallback: string.Empty),
                     Text(value, key, "model"),
-                    Number(value, "temperature", fallback: 0.0),
-                    Whole(value, "maxTokens", fallback: 16),
-                    Whole(value, "timeoutSeconds", fallback: 30));
+                    Number(value, key, "temperature", fallback: 0.0),
+                    PositiveWhole(value, key, "maxTokens", fallback: 16),
+                    PositiveWhole(value, key, "timeoutSeconds", fallback: 30));
 
                 break;
 
             case "ruleGate":
-                agent.RuleGate(Texts(value, key));
+                agent.RuleGate(ListedTexts(value, key));
 
                 break;
 
             case "judge":
+                Shaped(value, key, "apiUrl", "apiKey", "model", "temperature", "maxTokens", "timeoutSeconds");
+
                 agent.Judge(
                     Text(value, key, "apiUrl"),
                     Text(value, key, "apiKey", fallback: string.Empty),
                     Text(value, key, "model"),
-                    Number(value, "temperature", fallback: 0.0),
-                    Whole(value, "maxTokens", fallback: 16),
-                    Whole(value, "timeoutSeconds", fallback: 30));
+                    Number(value, key, "temperature", fallback: 0.0),
+                    PositiveWhole(value, key, "maxTokens", fallback: 16),
+                    PositiveWhole(value, key, "timeoutSeconds", fallback: 30));
 
                 break;
 
             case "ruleJudge":
-                agent.RuleJudge(Texts(value, key));
+                agent.RuleJudge(ListedTexts(value, key));
 
                 break;
 
@@ -250,10 +262,12 @@ public partial class StandardAgent
                 break;
 
             case "redact" when value is JsonObject rules:
-                agent.Redact([.. Items(rules["rules"], "redact.rules").Select(rule =>
+                Shaped(rules, key, "rules");
+
+                agent.Redact([.. Listed(rules["rules"], "redact.rules").Select(rule =>
                     new RedactionRule
                     {
-                        Label = Text(rule, "redact.rules", "label"),
+                        Label = Text(Shaped(rule, "redact.rules", "label", "pattern"), "redact.rules", "label"),
                         Pattern = Text(rule, "redact.rules", "pattern")
                     })]);
 
@@ -268,7 +282,7 @@ public partial class StandardAgent
                 break;
 
             case "maxTurns":
-                agent.MaxTurns(Whole(value, key));
+                agent.MaxTurns(Positive(Whole(value, key), key));
 
                 break;
 
@@ -283,7 +297,7 @@ public partial class StandardAgent
                 break;
 
             case "risk":
-                foreach ((string levelName, JsonNode? toolNames) in Entries(value, key))
+                foreach ((string levelName, JsonNode? toolNames) in ListedEntries(value, key))
                 {
                     agent.Risk(NamedText<RiskLevel>(levelName, key), Texts(toolNames, key));
                 }
@@ -291,11 +305,13 @@ public partial class StandardAgent
                 break;
 
             case "requireApproval":
-                agent.RequireApproval(Texts(value, key));
+                agent.RequireApproval(ListedTexts(value, key));
 
                 break;
 
             case "logTo" when value is JsonObject:
+                Shaped(value, key, "path", "verbosity");
+
                 agent.LogTo(
                     Text(value, key, "path"),
                     NamedText<TraceVerbosity>(
@@ -327,9 +343,11 @@ public partial class StandardAgent
                 break;
 
             case "sessions" when value is JsonObject:
+                Shaped(value, key, "path", "maxHistoryTurns");
+
                 agent.Sessions(
                     Text(value, key, "path"),
-                    Whole(value, "maxHistoryTurns", fallback: 20));
+                    PositiveWhole(value, key, "maxHistoryTurns", fallback: 20));
 
                 break;
 
@@ -357,17 +375,25 @@ public partial class StandardAgent
                 break;
 
             case "usage":
-                agent.Usage(Number(value, "charactersPerToken", fallback: 4.0));
+                Shaped(value, key, "charactersPerToken");
+
+                agent.Usage(
+                    PositiveNumber(
+                        Number(value, key, "charactersPerToken", fallback: 4.0),
+                        $"{key}.charactersPerToken"));
 
                 break;
 
             case "resilience" when value is JsonObject:
-                agent.Resilience(Whole(value, "retries", fallback: 3));
+                Shaped(value, key, "retries");
+
+                agent.Resilience(
+                    NonNegative(Whole(value, key, "retries", fallback: 3), $"{key}.retries"));
 
                 break;
 
             case "resilience":
-                agent.Resilience(Whole(value, key));
+                agent.Resilience(NonNegative(Whole(value, key), key));
 
                 break;
 
@@ -393,13 +419,21 @@ public partial class StandardAgent
     // so a cost bound with no rate fails the way a typo'd key does: loudly, and by name.
     private static void ApplyBudget(StandardAgent agent, JsonNode? budgetNode)
     {
+        const string key = "budget";
+
+        Shaped(budgetNode, key, "maxTokens", "maxCostUsd", "maxWallClockSeconds", "costPerThousandTokens");
+
         try
         {
             agent.Budget(
-                maxTokens: OptionalWhole(budgetNode, "maxTokens"),
-                maxCostUsd: OptionalMoney(budgetNode, "maxCostUsd"),
-                maxWallClock: OptionalSeconds(budgetNode, "maxWallClockSeconds"),
-                costPerThousandTokens: OptionalMoney(budgetNode, "costPerThousandTokens") ?? 0m);
+                maxTokens: Positive(OptionalWhole(budgetNode, key, "maxTokens"), $"{key}.maxTokens"),
+                maxCostUsd: Positive(OptionalMoney(budgetNode, key, "maxCostUsd"), $"{key}.maxCostUsd"),
+                maxWallClock: Positive(
+                    OptionalSeconds(budgetNode, key, "maxWallClockSeconds"),
+                    $"{key}.maxWallClockSeconds"),
+                costPerThousandTokens: NonNegative(
+                    OptionalMoney(budgetNode, key, "costPerThousandTokens") ?? 0m,
+                    $"{key}.costPerThousandTokens"));
         }
         catch (InvalidAgentBudgetException invalidAgentBudgetException)
         {
@@ -448,10 +482,20 @@ public partial class StandardAgent
     {
         if (server is JsonObject)
         {
+            Shaped(
+                server,
+                key,
+                "endpointUrl",
+                "relativeUrl",
+                "timeoutSeconds",
+                "bearerToken",
+                "apiKey",
+                "apiKeyHeader");
+
             agent.Mcp(
                 Text(server, key, "endpointUrl"),
                 Text(server, key, "relativeUrl", fallback: string.Empty),
-                Whole(server, "timeoutSeconds", fallback: 30),
+                PositiveWhole(server, key, "timeoutSeconds", fallback: 30),
                 OptionalText(server, "bearerToken"),
                 OptionalText(server, "apiKey"),
                 Text(server, key, "apiKeyHeader", fallback: "X-Api-Key"));
@@ -511,8 +555,122 @@ public partial class StandardAgent
                 $"'{key}' must be true or false.")
         };
 
-    private static double Number(JsonNode? node, string property, double fallback) =>
-        (node as JsonObject)?[property]?.GetValue<double>() ?? fallback;
+    // A section's shape, checked before its values are read (principal review 2026-09-04,
+    // F-24): it must be an object, and every key in it must be one the section accepts. A
+    // nested typo used to be ignored, which is a control the author believes is on and is not,
+    // the same failure the top-level unknown-key refusal exists to prevent.
+    private static JsonObject Shaped(JsonNode? node, string key, params string[] properties)
+    {
+        JsonObject section = node as JsonObject
+            ?? throw new InvalidAgentConfigurationException($"'{key}' must be an object.");
+
+        foreach (string property in section.Select(entry => entry.Key))
+        {
+            if (properties.Contains(property) is false)
+            {
+                throw new InvalidAgentConfigurationException(
+                    $"'{key}' does not accept '{property}'. It accepts: "
+                        + string.Join(", ", properties) + ".");
+            }
+        }
+
+        return section;
+    }
+
+    // A control that lists nothing is not a control: a gate with no rules, an approval list
+    // with no tools, a fleet with no agents all read as on and do nothing.
+    private static IEnumerable<JsonNode?> Listed(JsonNode? node, string key)
+    {
+        JsonArray items = node as JsonArray
+            ?? throw new InvalidAgentConfigurationException($"'{key}' must be an array.");
+
+        if (items.Count is 0)
+        {
+            throw new InvalidAgentConfigurationException(ListsNothing(key));
+        }
+
+        return items;
+    }
+
+    private static string[] ListedTexts(JsonNode? node, string key) =>
+        [.. Listed(node, key).Select(item => Text(item, key))];
+
+    private static IEnumerable<KeyValuePair<string, JsonNode?>> ListedEntries(JsonNode? node, string key)
+    {
+        JsonObject entries = node as JsonObject
+            ?? throw new InvalidAgentConfigurationException($"'{key}' must be an object.");
+
+        if (entries.Count is 0)
+        {
+            throw new InvalidAgentConfigurationException(ListsNothing(key));
+        }
+
+        return entries;
+    }
+
+    private static string ListsNothing(string key) =>
+        $"'{key}' lists nothing. A control that lists nothing is not a control: remove the "
+            + "key, or list what it should hold.";
+
+    // A limit of zero or less composes as if it were set and never binds - or, in MaxTurns'
+    // case, is quietly clamped. The document refuses it by name instead.
+    private static int Positive(int value, string name) =>
+        value > 0
+            ? value
+            : throw new InvalidAgentConfigurationException($"'{name}' must be a positive number.");
+
+    private static int? Positive(int? value, string name) =>
+        value is null ? null : Positive(value.Value, name);
+
+    private static decimal? Positive(decimal? value, string name) =>
+        value is null or > 0
+            ? value
+            : throw new InvalidAgentConfigurationException($"'{name}' must be a positive number.");
+
+    private static TimeSpan? Positive(TimeSpan? value, string name) =>
+        value is null || value > TimeSpan.Zero
+            ? value
+            : throw new InvalidAgentConfigurationException($"'{name}' must be a positive number.");
+
+    private static double PositiveNumber(double value, string name) =>
+        value > 0
+            ? value
+            : throw new InvalidAgentConfigurationException($"'{name}' must be a positive number.");
+
+    private static int NonNegative(int value, string name) =>
+        value >= 0
+            ? value
+            : throw new InvalidAgentConfigurationException(
+                $"'{name}' must be zero or a positive number.");
+
+    private static decimal NonNegative(decimal value, string name) =>
+        value >= 0
+            ? value
+            : throw new InvalidAgentConfigurationException(
+                $"'{name}' must be zero or a positive number.");
+
+    private static int PositiveWhole(JsonNode? node, string key, string property, int fallback) =>
+        Positive(Whole(node, key, property, fallback), $"{key}.{property}");
+
+    // Numbers are read as numbers or refused by name; a string where a number belongs used to
+    // surface as a runtime exception with no entry named, or fall through to a default.
+    private static JsonNode? NumberNode(JsonNode? node, string key, string property)
+    {
+        JsonNode? value = (node as JsonObject)?[property];
+
+        if (value is null)
+        {
+            return null;
+        }
+
+        return value.GetValueKind() is JsonValueKind.Number
+            ? value
+            : throw new InvalidAgentConfigurationException(
+                $"'{key}.{property}' must be a number.");
+    }
+
+    private static double Number(JsonNode? node, string key, string property, double fallback) =>
+        NumberNode(node, key, property)?.GetValue<double>() ?? fallback;
 
     private static int Whole(JsonNode? node, string key) =>
         node?.GetValueKind() is JsonValueKind.Number
@@ -520,17 +678,17 @@ public partial class StandardAgent
             : throw new InvalidAgentConfigurationException(
                 $"'{key}' must be a number.");
 
-    private static int Whole(JsonNode? node, string property, int fallback) =>
-        (node as JsonObject)?[property]?.GetValue<int>() ?? fallback;
+    private static int Whole(JsonNode? node, string key, string property, int fallback) =>
+        NumberNode(node, key, property)?.GetValue<int>() ?? fallback;
 
-    private static int? OptionalWhole(JsonNode? node, string property) =>
-        (node as JsonObject)?[property]?.GetValue<int>();
+    private static int? OptionalWhole(JsonNode? node, string key, string property) =>
+        NumberNode(node, key, property)?.GetValue<int>();
 
-    private static decimal? OptionalMoney(JsonNode? node, string property) =>
-        (node as JsonObject)?[property]?.GetValue<decimal>();
+    private static decimal? OptionalMoney(JsonNode? node, string key, string property) =>
+        NumberNode(node, key, property)?.GetValue<decimal>();
 
-    private static TimeSpan? OptionalSeconds(JsonNode? node, string property) =>
-        (node as JsonObject)?[property] is JsonNode value
+    private static TimeSpan? OptionalSeconds(JsonNode? node, string key, string property) =>
+        NumberNode(node, key, property) is JsonNode value
             ? TimeSpan.FromSeconds(value.GetValue<double>())
             : null;
 

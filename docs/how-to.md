@@ -1262,10 +1262,17 @@ var agent = StandardAgent.FromJson(json);        // or StandardAgent.FromJsonFil
 
 The rules, and each is deliberate:
 
-- **An unknown key refuses to compose**, with the key named. A form that typos `"buget"` must
-  not get an unbounded agent that looks configured — a control you believe is on and is not is
-  worse than an error at composition. Wrong-shaped values refuse the same way, and enum-valued
-  keys name what they accept (`permissions` accepts Open, Ask, Deny).
+- **An unknown key refuses to compose**, with the key named, at any depth. A form that typos
+  `"buget"` must not get an unbounded agent that looks configured — a control you believe is on
+  and is not is worse than an error at composition — and `"brain": { "temprature": 0.1 }` is the
+  same mistake one level down, so a section names what it accepts the same way the top level
+  does. Wrong-shaped values refuse the same way (`'brain.maxTokens' must be a number`,
+  `'usage' must be an object`), enum-valued keys name what they accept (`permissions` accepts
+  Open, Ask, Deny), a limit that is not positive is refused rather than composed as if set
+  (`"maxTurns": 0` used to clamp to one turn silently), and a control that lists nothing
+  (`"ruleGate": []`) is refused, because a control that lists nothing is not a control. The
+  supplied host checks all of this without starting: `--validate path/to/agent.json`
+  ([hosting.md](hosting.md)).
 - **Tools stay code, because they are code** — except `mcp`, where a tool is a URL, which is
   data. Delegates (`On*`) and broker instances (`Use*`) stay code for the same reason.
 - **Data and code compose.** `FromJson` returns the same `StandardAgent`, so keep chaining:
