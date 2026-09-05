@@ -5,6 +5,7 @@
 
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Brokers.Mcps;
+using Standard.Agents.Models.Brokers.Mcps;
 
 namespace Standard.Agents.Services.Foundations.ExternalTools;
 
@@ -28,4 +29,7 @@ public partial class ExternalToolService : IExternalToolService
 
         return await this.mcpBroker.CallAsync(name, input);
     });
+
+    public ValueTask<IReadOnlyList<McpTool>> RetrieveToolsAsync() =>
+        throw new NotImplementedException();
 }

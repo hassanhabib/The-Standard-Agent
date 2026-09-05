@@ -4,3 +4,5 @@ Standard.Agents.Models.Clients.Agents.Exceptions.InvalidAgentBudgetException.Inv
 Standard.Agents.Models.Clients.Agents.Exceptions.InvalidAgentConfigurationException.InvalidAgentConfigurationException(string! message, System.Exception! innerException) -> void
 Standard.Agents.Models.Clients.Agents.Exceptions.InvalidAgentApiUrlException
 Standard.Agents.Models.Clients.Agents.Exceptions.InvalidAgentApiUrlException.InvalidAgentApiUrlException(string! message) -> void
+Standard.Agents.Services.Foundations.ExternalTools.IExternalToolService.RetrieveToolsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Mcps.McpTool!>!>
+Standard.Agents.Services.Foundations.ExternalTools.ExternalToolService.RetrieveToolsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Mcps.McpTool!>!>
