@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Standard.Agents.Host.Models;
 using Standard.Agents.Models.Clients.Agents;
@@ -15,6 +16,9 @@ namespace Standard.Agents.Host.Controllers;
 [Route("api/[controller]")]
 public class AgentsController : ControllerBase
 {
+    // CR, LF and CRLF all end a line in server-sent events; CRLF first so it splits as one.
+    private static readonly string[] lineTerminators = ["\r\n", "\n", "\r"];
+
     private readonly IAgent agent;
 
     public AgentsController(IAgent agent) =>
@@ -56,10 +60,32 @@ public class AgentsController : ControllerBase
         await foreach (AgentStreamEvent streamEvent in
             this.agent.StreamPromptAsync(request.Prompt, HttpContext.RequestAborted))
         {
-            string message = $"event: {streamEvent.Type}\ndata: {streamEvent.Content}\n\n";
+            string frame = ToServerSentEvent(streamEvent);
 
-            await Response.WriteAsync(message, HttpContext.RequestAborted);
+            await Response.WriteAsync(frame, HttpContext.RequestAborted);
             await Response.Body.FlushAsync(HttpContext.RequestAborted);
         }
+    }
+
+    // One frame per event, in the shape the SSE specification reads: the kind as the event name,
+    // one "data:" line per line of content, then the blank line that ends the event. A content
+    // line left unprefixed is read as a field, and a blank line inside the content ends the event
+    // early - which is what a multi-line answer, the normal case, used to do (principal review
+    // 2026-09-04, F-11). The consumer joins the data lines back with a newline.
+    private static string ToServerSentEvent(AgentStreamEvent streamEvent)
+    {
+        string[] contentLines = streamEvent.Content.Split(lineTerminators, StringSplitOptions.None);
+        var frame = new StringBuilder();
+
+        frame.Append("event: ").Append(streamEvent.Type).Append('\n');
+
+        foreach (string contentLine in contentLines)
+        {
+            frame.Append("data: ").Append(contentLine).Append('\n');
+        }
+
+        frame.Append('\n');
+
+        return frame.ToString();
     }
 }

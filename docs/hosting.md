@@ -16,7 +16,7 @@ dotnet run --project Standard.Agents.Host
 |---|---|
 | `GET api/home` | Aliveness, nothing else — no security, no dependencies. What a load balancer checks. |
 | `POST api/agents/runs` | `{ "prompt": "..." }` → `{ "result": "...", "status": "Responded" }`. Status travels beside result because only `Responded` makes the result an answer. An empty prompt is `400` before any run starts. |
-| `POST api/agents/streams` | The same run as server-sent events — each event's kind as the SSE event name (`Status`, `Thinking`, `Narration`, `Tool`, `Response`), its content as data. Filtering to `Response` events equals what `runs` returns. |
+| `POST api/agents/streams` | The same run as server-sent events — each event's kind as the SSE event name (`Status`, `Thinking`, `Narration`, `Tool`, `Response`), its content as data, one `data:` line per line of content, which any SSE client joins back with a newline. Filtering to `Response` events equals what `runs` returns. |
 
 Closing the connection cancels the run at its next turn boundary — and, through the nesting
 seam, any sub-agents the run started.
