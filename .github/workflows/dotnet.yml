@@ -99,6 +99,29 @@ jobs:
     - name: Evaluating Quality
       run: dotnet run --project Standard.Agents.Evals --no-build --configuration Release
 
+  # The package, consumed: pack it, install it into a clean project outside the repository
+  # tree, compile the README's examples against it, and run one deterministic prompt on each
+  # target the package ships. A build that packs is not proof that the package installs
+  # (principal review 2026-09-04, F-27).
+  package-smoke:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Pulling Code
+      uses: actions/checkout@v7
+
+    - name: Installing .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        global-json-file: global.json
+        dotnet-version: 8.0.x
+
+    - name: Packing Package
+      run: dotnet pack Standard.Agents/Standard.Agents.csproj --configuration Release --output artifacts
+
+    - name: Consuming The Packed Package
+      run: bash scripts/package-smoke.sh artifacts
+
   supply-chain:
     runs-on: ubuntu-latest
 
