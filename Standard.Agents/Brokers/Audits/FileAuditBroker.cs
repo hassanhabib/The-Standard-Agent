@@ -66,8 +66,15 @@ public sealed class FileAuditBroker : IAuditBroker
 
     // Verifies a sink written by this broker: every record's previousHash must equal the hash
     // of the line before it. Returns the 1-based line number of the first record that does
-    // not, or null when the chain is intact — so a caller can prove a decision log was neither
-    // altered nor truncated (SPEC.md §4.7).
+    // not, or null when the chain is intact — so a caller can prove no record in the MIDDLE of
+    // a decision log was altered or removed (SPEC.md §4.7).
+    //
+    // What it does not prove, said plainly (principal review 2026-09-04, F-13): a suffix cut
+    // off the end leaves a valid prefix with no broken link, and the chain is unkeyed, so
+    // anyone who can rewrite the file can recompute it. This is local, append-only,
+    // hash-linked evidence, not immutable audit storage. A regulated deployment anchors the
+    // terminal hash somewhere it cannot write, or keeps the sink on append-only storage —
+    // docs/support.md says which guarantees are the file's and which are the store's.
     public static int? FindBrokenLink(IEnumerable<string> lines)
     {
         string? expectedHash = null;

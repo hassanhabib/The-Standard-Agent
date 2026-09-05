@@ -6,7 +6,10 @@ name: Standard.Agents Cut Release
 #
 # Publishing stays in release.yml. A release created with GITHUB_TOKEN does not fire the
 # `release` event (GitHub prevents workflows from triggering workflows through that token),
-# so after this succeeds, dispatch release.yml on the new tag to attach artifacts and publish.
+# so after this succeeds, dispatch release.yml with its `tag` input set to the tag created
+# here. release.yml checks that tag out, refuses it unless the project file carries the same
+# version, runs the full gate, and publishes exactly that version — never whatever branch
+# happened to be selected.
 on:
   workflow_dispatch:
     inputs:

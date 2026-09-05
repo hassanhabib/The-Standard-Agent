@@ -1,12 +1,22 @@
 name: Standard.Agents Release
 
-# Publishes the package to NuGet when a release is cut (a GitHub Release is
-# published) or triggered manually. The API key is never in the repo — it is
-# read from the NUGET_API_KEY repository secret at run time.
+# Publishes the package to NuGet when a release is cut (a GitHub Release is published) or
+# when dispatched by hand on a tag. The API key is never in the repo — it is read from the
+# NUGET_API_KEY repository secret at run time.
+#
+# Keyed by an immutable tag, never by "whatever branch was selected": a manual dispatch names
+# the tag it publishes, the workflow checks that tag out, and it refuses to run unless the
+# package version in the project file is the tag's version. A release whose bytes came from a
+# different commit than the tag names, or whose package carries an unbumped version, is worse
+# than no release (principal review 2026-09-04, F-17).
 on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "The published tag to build and publish (e.g. v1.16.0)"
+        required: true
 
 jobs:
   publish:
@@ -21,9 +31,28 @@ jobs:
       id-token: write
       attestations: write
 
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+
     steps:
-    - name: Pulling Code
+    - name: Pulling The Tagged Code
       uses: actions/checkout@v7
+      with:
+        ref: ${{ github.event.release.tag_name || inputs.tag }}
+
+    # The tag is the release's identity; the project file is what gets packed. They must agree
+    # before anything is built: a tag v1.16.0 packs 1.16.0.x, and the fourth segment is the
+    # build number NuGet normalizes away (docs/support.md, "Version numbers").
+    - name: Verifying The Tag Matches The Package Version
+      run: |
+        version=$(sed -n 's/.*<Version>\([0-9]*\.[0-9]*\.[0-9]*\)\.[0-9]*<\/Version>.*/\1/p' Standard.Agents/Standard.Agents.csproj | head -1)
+        tag="${RELEASE_TAG#v}"
+        echo "project version: $version"
+        echo "release tag:     $tag"
+        if [ -z "$version" ] || [ "$version" != "$tag" ]; then
+          echo "::error::The tag $RELEASE_TAG does not match the package version $version in Standard.Agents.csproj."
+          exit 1
+        fi
 
     # The SDK comes from global.json, so the package is built with the same compiler a
     # developer used. Reproducibility starts with agreeing on the toolchain.
@@ -31,6 +60,7 @@ jobs:
       uses: actions/setup-dotnet@v6
       with:
         global-json-file: global.json
+        dotnet-version: 8.0.x
 
     - name: Restoring Packages
       run: dotnet restore
@@ -41,10 +71,23 @@ jobs:
     - name: Running Tests
       run: dotnet test --no-build --configuration Release --verbosity normal
 
-    # Same gate the build workflow enforces — never publish a package that no
-    # longer conforms to the spec's vectors.
+    # The complete gate the build workflow enforces — every vector, the profiles the README
+    # claims, and the golden evals. Never publish a package that could not pass its own CI.
     - name: Certifying Conformance
       run: dotnet run --project Standard.Agents.Conformance --no-build --configuration Release
+
+    - name: Certifying Enterprise Profile
+      run: >
+        dotnet run --project Standard.Agents.Conformance --no-build --configuration Release
+        -- --profile Enterprise
+
+    - name: Certifying Critical Profile
+      run: >
+        dotnet run --project Standard.Agents.Conformance --no-build --configuration Release
+        -- --profile Critical
+
+    - name: Evaluating Quality
+      run: dotnet run --project Standard.Agents.Evals --no-build --configuration Release
 
     - name: Packing Package
       run: >
@@ -52,6 +95,17 @@ jobs:
         --no-build
         --configuration Release
         --output ${{ github.workspace }}/artifacts
+
+    # The packed artifact must carry the version the tag names. Packing an unbumped project
+    # produced a package NuGet already had, which --skip-duplicate then hid as a success.
+    - name: Verifying The Packed Version
+      run: |
+        expected="${RELEASE_TAG#v}"
+        ls "${{ github.workspace }}/artifacts"
+        if ! ls "${{ github.workspace }}/artifacts" | grep -q "^Standard\.Agents\.${expected}\.nupkg$"; then
+          echo "::error::No Standard.Agents.${expected}.nupkg was produced for tag $RELEASE_TAG."
+          exit 1
+        fi
 
     # A software bill of materials: what is actually inside the package, transitively. Most
     # regulated procurement asks for one, and generating it at release time means it describes
@@ -73,13 +127,15 @@ jobs:
     - name: Attaching Artifacts To The Release
       uses: softprops/action-gh-release@v3
       with:
+        tag_name: ${{ env.RELEASE_TAG }}
         files: |
           ${{ github.workspace }}/artifacts/*.nupkg
           ${{ github.workspace }}/artifacts/*.json
 
+    # No --skip-duplicate: a version NuGet already has is a release that did not happen, and
+    # the run must say so rather than print success over bytes that never shipped.
     - name: Publishing To NuGet
       run: >
         dotnet nuget push "${{ github.workspace }}/artifacts/*.nupkg"
         --source https://api.nuget.org/v3/index.json
         --api-key ${{ secrets.NUGET_API_KEY }}
-        --skip-duplicate

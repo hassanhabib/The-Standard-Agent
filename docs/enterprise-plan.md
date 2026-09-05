@@ -331,7 +331,9 @@ audit stream contains both, each record carrying a distinct `runId` and a monoto
 
 - Two consecutive prompts ⇒ **both** runs present in `audit.jsonl`.
 - Every record has `runId`, `sequence`, `timestampUtc`, `previousHash`.
-- Deleting any line from the file is detectable by replaying the chain.
+- Deleting or altering any line before the last is detectable by replaying the chain. A
+  suffix cut off the end is not, and the chain is unkeyed: this is local, append-only,
+  hash-linked evidence, not immutable audit storage (see `docs/support.md`, "Audit sink").
 - `.Audit()` absent ⇒ zero I/O, zero cost. Unchanged for the one-liner user.
 
 ---
