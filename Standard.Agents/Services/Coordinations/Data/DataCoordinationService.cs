@@ -96,6 +96,6 @@ public partial class DataCoordinationService : IDataCoordinationService
     public ValueTask RecordSessionAsync(AgentSession session) =>
         this.recollectionService.RecordSessionAsync(session);
 
-    public async ValueTask<IReadOnlyList<Models.Brokers.Mcps.McpTool>> RetrieveRemoteToolsAsync() =>
-        [];
+    public ValueTask<IReadOnlyList<Models.Brokers.Mcps.McpTool>> RetrieveRemoteToolsAsync() =>
+        this.retrievalService.RetrieveRemoteToolsAsync();
 }

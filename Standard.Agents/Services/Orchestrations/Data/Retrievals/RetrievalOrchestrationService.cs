@@ -33,9 +33,9 @@ public partial class RetrievalOrchestrationService : IRetrievalOrchestrationServ
     // only source — the pre-selection behavior, byte for byte.
     private readonly IReadOnlyDictionary<string, string>? toolCatalogEntries;
 
-    // The rendered remote catalog, kept after the first successful discovery so a healthy server
-    // is asked once per composition rather than once per prompt.
-    private string? remoteToolCatalog;
+    // The remote tools, kept after the first successful discovery so a healthy server is asked
+    // once per composition rather than once per prompt.
+    private IReadOnlyList<McpTool>? remoteTools;
 
     public RetrievalOrchestrationService(
         ISkillService skillService,
@@ -97,7 +97,7 @@ public partial class RetrievalOrchestrationService : IRetrievalOrchestrationServ
         }
 
         string localCatalog = SelectedToolCatalog();
-        string remoteCatalog = await RetrieveRemoteToolCatalogAsync();
+        string remoteCatalog = RenderRemoteToolCatalog(await DiscoverRemoteToolsAsync());
 
         if (string.IsNullOrEmpty(remoteCatalog))
         {
@@ -111,59 +111,59 @@ public partial class RetrievalOrchestrationService : IRetrievalOrchestrationServ
 
     // Best-effort and cached on success: a server down at discovery hides only its own tools
     // this turn and is asked again on the next. The foundation has already localized and logged
-    // its failure at the severity it earned, so this tier degrades to the local catalog rather
+    // its failure at the severity it earned, so this tier degrades to no remote tools rather
     // than reporting the outage as an empty server or failing the run.
-    private async ValueTask<string> RetrieveRemoteToolCatalogAsync()
+    private async ValueTask<IReadOnlyList<McpTool>> DiscoverRemoteToolsAsync()
     {
-        if (this.remoteToolCatalog is not null)
+        if (this.remoteTools is not null)
         {
-            return this.remoteToolCatalog;
+            return this.remoteTools;
         }
 
         try
         {
-            IReadOnlyList<McpTool> remoteTools =
-                await this.externalToolService.RetrieveToolsAsync();
+            this.remoteTools = await this.externalToolService.RetrieveToolsAsync();
 
-            this.remoteToolCatalog = RenderRemoteToolCatalog(remoteTools);
-
-            return this.remoteToolCatalog;
+            return this.remoteTools;
         }
         catch (ExternalToolDependencyException)
         {
-            return string.Empty;
+            return [];
         }
         catch (ExternalToolDependencyValidationException)
         {
-            return string.Empty;
+            return [];
         }
         catch (ExternalToolServiceException)
         {
-            return string.Empty;
+            return [];
         }
     }
 
-    // The same opt-in rule the local catalog uses (SPEC.md §6.1): a description is what
-    // advertises a tool, so an undescribed remote tool stays callable but unlisted. What the
-    // tool takes is part of the advertisement, so the schema the server declared rides the line
-    // exactly as a local tool's Parameters do.
+    // The same rules the local catalog lives by: a description is the opt-in (SPEC.md §6.1), so
+    // an undescribed remote tool stays callable but unlisted; a run under selection is shown
+    // only what it was offered (SPEC.md §4.15); and what the tool takes is part of the
+    // advertisement, so the schema the server declared rides the line as a local tool's
+    // Parameters do.
     private static string RenderRemoteToolCatalog(IReadOnlyList<McpTool> remoteTools)
     {
+        IReadOnlyList<string>? offered = Models.Loggings.AgentRun.Current?.OfferedTools;
+
         IEnumerable<string> catalogLines = remoteTools
             .Where(tool => string.IsNullOrWhiteSpace(tool.Description) is false)
+            .Where(tool => offered is null
+                || offered.Contains(tool.Name, StringComparer.OrdinalIgnoreCase))
             .Select(tool =>
                 $"- {tool.Name} — {tool.Description} parameters: {tool.InputSchemaJson}");
 
         return string.Join("\n", catalogLines);
     }
 
+    // Every tool the servers declared, described or not, so the callers apply the opt-in
+    // themselves — selection judges described names, the native list advertises described
+    // definitions, and the perimeter binds described names (principal review 2026-09-04, F-04).
     public ValueTask<IReadOnlyList<McpTool>> RetrieveRemoteToolsAsync() =>
-    TryCatch(async () =>
-    {
-        await ValueTask.CompletedTask;
-
-        return (IReadOnlyList<McpTool>)[];
-    });
+    TryCatch(async () => await DiscoverRemoteToolsAsync());
 
     public ValueTask<IReadOnlyList<string>> RetrieveGroundingAsync(string query) =>
     TryCatch(async () =>
