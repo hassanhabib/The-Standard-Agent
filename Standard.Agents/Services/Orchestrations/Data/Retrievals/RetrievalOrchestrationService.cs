@@ -4,7 +4,9 @@
 // ---------------------------------------------------------------
 
 using Standard.Agents.Brokers.Loggings;
-using Standard.Agents.Models.Orchestrations.Retrievals;
+using Standard.Agents.Models.Brokers.Mcps;
+using Standard.Agents.Models.Foundations.ExternalTools.Exceptions;
+using Standard.Agents.Services.Foundations.ExternalTools;
 using Standard.Agents.Services.Foundations.Knowledges;
 using Standard.Agents.Services.Foundations.Skills;
 
@@ -20,29 +22,34 @@ public partial class RetrievalOrchestrationService : IRetrievalOrchestrationServ
     private readonly string toolCatalog;
     private readonly ILoggingBroker loggingBroker;
 
-    // A model carrying a delegate rather than a broker, because remote tools are Direction's
-    // resource and this is Data's tier — configuration crosses natures where a dependency may
-    // not. Null when there is nothing remote to advertise.
-    private readonly ExternalToolCatalog? externalToolCatalog;
+    // Remote tools are a foundation this orchestration depends on like any other — visible at
+    // the tier a dependency is reviewed at, with its failures localized and categorized there.
+    // They used to arrive as a model carrying a delegate, which evaded that tier and reported an
+    // outage as "no tools" (principal review 2026-09-04, F-15).
+    private readonly IExternalToolService externalToolService;
 
     // The catalog per tool (name → its rendered line), so a run under selection (SPEC.md
     // §4.15) can be shown only what it was offered. Null keeps the whole-string catalog the
     // only source — the pre-selection behavior, byte for byte.
     private readonly IReadOnlyDictionary<string, string>? toolCatalogEntries;
 
+    // The rendered remote catalog, kept after the first successful discovery so a healthy server
+    // is asked once per composition rather than once per prompt.
+    private string? remoteToolCatalog;
+
     public RetrievalOrchestrationService(
         ISkillService skillService,
         IKnowledgeService knowledgeService,
         string toolCatalog,
         ILoggingBroker loggingBroker,
-        ExternalToolCatalog? externalToolCatalog = null,
+        IExternalToolService externalToolService,
         IReadOnlyDictionary<string, string>? toolCatalogEntries = null)
     {
         this.skillService = skillService;
         this.knowledgeService = knowledgeService;
         this.toolCatalog = toolCatalog;
         this.loggingBroker = loggingBroker;
-        this.externalToolCatalog = externalToolCatalog;
+        this.externalToolService = externalToolService;
         this.toolCatalogEntries = toolCatalogEntries;
     }
 
@@ -84,22 +91,67 @@ public partial class RetrievalOrchestrationService : IRetrievalOrchestrationServ
     // marker is present, so an agent that never advertises never pays a discovery call.
     private async ValueTask<string> RenderToolCatalogAsync(string skills)
     {
-        if (this.externalToolCatalog is null || skills.Contains(ToolsMarker) is false)
+        if (skills.Contains(ToolsMarker) is false)
         {
             return SelectedToolCatalog();
         }
 
-        string externalCatalog = await this.externalToolCatalog.DiscoverAsync();
         string localCatalog = SelectedToolCatalog();
+        string remoteCatalog = await RetrieveRemoteToolCatalogAsync();
 
-        if (string.IsNullOrEmpty(externalCatalog))
+        if (string.IsNullOrEmpty(remoteCatalog))
         {
             return localCatalog;
         }
 
         return string.IsNullOrEmpty(localCatalog)
-            ? externalCatalog
-            : $"{localCatalog}\n{externalCatalog}";
+            ? remoteCatalog
+            : $"{localCatalog}\n{remoteCatalog}";
+    }
+
+    // Best-effort and cached on success: a server down at discovery hides only its own tools
+    // this turn and is asked again on the next. The foundation has already localized and logged
+    // its failure at the severity it earned, so this tier degrades to the local catalog rather
+    // than reporting the outage as an empty server or failing the run.
+    private async ValueTask<string> RetrieveRemoteToolCatalogAsync()
+    {
+        if (this.remoteToolCatalog is not null)
+        {
+            return this.remoteToolCatalog;
+        }
+
+        try
+        {
+            IReadOnlyList<McpTool> remoteTools =
+                await this.externalToolService.RetrieveToolsAsync();
+
+            this.remoteToolCatalog = RenderRemoteToolCatalog(remoteTools);
+
+            return this.remoteToolCatalog;
+        }
+        catch (ExternalToolDependencyException)
+        {
+            return string.Empty;
+        }
+        catch (ExternalToolDependencyValidationException)
+        {
+            return string.Empty;
+        }
+        catch (ExternalToolServiceException)
+        {
+            return string.Empty;
+        }
+    }
+
+    // The same opt-in rule the local catalog uses (SPEC.md §6.1): a description is what
+    // advertises a tool, so an undescribed remote tool stays callable but unlisted.
+    private static string RenderRemoteToolCatalog(IReadOnlyList<McpTool> remoteTools)
+    {
+        IEnumerable<string> catalogLines = remoteTools
+            .Where(tool => string.IsNullOrWhiteSpace(tool.Description) is false)
+            .Select(tool => $"- {tool.Name} — {tool.Description} parameters: {{}}");
+
+        return string.Join("\n", catalogLines);
     }
 
     public ValueTask<IReadOnlyList<string>> RetrieveGroundingAsync(string query) =>
