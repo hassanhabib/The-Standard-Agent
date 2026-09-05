@@ -1,0 +1,26 @@
+{
+  "name": "native-tool-call-replay-never-leaks-a-redacted-value",
+  "description": "SPEC.md 4.6 meets SPEC.md 6: every model call is redacted, and a replayed tool call is part of a model call. The prompt carries an email address; the native model asks for send_email with the placeholder in its arguments; the framework rehydrates those arguments so the TOOL receives the real address, records the exchange, and on the next turn replays the assistant's request with its id. That replayed request MUST carry the placeholder again, not the address the tool received. The 2026-09-04 principal review (F-02) found the native decorator redacted message content and rehydrated arguments coming back, but never redacted arguments going out, so the second call sent the address in the clear. The tool must still receive the real value, and the caller must still get it back.",
+  "generatorReplies": [],
+  "nativeReplies": [
+    {
+      "toolCalls": [
+        {
+          "id": "call_1",
+          "name": "send_email",
+          "argumentsJson": "{\"to\":\"{{EMAIL_0}}\",\"subject\":\"report\"}"
+        }
+      ]
+    },
+    { "content": "Sent the report to {{EMAIL_0}}." }
+  ],
+  "tools": { "send_email": "sent" },
+  "prompt": "email the report to ada@example.com",
+  "redact": true,
+  "expect": {
+    "resultContains": "ada@example.com",
+    "noModelSees": "ada@example.com",
+    "toolRunCount": { "send_email": 1 },
+    "toolInput": { "send_email": "{\"to\":\"ada@example.com\",\"subject\":\"report\"}" }
+  }
+}

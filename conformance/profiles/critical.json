@@ -6,6 +6,7 @@
     "conversation-carries-history",
     "failed-run-unwinds-in-reverse",
     "native-tool-call-round-trips",
+    "native-tool-call-replay-never-leaks-a-redacted-value",
     "a-tool-narrates-and-the-model-says-nothing",
     "native-narration-rides-the-result",
     "awaiting-approval-resumes-in-a-new-process",
