@@ -1,1 +1,3 @@
 #nullable enable
+Standard.Agents.Models.Clients.Agents.Exceptions.InvalidAgentBudgetException
+Standard.Agents.Models.Clients.Agents.Exceptions.InvalidAgentBudgetException.InvalidAgentBudgetException(string! message) -> void
