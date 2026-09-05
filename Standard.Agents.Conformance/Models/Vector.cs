@@ -172,6 +172,10 @@ public sealed record Vector(
     // the advertisement opt-in (§6.1) — so what a run was OFFERED becomes observable in the
     // catalog the Brain reads.
     List<string>? SelectTools = null,
+
+    // Whether the offering BINDS at the Direction perimeter (SPEC.md §4.15, enforced): an act
+    // naming an advertised tool the run was not offered is denied rather than reachable.
+    bool EnforceSelection = false,
     Dictionary<string, string>? ToolDescriptions = null);
 
 /// <summary>A stub tool's declared narration templates, as a vector writes them.</summary>
