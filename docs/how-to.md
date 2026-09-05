@@ -1704,3 +1704,19 @@ the LlamaSharp package — one line — and you have a local brain.
 
 Register several tools at once with `Tools(...)`, the batch form of `Tool(...)`. Each swap changes
 one nature; the rest of the agent stays exactly as written.
+
+**HTTP itself has a seam.** The brain, the native brain and every MCP server speak HTTP, and by
+default each broker creates its own connection handler. A host that wants its own handler chain
+under all of that traffic (pooled and DNS-refreshing connections from `IHttpClientFactory`, a
+proxy, a certificate, a resilience handler, an observer) supplies it once:
+
+```csharp
+agent.Http(() => handlerFactory.CreateHandler("standard-agent"));   // IHttpMessageHandlerFactory
+```
+
+Ownership is explicit. A handler you supply is yours: the broker wraps it in a client that holds
+nothing of its own and never disposes it. Without the call, a composition creates one handler per
+HTTP broker and releases them when the next composition replaces them, so a long-lived agent
+holds one set for its life. Order does not matter: brokers are created at composition, so the
+handler reaches a brain or server registered before it. The supplied host wires this through
+`IHttpClientFactory` ([hosting.md](hosting.md)).

@@ -42,8 +42,15 @@ Builder methods are **not** safe to call while prompts are in flight. Configure 
 serve with it. Calling a builder method mid-flight invalidates the cached composition and races
 against readers of it.
 
-`StandardAgent` holds no unmanaged resources and does not need disposing. Brokers you supply are
-yours to manage.
+`StandardAgent` does not need disposing, and the ownership of what it holds is explicit. Brokers
+you supply are yours to manage. HTTP connections are the one resource the built-in brokers
+create for themselves: without `.Http(...)`, each composition creates one handler per HTTP
+broker (brain, native brain, each MCP server) and releases them when the next composition
+replaces them, so a long-lived agent holds one set for its life. A host that composes agents
+by the dozen, or needs a proxy, a certificate, a resilience handler or DNS refresh under the
+agent's traffic, supplies handlers with `.Http(...)`; those are the host's, and the agent never
+disposes them. The supplied host does this through `IHttpClientFactory`
+([hosting.md](hosting.md)).
 
 ---
 
