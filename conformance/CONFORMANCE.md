@@ -3,7 +3,7 @@
 A **language-neutral** set of behavioral test vectors that any Standard-Agents
 implementation runs to self-certify against
 [`SPEC.md`](https://github.com/hassanhabib/The-Standard-Agent-Specs/blob/main/SPEC.md).
-Seventy-one vectors, four readiness profiles, every vector proven able to fail.
+Seventy-two vectors, four readiness profiles, every vector proven able to fail.
 
 The vectors are the executable half of the specification. Prose can be read two ways; a vector
 cannot, which is why "conformant" here means *this suite passes* rather than *we believe we
@@ -183,6 +183,7 @@ the deterministic core of the Standard.
 | `knowledge-retrieves-by-relevance` | Retrieval returns the passage that answers, not the first found |
 | `guardian-screens-once-per-prompt` | An unchanged prompt is screened once, not once per turn |
 | `open-circuit-falls-back-to-secondary` | An unhealthy provider degrades rather than fails (§4.10) |
+| `open-circuit-falls-back-on-the-native-protocol` | The same degradation on the native seam; the text alternative becomes a final answer, never a cast (§4.10, §6) |
 | `conversation-carries-history` | A follow-up resolves against what came before (§4.11) |
 | `failed-run-unwinds-in-reverse` | Compensation undoes what was performed, newest first (§4.9) |
 | `effect-outcome-survives-a-crash` | A new instance resumes and does not repeat the act (§4.9, §4.11) |

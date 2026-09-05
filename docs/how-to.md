@@ -1039,6 +1039,10 @@ run-once, which is the whole reason the two features have to ship together.
     failuresBeforeOpen: 3)             // circuit opens after 3, then the alternative answers
 ```
 
+The alternative is text, and it degrades whichever protocol asked. On the text protocol it is the
+reply the loop reads, so it carries a `FINAL:` prefix like any other reply. On the native protocol
+it becomes a final answer with no tool calls, returned as written, so leave the prefix off there.
+
 **Budgets, with `.Budget(...)`.** Bound what one prompt may consume — tokens, money, or time:
 
 ```csharp
