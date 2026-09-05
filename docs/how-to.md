@@ -913,6 +913,15 @@ makes every prompt cost more than the last, without limit. A cancelled or budget
 never written back as an answer: the next prompt would otherwise be told the agent said something
 it never said.
 
+**A session has an owner and a version.** With `.Principal(...)` configured, the first write stamps
+the session with the principal that opened it, and a different principal asking for that session
+id is refused as a validation failure rather than shown someone else's conversation; without a
+principal, a session is the anonymous, shared-by-id one it always was. Every write also carries
+the version it was read at, plus one. The file store refuses a write based on a stale read, and
+the loop reads again and retries, so two prompts in one session at once both keep their turns. A
+custom `ISessionBroker` that ignores `Version` keeps last-writer-wins; honor it to get the same
+guarantee from your own store.
+
 The session lives *outside* the agent, which is what makes it resumable by a different process.
 When the agent stops mid-question, whoever picks it up answers with `ResumeAsync`:
 
