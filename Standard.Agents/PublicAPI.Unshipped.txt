@@ -59,3 +59,5 @@ Standard.Agents.Services.Managements.RunManagementService.RunManagementService(S
 Standard.Agents.Models.Coordinations.Agents.PrincipalResolver
 Standard.Agents.Models.Coordinations.Agents.PrincipalResolver.PrincipalResolver(System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal?>! resolve) -> void
 Standard.Agents.Models.Coordinations.Agents.PrincipalResolver.Resolve() -> Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal?
+Standard.Agents.IAgent.RunAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
+Standard.Agents.IAgent.StreamPromptAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request, System.Threading.CancellationToken cancellationToken) -> System.Collections.Generic.IAsyncEnumerable<Standard.Agents.Models.Clients.Agents.AgentStreamEvent!>!
