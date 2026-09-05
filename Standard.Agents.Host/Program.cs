@@ -13,8 +13,33 @@ using OpenTelemetry.Trace;
 using Standard.Agents;
 using Standard.Agents.Brokers.Telemetries;
 using Standard.Agents.Host.Security;
+using Standard.Agents.Models.Clients.Agents.Exceptions;
 
 const string AgentHttpClientName = "standard-agent";
+
+// A validate-only run: `--validate [path]` composes the document and says whether it composes,
+// naming the entry when it does not, without standing the host up - the check a deployment
+// pipeline runs before a green heartbeat could mislead it (principal review 2026-09-04, F-24).
+if (args.Contains("--validate"))
+{
+    string documentPath =
+        args.SkipWhile(argument => argument != "--validate").Skip(1).FirstOrDefault()
+            ?? Path.Combine(AppContext.BaseDirectory, "agent.json");
+
+    try
+    {
+        StandardAgent.FromJson(File.ReadAllText(documentPath));
+        Console.WriteLine($"{documentPath} composes.");
+
+        return 0;
+    }
+    catch (Exception exception) when (exception is InvalidAgentConfigurationException or IOException)
+    {
+        Console.Error.WriteLine($"{documentPath} does not compose: {exception.Message}");
+
+        return 1;
+    }
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -167,6 +192,8 @@ app.Use(async (context, next) =>
 app.MapControllers();
 
 app.Run();
+
+return 0;
 
 // Top-level statements compile to an internal Program; the acceptance tests stand the host up
 // through WebApplicationFactory<Program>, which needs to see it (F-20).
