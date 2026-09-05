@@ -113,7 +113,7 @@ var agent = new StandardAgent(url, key, "LLooMA2.0")
     .EffectLedger("ledger")                    // run once, even across a crash
     .ScreenToolOutput()                        // tool results are untrusted input
     .Sessions("sessions")                      // conversation that survives the process
-    .Budget(maxCostUsd: 0.25m)                 // bound what one prompt may spend — any protocol
+    .Budget(maxCostUsd: 0.25m, costPerThousandTokens: 0.002m) // bound what one prompt may spend, at your rate
     .Resilience(retries: 3)                    // survive a blip without paying twice
     .CompensateOnFailure();                    // unwind a run that died halfway
 ```
@@ -163,7 +163,7 @@ var agent = StandardAgent.FromJson(formBody);   // data
 {
   "brain": { "apiUrl": "https://api.peerllm.com/v1/", "apiKey": "k", "model": "LLooMA2.0" },
   "ruleGate": ["password"], "redact": true, "maxTurns": 5,
-  "requireApproval": ["wire_transfer"], "budget": { "maxCostUsd": 0.25 },
+  "requireApproval": ["wire_transfer"], "budget": { "maxCostUsd": 0.25, "costPerThousandTokens": 0.002 },
   "telemetry": "form-built-agent"
 }
 ```

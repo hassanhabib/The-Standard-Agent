@@ -17,4 +17,8 @@ public class InvalidAgentConfigurationException : Xeption
     public InvalidAgentConfigurationException(string message)
         : base(message)
     { }
+
+    public InvalidAgentConfigurationException(string message, Exception innerException)
+        : base(message, innerException)
+    { }
 }

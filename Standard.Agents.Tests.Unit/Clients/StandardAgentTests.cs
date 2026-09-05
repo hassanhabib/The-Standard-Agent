@@ -21,7 +21,7 @@ using Standard.Agents.Models.Brokers.Generators;
 
 namespace Standard.Agents.Tests.Unit.Clients;
 
-public class StandardAgentTests
+public partial class StandardAgentTests
 {
     private static StandardAgent CreateFullyStubbedAgent(string brainReply)
     {

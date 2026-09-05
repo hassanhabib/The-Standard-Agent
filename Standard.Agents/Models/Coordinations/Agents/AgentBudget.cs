@@ -15,7 +15,11 @@ public sealed record AgentBudget
     public decimal? MaxCostUsd { get; init; }
     public TimeSpan? MaxWallClock { get; init; }
 
-    /// <summary>Cost per 1,000 tokens, when the host wants a cost bound rather than a token one.</summary>
+    /// <summary>
+    /// Cost per 1,000 tokens, when the host wants a cost bound rather than a token one. The
+    /// builder requires it to be positive whenever <see cref="MaxCostUsd"/> is set: spend is
+    /// the token count times this rate, so a zero rate is a cost bound that can never trip.
+    /// </summary>
     public decimal CostPerThousandTokens { get; init; }
 
     public bool IsBounded =>
