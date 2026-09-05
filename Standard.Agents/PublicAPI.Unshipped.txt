@@ -1,3 +1,4 @@
 #nullable enable
 Standard.Agents.Models.Clients.Agents.Exceptions.InvalidAgentBudgetException
 Standard.Agents.Models.Clients.Agents.Exceptions.InvalidAgentBudgetException.InvalidAgentBudgetException(string! message) -> void
+Standard.Agents.Models.Clients.Agents.Exceptions.InvalidAgentConfigurationException.InvalidAgentConfigurationException(string! message, System.Exception! innerException) -> void

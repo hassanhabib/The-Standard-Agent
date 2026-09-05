@@ -91,6 +91,43 @@ public class StandardAgentFromJsonTests
             .WithMessage("*agents*name*");
     }
 
+    // A dollar bound priced at zero per token is zero dollars forever: the document looks bounded
+    // and is not, so it refuses to compose rather than composing an agent whose cost budget can
+    // never trip (principal review 2026-09-04, F-01). The builder's own refusal rides along as
+    // the inner exception; the document-level message names the entries the author must fix.
+    [Fact]
+    public void ShouldThrowInvalidAgentConfigurationExceptionOnFromJsonIfCostBudgetHasNoRate()
+    {
+        // given
+        var invalidAgentBudgetException =
+            new InvalidAgentBudgetException(
+                message:
+                    "Invalid agent budget: a cost bound (maxCostUsd) needs a positive "
+                        + "costPerThousandTokens. Cost is the token count times that rate, so at "
+                        + "zero the bound can never trip. Pass your model's rate, or bound by "
+                        + "maxTokens instead.");
+
+        var expectedInvalidAgentConfigurationException =
+            new InvalidAgentConfigurationException(
+                message:
+                    "The 'budget' entry sets 'maxCostUsd' without a positive "
+                        + "'costPerThousandTokens'. Cost is priced off the token count times that "
+                        + "rate, so without it the spend is zero forever and the bound can never "
+                        + "trip. Add your model's rate, or bound by 'maxTokens' instead.",
+                innerException: invalidAgentBudgetException);
+
+        // when
+        Action composeAction = () =>
+            StandardAgent.FromJson("""{ "budget": { "maxCostUsd": 0.25 } }""");
+
+        InvalidAgentConfigurationException actualInvalidAgentConfigurationException =
+            Assert.Throws<InvalidAgentConfigurationException>(composeAction);
+
+        // then
+        actualInvalidAgentConfigurationException.Should()
+            .BeEquivalentTo(expectedInvalidAgentConfigurationException);
+    }
+
     [Fact]
     public void ShouldRejectMalformedConfigurationJson()
     {
