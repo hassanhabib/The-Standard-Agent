@@ -107,6 +107,29 @@ with the core.
 
 ---
 
+## Version numbers
+
+One release carries three spellings of one version, and they map exactly:
+
+| Where | Shape | Example |
+|---|---|---|
+| `Standard.Agents.csproj` `<Version>` and the assembly version | four segments, the fourth a build number | `1.16.0.0` |
+| The git tag and the release notes file | `v` plus the first three segments | `v1.16.0`, `docs/releases/v1.16.0.md` |
+| The NuGet package | the first three segments; NuGet normalizes a trailing `.0` away | `Standard.Agents.1.16.0.nupkg` |
+
+The release workflow refuses to build a tag whose first three segments differ from the project
+file, and refuses to publish a package whose file name is not the tag's version, so the three
+cannot drift apart on the way out (F-17, F-29).
+
+## Audit sink
+
+`.Audit(path)` writes one JSON record per line, each carrying the SHA-256 of the line before it.
+Replaying the chain proves that no record before the last was altered or removed. It does not
+prove the file was not truncated at the end, and the chain is unkeyed, so anyone who can rewrite
+the file can recompute it. Treat the file as local, append-only, hash-linked evidence. A regulated
+deployment gets immutability from the store, not the file: append-only or WORM storage, a signed
+or keyed record, and the terminal hash anchored somewhere the writer cannot reach.
+
 ## Supply chain
 
 Every change on `main` and every pull request runs:

@@ -78,6 +78,12 @@ the agent without memory unless the document carries a `memory` key, or `Agent:M
 path in the classic configuration. Without one, the agent recalls nothing and never offers the
 `remember` tool. Turning it on is a deliberate choice that every caller of that host shares.
 
+**Keep the real document out of the repository.** An `agent.json` may carry an API key, so the
+repository ignores `agent.json` and `agent.*.local.json`, and commits
+`Standard.Agents.Host/agent.example.json` instead, without secrets. Copy the example to
+`agent.json` beside the executable, set the key locally or point `Agent:Config` at a file your
+secret store writes, and the ignore rule keeps a careless `git add .` from shipping it.
+
 ## Locking the door
 
 An agent endpoint carries approval and budget semantics, so the front door is worth a thought.
