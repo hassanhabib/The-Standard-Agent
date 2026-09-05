@@ -71,6 +71,13 @@ with no brain key still stands and heartbeats, and answers every run with exactl
 rather than failing at startup or at the first prompt. No document means the classic
 `Agent:Url` configuration above, unchanged.
 
+**Memory is off in the host unless you turn it on.** One instance serves every caller, so a
+memory file would be one memory for all of them: one caller's remembered facts in another
+caller's context, and one caller able to poison memory for everyone after. The host composes
+the agent without memory unless the document carries a `memory` key, or `Agent:Memory` names a
+path in the classic configuration. Without one, the agent recalls nothing and never offers the
+`remember` tool. Turning it on is a deliberate choice that every caller of that host shares.
+
 ## Locking the door
 
 An agent endpoint carries approval and budget semantics, so the front door is worth a thought.
