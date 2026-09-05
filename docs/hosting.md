@@ -38,6 +38,11 @@ Zero config still runs: without a Brain the host stands, heartbeats, and answers
 with what to configure — a first deployment fails loudly at the first prompt, never silently
 at startup.
 
+A document that refuses to compose (an unknown key, a cost budget with no rate) behaves
+differently from a missing brain: the agent is composed on the first request, not at startup,
+so the host still stands and heartbeats, and every prompt is a 500 whose log line names the
+offending entry. A green heartbeat is not proof the document composed; the first prompt is.
+
 The agent is registered as a **singleton**, which is the intended shape
 ([support.md](support.md)): one instance serves prompts concurrently, and run state is per
 invocation by SPEC.md §4.4. Enterprise controls — perimeter, budgets, sessions, redaction,
@@ -55,7 +60,7 @@ as data ([how-to.md §16](how-to.md)). Point `Agent:Config` at the file, or just
   "brain": { "apiUrl": "https://api.peerllm.com/v1/", "apiKey": "k", "model": "LLooMA2.0" },
   "skills": "Skills",
   "ruleGate": ["password"],
-  "budget": { "maxCostUsd": 0.25 },
+  "budget": { "maxCostUsd": 0.25, "costPerThousandTokens": 0.002 },
   "telemetry": "form-built-agent"
 }
 ```

@@ -651,7 +651,7 @@ non-idempotent tools, because `IdempotencyKey` only binds when a tool declares a
 
 ```csharp
 await agent.ProcessPromptAsync(prompt, cancellationToken);   // new overload; old one stays
-.Budget(maxTokens: 50_000, maxCostUsd: 0.25m, maxWallClock: TimeSpan.FromSeconds(30))
+.Budget(maxTokens: 50_000, maxCostUsd: 0.25m, maxWallClock: TimeSpan.FromSeconds(30), costPerThousandTokens: 0.002m)
 .Resilience(retries: 3, breakAfter: 5)
 ```
 

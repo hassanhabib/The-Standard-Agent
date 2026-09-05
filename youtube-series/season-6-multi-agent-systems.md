@@ -143,7 +143,7 @@ deadlock, which is *better* than hanging and still an outage. Bound every agent 
       .OnPolicy(Authorize)
       .EffectLedger("ledger")
       .Audit("audit.jsonl")
-      .Budget(maxCostUsd: 0.05m);
+      .Budget(maxCostUsd: 0.05m, costPerThousandTokens: 0.002m);
   ```
 - Budget the **system**, not the agent: divide a total across the tree, and give the outer agent the
   smaller share because it multiplies.

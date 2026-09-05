@@ -1048,6 +1048,11 @@ Checked at the turn boundary — the smallest unit the loop can stop between wit
 effect half-recorded. Exhaustion is reported *distinguishably*: a caller who cannot tell "I will
 not" from "I ran out" cannot decide whether to retry.
 
+A cost bound needs its rate. The framework cannot know what your model costs, and spend is the
+token count times `costPerThousandTokens`, so `maxCostUsd` with no positive rate is a bound that
+computes zero forever and never trips. That contradiction refuses to compose, in code and in JSON,
+naming the missing rate. A model that genuinely costs nothing is bounded by `maxTokens` instead.
+
 **Every protocol is bounded.** The provider's own report is used wherever there is one — it is
 what the invoice is drawn from — and where there is none the tokens are counted locally. That
 fallback covers the text protocol batched, the text protocol streamed, and any V1 endpoint that
@@ -1213,7 +1218,7 @@ var agent = StandardAgent.FromJson(json);        // or StandardAgent.FromJsonFil
   "sessions": "sessions",
   "effectLedger": "ledger",
   "screenToolOutput": true,
-  "budget": { "maxTokens": 50000, "maxCostUsd": 0.25 },
+  "budget": { "maxTokens": 50000, "maxCostUsd": 0.25, "costPerThousandTokens": 0.002 },
   "resilience": 3,
   "compensateOnFailure": true
 }

@@ -230,7 +230,7 @@ on itself and the single most transferable practice in the whole series.
       .EffectLedger("ledger")
       .ScreenToolOutput()
       .Sessions("sessions")
-      .Budget(maxCostUsd: 0.25m)
+      .Budget(maxCostUsd: 0.25m, costPerThousandTokens: 0.002m)
       .Resilience(retries: 3)
       .CompensateOnFailure();
   ```
