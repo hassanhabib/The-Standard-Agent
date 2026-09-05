@@ -444,6 +444,19 @@ public sealed partial class StandardAgent : IAgent
         Set(() => this.memoryPath = path);
 
     /// <summary>
+    /// Composes the agent with <b>no memory</b>: nothing is recalled, and the built-in
+    /// <c>remember</c> tool is not registered, so the model is never offered a way to store.
+    /// The explicit opt-out for a deployment where one instance serves many callers — a shared
+    /// memory would let one caller's facts reach another caller's model, and let one caller
+    /// poison memory for everyone after (principal review 2026-09-04, F-05). Wins over
+    /// <see cref="Memory"/>, <see cref="UseMemory"/> and <see cref="OnMemory"/> whatever order
+    /// they were called in. The one-user default keeps its memory file.
+    /// </summary>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent WithoutMemory() =>
+        Set(() => this.memoryBroker = new NotConfiguredMemoryBroker());
+
+    /// <summary>
     /// Gives the agent a knowledge base — a folder of reference files searched each turn, with the
     /// most relevant matches seeded into the turn's observations for the brain to draw on.
     /// </summary>
