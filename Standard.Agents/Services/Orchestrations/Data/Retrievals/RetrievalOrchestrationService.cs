@@ -144,12 +144,15 @@ public partial class RetrievalOrchestrationService : IRetrievalOrchestrationServ
     }
 
     // The same opt-in rule the local catalog uses (SPEC.md §6.1): a description is what
-    // advertises a tool, so an undescribed remote tool stays callable but unlisted.
+    // advertises a tool, so an undescribed remote tool stays callable but unlisted. What the
+    // tool takes is part of the advertisement, so the schema the server declared rides the line
+    // exactly as a local tool's Parameters do.
     private static string RenderRemoteToolCatalog(IReadOnlyList<McpTool> remoteTools)
     {
         IEnumerable<string> catalogLines = remoteTools
             .Where(tool => string.IsNullOrWhiteSpace(tool.Description) is false)
-            .Select(tool => $"- {tool.Name} — {tool.Description} parameters: {{}}");
+            .Select(tool =>
+                $"- {tool.Name} — {tool.Description} parameters: {tool.InputSchemaJson}");
 
         return string.Join("\n", catalogLines);
     }

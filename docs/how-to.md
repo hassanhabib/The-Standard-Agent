@@ -278,6 +278,12 @@ When the brain names a tool that isn't registered locally, the agent routes the 
 no MCP is configured, an unknown tool returns a graceful "not configured" note and the agent
 recovers on the next turn instead of crashing.
 
+**What a remote tool takes travels with it.** Discovery keeps each tool's `inputSchema`, and the
+`{{tools}}` catalog advertises it as the tool's `parameters`, exactly as a local tool's are. On
+the way out, a native tool call's arguments reach the server as the JSON object the model wrote;
+the text protocol's plain-text payload reaches it as the one argument `{ "input": "..." }`, which
+is what a tool with no schema understands.
+
 **Servers accumulate.** Like `.Tool(...)`, each `.Mcp(...)` call *adds* a server — the agent asks
 each server what it offers (`tools/list`) and routes every call to the server whose catalog owns
 the name. When two servers claim the same name, the **first registered wins** — deterministic,

@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------
 
 using System.Linq.Expressions;
+using System.Text.Json;
 using Moq;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Brokers.Mcps;
@@ -31,6 +32,11 @@ public partial class ExternalToolServiceTests
 
     private static string CreateRandomString() =>
         new MnemonicString().GetValue();
+
+    // What the foundation hands the broker for plain text: the text as the one argument a
+    // schema-less tool understands. A JSON object is handed over as given.
+    private static string ExpectedArgumentsJson(string input) =>
+        JsonSerializer.Serialize(new Dictionary<string, string> { ["input"] = input });
 
     private static Expression<Func<Xeption, bool>> SameExceptionAs(Xeption expectedException) =>
         actualException => actualException.SameExceptionAs(expectedException);

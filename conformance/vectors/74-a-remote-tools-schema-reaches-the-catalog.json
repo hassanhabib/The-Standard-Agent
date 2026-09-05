@@ -1,0 +1,18 @@
+{
+  "name": "a-remote-tools-schema-reaches-the-catalog",
+  "description": "SPEC.md 6.1 for remote tools: what a tool takes is part of what advertises it. A server declares an inputSchema on tools/list, and the catalog line the Brain reads MUST carry that schema rather than an empty object - otherwise the model is told the tool exists and nothing about how to call it, and a typed, multi-property tool can never be called correctly. The 2026-09-04 principal review (F-03) found discovery discarding the schema and every remote tool advertised as taking nothing.",
+  "mcpServers": [
+    { "weather": "sunny in Seattle" }
+  ],
+  "mcpToolSchemas": {
+    "weather": "{\"type\":\"object\",\"properties\":{\"city\":{\"type\":\"string\"}},\"required\":[\"city\"]}"
+  },
+  "extraSkills": [ "Your tools:\n{{tools}}" ],
+  "generatorReplies": [ "FINAL: noted" ],
+  "tools": {},
+  "prompt": "what tools do you have",
+  "expect": {
+    "resultContains": "noted",
+    "brainSees": "\"properties\":{\"city\":{\"type\":\"string\"}}"
+  }
+}

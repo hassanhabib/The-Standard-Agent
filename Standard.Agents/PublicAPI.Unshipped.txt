@@ -21,3 +21,17 @@ Standard.Agents.Services.Orchestrations.Data.Retrievals.RetrievalOrchestrationSe
 *REMOVED*override Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog.ToString() -> string!
 *REMOVED*static Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog.operator !=(Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog? left, Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog? right) -> bool
 *REMOVED*static Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog.operator ==(Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog? left, Standard.Agents.Models.Orchestrations.Retrievals.ExternalToolCatalog? right) -> bool
+*REMOVED*Standard.Agents.Brokers.Mcps.CompositeMcpBroker.CallAsync(string! name, string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Mcps.CompositeMcpBroker.CallAsync(string! name, string! argumentsJson) -> System.Threading.Tasks.ValueTask<string!>
+*REMOVED*Standard.Agents.Brokers.Mcps.IMcpBroker.CallAsync(string! name, string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Mcps.IMcpBroker.CallAsync(string! name, string! argumentsJson) -> System.Threading.Tasks.ValueTask<string!>
+*REMOVED*Standard.Agents.Brokers.Mcps.McpBroker.CallAsync(string! name, string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Mcps.McpBroker.CallAsync(string! name, string! argumentsJson) -> System.Threading.Tasks.ValueTask<string!>
+*REMOVED*Standard.Agents.Brokers.Mcps.NotConfiguredMcpBroker.CallAsync(string! name, string! input) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Mcps.NotConfiguredMcpBroker.CallAsync(string! name, string! argumentsJson) -> System.Threading.Tasks.ValueTask<string!>
+*REMOVED*Standard.Agents.Models.Brokers.Mcps.McpTool.Deconstruct(out string! Name, out string! Description) -> void
+*REMOVED*Standard.Agents.Models.Brokers.Mcps.McpTool.McpTool(string! Name, string! Description) -> void
+Standard.Agents.Models.Brokers.Mcps.McpTool.Deconstruct(out string! Name, out string! Description, out string! InputSchemaJson) -> void
+Standard.Agents.Models.Brokers.Mcps.McpTool.McpTool(string! Name, string! Description, string! InputSchemaJson = "{}") -> void
+Standard.Agents.Models.Brokers.Mcps.McpTool.InputSchemaJson.get -> string!
+Standard.Agents.Models.Brokers.Mcps.McpTool.InputSchemaJson.init -> void

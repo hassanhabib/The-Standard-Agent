@@ -9,7 +9,7 @@ namespace Standard.Agents.Brokers.Mcps;
 
 public interface IMcpBroker
 {
-    ValueTask<string> CallAsync(string name, string input);
+    ValueTask<string> CallAsync(string name, string argumentsJson);
 
     /// <summary>
     /// The server's tool catalog (<c>tools/list</c>). What makes more than one server composable:

@@ -14,14 +14,20 @@ namespace Standard.Agents.Conformance;
 public sealed class ScriptedMcpServer : IMcpBroker
 {
     private readonly Dictionary<string, string> tools;
+    private readonly Dictionary<string, string> schemas;
     private int callCount;
 
-    public ScriptedMcpServer(Dictionary<string, string> tools) =>
+    public ScriptedMcpServer(
+        Dictionary<string, string> tools,
+        Dictionary<string, string>? schemas = null)
+    {
         this.tools = tools;
+        this.schemas = schemas ?? [];
+    }
 
     public int CallCount => Volatile.Read(ref this.callCount);
 
-    public async ValueTask<string> CallAsync(string name, string input)
+    public async ValueTask<string> CallAsync(string name, string argumentsJson)
     {
         Interlocked.Increment(ref this.callCount);
 
@@ -30,6 +36,12 @@ public sealed class ScriptedMcpServer : IMcpBroker
             : $"[external '{name}' not configured]";
     }
 
+    // A tool the vector gave a schema advertises it; the rest take an open object, as a real
+    // server that declares none would.
     public async ValueTask<IReadOnlyList<McpTool>> ListToolsAsync() =>
-        [.. this.tools.Keys.Select(name => new McpTool(name, $"scripted tool {name}"))];
+        [.. this.tools.Keys.Select(name =>
+            new McpTool(
+                name,
+                $"scripted tool {name}",
+                this.schemas.TryGetValue(name, out string? schema) ? schema : "{}"))];
 }

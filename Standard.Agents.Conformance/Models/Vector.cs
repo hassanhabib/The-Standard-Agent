@@ -123,6 +123,11 @@ public sealed record Vector(
     // contested name. ExtraSkills adds skill sources after the harness's stub, in order,
     // because accumulation is only observable with more than one source.
     List<Dictionary<string, string>>? McpServers = null,
+
+    // What a scripted server declares its tools take, {toolName: inputSchemaJson}. A tool with
+    // no entry takes an open object, as a real server that declares no schema would (SPEC.md
+    // §6.1: what a tool takes is part of what advertises it).
+    Dictionary<string, string>? McpToolSchemas = null,
     List<string>? ExtraSkills = null,
 
     // Composition from data (SPEC.md §4.8 v1.4). When set, the vector certifies composition
