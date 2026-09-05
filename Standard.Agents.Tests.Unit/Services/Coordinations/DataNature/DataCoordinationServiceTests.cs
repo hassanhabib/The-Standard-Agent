@@ -7,6 +7,7 @@ using System.Linq.Expressions;
 using Moq;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models.Orchestrations.Agents;
+using Standard.Agents.Services.Foundations.ExternalTools;
 using Standard.Agents.Services.Foundations.Knowledges;
 using Standard.Agents.Services.Foundations.Memorys;
 using Standard.Agents.Services.Foundations.Skills;
@@ -48,7 +49,8 @@ public partial class DataCoordinationServiceTests
                 skillService: this.skillServiceMock.Object,
                 knowledgeService: this.knowledgeServiceMock.Object,
                 toolCatalog: ToolCatalog,
-                loggingBroker: this.loggingBrokerMock.Object),
+                loggingBroker: this.loggingBrokerMock.Object,
+                externalToolService: new Mock<IExternalToolService>().Object),
             recollectionService: new RecollectionOrchestrationService(
                 memoryService: this.memoryServiceMock.Object,
                 sessionService: new Mock<ISessionService>().Object,

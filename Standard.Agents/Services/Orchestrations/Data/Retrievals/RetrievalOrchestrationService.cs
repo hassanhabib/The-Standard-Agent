@@ -4,7 +4,7 @@
 // ---------------------------------------------------------------
 
 using Standard.Agents.Brokers.Loggings;
-using Standard.Agents.Models.Orchestrations.Retrievals;
+using Standard.Agents.Services.Foundations.ExternalTools;
 using Standard.Agents.Services.Foundations.Knowledges;
 using Standard.Agents.Services.Foundations.Skills;
 
@@ -20,10 +20,11 @@ public partial class RetrievalOrchestrationService : IRetrievalOrchestrationServ
     private readonly string toolCatalog;
     private readonly ILoggingBroker loggingBroker;
 
-    // A model carrying a delegate rather than a broker, because remote tools are Direction's
-    // resource and this is Data's tier — configuration crosses natures where a dependency may
-    // not. Null when there is nothing remote to advertise.
-    private readonly ExternalToolCatalog? externalToolCatalog;
+    // Remote tools are a foundation this orchestration depends on like any other — visible at
+    // the tier a dependency is reviewed at, with its failures localized and categorized there.
+    // They used to arrive as a model carrying a delegate, which evaded that tier and reported an
+    // outage as "no tools" (principal review 2026-09-04, F-15).
+    private readonly IExternalToolService externalToolService;
 
     // The catalog per tool (name → its rendered line), so a run under selection (SPEC.md
     // §4.15) can be shown only what it was offered. Null keeps the whole-string catalog the
@@ -35,14 +36,14 @@ public partial class RetrievalOrchestrationService : IRetrievalOrchestrationServ
         IKnowledgeService knowledgeService,
         string toolCatalog,
         ILoggingBroker loggingBroker,
-        ExternalToolCatalog? externalToolCatalog = null,
+        IExternalToolService externalToolService,
         IReadOnlyDictionary<string, string>? toolCatalogEntries = null)
     {
         this.skillService = skillService;
         this.knowledgeService = knowledgeService;
         this.toolCatalog = toolCatalog;
         this.loggingBroker = loggingBroker;
-        this.externalToolCatalog = externalToolCatalog;
+        this.externalToolService = externalToolService;
         this.toolCatalogEntries = toolCatalogEntries;
     }
 
@@ -80,26 +81,11 @@ public partial class RetrievalOrchestrationService : IRetrievalOrchestrationServ
             .Select(entry => entry.Value));
     }
 
-    // Remote tools join the catalog under the same opt-in as local ones — and only when the
-    // marker is present, so an agent that never advertises never pays a discovery call.
     private async ValueTask<string> RenderToolCatalogAsync(string skills)
     {
-        if (this.externalToolCatalog is null || skills.Contains(ToolsMarker) is false)
-        {
-            return SelectedToolCatalog();
-        }
+        await ValueTask.CompletedTask;
 
-        string externalCatalog = await this.externalToolCatalog.DiscoverAsync();
-        string localCatalog = SelectedToolCatalog();
-
-        if (string.IsNullOrEmpty(externalCatalog))
-        {
-            return localCatalog;
-        }
-
-        return string.IsNullOrEmpty(localCatalog)
-            ? externalCatalog
-            : $"{localCatalog}\n{externalCatalog}";
+        return SelectedToolCatalog();
     }
 
     public ValueTask<IReadOnlyList<string>> RetrieveGroundingAsync(string query) =>

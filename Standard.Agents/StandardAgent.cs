@@ -1780,45 +1780,17 @@ public sealed partial class StandardAgent : IAgent
                 this.knowledgeMinScore)
             : new KnowledgeService(this.knowledgeBroker, logging);
 
-        // Remote tools advertise beside local ones, under the same opt-in: only tools whose
-        // catalog carries a description are listed. Best-effort and cached on success — a server
-        // down at discovery hides only its own tools this turn, is asked again on the next, and
-        // never fails the run.
-        string? discoveredCatalog = null;
-
-        Models.Orchestrations.Retrievals.ExternalToolCatalog? externalToolCatalog =
-            this.mcpSources.Count is 0
-            ? null
-            : new(async () =>
-            {
-                if (discoveredCatalog is not null)
-                {
-                    return discoveredCatalog;
-                }
-
-                try
-                {
-                    IReadOnlyList<Models.Brokers.Mcps.McpTool> remoteTools =
-                        await mcp.ListToolsAsync();
-
-                    discoveredCatalog = string.Join("\n", remoteTools
-                        .Where(tool => string.IsNullOrWhiteSpace(tool.Description) is false)
-                        .Select(tool => $"- {tool.Name} — {tool.Description} parameters: {{}}"));
-
-                    return discoveredCatalog;
-                }
-                catch
-                {
-                    return string.Empty;
-                }
-            });
+        // One foundation over the remote tools, shared by the two natures that need it: Data
+        // advertises what the servers offer, Direction performs what the Brain chose. A single
+        // instance keeps discovery and execution reading the same servers.
+        IExternalToolService externalToolService = new ExternalToolService(mcp, logging);
 
         // The Data nature, as two regions and the coordination that composes them. Retrieval is
         // authored material selected by relevance; Recollection is what the agent accumulated.
         DataCoordinationService data = new(
             new RetrievalOrchestrationService(
                 skillService, knowledgeService, RenderToolCatalog(allTools), logging,
-                externalToolCatalog,
+                externalToolService,
                 RenderToolCatalogEntries(allTools)),
             new RecollectionOrchestrationService(
                 memoryService,
@@ -1896,7 +1868,7 @@ public sealed partial class StandardAgent : IAgent
                 logging),
             new ExecutionOrchestrationService(
                 new InternalToolService(toolBroker, logging),
-                new ExternalToolService(mcp, logging),
+                externalToolService,
                 new ReturnService(logging),
                 logging),
             logging,
