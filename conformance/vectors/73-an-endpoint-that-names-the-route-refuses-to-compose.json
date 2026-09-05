@@ -1,0 +1,10 @@
+{
+  "name": "an-endpoint-that-names-the-route-refuses-to-compose",
+  "description": "Composition from data (SPEC.md 4.8 v1.4): an apiUrl is the base a route is appended to, so a document whose brain names chat/completions itself - or omits the trailing slash that keeps the route under its path - describes an endpoint that fails at the first prompt with a 404 blaming the provider. The document MUST refuse to compose and the refusal MUST name apiUrl. The 2026-09-04 principal review (F-12) found hosting.md teaching exactly this URL. No run happens; the refusal is the certification.",
+  "configurationJson": "{ \"brain\": { \"apiUrl\": \"http://localhost:11434/v1/chat/completions\", \"apiKey\": \"k\", \"model\": \"m\" } }",
+  "generatorReplies": [],
+  "prompt": "",
+  "expect": {
+    "configurationRefusalNames": "apiUrl"
+  }
+}

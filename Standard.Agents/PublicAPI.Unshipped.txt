@@ -2,3 +2,5 @@
 Standard.Agents.Models.Clients.Agents.Exceptions.InvalidAgentBudgetException
 Standard.Agents.Models.Clients.Agents.Exceptions.InvalidAgentBudgetException.InvalidAgentBudgetException(string! message) -> void
 Standard.Agents.Models.Clients.Agents.Exceptions.InvalidAgentConfigurationException.InvalidAgentConfigurationException(string! message, System.Exception! innerException) -> void
+Standard.Agents.Models.Clients.Agents.Exceptions.InvalidAgentApiUrlException
+Standard.Agents.Models.Clients.Agents.Exceptions.InvalidAgentApiUrlException.InvalidAgentApiUrlException(string! message) -> void

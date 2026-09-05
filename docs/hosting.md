@@ -26,7 +26,7 @@ seam, any sub-agents the run started.
 ```json
 {
   "Agent": {
-    "Url": "http://localhost:11434/v1/chat/completions",
+    "Url": "http://localhost:11434/v1/",
     "ApiKey": "",
     "Model": "LLooMA2.0",
     "Skills": "Skills"
