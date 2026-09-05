@@ -62,6 +62,43 @@ jobs:
     - name: Evaluating Quality
       run: dotnet run --project Standard.Agents.Evals --no-build --configuration Release
 
+  # The same gate on the other operating system the package is used on. What varies most
+  # across platforms is exactly what the file stores, the session lock, path handling and the
+  # SSE wire exercise, and a suite proven on Ubuntu alone proves it there alone (principal
+  # review 2026-09-04, F-28). Certifying Critical here re-certifies every profile below it.
+  windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Pulling Code
+      uses: actions/checkout@v7
+
+    - name: Installing .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        global-json-file: global.json
+        dotnet-version: 8.0.x
+
+    - name: Restoring Packages
+      run: dotnet restore
+
+    - name: Building Solution
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Running Tests
+      run: dotnet test --no-build --configuration Release --verbosity normal
+
+    - name: Certifying Conformance
+      run: dotnet run --project Standard.Agents.Conformance --no-build --configuration Release
+
+    - name: Certifying Critical Profile
+      run: >
+        dotnet run --project Standard.Agents.Conformance --no-build --configuration Release
+        -- --profile Critical
+
+    - name: Evaluating Quality
+      run: dotnet run --project Standard.Agents.Evals --no-build --configuration Release
+
   supply-chain:
     runs-on: ubuntu-latest
 
