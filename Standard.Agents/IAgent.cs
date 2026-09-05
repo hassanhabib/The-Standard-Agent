@@ -8,23 +8,43 @@ using Standard.Agents.Models.Orchestrations.Agents;
 
 namespace Standard.Agents;
 
+/// <summary>
+/// An agent, as a host or a nested agent sees it. The request-rich members are the contract:
+/// a run carries a session, a caller-owned transcript, caller tools, resumed tool exchanges and
+/// inference controls, and ends with a structured outcome that says HOW it ended. The
+/// string members are convenience adapters over them, so an adapter can never report a held
+/// or refused run as an answer (principal review 2026-09-04, F-09).
+/// </summary>
 public interface IAgent
 {
-    ValueTask<string> ProcessPromptAsync(string prompt);
+    /// <summary>
+    /// The run, in full: everything about the request that is data, and an outcome that says
+    /// how the run ended — answered, refused, held on an authority, waiting on the caller, or
+    /// out of turns. Only <see cref="AgentStatus.Responded"/> makes the result an answer.
+    /// Cancellation stops it at the next turn boundary, so no effect is left half-recorded
+    /// (SPEC.md §4.10).
+    /// </summary>
+    ValueTask<AgentOutcome> RunAsync(
+        PromptRequest request,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The same run, streamed (SPEC.md §4.14): every event as it happens, for a request
+    /// carrying everything <see cref="RunAsync(PromptRequest, CancellationToken)"/> accepts.
+    /// </summary>
+    IAsyncEnumerable<AgentStreamEvent> StreamPromptAsync(
+        PromptRequest request,
+        CancellationToken cancellationToken);
+
+    /// <summary>The one-line door: a prompt in, the answer's text out.</summary>
+    async ValueTask<string> ProcessPromptAsync(string prompt) =>
+        (await RunAsync(new PromptRequest { Prompt = prompt }, CancellationToken.None)).Result;
 
     /// <summary>
     /// The same run, reported with <b>how it ended</b> as well as what it produced. A run can end
     /// answered, refused, held on an authority, or out of turns, and only the first makes the
     /// result an answer — a caller given nothing but the string cannot tell them apart.
     /// </summary>
-    /// <remarks>
-    /// The default assumes the run answered, which is exactly what a caller of
-    /// <see cref="ProcessPromptAsync"/> already assumes, so an existing implementation keeps
-    /// working and is no less accurate than it was. An implementation that knows better — and
-    /// every implementation that runs the loop does — should override it. Nesting reads this
-    /// (<c>AgentTool</c>), so an agent that leaves the default will have its held runs reported to
-    /// an outer agent as answers.
-    /// </remarks>
     async ValueTask<AgentOutcome> RunAsync(string prompt) =>
         new AgentOutcome(
             Result: await ProcessPromptAsync(prompt),
@@ -35,16 +55,14 @@ public interface IAgent
     /// is left half-recorded (SPEC.md §4.10). Nesting reads this — <c>AgentTool</c> forwards
     /// the outer run's token here, so cancelling an outer run stops the whole tree.
     /// </summary>
-    /// <remarks>
-    /// The default ignores the token, which is no less accurate than an implementation that
-    /// cannot stop mid-run was before. An implementation that runs the loop should override it.
-    /// </remarks>
     ValueTask<AgentOutcome> RunAsync(string prompt, CancellationToken cancellationToken) =>
         RunAsync(prompt);
 
+    /// <summary>The streamed run for a bare prompt, riding the request-rich stream.</summary>
     IAsyncEnumerable<AgentStreamEvent> StreamPromptAsync(
         string prompt,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default) =>
+        StreamPromptAsync(new PromptRequest { Prompt = prompt }, cancellationToken);
 
     /// <summary>
     /// The streamed run (SPEC.md §4.14): every event live, and — once the enumeration
@@ -53,11 +71,10 @@ public interface IAgent
     /// run's story.
     /// </summary>
     /// <remarks>
-    /// The default adapts <see cref="StreamPromptAsync"/> and assumes the run answered —
-    /// exactly the assumption <see cref="RunAsync(string)"/>'s default documents, and no less
-    /// accurate than it was. It cannot know a pending effect or a refusal from the events
-    /// alone, so an implementation that runs the loop — and every implementation that runs the
-    /// loop knows how its run ended — should override it.
+    /// The default adapts <see cref="StreamPromptAsync(string, CancellationToken)"/> and
+    /// assumes the run answered, because it cannot know a pending effect or a refusal from the
+    /// events alone. An implementation that runs the loop — and every implementation that runs
+    /// the loop knows how its run ended — overrides it; <c>StandardAgent</c> does.
     /// </remarks>
     AgentRunStream RunStreamAsync(
         string prompt,
