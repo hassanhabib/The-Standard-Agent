@@ -44,12 +44,43 @@ public sealed class GeneratorBroker : IGeneratorBroker
         double temperature,
         int maxTokens,
         int timeoutSeconds)
+        : this(new HttpClient(), apiUrl, apiKey, model, temperature, maxTokens, timeoutSeconds)
     {
-        this.httpClient = new HttpClient
-        {
-            BaseAddress = new Uri(apiUrl),
-            Timeout = TimeSpan.FromSeconds(timeoutSeconds)
-        };
+    }
+
+    // The host's handler under this broker's traffic (F-23). The handler is the host's: the
+    // client around it holds nothing of its own and never disposes it.
+    public GeneratorBroker(
+        HttpMessageHandler handler,
+        string apiUrl,
+        string apiKey,
+        string model,
+        double temperature,
+        int maxTokens,
+        int timeoutSeconds)
+        : this(
+            new HttpClient(handler, disposeHandler: false),
+            apiUrl,
+            apiKey,
+            model,
+            temperature,
+            maxTokens,
+            timeoutSeconds)
+    {
+    }
+
+    private GeneratorBroker(
+        HttpClient httpClient,
+        string apiUrl,
+        string apiKey,
+        string model,
+        double temperature,
+        int maxTokens,
+        int timeoutSeconds)
+    {
+        this.httpClient = httpClient;
+        this.httpClient.BaseAddress = new Uri(apiUrl);
+        this.httpClient.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
 
         this.httpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue(scheme: "Bearer", parameter: apiKey);

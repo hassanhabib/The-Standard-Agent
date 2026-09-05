@@ -39,12 +39,43 @@ public sealed class AnthropicGeneratorBrokerV1 : IGeneratorBrokerV1
         int maxTokens = 1024,
         int timeoutSeconds = 120,
         string apiUrl = "https://api.anthropic.com/")
+        : this(new HttpClient(), apiKey, model, temperature, maxTokens, timeoutSeconds, apiUrl)
     {
-        this.httpClient = new HttpClient
-        {
-            BaseAddress = new Uri(apiUrl),
-            Timeout = TimeSpan.FromSeconds(timeoutSeconds)
-        };
+    }
+
+    // The host's handler under this broker's traffic (F-23). The handler is the host's: the
+    // client around it holds nothing of its own and never disposes it.
+    public AnthropicGeneratorBrokerV1(
+        HttpMessageHandler handler,
+        string apiKey,
+        string model,
+        double temperature,
+        int maxTokens,
+        int timeoutSeconds,
+        string apiUrl)
+        : this(
+            new HttpClient(handler, disposeHandler: false),
+            apiKey,
+            model,
+            temperature,
+            maxTokens,
+            timeoutSeconds,
+            apiUrl)
+    {
+    }
+
+    private AnthropicGeneratorBrokerV1(
+        HttpClient httpClient,
+        string apiKey,
+        string model,
+        double temperature,
+        int maxTokens,
+        int timeoutSeconds,
+        string apiUrl)
+    {
+        this.httpClient = httpClient;
+        this.httpClient.BaseAddress = new Uri(apiUrl);
+        this.httpClient.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
 
         this.httpClient.DefaultRequestHeaders.Add("x-api-key", apiKey);
         this.httpClient.DefaultRequestHeaders.Add("anthropic-version", AnthropicVersion);

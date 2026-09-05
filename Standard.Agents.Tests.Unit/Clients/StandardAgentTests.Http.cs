@@ -27,6 +27,11 @@ public class StandardAgentHttpTests
         "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"FINAL: 4\"}}],"
             + "\"usage\":{\"prompt_tokens\":1,\"completion_tokens\":1}}";
 
+    // The native protocol carries the answer as the content itself; no FINAL: marker.
+    private const string NativeChatCompletion =
+        "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"4\"}}],"
+            + "\"usage\":{\"prompt_tokens\":1,\"completion_tokens\":1}}";
+
     private const string EmptyToolList =
         "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"tools\":[]}}";
 
@@ -101,7 +106,7 @@ public class StandardAgentHttpTests
     {
         // given — the same handler under the native tool-calling brain, supplied AFTER the brain,
         // because a seam that only works in one order is a trap
-        var handler = new RecordingHandler(ChatCompletion);
+        var handler = new RecordingHandler(NativeChatCompletion);
 
         StandardAgent agent = BareShell()
             .NativeBrain("http://brain.test/v1/", "key-1", "model-1")
