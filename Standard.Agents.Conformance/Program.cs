@@ -821,7 +821,8 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
     else if (vector.Concurrent)
     {
         string[] results = await Task.WhenAll(
-            prompts.Select(prompt => agent.ProcessPromptAsync(prompt).AsTask()));
+            prompts.Select(prompt =>
+                agent.ProcessPromptAsync(prompt, vector.SessionId ?? string.Empty).AsTask()));
 
         promptResults.AddRange(results);
         result = results[0];
