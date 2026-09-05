@@ -37,6 +37,15 @@ public partial class SessionService
         {
             throw await CreateAndLogCriticalDependencyExceptionAsync(unauthorizedAccessException);
         }
+        catch (System.Data.DBConcurrencyException dbConcurrencyException)
+        {
+            var staleSessionException =
+                new StaleSessionException(
+                    message: "The session was written by another prompt since it was read; read it again and retry.",
+                    innerException: dbConcurrencyException);
+
+            throw await CreateAndLogDependencyValidationExceptionAsync(staleSessionException);
+        }
         catch (IOException ioException)
         {
             throw await CreateAndLogDependencyExceptionAsync(ioException);
@@ -73,6 +82,15 @@ public partial class SessionService
         catch (UnauthorizedAccessException unauthorizedAccessException)
         {
             throw await CreateAndLogCriticalDependencyExceptionAsync(unauthorizedAccessException);
+        }
+        catch (System.Data.DBConcurrencyException dbConcurrencyException)
+        {
+            var staleSessionException =
+                new StaleSessionException(
+                    message: "The session was written by another prompt since it was read; read it again and retry.",
+                    innerException: dbConcurrencyException);
+
+            throw await CreateAndLogDependencyValidationExceptionAsync(staleSessionException);
         }
         catch (IOException ioException)
         {
@@ -118,6 +136,19 @@ public partial class SessionService
         await this.loggingBroker.LogCriticalAsync(sessionDependencyException);
 
         return sessionDependencyException;
+    }
+
+    private async ValueTask<SessionDependencyValidationException>
+        CreateAndLogDependencyValidationExceptionAsync(Xeption exception)
+    {
+        var sessionDependencyValidationException =
+            new SessionDependencyValidationException(
+                message: "Session dependency validation error occurred, fix the error and try again.",
+                innerException: exception);
+
+        await this.loggingBroker.LogErrorAsync(sessionDependencyValidationException);
+
+        return sessionDependencyValidationException;
     }
 
     private async ValueTask<SessionDependencyException> CreateAndLogDependencyExceptionAsync(

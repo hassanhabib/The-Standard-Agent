@@ -28,34 +28,52 @@ public sealed class FileSessionBroker : ISessionBroker
     };
 
     private readonly string sessionsPath;
-    private readonly SemaphoreSlim writeLock = new(initialCount: 1, maxCount: 1);
+
+    // One lock over reads and writes alike: a move over a file another prompt is reading fails
+    // on Windows with access denied, which is how two prompts in one session crashed a run
+    // (principal review 2026-09-04, F-06). Per instance — a second process gets its own lock,
+    // which is the limit of a file and the reason a store shared across replicas is a session
+    // broker of its own.
+    private readonly SemaphoreSlim fileLock = new(initialCount: 1, maxCount: 1);
 
     public FileSessionBroker(string sessionsPath) =>
         this.sessionsPath = Path.GetFullPath(sessionsPath);
 
     public async ValueTask<AgentSession?> SelectSessionAsync(string sessionId)
     {
-        string sessionFile = FileFor(sessionId);
+        await this.fileLock.WaitAsync();
 
-        if (File.Exists(sessionFile) is false)
+        try
         {
-            return null;
+            return await ReadSessionAsync(FileFor(sessionId));
         }
-
-        string json = await File.ReadAllTextAsync(sessionFile);
-
-        return JsonSerializer.Deserialize<AgentSession>(json, jsonOptions);
+        finally
+        {
+            this.fileLock.Release();
+        }
     }
 
+    // Compare-and-swap on the version, a file's stand-in for a store's own: a write based on a
+    // read that is no longer current is refused with the concurrency failure the foundation
+    // localizes, rather than erasing the turn a faster writer stored.
     public async ValueTask UpsertSessionAsync(AgentSession session)
     {
-        await this.writeLock.WaitAsync();
+        await this.fileLock.WaitAsync();
 
         try
         {
             Directory.CreateDirectory(this.sessionsPath);
 
             string sessionFile = FileFor(session.Id);
+            long storedVersion = (await ReadSessionAsync(sessionFile))?.Version ?? 0;
+
+            if (session.Version != storedVersion + 1)
+            {
+                throw new System.Data.DBConcurrencyException(
+                    $"Session '{session.Id}' is at version {storedVersion}; this write was "
+                        + $"based on version {session.Version - 1}.");
+            }
+
             string temporaryFile = $"{sessionFile}.writing";
 
             await File.WriteAllTextAsync(
@@ -66,8 +84,20 @@ public sealed class FileSessionBroker : ISessionBroker
         }
         finally
         {
-            this.writeLock.Release();
+            this.fileLock.Release();
         }
+    }
+
+    private static async ValueTask<AgentSession?> ReadSessionAsync(string sessionFile)
+    {
+        if (File.Exists(sessionFile) is false)
+        {
+            return null;
+        }
+
+        string json = await File.ReadAllTextAsync(sessionFile);
+
+        return JsonSerializer.Deserialize<AgentSession>(json, jsonOptions);
     }
 
     // A session id comes from the host and may be anything — an email, a ticket reference, a
