@@ -84,8 +84,8 @@ public partial class DirectionCoordinationService : IDirectionCoordinationServic
         {
             string result = await this.executionService.ReturnAsync(context.Payload);
 
-            await this.loggingBroker.LogProcessAsync(
-                "Direction", $"{context.DirectionType} → returned: {result}");
+            await this.loggingBroker.LogPayloadAsync(
+                "Direction", $"{context.DirectionType} returned", result, detail: false);
 
             return context with
             {

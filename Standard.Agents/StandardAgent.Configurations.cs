@@ -329,6 +329,14 @@ public partial class StandardAgent
 
                 break;
 
+            case "auditPayloads" when Truth(value, key):
+                agent.AuditPayloads();
+
+                break;
+
+            case "auditPayloads":
+                break;
+
             case "telemetry" when value?.GetValueKind() is JsonValueKind.String:
                 agent.Telemetry(Text(value, key));
 

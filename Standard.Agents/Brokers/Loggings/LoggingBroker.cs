@@ -114,6 +114,15 @@ public sealed class LoggingBroker : ILoggingBroker
         }
     }
 
+    // The trace is the human's reading aid, so the payload is written in full: on the same line
+    // when it fits, under the summary when it spans lines.
+    public ValueTask LogPayloadAsync(string actor, string summary, string payload, bool detail)
+    {
+        string separator = payload.Contains('\n') ? Environment.NewLine : " ";
+
+        return LogProcessAsync(actor, $"{summary} →{separator}{payload}", detail);
+    }
+
     // The trace is a shared file and one broker serves every concurrent run, so writes are
     // serialized - without this, sixty-four prompts in flight collide on the handle and most
     // of them fail with an IOException rather than an answer.

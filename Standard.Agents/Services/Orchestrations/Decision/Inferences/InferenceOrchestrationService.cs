@@ -113,10 +113,7 @@ public partial class InferenceOrchestrationService : IInferenceOrchestrationServ
     // check could hold the doors to each other.
     private async ValueTask NarrateDecidedAsync(AgentContext decided, string reply)
     {
-        await this.loggingBroker.LogProcessAsync(
-            "Decision",
-            $"Brain replied →{Environment.NewLine}{reply}",
-            detail: true);
+        await this.loggingBroker.LogPayloadAsync("Decision", "Brain replied", reply, detail: true);
 
         await this.loggingBroker.LogProcessAsync(
             "Decision",

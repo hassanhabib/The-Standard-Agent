@@ -81,3 +81,28 @@ Standard.Agents.Brokers.Audits.AuditingLoggingBroker.LogStepAsync(Standard.Agent
 Standard.Agents.Brokers.Audits.AuditingLoggingBroker.LogTraceAsync(string! message) -> System.Threading.Tasks.ValueTask
 Standard.Agents.Brokers.Audits.AuditingLoggingBroker.LogTurnAsync(int turn) -> System.Threading.Tasks.ValueTask
 Standard.Agents.Brokers.Audits.AuditingLoggingBroker.LogWarningAsync(string! message) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Loggings.ILoggingBroker.LogPayloadAsync(string! actor, string! summary, string! payload, bool detail) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Loggings.LoggingBroker.LogPayloadAsync(string! actor, string! summary, string! payload, bool detail) -> System.Threading.Tasks.ValueTask
+Standard.Agents.Brokers.Audits.AuditingLoggingBroker.LogPayloadAsync(string! actor, string! summary, string! payload, bool detail) -> System.Threading.Tasks.ValueTask
+*REMOVED*Standard.Agents.Brokers.Audits.AuditingLoggingBroker.AuditingLoggingBroker(Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, Standard.Agents.Brokers.Audits.IAuditBroker! auditBroker, Standard.Agents.Brokers.Times.ITimeBroker! timeBroker, System.Func<string?>? principal = null) -> void
+Standard.Agents.Brokers.Audits.AuditingLoggingBroker.AuditingLoggingBroker(Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, Standard.Agents.Brokers.Audits.IAuditBroker! auditBroker, Standard.Agents.Brokers.Times.ITimeBroker! timeBroker, Standard.Agents.Brokers.Redactions.IRedactionBroker! redactionBroker, Standard.Agents.Models.Brokers.Audits.AuditPolicy! policy, System.Func<string?>? principal = null) -> void
+Standard.Agents.Models.Brokers.Audits.AuditPolicy
+Standard.Agents.Models.Brokers.Audits.AuditPolicy.AuditPolicy(bool Payloads) -> void
+Standard.Agents.Models.Brokers.Audits.AuditPolicy.Payloads.get -> bool
+Standard.Agents.Models.Brokers.Audits.AuditPolicy.Payloads.init -> void
+static Standard.Agents.Models.Brokers.Audits.AuditPolicy.Metadata.get -> Standard.Agents.Models.Brokers.Audits.AuditPolicy!
+Standard.Agents.Models.Brokers.Audits.AuditRecord.Payload.get -> string?
+Standard.Agents.Models.Brokers.Audits.AuditRecord.Payload.init -> void
+Standard.Agents.Models.Brokers.Audits.AuditRecord.PayloadHash.get -> string?
+Standard.Agents.Models.Brokers.Audits.AuditRecord.PayloadHash.init -> void
+Standard.Agents.Models.Brokers.Audits.AuditRecord.PayloadLength.get -> int?
+Standard.Agents.Models.Brokers.Audits.AuditRecord.PayloadLength.init -> void
+Standard.Agents.StandardAgent.AuditPayloads() -> Standard.Agents.StandardAgent!
+Standard.Agents.Models.Brokers.Audits.AuditPolicy.<Clone>$() -> Standard.Agents.Models.Brokers.Audits.AuditPolicy!
+Standard.Agents.Models.Brokers.Audits.AuditPolicy.Deconstruct(out bool Payloads) -> void
+Standard.Agents.Models.Brokers.Audits.AuditPolicy.Equals(Standard.Agents.Models.Brokers.Audits.AuditPolicy? other) -> bool
+override Standard.Agents.Models.Brokers.Audits.AuditPolicy.Equals(object? obj) -> bool
+override Standard.Agents.Models.Brokers.Audits.AuditPolicy.GetHashCode() -> int
+override Standard.Agents.Models.Brokers.Audits.AuditPolicy.ToString() -> string!
+static Standard.Agents.Models.Brokers.Audits.AuditPolicy.operator !=(Standard.Agents.Models.Brokers.Audits.AuditPolicy? left, Standard.Agents.Models.Brokers.Audits.AuditPolicy? right) -> bool
+static Standard.Agents.Models.Brokers.Audits.AuditPolicy.operator ==(Standard.Agents.Models.Brokers.Audits.AuditPolicy? left, Standard.Agents.Models.Brokers.Audits.AuditPolicy? right) -> bool

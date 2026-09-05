@@ -632,14 +632,30 @@ var agent = new StandardAgent(url, key, "LLooMA2.0")
 - `TraceVerbosity.Full`: every Process (`Process 0: Data: Received prompt`, and so on). This is the default.
 
 **Machine-readable audit, with `.Audit(path)`.** Writes one JSON object per trace event (turn,
-step, process, outcome, error) as JSON lines, always at full detail, for ingestion into a SIEM or
-telemetry pipeline. It runs alongside `.LogTo(...)`, not instead of it.
+step, process, outcome, error) as JSON lines, for ingestion into a SIEM or telemetry pipeline.
+It runs alongside `.LogTo(...)`, not instead of it.
 
 ```csharp
 var agent = new StandardAgent(url, key, "LLooMA2.0")
     .LogTo("log.txt")        // human-readable transcript
     .Audit("audit.jsonl");   // {"kind":"turn",...} {"kind":"process",...} {"kind":"outcome",...}
 ```
+
+**The decision log records metadata, not content, unless you say otherwise.** A process record
+that carries a payload (the prompt, the system prompt, the Brain's reply, a tool's input or
+output, the agent's narration) records *that* it happened, who did it, when, and the payload's
+length and SHA-256, never the payload:
+
+```json
+{"kind":"process","actor":"Data","message":"Received prompt","payloadLength":31,"payloadHash":"9f2c…"}
+```
+
+An audit sink usually has broader access and a longer life than anything at runtime, so the
+conversation does not travel there by default. `.AuditPayloads()` (or `"auditPayloads": true`
+in the document) turns payload capture on, knowing that whoever reads the sink reads the
+conversation, and when it is on the configured `.Redact(...)` rules apply at the audit boundary
+exactly as at the model boundary, so a card number the Brain never saw is a card number the
+sink never sees either. The trace file (`.LogTo`) is a development aid and keeps the full text.
 
 **Spans and metrics, with `.Telemetry()`.** The third observability voice, beside the trace's
 prose and the audit's records: OpenTelemetry-compatible telemetry through the BCL's
@@ -665,15 +681,16 @@ the `Standard.Agents` source and meter and the spans flow to your collector —
 pipeline or a metrics API no ActivityListener reaches.
 
 **What the trace carries — and where it may go.** Know this before pointing any of these at a
-central sink: the trace and the audit carry message **content** — the received prompt, the
-returned answer, tool lines. For a SIEM inside a bank that is the point. For a deployment whose
-promise to its users is that no central party reads their messages, it is a broken promise in
-one config line — the reference deployment wired its audit stream to a cloud log store and
-un-wired it the same day, on exactly this ground. Until a content-free audit mode ships
-(structure only: kind, actor, outcome, timings — never message text), a privacy-first
-deployment should keep content-bearing sinks local and user-owned (`LogTo`/`Audit` to the
-user's own disk), or not wire them at all. Telemetry is the exception: its events carry counts
-and outcomes, never text.
+central sink: the trace carries message **content** — the received prompt, the returned
+answer, tool lines — and the audit carries it only when `.AuditPayloads()` says so. For a SIEM
+inside a bank, payload capture is the point. For a deployment whose promise to its users is
+that no central party reads their messages, it would be a broken promise in one config line —
+the reference deployment wired its audit stream to a cloud log store and un-wired it the same
+day, on exactly this ground, which is why the decision log is content-free by default
+(structure only: kind, actor, outcome, timings, payload length and hash — never message text).
+A privacy-first deployment keeps the trace local and user-owned (`LogTo` to the user's own
+disk), or does not wire it at all, and leaves payload capture off. Telemetry carries counts and
+outcomes, never text.
 
 ---
 

@@ -35,9 +35,10 @@ public partial class DecisionCoordinationServiceTests
 
         // then
         this.loggingBrokerMock.Verify(broker =>
-            broker.LogProcessAsync(
+            broker.LogPayloadAsync(
                 "Decision",
-                It.Is<string>(message => message.Contains("Gate")),
+                It.Is<string>(summary => summary.Contains("Gate")),
+                It.IsAny<string>(),
                 It.IsAny<bool>()),
                     Times.Once);
 

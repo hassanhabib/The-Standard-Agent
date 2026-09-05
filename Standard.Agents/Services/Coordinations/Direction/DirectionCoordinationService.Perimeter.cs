@@ -156,11 +156,11 @@ public partial class DirectionCoordinationService
         AgentRun.Current?.RecordPerformed(
             new PerformedEffect(effect.ToolName, effect.Arguments, output));
 
-        await this.loggingBroker.LogProcessAsync(
-            "Direction", $"Tool '{effect.ToolName}' ← {context.Payload}", detail: true);
+        await this.loggingBroker.LogPayloadAsync(
+            "Direction", $"Tool '{effect.ToolName}' input", context.Payload, detail: true);
 
-        await this.loggingBroker.LogProcessAsync(
-            "Direction", $"Tool '{effect.ToolName}' → {output}");
+        await this.loggingBroker.LogPayloadAsync(
+            "Direction", $"Tool '{effect.ToolName}' output", output, detail: false);
 
         return Observed(context, output);
     }
@@ -224,10 +224,11 @@ public partial class DirectionCoordinationService
         {
             CompensationOutcome outcome = await CompensateEffectAsync(effect);
 
-            await this.loggingBroker.LogProcessAsync(
+            await this.loggingBroker.LogPayloadAsync(
                 "Direction",
-                $"Compensate '{effect.ToolName}' → "
-                    + $"{(outcome.Undone ? "UNDONE" : "STANDS")}: {outcome.Detail}");
+                $"Compensate '{effect.ToolName}' {(outcome.Undone ? "UNDONE" : "STANDS")}",
+                outcome.Detail,
+                detail: false);
 
             outcomes.Add(outcome);
         }
