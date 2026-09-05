@@ -13,6 +13,11 @@ log.math.txt
 ## Local secrets — set appsettings.json ApiKey locally; never commit real keys
 appsettings.*.local.json
 
+## The agent document the host reads may carry credentials (docs/how-to.md §16). The
+## committed shape is agent.example.json, without secrets; the real one stays local.
+agent.json
+agent.*.local.json
+
 ## IDE / OS
 .vs/
 .idea/

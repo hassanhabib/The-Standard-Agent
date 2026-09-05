@@ -1,0 +1,7 @@
+{
+  "brain": { "apiUrl": "https://api.peerllm.com/v1/", "apiKey": "<set locally, never commit>", "model": "LLooMA2.0" },
+  "skills": "Skills",
+  "ruleGate": ["password"],
+  "budget": { "maxCostUsd": 0.25, "costPerThousandTokens": 0.002 },
+  "telemetry": "form-built-agent"
+}
