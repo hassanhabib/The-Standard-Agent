@@ -7,7 +7,10 @@ using FluentAssertions;
 using Moq;
 using Standard.Agents.Brokers.Knowledges;
 using Standard.Agents.Brokers.Memorys;
+using Standard.Agents.Brokers.Sessions;
 using Standard.Agents.Brokers.Skills;
+using Standard.Agents.Models.Brokers.Sessions;
+using Standard.Agents.Models.Coordinations.Agents.Exceptions;
 using Standard.Agents.Models.Foundations.Skills;
 using Xunit;
 
@@ -174,5 +177,50 @@ public class SessionTests : IDisposable
         {
             Directory.Delete(this.sessionsPath, recursive: true);
         }
+    }
+
+    // Found in the 2026-09-04 principal review (F-06): a session id is caller-provided and the
+    // record carried no owner, so two callers sharing or guessing one id shared one history. A
+    // session records the principal that opened it, and a different principal is refused as a
+    // validation failure, never served a quietly shared conversation.
+    [Fact]
+    public async Task ShouldRefuseASessionOwnedByAnotherPrincipalAsync()
+    {
+        // given
+        StandardAgent adasAgent = NewAgent(answerFor: _ => "FINAL: noted").Principal(() => "ada");
+        StandardAgent bobsAgent = NewAgent(answerFor: _ => "FINAL: noted").Principal(() => "bob");
+        await adasAgent.ProcessPromptAsync("remember my order", sessionId: "order-42");
+
+        // when
+        ValueTask<string> bobsTask =
+            bobsAgent.ProcessPromptAsync("what was the order?", sessionId: "order-42");
+
+        // then
+        await Assert.ThrowsAsync<AgentCoordinationValidationException>(bobsTask.AsTask);
+    }
+
+    // Found in the 2026-09-04 principal review (F-06): a save was read, append, whole-record
+    // upsert, so two prompts in one session could both read the old history and the last writer
+    // erased the other's completed turn. Every write carries the version it was based on, the
+    // store refuses a stale one, and the loop re-reads and tries again.
+    [Fact]
+    public async Task ShouldKeepEveryTurnWhenPromptsRunConcurrentlyInOneSessionAsync()
+    {
+        // given
+        StandardAgent agent = NewAgent(answerFor: _ => "FINAL: noted");
+
+        IReadOnlyList<string> prompts =
+            [.. Enumerable.Range(0, 8).Select(index => $"fact number {index}")];
+
+        // when
+        await Task.WhenAll(prompts.Select(prompt =>
+            agent.ProcessPromptAsync(prompt, sessionId: "busy-session").AsTask()));
+
+        // then: every prompt's turn is in the history, whichever order they landed in
+        AgentSession? session =
+            await new FileSessionBroker(this.sessionsPath).SelectSessionAsync("busy-session");
+
+        session.Should().NotBeNull();
+        session!.History.Select(turn => turn.Prompt).Should().BeEquivalentTo(prompts);
     }
 }
