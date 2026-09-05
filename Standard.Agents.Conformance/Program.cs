@@ -300,7 +300,8 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
     // Created once per vector so call counts survive instance rebuilds, the way a real
     // server's would.
     List<ScriptedMcpServer> scriptedMcpServers =
-        [.. (vector.McpServers ?? []).Select(catalog => new ScriptedMcpServer(catalog))];
+        [.. (vector.McpServers ?? []).Select(catalog =>
+            new ScriptedMcpServer(catalog, vector.McpToolSchemas))];
 
     // The fleet (SPEC.md §4.8 v1.6): scripted specialists, created once per vector so their
     // scripted brains keep their place across instance rebuilds, exactly as real endpoints
