@@ -728,6 +728,12 @@ grows, and all of it rides along each turn). Want it somewhere other than a flat
 a per-user store? Implement `IMemoryBroker` and pass it to `.UseMemory(...)`. Calling `.Memory(path)`
 a second time **replaces** the path rather than adding a second one.
 
+**No memory at all.** `.WithoutMemory()` composes the agent with nothing to recall and no
+`remember` tool offered, and it wins whatever order the memory verbs were called in; in a JSON
+document the key is `"memory": false`. It is what a host serving many callers from one instance
+should use unless a shared memory is a deliberate choice, because one instance's memory is one
+memory for every caller. The one-user default keeps its memory file.
+
 ### Memory in Redis
 
 For a shared, multi-tenant memory — one store, many users — the

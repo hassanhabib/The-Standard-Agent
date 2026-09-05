@@ -61,6 +61,19 @@ builder.Services.AddSingleton<IAgent>(provider =>
         string agentJson = File.ReadAllText(agentJsonPath);
         StandardAgent configured = StandardAgent.FromJson(agentJson);
 
+        // One instance serves every caller, so a memory would be one memory for all of them:
+        // one caller's facts in another caller's context. The document must name a memory to
+        // get one; otherwise the agent recalls nothing and offers no way to store
+        // (principal review 2026-09-04, F-05).
+        bool namesMemory =
+            System.Text.Json.Nodes.JsonNode.Parse(agentJson) is System.Text.Json.Nodes.JsonObject memoryDocument
+                && memoryDocument.ContainsKey("memory");
+
+        if (namesMemory is false)
+        {
+            configured.WithoutMemory();
+        }
+
         // The same zero-config grace the classic path has: a document with no brain still
         // stands, heartbeats, and answers with what to add — never a 500 at the first prompt.
         bool hasBrain =
@@ -95,6 +108,19 @@ builder.Services.AddSingleton<IAgent>(provider =>
     if (string.IsNullOrWhiteSpace(skillsPath) is false)
     {
         agent.Skills(skillsPath);
+    }
+
+    // The same rule as the document: a hosted memory is shared by every caller, so it exists
+    // only when the configuration names it (Agent:Memory).
+    string? memoryPath = configuration["Agent:Memory"];
+
+    if (string.IsNullOrWhiteSpace(memoryPath))
+    {
+        agent.WithoutMemory();
+    }
+    else
+    {
+        agent.Memory(memoryPath);
     }
 
     // Always on: the spans exist only when something listens, so this line is free on a

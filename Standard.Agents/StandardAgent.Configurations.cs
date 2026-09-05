@@ -158,6 +158,17 @@ public partial class StandardAgent
 
                 break;
 
+            // A document that wants no memory says so with one key: a hosted agent is the
+            // whole document, and a hosted memory is one memory for every caller.
+            case "memory" when value is JsonValue memoryFlag
+                && memoryFlag.TryGetValue(out bool memoryEnabled):
+                if (memoryEnabled is false)
+                {
+                    agent.WithoutMemory();
+                }
+
+                break;
+
             case "memory":
                 agent.Memory(Text(value, key));
 

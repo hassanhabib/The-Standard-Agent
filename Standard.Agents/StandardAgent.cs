@@ -444,6 +444,23 @@ public sealed partial class StandardAgent : IAgent
         Set(() => this.memoryPath = path);
 
     /// <summary>
+    /// Composes the agent with <b>no memory</b>: nothing is recalled, and the built-in
+    /// <c>remember</c> tool is not registered, so the model is never offered a way to store.
+    /// The explicit opt-out for a deployment where one instance serves many callers — a shared
+    /// memory would let one caller's facts reach another caller's model, and let one caller
+    /// poison memory for everyone after (principal review 2026-09-04, F-05). Wins over
+    /// <see cref="Memory"/>, <see cref="UseMemory"/> and <see cref="OnMemory"/> whatever order
+    /// they were called in. The one-user default keeps its memory file.
+    /// </summary>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent WithoutMemory() =>
+        Set(() => this.memoryDisabled = true);
+
+    // Whether memory is composed at all, held until composition. A flag rather than a broker
+    // swap so the opt-out wins whatever order the memory verbs were called in.
+    private bool memoryDisabled;
+
+    /// <summary>
     /// Gives the agent a knowledge base — a folder of reference files searched each turn, with the
     /// most relevant matches seeded into the turn's observations for the brain to draw on.
     /// </summary>
@@ -1684,11 +1701,18 @@ public sealed partial class StandardAgent : IAgent
                         brain.MaxTokens ?? ResolvedInference.DefaultMaxTokens,
                         brain.TimeoutSeconds));
 
-        IMemoryService memoryService = this.memoryBroker is null
-            ? new MemoryService(file, Path.GetFullPath(this.memoryPath), logging)
-            : new MemoryService(this.memoryBroker, logging);
+        // Without memory there is nothing to recall and no way to store: the foundation reads a
+        // not-configured broker, and the remember tool is never registered, so the model is not
+        // offered it (principal review 2026-09-04, F-05).
+        IMemoryService memoryService = this.memoryDisabled
+            ? new MemoryService(new NotConfiguredMemoryBroker(), logging)
+            : this.memoryBroker is null
+                ? new MemoryService(file, Path.GetFullPath(this.memoryPath), logging)
+                : new MemoryService(this.memoryBroker, logging);
 
-        List<ITool> allTools = [.. this.tools, new RememberTool(memoryService.RememberAsync)];
+        List<ITool> allTools = this.memoryDisabled
+            ? [.. this.tools]
+            : [.. this.tools, new RememberTool(memoryService.RememberAsync)];
 
         // The fleet materializes as tools — which is the whole design: a handoff is an act, so
         // the advertisement opt-in, the perimeter, the audit and cancellation across the seam
