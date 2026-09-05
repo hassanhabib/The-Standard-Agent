@@ -9,7 +9,10 @@ dotnet run --project Standard.Agents.Evals                     # the framework's
 dotnet run --project Standard.Agents.Evals -- path/to/golden   # your own
 ```
 
-Exit `0` means every threshold in every case is met. Anything else fails the build.
+Exit `0` means every threshold in every case is met. Anything else fails the build: `1` when a
+case misses a threshold, `2` when the run discovered no cases at all. A run that certifies
+nothing is not a pass, so an empty or mistyped golden path fails loudly rather than printing
+`0 passed, 0 failed` in green; pass `--allow-empty` to accept an empty set on purpose.
 
 ## The metrics
 

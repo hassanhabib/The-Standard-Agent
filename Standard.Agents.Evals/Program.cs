@@ -30,8 +30,15 @@ string[] knownMetrics =
     "revisionEffectiveness"
 ];
 
-string goldenPath = args.Length > 0
-    ? args[0]
+// A run that discovers no cases certifies nothing, so by default it fails rather than printing
+// "0 passed, 0 failed" and exiting green - the pass a build reads as coverage (principal review
+// 2026-09-04, F-19). A caller who means an empty set says so.
+const string AllowEmptyFlag = "--allow-empty";
+bool allowEmpty = args.Contains(AllowEmptyFlag, StringComparer.Ordinal);
+string[] pathArguments = [.. args.Where(argument => argument != AllowEmptyFlag)];
+
+string goldenPath = pathArguments.Length > 0
+    ? pathArguments[0]
     : Path.Combine(FindRepositoryRoot(), "evals", "golden");
 
 JsonSerializerOptions jsonOptions = new()
@@ -116,6 +123,15 @@ foreach (string caseFile in
 
 Console.WriteLine();
 Console.WriteLine($"{passed} passed, {failed} failed  [Standard.Agents {frameworkVersion}, set {goldenSetHash}]");
+
+if (passed + failed == 0 && allowEmpty is false)
+{
+    Console.WriteLine(
+        $"No cases discovered in {goldenPath}. A run that certifies nothing is not a pass; "
+            + $"pass {AllowEmptyFlag} to accept an empty set on purpose.");
+
+    return 2;
+}
 
 return failed == 0 ? 0 : 1;
 
