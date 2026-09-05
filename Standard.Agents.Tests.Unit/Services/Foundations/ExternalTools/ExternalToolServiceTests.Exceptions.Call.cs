@@ -50,7 +50,7 @@ Exception criticalDependencyException)
                 innerException: failedExternalToolDependencyException);
 
         this.mcpBrokerMock.Setup(broker =>
-            broker.CallAsync(randomName, randomInput))
+            broker.CallAsync(randomName, ExpectedArgumentsJson(randomInput)))
                 .ThrowsAsync(criticalDependencyException);
 
         // when
@@ -66,7 +66,7 @@ Exception criticalDependencyException)
             .BeEquivalentTo(expectedExternalToolDependencyException);
 
         this.mcpBrokerMock.Verify(broker =>
-            broker.CallAsync(randomName, randomInput),
+            broker.CallAsync(randomName, ExpectedArgumentsJson(randomInput)),
                 Times.Once);
 
         this.loggingBrokerMock.Verify(broker =>
@@ -98,7 +98,7 @@ Exception criticalDependencyException)
                 innerException: failedExternalToolDependencyException);
 
         this.mcpBrokerMock.Setup(broker =>
-            broker.CallAsync(randomName, randomInput))
+            broker.CallAsync(randomName, ExpectedArgumentsJson(randomInput)))
                 .ThrowsAsync(dependencyException);
 
         // when
@@ -114,7 +114,7 @@ Exception criticalDependencyException)
             .BeEquivalentTo(expectedExternalToolDependencyException);
 
         this.mcpBrokerMock.Verify(broker =>
-            broker.CallAsync(randomName, randomInput),
+            broker.CallAsync(randomName, ExpectedArgumentsJson(randomInput)),
                 Times.Once);
 
         this.loggingBrokerMock.Verify(broker =>
@@ -144,7 +144,7 @@ Exception criticalDependencyException)
                 innerException: invalidExternalToolException);
 
         this.mcpBrokerMock.Setup(broker =>
-            broker.CallAsync(randomName, randomInput))
+            broker.CallAsync(randomName, ExpectedArgumentsJson(randomInput)))
                 .ThrowsAsync(badRequestException);
 
         // when
@@ -160,7 +160,7 @@ Exception criticalDependencyException)
             .BeEquivalentTo(expectedExternalToolDependencyValidationException);
 
         this.mcpBrokerMock.Verify(broker =>
-            broker.CallAsync(randomName, randomInput),
+            broker.CallAsync(randomName, ExpectedArgumentsJson(randomInput)),
                 Times.Once);
 
         this.loggingBrokerMock.Verify(broker =>
@@ -191,7 +191,7 @@ Exception criticalDependencyException)
                 innerException: failedExternalToolServiceException);
 
         this.mcpBrokerMock.Setup(broker =>
-            broker.CallAsync(randomName, randomInput))
+            broker.CallAsync(randomName, ExpectedArgumentsJson(randomInput)))
                 .ThrowsAsync(serviceException);
 
         // when
@@ -207,7 +207,7 @@ Exception criticalDependencyException)
             .BeEquivalentTo(expectedExternalToolServiceException);
 
         this.mcpBrokerMock.Verify(broker =>
-            broker.CallAsync(randomName, randomInput),
+            broker.CallAsync(randomName, ExpectedArgumentsJson(randomInput)),
                 Times.Once);
 
         this.loggingBrokerMock.Verify(broker =>
