@@ -22,6 +22,7 @@
     "a-generous-budget-lets-the-run-finish",
     "guardian-screens-once-per-prompt",
     "open-circuit-falls-back-to-secondary",
+    "open-circuit-falls-back-on-the-native-protocol",
     "knowledge-retrieves-by-relevance",
     "request-schema-applies-when-unconfigured",
     "configured-contract-overrides-request-schema",
