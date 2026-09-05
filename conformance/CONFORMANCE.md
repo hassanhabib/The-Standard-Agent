@@ -160,7 +160,7 @@ the deterministic core of the Standard.
 | `gate-refusal-short-circuits` | A Gate refusal ends the run without reaching the Brain |
 | `constitution-binds-guardians` | A constitution reaches *both* guardian rubrics |
 | `consumption-replaces-policy` | A consumption skill replaces the policy in both, contract intact |
-| `audit-retains-every-run` | Beginning a run never discards a prior run's records (§4.7) |
+| `audit-retains-every-run` | Beginning a run never discards a prior run's records (§4.7); evidence of a prompt is its record's payload hash, or the payload itself when the deployment opted into payload capture |
 | `concurrent-runs-are-isolated` | Eight prompts at once on one instance; no record corrupts another |
 | `judge-receives-the-task` | The Judge scores against the task, not the candidate alone (§4.2) |
 | `redaction-covers-every-model-call` | Brain, Gate and Judge all see the token, never the value (§4.6) |

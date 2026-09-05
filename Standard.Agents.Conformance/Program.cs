@@ -922,8 +922,16 @@ static bool AuditConformant(Vector vector, List<AuditRecord> records, out string
     {
         foreach (string prompt in prompts)
         {
+            // Evidence of a prompt is its record: the payload itself when the deployment opted
+            // into payload capture, otherwise the payload's hash - the decision log is
+            // metadata by default (F-14), and a hash is proof the prompt was received without
+            // the prompt travelling to the sink.
+            string promptHash = Sha256Hex(prompt);
+
             bool retained = records.Any(record =>
-                record.Message.Contains(prompt, StringComparison.Ordinal));
+                record.Message.Contains(prompt, StringComparison.Ordinal)
+                    || record.Payload?.Contains(prompt, StringComparison.Ordinal) is true
+                    || record.PayloadHash == promptHash);
 
             if (retained is false)
             {
@@ -1480,6 +1488,13 @@ static List<string> ProfileRequirements(
 
 static string Show(string value) =>
     value.Replace("\n", "\\n").Replace("\r", "\\r");
+
+// The same fingerprint the decision log writes for a payload: SHA-256 of the UTF-8 bytes,
+// lowercase hex, on both targets.
+static string Sha256Hex(string value) =>
+    Convert.ToHexString(
+        System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(value)))
+            .ToLowerInvariant();
 
 static string FindRepositoryRoot()
 {
