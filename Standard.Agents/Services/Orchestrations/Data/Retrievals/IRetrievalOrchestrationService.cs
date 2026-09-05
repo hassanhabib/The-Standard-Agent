@@ -20,4 +20,11 @@ public interface IRetrievalOrchestrationService
 
     /// <summary>The passages that answer this prompt, best first.</summary>
     ValueTask<IReadOnlyList<string>> RetrieveGroundingAsync(string query);
+
+    /// <summary>
+    /// The remote tools the configured servers offer, discovered once and kept: what a run may
+    /// be offered beyond the tools the agent carries. Empty when there are none, or when their
+    /// server could not be asked — that failure was localized and logged where it happened.
+    /// </summary>
+    ValueTask<IReadOnlyList<Models.Brokers.Mcps.McpTool>> RetrieveRemoteToolsAsync();
 }

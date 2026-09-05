@@ -1,0 +1,21 @@
+{
+  "name": "an-enforced-offering-binds-a-remote-tool",
+  "description": "SPEC.md 4.15, enforced, over remote tools: with enforcement on, an act naming an advertised tool the run was not offered is denied at the Direction perimeter - told, non-terminal, recoverable - and a described remote tool is advertised like a local one, so the offering binds it the same way. A disobedient Brain names the withheld almanac; its server is never called, the denial reaches the Brain, and the run answers among what it was offered. The 2026-09-04 principal review (F-04) found enforcement checking the LOCAL advertised set only, so an unoffered remote call went through.",
+  "mcpServers": [
+    { "weather": "sunny in Seattle", "almanac": "plant in spring" }
+  ],
+  "extraSkills": [ "Available tools:\n{{tools}}" ],
+  "generatorReplies": [
+    "ACTION: almanac: when should I plant?",
+    "FINAL: I could not consult the almanac."
+  ],
+  "tools": {},
+  "prompt": "when should I plant?",
+  "selectTools": [ "weather" ],
+  "enforceSelection": true,
+  "expect": {
+    "resultContains": "could not consult",
+    "brainSees": "not offered to this run",
+    "mcpServerCalls": [ 0 ]
+  }
+}

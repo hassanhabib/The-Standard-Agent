@@ -6,10 +6,12 @@
 using FluentAssertions;
 using Moq;
 using Standard.Agents.Brokers.Knowledges;
+using Standard.Agents.Brokers.Mcps;
 using Standard.Agents.Brokers.Memorys;
 using Standard.Agents.Brokers.Skills;
 using Standard.Agents.Models.Brokers.Generators.V1;
 using Standard.Agents.Models.Clients.Agents;
+using Standard.Agents.Models.Brokers.Mcps;
 using Standard.Agents.Models.Foundations.Skills;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Tools;
@@ -238,5 +240,49 @@ public class SelectionEnforcementTests
         outcome.Status.Should().Be(AgentStatus.AwaitingInput);
         outcome.PendingEffect.Should().NotBeNull();
         outcome.PendingEffect!.ToolName.Should().Be("send_email");
+    }
+
+    // Found in the 2026-09-04 principal review (F-04): enforcement denied a withheld tool only
+    // when its name was in the LOCAL advertised set, so a disobedient brain could call an
+    // unoffered remote tool freely. A described remote tool is advertised like a local one, and
+    // an enforced offering binds it the same way.
+    [Fact]
+    public async Task ShouldDenyAnUnofferedRemoteToolWhenTheOfferingIsEnforcedAsync()
+    {
+        // given: the run is offered only the calculator, yet the brain names the remote almanac
+        var server = new Mock<IMcpBroker>();
+
+        server.Setup(broker => broker.ListToolsAsync())
+            .ReturnsAsync([new McpTool("almanac", "consults the stars")]);
+
+        server.Setup(broker => broker.CallAsync("almanac", It.IsAny<string>()))
+            .ReturnsAsync("the stars say yes");
+
+        var calculator = new NamedTool("calculator");
+        IReadOnlyList<ConversationMessage> secondTurnMessages = null!;
+
+        StandardAgent agent = AgentWith(
+            CallsThenAnswers(
+                "almanac",
+                "answered among what was offered",
+                messages => secondTurnMessages = messages),
+            calculator)
+            .UseMcp(server.Object)
+            .OnSelectTools((task, described) =>
+                new ValueTask<IReadOnlyList<string>>(new[] { "calculator" }))
+            .EnforceSelection();
+
+        // when
+        string result = await agent.ProcessPromptAsync("when should I plant?");
+
+        // then: the remote act never ran, the denial was told, and the run recovered
+        server.Verify(broker =>
+            broker.CallAsync(It.IsAny<string>(), It.IsAny<string>()),
+                Times.Never);
+
+        result.Should().Be("answered among what was offered");
+
+        secondTurnMessages.Should().Contain(message =>
+            message.Content != null && message.Content.Contains("not offered"));
     }
 }

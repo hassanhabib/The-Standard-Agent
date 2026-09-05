@@ -6,9 +6,11 @@
 using FluentAssertions;
 using Moq;
 using Standard.Agents.Brokers.Knowledges;
+using Standard.Agents.Brokers.Mcps;
 using Standard.Agents.Brokers.Memorys;
 using Standard.Agents.Brokers.Skills;
 using Standard.Agents.Models.Brokers.Generators.V1;
+using Standard.Agents.Models.Brokers.Mcps;
 using Standard.Agents.Models.Foundations.Skills;
 using Standard.Agents.Tools;
 using Xunit;
@@ -280,5 +282,50 @@ public class SelectionTests
         answer.Should().Be("hello!");
         shown.Should().Contain(definition => definition.Name == "web_search");
         shown.Should().NotContain(definition => definition.Name == "code_search");
+    }
+
+    // Found in the 2026-09-04 principal review (F-04): the selector judged over the LOCAL
+    // described names and the remote catalog was appended after selection ran, so OnSelectTools
+    // could neither see nor withhold a remote tool, the very case the how-to names as the
+    // motivation for selection: an agent with twenty MCP servers. Remote tools are discovered
+    // before selection and judged with the rest.
+    [Fact]
+    public async Task ShouldOfferTheSelectorRemoteToolsAndWithholdTheUnselectedOnesAsync()
+    {
+        // given: a server offering two described tools; the selector keeps one
+        var server = new Mock<IMcpBroker>();
+
+        server.Setup(broker => broker.ListToolsAsync())
+            .ReturnsAsync(
+            [
+                new McpTool("weather", "answers weather questions"),
+                new McpTool("almanac", "consults the stars")
+            ]);
+
+        IReadOnlyList<string> describedSeenBySelector = [];
+        string capturedSystemPrompt = string.Empty;
+
+        StandardAgent agent = TextAgentWith(async (systemPrompt, userPrompt) =>
+            {
+                capturedSystemPrompt = systemPrompt;
+
+                return "FINAL: done";
+            })
+            .UseMcp(server.Object)
+            .OnSelectTools((task, described) =>
+            {
+                describedSeenBySelector = described;
+
+                return new ValueTask<IReadOnlyList<string>>(new[] { "weather" });
+            });
+
+        // when
+        await agent.ProcessPromptAsync("will it rain in Seattle?");
+
+        // then: the selector saw both remote names, and only the offered line reached the model
+        describedSeenBySelector.Should().Contain("weather");
+        describedSeenBySelector.Should().Contain("almanac");
+        capturedSystemPrompt.Should().Contain("weather — answers weather questions");
+        capturedSystemPrompt.Should().NotContain("almanac");
     }
 }

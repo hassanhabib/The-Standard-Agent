@@ -432,6 +432,11 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         // Selection (SPEC.md §4.15): a scripted selector returning the vector's fixed set,
         // whatever the task — how the harness certifies that a run is offered only what a
         // selector named, with an empty list as the valid offered-nothing case.
+        if (vector.EnforceSelection)
+        {
+            agent.EnforceSelection();
+        }
+
         if (vector.SelectTools is not null)
         {
             agent.OnSelectTools((task, described) =>

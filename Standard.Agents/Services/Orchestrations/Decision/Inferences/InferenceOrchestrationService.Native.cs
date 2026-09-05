@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------
 
 using Standard.Agents.Models.Brokers.Generators.V1;
+using Standard.Agents.Models.Brokers.Mcps;
 using Standard.Agents.Models.Orchestrations.Agents;
 
 namespace Standard.Agents.Services.Orchestrations.Decision.Inferences;
@@ -85,7 +86,8 @@ public partial class InferenceOrchestrationService
     // is safe — and only Direction knows which words are whose.
     private IReadOnlyList<ToolDefinition> MergedTools(AgentContext context)
     {
-        IReadOnlyList<ToolDefinition> configured = this.toolDefinitions;
+        IReadOnlyList<ToolDefinition> configured =
+            [.. this.toolDefinitions, .. RemoteToolDefinitions()];
 
         // Selection (SPEC.md §4.15): the run is offered the selected subset of the agent's own
         // tools. Caller tools are the caller's vocabulary and are never selected away.
@@ -100,5 +102,20 @@ public partial class InferenceOrchestrationService
         return callerTools.Count == 0
             ? configured
             : [.. configured, .. callerTools];
+    }
+
+    // The servers' described tools this run discovered, advertised natively with the schema they
+    // declared, after the agent's own: a remote name the agent already carries is the local
+    // tool's. Native definitions used to be built from local tools alone, so a native brain was
+    // never told a remote tool existed (principal review 2026-09-04, F-03).
+    private IReadOnlyList<ToolDefinition> RemoteToolDefinitions()
+    {
+        IReadOnlyList<McpTool> remoteTools = Models.Loggings.AgentRun.Current?.RemoteTools ?? [];
+
+        return [.. remoteTools
+            .Where(tool => string.IsNullOrWhiteSpace(tool.Description) is false)
+            .Where(tool => this.toolDefinitions.Any(local =>
+                local.Name.Equals(tool.Name, StringComparison.OrdinalIgnoreCase)) is false)
+            .Select(tool => new ToolDefinition(tool.Name, tool.Description, tool.InputSchemaJson))];
     }
 }

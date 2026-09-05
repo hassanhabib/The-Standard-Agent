@@ -18,4 +18,10 @@ public interface IDataCoordinationService
     ValueTask<AgentSession?> RecallSessionAsync(string sessionId);
 
     ValueTask RecordSessionAsync(AgentSession session);
+
+    /// <summary>
+    /// The remote tools the agent's servers offer — part of what the agent HAS, so the loop can
+    /// judge them with the local tools when it decides what a run is offered (SPEC.md §4.15).
+    /// </summary>
+    ValueTask<IReadOnlyList<Models.Brokers.Mcps.McpTool>> RetrieveRemoteToolsAsync();
 }

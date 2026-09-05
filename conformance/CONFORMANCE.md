@@ -3,7 +3,7 @@
 A **language-neutral** set of behavioral test vectors that any Standard-Agents
 implementation runs to self-certify against
 [`SPEC.md`](https://github.com/hassanhabib/The-Standard-Agent-Specs/blob/main/SPEC.md).
-Seventy-four vectors, four readiness profiles, every vector proven able to fail.
+Seventy-six vectors, four readiness profiles, every vector proven able to fail.
 
 The vectors are the executable half of the specification. Prose can be read two ways; a vector
 cannot, which is why "conformant" here means *this suite passes* rather than *we believe we
@@ -75,6 +75,8 @@ capability it configures did not exist, which is why the early vectors still des
 | `streamed` | run the request through the streamed loop, which enforces every control the batched one does |
 | `streamedOutcome` | run the request through the third door (§4.14): the enumeration's events AND the structured outcome its completion carries, so `status` / `pendingEffectTool` certify on the streamed door too |
 | `selectTools` | a scripted selector (§4.15) returning this fixed set whatever the task; an empty list is the valid offered-nothing selection |
+| `enforceSelection` | the offering BINDS at the perimeter (§4.15, enforced): an unoffered advertised tool is denied rather than reachable |
+| `mcpToolSchemas` | what a scripted server declares its tools take, `{tool: inputSchemaJson}`; the rest take an open object |
 | `toolDescriptions` | gives stub tools descriptions — the advertisement opt-in (§6.1) — so what a run was OFFERED is observable in the catalog the Brain reads |
 | `toolNarrations` | a stub tool's declared narration templates, `{tool: {starting, observed}}` — `{tool}` and `{payload}` slots interpolate |
 | `gateVerdictOnNarration` | the verdict the scripted Gate returns for model narration — screened text that is neither the prompt nor a tool's output |
@@ -175,6 +177,8 @@ the deterministic core of the Standard.
 | `a-cost-budget-without-a-rate-refuses-to-compose` | A dollar bound with no rate computes zero forever; the document refuses and names the missing rate (§4.10) |
 | `an-endpoint-that-names-the-route-refuses-to-compose` | An apiUrl is the base the route is appended to; one that names the route, or drops its trailing slash, refuses and names apiUrl |
 | `a-remote-tools-schema-reaches-the-catalog` | A server's declared inputSchema rides the catalog line as the tool's parameters; the Brain is told how to call it, not only that it exists (§6.1) |
+| `a-selector-can-withhold-a-remote-tool` | Remote tools are discovered before selection and judged with the local ones; the withheld remote line reaches no model (§4.15) |
+| `an-enforced-offering-binds-a-remote-tool` | With enforcement on, an unoffered remote tool is denied at the perimeter, its server never called, and the run recovers (§4.15) |
 | `a-repeat-in-a-session-is-a-new-act` | Run-once is scoped to a run; a repeat in a later run performs (§4.9) |
 | `an-allow-list-can-say-where` | Permission is what **and where**; the tool names the scope (§4.9) |
 | `ask-first-covers-what-nothing-permitted` | A mode answers for the acts no permission mentioned (§4.9) |

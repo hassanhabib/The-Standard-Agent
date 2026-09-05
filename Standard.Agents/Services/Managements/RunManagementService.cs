@@ -10,6 +10,7 @@ using Standard.Agents.Brokers.Telemetries;
 using Standard.Agents.Brokers.Times;
 using Standard.Agents.Models.Brokers.Generators;
 using Standard.Agents.Models.Brokers.Generators.V1;
+using Standard.Agents.Models.Brokers.Mcps;
 using Standard.Agents.Models.Brokers.Sessions;
 using Standard.Agents.Models.Coordinations.Agents;
 using Standard.Agents.Models.Clients.Agents;
@@ -106,6 +107,19 @@ public partial class RunManagementService : IRunManagementService
 
         this.toolSelector = toolSelector;
         this.describedToolNames = [.. describedToolNames ?? []];
+    }
+
+    // The described names selection judges over: the agent's own, then its servers' — a
+    // description is the opt-in for both (SPEC.md §6.1), and a remote name the agent already
+    // carries locally is the local tool's: first to claim a name keeps it.
+    private IReadOnlyList<string> DescribedToolNames(IReadOnlyList<McpTool> remoteTools)
+    {
+        IEnumerable<string> remoteDescribedToolNames = remoteTools
+            .Where(tool => string.IsNullOrWhiteSpace(tool.Description) is false)
+            .Select(tool => tool.Name)
+            .Where(name => this.describedToolNames.Contains(name, StringComparer.OrdinalIgnoreCase) is false);
+
+        return [.. this.describedToolNames, .. remoteDescribedToolNames];
     }
 
     // Precedence, per field: configured → request → framework default
@@ -458,14 +472,29 @@ public partial class RunManagementService : IRunManagementService
         // the native tool list), and neither renderer should gain a parameter for it. Recorded,
         // because a review of a run that lacked a capability must see that it was withheld by
         // selection rather than missing from the agent.
+        // What the agent's servers offer, discovered once per composition and carried on the
+        // run: selection judges these with the local tools, the native tool list advertises
+        // them, and the perimeter binds them (SPEC.md §4.15). They used to join the catalog
+        // AFTER selection, so a selector could neither see nor withhold a remote tool
+        // (principal review 2026-09-04, F-04). A double that answered nothing is no servers.
+        IReadOnlyList<McpTool> remoteTools =
+            await this.dataCoordinationService.RetrieveRemoteToolsAsync() ?? [];
+
+        IReadOnlyList<string> describedToolNames = DescribedToolNames(remoteTools);
+
+        if (AgentRun.Current is AgentRun discoveringRun)
+        {
+            discoveringRun.RemoteTools = remoteTools;
+        }
+
         if (this.toolSelector is not null && AgentRun.Current is AgentRun selectingRun)
         {
             IReadOnlyList<string> chosen =
-                await this.toolSelector.SelectAsync(prompt, this.describedToolNames);
+                await this.toolSelector.SelectAsync(prompt, describedToolNames);
 
             // Names the agent does not carry are ignored, and the record below states the
             // TRUTH of the offering — never the selector's claim (SPEC.md §4.15).
-            IReadOnlyList<string> offered = [.. this.describedToolNames
+            IReadOnlyList<string> offered = [.. describedToolNames
                 .Where(name => chosen.Contains(name, StringComparer.OrdinalIgnoreCase))];
 
             selectingRun.OfferedTools = offered;
@@ -473,7 +502,7 @@ public partial class RunManagementService : IRunManagementService
             await this.loggingBroker.LogProcessAsync(
                 "Run",
                 $"Selection → offered [{string.Join(", ", offered)}]; withheld "
-                    + $"[{string.Join(", ", this.describedToolNames.Except(offered, StringComparer.OrdinalIgnoreCase))}]");
+                    + $"[{string.Join(", ", describedToolNames.Except(offered, StringComparer.OrdinalIgnoreCase))}]");
         }
 
         // Precedence resolved once, at the top of the run, and never again below it: a loop

@@ -6,9 +6,11 @@
 using FluentAssertions;
 using Moq;
 using Standard.Agents.Brokers.Knowledges;
+using Standard.Agents.Brokers.Mcps;
 using Standard.Agents.Brokers.Memorys;
 using Standard.Agents.Brokers.Skills;
 using Standard.Agents.Models.Brokers.Generators.V1;
+using Standard.Agents.Models.Brokers.Mcps;
 using Standard.Agents.Models.Foundations.Skills;
 using Standard.Agents.Tools;
 using Xunit;
@@ -254,5 +256,61 @@ public class NativeToolCallTests
 
         // then — reported usage is what the budget measures, not an estimate
         actualResult.Should().Contain("token budget");
+    }
+
+    // Found in the 2026-09-04 principal review (F-03): native tool definitions were built from
+    // local tools only, so a native brain was never told a remote tool existed. A described
+    // remote tool is advertised as a native definition carrying its schema, and a native call
+    // naming it routes to its server with the arguments as written.
+    [Fact]
+    public async Task ShouldAdvertiseDescribedRemoteToolsNativelyAndRouteTheCallAsync()
+    {
+        // given
+        string weatherSchema = """{"type":"object","properties":{"city":{"type":"string"}}}""";
+        string weatherArguments = """{"city":"Seattle"}""";
+        var server = new Mock<IMcpBroker>();
+
+        server.Setup(broker => broker.ListToolsAsync())
+            .ReturnsAsync([new McpTool("weather", "answers weather questions", weatherSchema)]);
+
+        server.Setup(broker => broker.CallAsync("weather", weatherArguments))
+            .ReturnsAsync("sunny");
+
+        IReadOnlyList<ToolDefinition> offeredDefinitions = [];
+        var tool = new CalculatorTool();
+
+        StandardAgent agent = AgentWith(tool, (tools, call) =>
+            {
+                offeredDefinitions = tools;
+
+                return call == 0
+                    ? new GenerationResult
+                    {
+                        ToolCalls =
+                        [
+                            new ModelToolCall(
+                                Id: "call_1",
+                                Name: "weather",
+                                ArgumentsJson: weatherArguments)
+                        ]
+                    }
+                    : new GenerationResult { Content = "It is sunny in Seattle." };
+            })
+            .UseMcp(server.Object);
+
+        // when
+        string actualResult = await agent.ProcessPromptAsync("what is the weather in Seattle?");
+
+        // then: the remote tool was offered natively with its schema, and its call reached it
+        offeredDefinitions.Should().Contain(definition =>
+            definition.Name == "weather"
+                && definition.Description == "answers weather questions"
+                && definition.ParametersJson == weatherSchema);
+
+        server.Verify(broker =>
+            broker.CallAsync("weather", weatherArguments),
+                Times.Once);
+
+        actualResult.Should().Be("It is sunny in Seattle.");
     }
 }

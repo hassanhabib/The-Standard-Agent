@@ -354,6 +354,15 @@ public partial class DirectionCoordinationService
     private bool DeniedBecauseSelectionWithheldIt(string toolName) =>
         this.enforceSelection
             && AgentRun.Current?.OfferedTools is { } offered
-            && this.advertisedToolNames.Contains(toolName)
+            && IsAdvertised(toolName)
             && offered.Contains(toolName, StringComparer.OrdinalIgnoreCase) is false;
+
+    // Advertised is what selection could have offered: the agent's described tools, and the
+    // described remote tools this run discovered. Enforcement used to check the local set alone,
+    // so an unoffered remote call went through (principal review 2026-09-04, F-04).
+    private bool IsAdvertised(string toolName) =>
+        this.advertisedToolNames.Contains(toolName)
+            || (AgentRun.Current?.RemoteTools ?? []).Any(tool =>
+                string.IsNullOrWhiteSpace(tool.Description) is false
+                    && tool.Name.Equals(toolName, StringComparison.OrdinalIgnoreCase));
 }

@@ -1,0 +1,21 @@
+{
+  "name": "a-selector-can-withhold-a-remote-tool",
+  "description": "SPEC.md 4.15 over remote tools: what an agent carries includes what its servers offer, so selection judges the remote catalog together with the local one. The selector keeps weather and withholds almanac; almanac's catalog line reaches no model, and the offered remote tool works exactly as before. The 2026-09-04 principal review (F-04) found the remote catalog appended AFTER selection ran, so a selector could neither see nor withhold a remote tool - the very case the how-to names as selection's motivation, an agent with twenty MCP servers.",
+  "mcpServers": [
+    { "weather": "sunny in Seattle", "almanac": "plant in spring" }
+  ],
+  "extraSkills": [ "Available tools:\n{{tools}}" ],
+  "generatorReplies": [
+    "ACTION: weather: Seattle",
+    "FINAL: sunny"
+  ],
+  "tools": {},
+  "prompt": "what is the weather in Seattle?",
+  "selectTools": [ "weather" ],
+  "expect": {
+    "resultContains": "sunny",
+    "brainSees": "scripted tool weather",
+    "brainNeverSees": "scripted tool almanac",
+    "mcpServerCalls": [ 1 ]
+  }
+}

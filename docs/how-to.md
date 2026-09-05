@@ -284,6 +284,12 @@ the way out, a native tool call's arguments reach the server as the JSON object 
 the text protocol's plain-text payload reaches it as the one argument `{ "input": "..." }`, which
 is what a tool with no schema understands.
 
+**Remote tools are the agent's tools.** A described remote tool is advertised to a native brain as
+a tool definition carrying its schema, judged by `.OnSelectTools(...)` beside the local names,
+and bound by `.EnforceSelection()` the same way. Discovery happens once per composition, at the
+top of the first run, and a server that is down at that moment offers nothing until the next
+run asks again.
+
 **Servers accumulate.** Like `.Tool(...)`, each `.Mcp(...)` call *adds* a server — the agent asks
 each server what it offers (`tools/list`) and routes every call to the server whose catalog owns
 the name. When two servers claim the same name, the **first registered wins** — deterministic,
@@ -1547,6 +1553,10 @@ Without selection, every described tool reaches every run: an agent with twenty 
 puts twenty catalogs in front of "Hello", the token cost scales with the catalog, and a model
 offered a tool will sometimes act on it because it was shown, not because the task needs it —
 the day narration went live, production watched a greeting run a web search six times.
+
+The described names the selector judges over are the agent's own **and** its servers': remote
+tools are discovered before selection runs, so those twenty catalogs are exactly what a selector
+can withhold, and an enforced offering binds a remote name the same way it binds a local one.
 
 ```csharp
 StandardAgent agent = new StandardAgent()
