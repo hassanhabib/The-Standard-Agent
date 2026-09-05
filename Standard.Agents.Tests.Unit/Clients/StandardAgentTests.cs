@@ -87,7 +87,7 @@ public partial class StandardAgentTests
         var memory = new Mock<IMemoryBroker>();
         memory.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
 
-        var agent = new StandardAgent(apiUrl: "invalid-url", apiKey: "key", model: "model")
+        var agent = new StandardAgent(apiUrl: "https://api.peerllm.invalid/v1/", apiKey: "key", model: "model")
             .UseSkills(skillBroker.Object)
             .UseMemory(memory.Object)
             .UseKnowledge(EmptyKnowledgeBroker());

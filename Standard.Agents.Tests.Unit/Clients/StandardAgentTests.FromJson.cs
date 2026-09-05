@@ -128,6 +128,40 @@ public class StandardAgentFromJsonTests
             .BeEquivalentTo(expectedInvalidAgentConfigurationException);
     }
 
+    // The document reaches the same verb code does, so the same URL shape is refused — and the
+    // refusal names the entry, because the author is looking at a JSON file, not a stack trace.
+    [Fact]
+    public void ShouldThrowInvalidAgentConfigurationExceptionOnFromJsonIfBrainApiUrlIsInvalid()
+    {
+        // given
+        var invalidAgentApiUrlException =
+            new InvalidAgentApiUrlException(
+                message:
+                    "Invalid agent API URL. An endpoint is the base the route is appended to: an "
+                        + "absolute http(s) URL ending with '/', such as "
+                        + "https://api.peerllm.com/v1/, that does not name chat/completions "
+                        + "itself.");
+
+        var expectedInvalidAgentConfigurationException =
+            new InvalidAgentConfigurationException(
+                message:
+                    "The 'brain' entry's 'apiUrl' is not an endpoint base the route can be "
+                        + "appended to. " + invalidAgentApiUrlException.Message,
+                innerException: invalidAgentApiUrlException);
+
+        // when
+        Action composeAction = () =>
+            StandardAgent.FromJson(
+                """{ "brain": { "apiUrl": "http://localhost:11434/v1/chat/completions", "apiKey": "k", "model": "m" } }""");
+
+        InvalidAgentConfigurationException actualInvalidAgentConfigurationException =
+            Assert.Throws<InvalidAgentConfigurationException>(composeAction);
+
+        // then
+        actualInvalidAgentConfigurationException.Should()
+            .BeEquivalentTo(expectedInvalidAgentConfigurationException);
+    }
+
     [Fact]
     public void ShouldRejectMalformedConfigurationJson()
     {
