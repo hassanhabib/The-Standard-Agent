@@ -146,6 +146,10 @@ Every change on `main` and every pull request runs:
 - **The full unit suite and the conformance vectors**, plus certification of the claimed profile.
 - **Dependency vulnerability audit**, transitively, failing the build on a finding.
 - **Dependency licence listing**, transitively.
+- **Dependency budget**: the shipped graph, transitively, is committed in
+  `licenses/dependency-budget.txt`, and a package that appears without that file changing fails
+  the build. The core's three runtime packages are `RESTFulSense`, `Xeption` and
+  `Microsoft.Extensions.Logging.Abstractions`; what they bring is what the budget lists.
 - **Secret scanning** over the diff.
 
 Every release additionally publishes:

@@ -171,6 +171,13 @@ jobs:
           -override licenses/package-overrides.json \
           -err
 
+    # The graph's SIZE is policy too: every package the three runtime dependencies bring,
+    # transitively, is committed in licenses/dependency-budget.txt, and a package that appears
+    # without that file changing fails the build. Growth is a reviewed decision, never a side
+    # effect of a version bump (F-22).
+    - name: Checking The Dependency Budget
+      run: bash scripts/dependency-budget.sh
+
     - name: Publishing The License Inventory
       uses: actions/upload-artifact@v4
       with:
