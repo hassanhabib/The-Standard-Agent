@@ -31,5 +31,5 @@ public partial class ExternalToolService : IExternalToolService
     });
 
     public ValueTask<IReadOnlyList<McpTool>> RetrieveToolsAsync() =>
-        throw new NotImplementedException();
+    TryCatch(async () => await this.mcpBroker.ListToolsAsync());
 }

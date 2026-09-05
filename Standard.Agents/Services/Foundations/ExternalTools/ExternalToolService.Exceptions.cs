@@ -11,13 +11,13 @@ namespace Standard.Agents.Services.Foundations.ExternalTools;
 
 public partial class ExternalToolService
 {
-    private delegate ValueTask<string> ReturningStringFunction();
+    private delegate ValueTask<T> ReturningFunction<T>();
 
-    private async ValueTask<string> TryCatch(ReturningStringFunction returningStringFunction)
+    private async ValueTask<T> TryCatch<T>(ReturningFunction<T> returningFunction)
     {
         try
         {
-            return await returningStringFunction();
+            return await returningFunction();
         }
         catch (InvalidExternalToolException invalidExternalToolException)
         {
