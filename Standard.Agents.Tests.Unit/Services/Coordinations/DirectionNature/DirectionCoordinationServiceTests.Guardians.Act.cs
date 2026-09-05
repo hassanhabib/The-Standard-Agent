@@ -6,6 +6,7 @@
 using FluentAssertions;
 using Moq;
 using Standard.Agents.Models.Orchestrations.Agents;
+using Standard.Agents.Brokers.Times;
 using Standard.Agents.Brokers.Policies;
 using Standard.Agents.Brokers.Approvals;
 using Standard.Agents.Brokers.Effects;
@@ -32,7 +33,8 @@ public partial class DirectionCoordinationServiceTests
                 new ApprovalService(
                     new NotConfiguredApprovalBroker(), this.loggingBrokerMock.Object),
                 new EffectLedgerService(
-                    new InMemoryEffectLedgerBroker(), this.loggingBrokerMock.Object),
+                    new InMemoryEffectLedgerBroker(), new TimeBroker(), this.loggingBrokerMock.Object),
+                new TimeBroker(),
                 this.loggingBrokerMock.Object),
             executionService: NewExecution(),
             loggingBroker: this.loggingBrokerMock.Object);
@@ -70,7 +72,8 @@ public partial class DirectionCoordinationServiceTests
                 new ApprovalService(
                     new NotConfiguredApprovalBroker(), this.loggingBrokerMock.Object),
                 new EffectLedgerService(
-                    new InMemoryEffectLedgerBroker(), this.loggingBrokerMock.Object),
+                    new InMemoryEffectLedgerBroker(), new TimeBroker(), this.loggingBrokerMock.Object),
+                new TimeBroker(),
                 this.loggingBrokerMock.Object),
             executionService: NewExecution(),
             loggingBroker: this.loggingBrokerMock.Object);

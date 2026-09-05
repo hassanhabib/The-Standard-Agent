@@ -5,6 +5,7 @@
 
 using System.Linq.Expressions;
 using Moq;
+using Standard.Agents.Brokers.Times;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Services.Foundations.ExternalTools;
@@ -53,7 +54,8 @@ public partial class DirectionCoordinationServiceTests
             new PolicyService(new NotConfiguredPolicyBroker(), this.loggingBrokerMock.Object),
             new ApprovalService(new NotConfiguredApprovalBroker(), this.loggingBrokerMock.Object),
             new EffectLedgerService(
-                new InMemoryEffectLedgerBroker(), this.loggingBrokerMock.Object),
+                new InMemoryEffectLedgerBroker(), new TimeBroker(), this.loggingBrokerMock.Object),
+            new TimeBroker(),
             this.loggingBrokerMock.Object);
 
     private ExecutionOrchestrationService NewExecution() =>

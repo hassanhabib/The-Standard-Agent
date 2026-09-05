@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using Standard.Agents.Models.Brokers.Effects;
 using Standard.Agents.Models.Foundations.EffectLedgers.Exceptions;
 using Standard.Agents.Models.Orchestrations.Effects;
 
@@ -15,6 +16,26 @@ public partial class EffectLedgerService
     private static void ValidateEffect(AgentEffect effect)
     {
         if (effect is null || string.IsNullOrWhiteSpace(effect.ToolName))
+        {
+            throw new InvalidEffectLedgerException(
+                message: "Invalid effect ledger. Please correct the error and try again.");
+        }
+    }
+
+    private static void ValidateKey(string idempotencyKey)
+    {
+        if (string.IsNullOrWhiteSpace(idempotencyKey))
+        {
+            throw new InvalidEffectLedgerException(
+                message: "Invalid effect ledger. Please correct the error and try again.");
+        }
+    }
+
+    // Compensation is recorded against an act the ledger knows; marking an act it never saw
+    // would invent a history for it.
+    private static void ValidateRecordExists(EffectRecord? record)
+    {
+        if (record is null)
         {
             throw new InvalidEffectLedgerException(
                 message: "Invalid effect ledger. Please correct the error and try again.");

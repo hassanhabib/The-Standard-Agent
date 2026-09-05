@@ -4,51 +4,25 @@
 // ---------------------------------------------------------------
 
 using System.Collections.Concurrent;
-using Standard.Agents.Models.Orchestrations.Effects;
+using Standard.Agents.Models.Brokers.Effects;
 
 namespace Standard.Agents.Brokers.Effects;
 
-// Run-once within one agent instance. That is the whole scope, and saying so is the point:
-// it covers a retry inside a run and a repeat proposal across turns, which is where duplicate
-// effects actually come from today. It does NOT survive a process restart — cross-process
-// run-once needs a durable ledger, which arrives with the session store.
-//
-// A host that needs the stronger guarantee now swaps this broker for one over its own store;
-// that is what the seam is for (SPEC.md §4.1).
+// The built-in ledger: one process, one lifetime. Run-once holds within the instance; nothing
+// here survives it, which is what .EffectLedger(path) and UseEffectLedger(...) are for.
 public sealed class InMemoryEffectLedgerBroker : IEffectLedgerBroker
 {
-    private readonly ConcurrentDictionary<string, string?> outcomesByKey = new();
+    private readonly ConcurrentDictionary<string, EffectRecord> recordsByKey = new();
 
-    public ValueTask<string?> SelectOutcomeAsync(AgentEffect effect)
-    {
-        // Claim the key and report the prior outcome in one step, so two concurrent runs
-        // proposing the same act cannot both decide they are the first.
-        bool isFirst = this.outcomesByKey.TryAdd(effect.IdempotencyKey, null);
+    public async ValueTask<bool> InsertClaimAsync(EffectRecord claim) =>
+        this.recordsByKey.TryAdd(claim.IdempotencyKey, claim);
 
-        if (isFirst)
-        {
-            return ValueTask.FromResult<string?>(null);
-        }
+    public async ValueTask<EffectRecord?> SelectRecordAsync(string idempotencyKey) =>
+        this.recordsByKey.GetValueOrDefault(idempotencyKey);
 
-        this.outcomesByKey.TryGetValue(effect.IdempotencyKey, out string? outcome);
+    public async ValueTask UpdateRecordAsync(EffectRecord record) =>
+        this.recordsByKey[record.IdempotencyKey] = record;
 
-        return ValueTask.FromResult<string?>(outcome ?? "effect already in progress");
-    }
-
-    public ValueTask InsertOutcomeAsync(AgentEffect effect, string outcome)
-    {
-        this.outcomesByKey[effect.IdempotencyKey] = outcome;
-
-        return ValueTask.CompletedTask;
-    }
-
-    // Only an unfinished claim is given back. A key that already carries an outcome names an act
-    // that happened, and forgetting that would turn run-once back into run-again.
-    public ValueTask DeleteClaimAsync(AgentEffect effect)
-    {
-        this.outcomesByKey.TryRemove(
-            new KeyValuePair<string, string?>(effect.IdempotencyKey, null));
-
-        return ValueTask.CompletedTask;
-    }
+    public async ValueTask DeleteRecordAsync(string idempotencyKey) =>
+        this.recordsByKey.TryRemove(idempotencyKey, out _);
 }

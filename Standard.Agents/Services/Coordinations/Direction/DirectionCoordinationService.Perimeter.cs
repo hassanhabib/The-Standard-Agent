@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------
 
 using Standard.Agents.Brokers.Approvals;
+using Standard.Agents.Models.Brokers.Effects;
 using Standard.Agents.Models.Loggings;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Models.Orchestrations.Effects;
@@ -85,16 +86,22 @@ public partial class DirectionCoordinationService
             return Denied(context, denial);
         }
 
-        // 2 — record the intent, and learn whether this act already happened
-        string? priorOutcome = await this.perimeterService.ClaimAsync(effect);
+        // 2 — record the intent, and learn what the ledger knows about this act
+        EffectClaim claim = await this.perimeterService.ClaimAsync(effect);
 
-        if (priorOutcome is not null)
+        switch (claim.Verdict)
         {
-            await this.loggingBroker.LogProcessAsync(
-                "Direction",
-                $"Run-once → '{effect.ToolName}' already ran; replaying its outcome");
+            case EffectClaimVerdict.Replay:
+                return Observed(context, claim.Outcome ?? string.Empty);
 
-            return Observed(context, priorOutcome);
+            case EffectClaimVerdict.InProgress:
+                return Denied(
+                    context,
+                    $"'{effect.ToolName}' is already in progress in another run; it was not "
+                        + "performed again. Wait for that run, or answer with what you know.");
+
+            case EffectClaimVerdict.Unreconciled:
+                return Unreconciled(context, effect, claim.Record!);
         }
 
         // 3 — approve, if required
@@ -144,17 +151,35 @@ public partial class DirectionCoordinationService
             }
         }
 
-        // 4 — execute
-        string output = await RunToolAsync(context);
+        // 4 — execute. A tool that throws leaves the world in an unknown state, and the ledger
+        // says so: the claim is marked failed, never released, so a repeat is held rather than
+        // performed blind (F-08).
+        string output;
+
+        try
+        {
+            output = await RunToolAsync(context);
+        }
+        catch (Exception exception)
+        {
+            await this.perimeterService.RecordFailureAsync(effect, exception.Message);
+
+            throw;
+        }
+
+        // Remember that this run performed it, so it can be unwound - before the outcome is
+        // recorded, because the store can fail after the act succeeded, and an act that happened
+        // must still be compensable. Only here: an effect denied, held for approval, or replayed
+        // from the ledger returned above and was never performed by this run, and compensating it
+        // would undo something this run did not do (SPEC.md §4.9).
+        AgentRun.Current?.RecordPerformed(
+            new PerformedEffect(effect.ToolName, effect.Arguments, output)
+            {
+                IdempotencyKey = effect.IdempotencyKey
+            });
 
         // 5 — record the outcome, before the loop advances
         await this.perimeterService.RecordOutcomeAsync(effect, output);
-
-        // Remember that this run performed it, so it can be unwound. Only here: an effect denied,
-        // held for approval, or replayed from the ledger returned above and was never performed by
-        // this run, and compensating it would undo something this run did not do (SPEC.md §4.9).
-        AgentRun.Current?.RecordPerformed(
-            new PerformedEffect(effect.ToolName, effect.Arguments, output));
 
         await this.loggingBroker.LogPayloadAsync(
             "Direction", $"Tool '{effect.ToolName}' input", context.Payload, detail: true);
@@ -244,12 +269,22 @@ public partial class DirectionCoordinationService
 
         try
         {
+            // The intent goes on the record before the reversal is attempted (F-08): a process
+            // that dies between the two leaves a ledger that says compensation was owed, which
+            // is reconcilable, rather than one that says the act simply stands.
+            await this.perimeterService.RecordCompensationIntentAsync(effect.IdempotencyKey);
+
             string reversal = await this.executionService.CompensateAsync(
                 effect.ToolName, effect.Arguments, effect.Outcome);
 
-            return string.IsNullOrEmpty(reversal)
-                ? new CompensationOutcome(effect.ToolName, Undone: false, Detail: stands)
-                : new CompensationOutcome(effect.ToolName, Undone: true, Detail: reversal);
+            if (string.IsNullOrEmpty(reversal))
+            {
+                return new CompensationOutcome(effect.ToolName, Undone: false, Detail: stands);
+            }
+
+            await this.perimeterService.RecordCompensationAsync(effect.IdempotencyKey, reversal);
+
+            return new CompensationOutcome(effect.ToolName, Undone: true, Detail: reversal);
         }
         catch (Exception)
         {
@@ -259,6 +294,25 @@ public partial class DirectionCoordinationService
 
     private ValueTask<string> RunToolAsync(AgentContext context) =>
         this.executionService.RunAsync(context.DirectionType, context.Payload);
+
+    // An earlier attempt whose fate is unknown ends the turn waiting on the caller (SPEC.md
+    // §4.9, §4.11): the act travels as the pending effect, key included, so whoever holds the
+    // ledger can check the world, record the real outcome or release the claim, and resume.
+    // Performing it blind could do it twice; presuming it done could leave it never done.
+    private static AgentContext Unreconciled(
+        AgentContext context,
+        AgentEffect effect,
+        EffectRecord record) =>
+        context with
+        {
+            Result =
+                $"'{effect.ToolName}' has an earlier attempt in the ledger with no usable outcome "
+                    + $"(state: {record.State}, claimed {record.ClaimedOn:u}); reconcile the "
+                    + "ledger against the world - record the real outcome, or release the claim - "
+                    + "before this act can run again.",
+            PendingEffect = effect,
+            Status = AgentStatus.AwaitingInput
+        };
 
     // A denial is non-terminal: the agent is told and may choose a permitted path on the next
     // turn, exactly as it recovers from a malformed call (SPEC.md §4.6, §4.9).

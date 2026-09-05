@@ -15,4 +15,11 @@ namespace Standard.Agents.Models.Loggings;
 /// the ledger was never performed by this run, and compensating it would undo something this run
 /// did not do.
 /// </remarks>
-public sealed record PerformedEffect(string ToolName, string Arguments, string Outcome);
+public sealed record PerformedEffect(string ToolName, string Arguments, string Outcome)
+{
+    /// <summary>
+    /// The act's line in the ledger, so compensating it can be recorded against the same record
+    /// that says it happened (SPEC.md §4.9). Empty when the act was performed without a ledger.
+    /// </summary>
+    public string IdempotencyKey { get; init; } = "";
+}

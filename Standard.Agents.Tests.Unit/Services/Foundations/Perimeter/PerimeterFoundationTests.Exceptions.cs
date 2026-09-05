@@ -6,6 +6,7 @@
 using FluentAssertions;
 using Moq;
 using Standard.Agents.Brokers.Approvals;
+using Standard.Agents.Models.Brokers.Effects;
 using Standard.Agents.Models.Foundations.Approvals.Exceptions;
 using Standard.Agents.Models.Foundations.EffectLedgers.Exceptions;
 using Standard.Agents.Models.Foundations.Policys.Exceptions;
@@ -130,7 +131,7 @@ public partial class PerimeterFoundationTests
                 innerException: failedEffectLedgerDependencyException);
 
         this.effectLedgerBrokerMock.Setup(broker =>
-            broker.InsertOutcomeAsync(It.IsAny<AgentEffect>(), It.IsAny<string>()))
+            broker.UpdateRecordAsync(It.IsAny<EffectRecord>()))
                 .ThrowsAsync(ioException);
 
         // when
@@ -149,7 +150,11 @@ public partial class PerimeterFoundationTests
                     Times.Once);
 
         this.effectLedgerBrokerMock.Verify(broker =>
-            broker.InsertOutcomeAsync(randomEffect, randomOutcome),
+            broker.SelectRecordAsync(randomEffect.IdempotencyKey),
+                Times.Once);
+
+        this.effectLedgerBrokerMock.Verify(broker =>
+            broker.UpdateRecordAsync(It.IsAny<EffectRecord>()),
                 Times.Once);
 
         this.effectLedgerBrokerMock.VerifyNoOtherCalls();
@@ -157,11 +162,15 @@ public partial class PerimeterFoundationTests
     }
 
     [Fact]
-    public async Task ShouldThrowCriticalDependencyExceptionOnRetrieveOutcomeIfAccessDeniedAsync()
+    public async Task ShouldThrowCriticalDependencyExceptionOnClaimEffectIfAccessDeniedAsync()
     {
         // given
         AgentEffect randomEffect = CreateRandomEffect();
         var unauthorizedAccessException = new UnauthorizedAccessException();
+
+        this.timeBrokerMock.Setup(broker =>
+            broker.GetCurrentDateTimeOffset())
+                .Returns(CreateRandomDateTimeOffset());
 
         var failedEffectLedgerDependencyException =
             new FailedEffectLedgerDependencyException(
@@ -174,15 +183,15 @@ public partial class PerimeterFoundationTests
                 innerException: failedEffectLedgerDependencyException);
 
         this.effectLedgerBrokerMock.Setup(broker =>
-            broker.SelectOutcomeAsync(It.IsAny<AgentEffect>()))
+            broker.InsertClaimAsync(It.IsAny<EffectRecord>()))
                 .ThrowsAsync(unauthorizedAccessException);
 
         // when
-        ValueTask<string?> retrieveTask =
-            this.effectLedgerService.RetrieveOutcomeAsync(randomEffect);
+        ValueTask<EffectRecord?> claimTask =
+            this.effectLedgerService.ClaimEffectAsync(randomEffect);
 
         EffectLedgerDependencyException actualException =
-            await Assert.ThrowsAsync<EffectLedgerDependencyException>(retrieveTask.AsTask);
+            await Assert.ThrowsAsync<EffectLedgerDependencyException>(claimTask.AsTask);
 
         // then
         actualException.Should().BeEquivalentTo(expectedEffectLedgerDependencyException);
@@ -193,7 +202,7 @@ public partial class PerimeterFoundationTests
                     Times.Once);
 
         this.effectLedgerBrokerMock.Verify(broker =>
-            broker.SelectOutcomeAsync(randomEffect),
+            broker.InsertClaimAsync(It.IsAny<EffectRecord>()),
                 Times.Once);
 
         this.effectLedgerBrokerMock.VerifyNoOtherCalls();
