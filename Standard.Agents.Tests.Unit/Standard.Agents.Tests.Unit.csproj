@@ -33,6 +33,11 @@
          just documentation. Copied next to the assembly so PackageReadmeTests can read the same
          bytes that get packed. -->
     <None Include="..\README.md" Link="README.md" CopyToOutputDirectory="PreserveNewest" />
+
+    <!-- The endpoints these documents teach are composed through the real builder by
+         DocumentedApiUrlTests, so a documented URL the builder refuses fails here. -->
+    <None Include="..\docs\hosting.md" Link="docs\hosting.md" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\docs\how-to.md" Link="docs\how-to.md" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
