@@ -498,7 +498,25 @@
          (EnforceSelection, AdvertisedTools - derived from the same 6.1 rendering the catalogs
          use). Spec-first: tracks SPEC.md v1.12 (SS4.15). New routines and models: segment 2
          advances, 3/4 reset. -->
-    <Version>1.16.0.0</Version>
+    <!-- 2.0.0.0 "A Turn Carries Its Work": a turn was a prompt and an answer, so the calls an
+         agent made in order to answer were dropped at the save and could never be recalled.
+         Sessions and native tool calling each worked; the seam between them lost the tool work,
+         and no vector covered the pair - every multi-turn vector runs with no tools, and vector
+         63 proves only that a prior turn's TEXT reaches the Brain. Two symptoms, one missing
+         field: a session forgot what it had already done, and a caller holding a stateless
+         conversation had nowhere to put a finished call except the CURRENT turn's exchange list,
+         where a call already made reads as evidence for the prompt being asked now (the
+         motivating production finding: an editor plugin's agent kept reporting a file edited on
+         every follow-up, because the edit from turn one was replayed under turn two's prompt).
+         AgentTurn.Exchanges carries a turn's own calls; BuildConversation emits them inside that
+         turn, between the prompt that asked for them and the answer they produced;
+         SaveSessionAsync persists them; AgentTurnV1 carries them on the wire so a stateless
+         caller can say which turn a call belongs to. Additive: the shipped constructor,
+         Deconstruct, Prompt and Answer are untouched, so no consumer must react. Certified by
+         vectors 78 and 79, which fail against a build with the fix suppressed while all 77
+         pre-existing vectors pass against that same build. Spec-first: tracks SPEC.md v1.13
+         (SS3.2, SS4.11, SS6.2). The model shape changed: segment 1 advances, 2/3/4 reset. -->
+    <Version>2.0.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>

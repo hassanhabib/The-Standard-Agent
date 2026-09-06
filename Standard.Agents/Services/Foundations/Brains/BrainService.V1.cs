@@ -66,6 +66,15 @@ public partial class BrainService
                 Content = turn.Prompt
             };
 
+            // A past turn's calls belong inside that turn, between the prompt that asked for
+            // them and the answer they produced. Held back and flushed after the CURRENT
+            // prompt they read as this turn's evidence, which is how a finished edit becomes a
+            // claim that the file was just edited (SPEC.md 4.11).
+            foreach (ConversationMessage replayed in Replayed(turn.Exchanges))
+            {
+                yield return replayed;
+            }
+
             yield return new ConversationMessage
             {
                 Role = MessageRole.Assistant,
@@ -79,29 +88,9 @@ public partial class BrainService
             Content = context.Prompt
         };
 
-        // Native calls go back as what they were: the assistant's request, then the tool's answer
-        // naming the call it answers (SPEC.md §6). This is the shape hosted models are trained on,
-        // and it is the reason the id exists — narrating "calculator: 4183" would leave the model
-        // matching answers to questions by reading.
-        foreach (ToolExchange exchange in context.ToolExchanges)
+        foreach (ConversationMessage replayed in Replayed(context.ToolExchanges))
         {
-            yield return new ConversationMessage
-            {
-                Role = MessageRole.Assistant,
-
-                ToolCalls =
-                [
-                    new ModelToolCall(
-                        exchange.CallId, exchange.ToolName, exchange.ArgumentsJson)
-                ]
-            };
-
-            yield return new ConversationMessage
-            {
-                Role = MessageRole.Tool,
-                ToolCallId = exchange.CallId,
-                Content = exchange.Result
-            };
+            yield return replayed;
         }
 
         // What is left is everything the exchanges do not already carry — a denial, a screening
@@ -122,6 +111,35 @@ public partial class BrainService
                 Role = MessageRole.Assistant,
                 Content = "Observations so far:\n"
                     + string.Join('\n', narrated.Select(o => $"- {o}"))
+            };
+        }
+    }
+
+    // Native calls go back as what they were: the assistant's request, then the tool's answer
+    // naming the call it answers (SPEC.md 6). This is the shape hosted models are trained on, and
+    // it is the reason the id exists. Narrating "calculator: 4183" would leave the model matching
+    // answers to questions by reading.
+    private static IEnumerable<ConversationMessage> Replayed(
+        IReadOnlyList<ToolExchange> exchanges)
+    {
+        foreach (ToolExchange exchange in exchanges)
+        {
+            yield return new ConversationMessage
+            {
+                Role = MessageRole.Assistant,
+
+                ToolCalls =
+                [
+                    new ModelToolCall(
+                        exchange.CallId, exchange.ToolName, exchange.ArgumentsJson)
+                ]
+            };
+
+            yield return new ConversationMessage
+            {
+                Role = MessageRole.Tool,
+                ToolCallId = exchange.CallId,
+                Content = exchange.Result
             };
         }
     }

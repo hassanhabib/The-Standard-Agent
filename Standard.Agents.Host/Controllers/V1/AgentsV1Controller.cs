@@ -84,7 +84,15 @@ public class AgentsV1Controller : ControllerBase
             SessionId = request.SessionId,
 
             History = [.. request.History.Select(turn =>
-                new AgentTurn(turn.Prompt, turn.Answer))],
+                new AgentTurn(turn.Prompt, turn.Answer)
+                {
+                    Exchanges = [.. turn.Exchanges.Select(exchange =>
+                        new ToolExchange(
+                            exchange.CallId,
+                            exchange.ToolName,
+                            exchange.ArgumentsJson,
+                            exchange.Result))]
+                })],
 
             ToolExchanges = [.. request.ToolExchanges.Select(exchange =>
                 new ToolExchange(

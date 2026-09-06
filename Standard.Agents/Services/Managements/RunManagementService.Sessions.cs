@@ -165,7 +165,17 @@ public partial class RunManagementService
             new AgentSession
             {
                 Id = context.SessionId,
-                History = [.. existing?.History ?? [], new AgentTurn(context.Prompt, context.Result)],
+                // What the turn DID travels with what it said. Recording the answer alone was
+                // lossy in a way nothing errored on: the history reloaded, the run completed, and
+                // the calls that produced the answer were simply gone (SPEC.md 4.11, SPEC.md 6).
+                History =
+                [
+                    .. existing?.History ?? [],
+                    new AgentTurn(context.Prompt, context.Result)
+                    {
+                        Exchanges = context.ToolExchanges
+                    }
+                ],
                 Status = context.Status,
                 RunId = AgentRun.Current?.Id ?? string.Empty,
 

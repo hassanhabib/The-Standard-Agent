@@ -1,0 +1,27 @@
+{
+  "name": "a-session-carries-a-turns-tool-call",
+  "description": "SPEC.md 4.11 and SPEC.md 6 together, which is where they were never certified as a pair. A turn is not only what was said; it is what the agent did in order to be able to say it. A session that records the answer and drops the call that produced it tells the next prompt that the agent answered and never how, so the agent forgets what it already did. Every other multi-turn vector runs with no tools and vector 29 runs a single prompt, so the seam between sessions and native tool calling was covered by nothing. Two prompts share a session; the first calls the tool, and the second must still be handed that call and the answer naming it.",
+  "generatorReplies": [],
+  "nativeReplies": [
+    {
+      "toolCalls": [
+        {
+          "id": "call_7",
+          "name": "calculator",
+          "argumentsJson": "{\"expression\":\"47*89\"}"
+        }
+      ]
+    },
+    { "content": "4183" },
+    { "content": "I multiplied 47 by 89." }
+  ],
+  "tools": { "calculator": "4183" },
+  "prompt": "what is 47 times 89?",
+  "prompts": ["what is 47 times 89?", "how did you get that?"],
+  "sessionId": "conformance-session-tools",
+  "expect": {
+    "result": "I multiplied 47 by 89.",
+    "toolRunCount": { "calculator": 1 },
+    "toolResultAnswersCall": "call_7"
+  }
+}
