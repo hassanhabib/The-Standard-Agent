@@ -447,7 +447,8 @@ public sealed partial class StandardAgent
                 new EffectLedgerService(
                     this.effectLedgerBroker ?? new InMemoryEffectLedgerBroker(),
                     new TimeBroker(),
-                    logging),
+                    logging,
+                    this.effectLease),
                 new TimeBroker(),
                 logging),
             new ExecutionOrchestrationService(

@@ -369,6 +369,12 @@ public partial class StandardAgent
 
                 break;
 
+            case "effectLeaseSeconds":
+                agent.EffectLease(
+                    TimeSpan.FromSeconds(PositiveNumber(Number(value, key), key)));
+
+                break;
+
             case "screenToolOutput" when Truth(value, key):
                 agent.ScreenToolOutput();
 
@@ -679,6 +685,12 @@ public partial class StandardAgent
 
     private static double Number(JsonNode? node, string key, string property, double fallback) =>
         NumberNode(node, key, property)?.GetValue<double>() ?? fallback;
+
+    private static double Number(JsonNode? node, string key) =>
+        node?.GetValueKind() is JsonValueKind.Number
+            ? node.GetValue<double>()
+            : throw new InvalidAgentConfigurationException(
+                $"'{key}' must be a number.");
 
     private static int Whole(JsonNode? node, string key) =>
         node?.GetValueKind() is JsonValueKind.Number
