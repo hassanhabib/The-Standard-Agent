@@ -203,6 +203,56 @@ public class EffectLedgerReconciliationTests : IDisposable
         actualOutcome.Result.Should().Be("already paid");
     }
 
+    // The lease is how long an in-flight claim is presumed live; a deployment whose tools take
+    // longer than the default five minutes, or far less, says so once at composition.
+    [Fact]
+    public async Task ShouldClaimUnderTheConfiguredLeaseAsync()
+    {
+        // given
+        var ledger = new CapturingLedger();
+        var tool = new CountingTool();
+        TimeSpan configuredLease = TimeSpan.FromSeconds(30);
+
+        StandardAgent agent = NewProcess(ledger, tool, Proposal, "FINAL: paid")
+            .EffectLease(configuredLease);
+
+        // when
+        AgentOutcome actualOutcome =
+            await agent.RunAsync(Request("pay the invoice"), CancellationToken.None);
+
+        // then — the act's claim was written for exactly the configured window
+        actualOutcome.Status.Should().Be(AgentStatus.Responded);
+        tool.ExecutionCount.Should().Be(1);
+
+        EffectRecord actualClaim = ledger.Claims.Should().ContainSingle().Subject;
+        (actualClaim.LeaseUntil - actualClaim.ClaimedOn).Should().Be(configuredLease);
+        actualClaim.ToolName.Should().Be("wire_transfer");
+    }
+
+    // Keeps every claim the agent writes, so a test can read the lease it was written under.
+    private sealed class CapturingLedger : IEffectLedgerBroker
+    {
+        private readonly InMemoryEffectLedgerBroker store = new();
+
+        public List<EffectRecord> Claims { get; } = [];
+
+        public ValueTask<bool> InsertClaimAsync(EffectRecord claim)
+        {
+            this.Claims.Add(claim);
+
+            return this.store.InsertClaimAsync(claim);
+        }
+
+        public ValueTask<EffectRecord?> SelectRecordAsync(string idempotencyKey) =>
+            this.store.SelectRecordAsync(idempotencyKey);
+
+        public ValueTask UpdateRecordAsync(EffectRecord record) =>
+            this.store.UpdateRecordAsync(record);
+
+        public ValueTask DeleteRecordAsync(string idempotencyKey) =>
+            this.store.DeleteRecordAsync(idempotencyKey);
+    }
+
     [Fact]
     public async Task ShouldRecordAFailedAttemptAndHoldItsRepeatAsync()
     {

@@ -105,6 +105,7 @@ public partial class StandardAgentFromJsonTests
     [InlineData(
         """{ "mcp": { "endpointUrl": "http://mcp.test/", "timeoutSeconds": 0 } }""",
         "'mcp.timeoutSeconds' must be a positive number.")]
+    [InlineData("""{ "effectLeaseSeconds": 0 }""", "'effectLeaseSeconds' must be a positive number.")]
     public void ShouldThrowInvalidAgentConfigurationExceptionOnFromJsonIfALimitIsNotPositive(
         string json,
         string expectedMessage) =>
