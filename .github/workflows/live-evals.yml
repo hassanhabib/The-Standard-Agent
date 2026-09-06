@@ -1,0 +1,50 @@
+name: Standard.Agents Live Evals
+
+# The live evals: the same agent loop against LLooMA on PeerLLM and real skills from the PeerLLM
+# registry. Opt-in and outside the PR gate on purpose: a live model is not deterministic, a run
+# costs time on the network, and a flake in a required gate is a gate nobody trusts (principal
+# review 2026-09-04, F-19). Every prompt is sampled several times, a metric is a pass rate, and
+# the report records which model, which skillset version and which framework answered.
+#
+# Needs one repository secret: PEERLLM_API_KEY. Without it the run exits 3 and fails, so a
+# missing key never reads as a pass.
+on:
+  workflow_dispatch:
+    inputs:
+      samples:
+        description: "How many times each prompt is sampled"
+        required: false
+        default: "3"
+  schedule:
+    - cron: "0 6 * * 1"
+
+jobs:
+  live-evals:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Pulling Code
+      uses: actions/checkout@v7
+
+    - name: Installing .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        global-json-file: global.json
+
+    - name: Building The Live Evals
+      run: dotnet build Standard.Agents.Evals.Live --configuration Release
+
+    - name: Evaluating LLooMA And The Registry Skills
+      env:
+        PEERLLM_API_KEY: ${{ secrets.PEERLLM_API_KEY }}
+      run: >
+        dotnet run --project Standard.Agents.Evals.Live --no-build --configuration Release
+        -- --samples ${{ github.event.inputs.samples || '3' }} --report artifacts/live-evals/report.json
+
+    - name: Publishing The Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: live-evals-report
+        path: artifacts/live-evals/report.json
+        if-no-files-found: ignore
