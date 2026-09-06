@@ -70,5 +70,17 @@ public sealed record AgentSession
     public long Version { get; init; }
 }
 
-/// <summary>One exchange: what was asked, and what came back.</summary>
-public sealed record AgentTurn(string Prompt, string Answer);
+/// <summary>One exchange: what was asked, what came back, and the work that produced it.</summary>
+public sealed record AgentTurn(string Prompt, string Answer)
+{
+    /// <summary>The native calls this turn made and what they returned, oldest first.</summary>
+    /// <remarks>
+    /// A turn is not only what was said. It is what the agent did in order to be able to say it,
+    /// and a history that keeps the answer while dropping the call that produced it tells the next
+    /// prompt that the agent answered but never how. A caller that holds the conversation itself
+    /// then has nowhere to put a finished call except the current turn's exchange list, where it
+    /// reads as this turn's evidence rather than as something already done (SPEC.md 4.11, SPEC.md 6).
+    /// Empty for a turn that called nothing, which is every turn the text protocol produces.
+    /// </remarks>
+    public IReadOnlyList<ToolExchange> Exchanges { get; init; } = [];
+}

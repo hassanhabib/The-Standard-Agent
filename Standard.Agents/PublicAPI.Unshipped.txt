@@ -218,3 +218,5 @@ static Standard.Agents.Models.Brokers.Effects.EffectRecord.operator !=(Standard.
 static Standard.Agents.Models.Brokers.Effects.EffectRecord.operator ==(Standard.Agents.Models.Brokers.Effects.EffectRecord? left, Standard.Agents.Models.Brokers.Effects.EffectRecord? right) -> bool
 static Standard.Agents.Models.Orchestrations.Effects.EffectClaim.operator !=(Standard.Agents.Models.Orchestrations.Effects.EffectClaim? left, Standard.Agents.Models.Orchestrations.Effects.EffectClaim? right) -> bool
 static Standard.Agents.Models.Orchestrations.Effects.EffectClaim.operator ==(Standard.Agents.Models.Orchestrations.Effects.EffectClaim? left, Standard.Agents.Models.Orchestrations.Effects.EffectClaim? right) -> bool
+Standard.Agents.Models.Brokers.Sessions.AgentTurn.Exchanges.get -> System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Orchestrations.Agents.ToolExchange!>!
+Standard.Agents.Models.Brokers.Sessions.AgentTurn.Exchanges.init -> void
