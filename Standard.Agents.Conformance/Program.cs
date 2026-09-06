@@ -747,7 +747,16 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
 
         History =
             [.. (spec.History ?? []).Select(turn =>
-                new AgentTurn(turn.Prompt, turn.Answer))],
+                new AgentTurn(turn.Prompt, turn.Answer)
+                {
+                    Exchanges =
+                        [.. (turn.Exchanges ?? []).Select(exchange =>
+                            new ToolExchange(
+                                exchange.CallId,
+                                exchange.ToolName,
+                                exchange.ArgumentsJson,
+                                exchange.Result))]
+                })],
 
         CallerTools =
             [.. (spec.CallerTools ?? []).Select(tool =>

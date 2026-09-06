@@ -193,6 +193,7 @@ the deterministic core of the Standard.
 | `open-circuit-falls-back-to-secondary` | An unhealthy provider degrades rather than fails (§4.10) |
 | `open-circuit-falls-back-on-the-native-protocol` | The same degradation on the native seam; the text alternative becomes a final answer, never a cast (§4.10, §6) |
 | `conversation-carries-history` | A follow-up resolves against what came before (§4.11) |
+| `a-session-carries-a-turns-tool-call` | A turn's calls survive the save with its words; the next prompt is told what the agent did, not only what it said (§4.11, §6) |
 | `failed-run-unwinds-in-reverse` | Compensation undoes what was performed, newest first (§4.9) |
 | `effect-outcome-survives-a-crash` | A new instance resumes and does not repeat the act (§4.9, §4.11) |
 | `awaiting-approval-resumes-in-a-new-process` | A held act runs once the authority says yes, elsewhere |
@@ -214,6 +215,7 @@ the deterministic core of the Standard.
 | `caller-tool-name-collision-drops-caller-tool` | A caller cannot shadow the deployment's own tool; configured wins |
 | `pending-call-rides-the-outcome-without-a-session` | A stateless exposer reads the caller's call off the outcome itself |
 | `the-callers-transcript-reaches-the-brain` | A prior turn re-posted by the caller reaches the Brain; the run never starts from nothing |
+| `the-callers-transcript-carries-a-turns-tool-call` | A prior turn's CALLS travel on the request as its words do, so a finished call is never handed over as this turn's evidence (§4.11, §6) |
 | `a-model-narrates-before-acting` | A leading SAY: line is narration — peeled, screened, voiced; never the act, never the answer (§6.0) |
 | `a-refused-narration-is-withheld` | A refused narration reaches no channel at all, and the run is unharmed (Invariant 5, §4.9) |
 | `a-tool-narrates-and-the-model-says-nothing` | A tool's declared templates are the floor: the run never goes silent because the model was terse (§6.0) |

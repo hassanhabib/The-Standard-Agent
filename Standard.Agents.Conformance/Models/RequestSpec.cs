@@ -24,7 +24,24 @@ public sealed record RequestSpec(
     List<TurnSpec>? History = null);
 
 /// <summary>One prior exchange in the caller-owned transcript, oldest first.</summary>
-public sealed record TurnSpec(string Prompt, string Answer);
+/// <remarks>
+/// A turn carries what it DID as well as what it said. Without <see cref="Exchanges"/> a vector
+/// could only say that a prior turn's text reached the Brain, which is all vector 63 ever proved;
+/// a caller re-posting a conversation had nowhere to put a finished call but the request's own
+/// <c>toolExchanges</c>, this turn's in-flight work, where it certifies as evidence for the
+/// prompt being asked now (SPEC.md 4.11, SPEC.md 6).
+/// </remarks>
+public sealed record TurnSpec(
+    string Prompt,
+    string Answer,
+    List<ToolExchangeSpec>? Exchanges = null);
+
+/// <summary>One call a prior turn made, and what it returned.</summary>
+public sealed record ToolExchangeSpec(
+    string CallId,
+    string ToolName,
+    string ArgumentsJson,
+    string Result);
 
 /// <summary>
 /// A tool the CALLER will execute, declared so the model may name it. The agent never runs one

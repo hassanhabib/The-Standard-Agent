@@ -1,0 +1,28 @@
+{
+  "name": "the-callers-transcript-carries-a-turns-tool-call",
+  "description": "The sibling vector 63 never had. The exposed protocols are stateless and the client re-posts the conversation, so a prior turn's CALLS have to travel on the request exactly as its words do. Without a per-turn home for them a caller has nowhere to put a finished call but the request's own toolExchanges, which is this turn's in-flight work: a call replayed there is handed to the model as evidence for the prompt being asked now, and a finished edit reads as an edit just made. A prior turn's call carried on the request must reach the Brain as that turn's call.",
+  "generatorReplies": [],
+  "nativeReplies": [{ "content": "ok" }],
+  "tools": {},
+  "prompt": "and then?",
+  "request": {
+    "history": [
+      {
+        "prompt": "what is 47 times 89?",
+        "answer": "4183",
+        "exchanges": [
+          {
+            "callId": "call_7",
+            "toolName": "calculator",
+            "argumentsJson": "{\"expression\":\"47*89\"}",
+            "result": "4183"
+          }
+        ]
+      }
+    ]
+  },
+  "expect": {
+    "result": "ok",
+    "toolResultAnswersCall": "call_7"
+  }
+}
