@@ -316,4 +316,50 @@ public class SessionTests : IDisposable
         answer!.ToolCallId.Should().Be("call_7");
         answer.Content.Should().Be("4183");
     }
+
+    // The other half of the same property. Once a turn carries its calls, those calls have to be
+    // as session-scoped as its words already are: one agent instance serving two conversations
+    // must never hand one conversation's call to the other. Keeping the exchanges anywhere but the
+    // session, on the instance or in a static, satisfies the carrying test above and leaks here,
+    // and nothing else in this suite would notice: every other session test runs with no tools.
+    [Fact]
+    public async Task ShouldNotCarryOneSessionsToolExchangeIntoAnotherAsync()
+    {
+        // given
+        IReadOnlyList<ConversationMessage> otherConversation = [];
+        int brainCalls = 0;
+
+        StandardAgent agent = NewNativeAgent(new CalculatorTool(), messages =>
+        {
+            int call = brainCalls++;
+
+            if (call == 0)
+            {
+                return new GenerationResult
+                {
+                    ToolCalls =
+                    [
+                        new ModelToolCall("call_7", "calculator", """{"expression":"47*89"}""")
+                    ]
+                };
+            }
+
+            if (call == 2)
+            {
+                otherConversation = messages;
+            }
+
+            return new GenerationResult { Content = "4183" };
+        });
+
+        // when: one instance, two conversations
+        await agent.ProcessPromptAsync("what is 47 times 89?", sessionId: "alice");
+        await agent.ProcessPromptAsync("what is the capital of France?", sessionId: "bob");
+
+        // then: bob is handed neither alice's call nor the answer that names it
+        otherConversation.Should().NotContain(message => message.Role == MessageRole.Tool);
+
+        otherConversation.Should().NotContain(message =>
+            message.Role == MessageRole.Assistant && message.ToolCalls.Count > 0);
+    }
 }
