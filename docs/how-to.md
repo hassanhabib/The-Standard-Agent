@@ -925,6 +925,12 @@ await agent.ProcessPromptAsync("and how many people live there?", sessionId: "tr
 // the second prompt knows "there" means Paris
 ```
 
+**A turn carries what it did, not only what it said.** When the agent calls a tool to answer, that
+call and its result are recorded on the turn beside the answer, and replayed inside that turn on the
+next prompt. Without it the follow-up is told the agent answered and never how, so the agent forgets
+what it already looked up and what it already performed — and a conversation that cannot remember
+its own acts is a poor place to reason about whether to repeat one.
+
 History is bounded — `.Sessions(path, maxHistoryTurns: 20)` — because an unbounded conversation
 makes every prompt cost more than the last, without limit. A cancelled or budget-stopped run is
 never written back as an answer: the next prompt would otherwise be told the agent said something
@@ -1489,12 +1495,15 @@ Two more fields deserve a word:
   `CallId` so the caller's result can answer it. A caller tool sharing a configured tool's name
   is dropped at the boundary: a caller cannot shadow the deployment's own tool.
 
-- **`History` and `ToolExchanges`** — the caller-owned transcript. The exposed protocols are
-  stateless: the client re-posts the conversation, prior tool results included, and the run
-  receives it here — prior turns render into the conversation on both protocols, and a
-  replayed exchange returns as a tool message still naming the call the model minted. When a
-  session exists it wins: the deployment's record of the conversation beats the caller's
-  retelling of it.
+- **`History` and `ToolExchanges`** — the caller-owned transcript, and this turn's in-flight
+  work. They are not interchangeable. The exposed protocols are stateless: the client re-posts
+  the conversation and the run receives it in `History`, where each `AgentTurn` carries its own
+  `Exchanges` — the calls that turn made and what they returned — so a past call is replayed
+  inside the turn it belongs to, still naming the call the model minted. `ToolExchanges` is
+  narrower: it is the work of the turn being asked *now*, a caller answering a call this run is
+  still waiting on. A finished call put there is handed to the model as evidence for the current
+  prompt, which is how an edit made three turns ago reads as an edit just made. When a session
+  exists it wins: the deployment's record of the conversation beats the caller's retelling of it.
 
 - **Parallel tool calls** — one pending call per run, today. A decider that can emit several
   (set `parallel_tool_calls: false` where the provider supports it) hands them back one turn at
