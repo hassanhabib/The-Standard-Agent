@@ -1,0 +1,26 @@
+{
+  "name": "versioning-skill-is-followed",
+  "description": "The Standard's versioning skill, pulled from the PeerLLM registry, states rules a model must apply rather than recite: a model change advances the first segment and resets the rest; a routine change advances the second; a fix advances the third. LLooMA is asked each case and must answer from the skill, not from semver habit.",
+  "skillset": "hassanhabib/the-standard-skills@15",
+  "members": ["the-standard-versioning"],
+  "protocol": "text",
+  "samples": 3,
+  "prompts": [
+    {
+      "prompt": "Our current release is v1.2.3.4. This release changes a model. Under the versioning rules you were given, what is the next release version? Reply with the version only.",
+      "answerMustContainAny": ["v2.0.0.0", "2.0.0.0"],
+      "answerMustNotContain": ["1.3.0.0", "1.2.4.0", "1.2.3.5"]
+    },
+    {
+      "prompt": "Our current release is v1.2.3.4. This release changes a service routine and nothing else. Under the versioning rules you were given, what is the next release version? Reply with the version only.",
+      "answerMustContainAny": ["v1.3.0.0", "1.3.0.0"],
+      "answerMustNotContain": ["2.0.0.0", "1.2.4.0"]
+    },
+    {
+      "prompt": "Our current release is v1.2.3.4. This release is a bug fix and nothing else. Under the versioning rules you were given, what is the next release version? Reply with the version only.",
+      "answerMustContainAny": ["v1.2.4.0", "1.2.4.0"],
+      "answerMustNotContain": ["2.0.0.0", "1.3.0.0"]
+    }
+  ],
+  "thresholds": { "taskCompletion": 0.67, "groundedness": 0.67 }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "tool-selection-on-the-native-protocol",
+  "description": "LLooMA 2.0 speaks OpenAI-style tool calling. Offered one tool the task needs, it must call exactly that tool and carry the tool's result into its answer rather than compute or guess around it.",
+  "skillset": "hassanhabib/the-standard-agentic-skills@1",
+  "protocol": "native",
+  "samples": 3,
+  "maxTurns": 4,
+  "tools": { "calculator": "4183" },
+  "prompts": [
+    {
+      "prompt": "Use the calculator tool to compute 47 times 89, then tell me the result it returned.",
+      "expectedTools": ["calculator"],
+      "answerMustContain": ["4183"]
+    }
+  ],
+  "thresholds": { "toolSelection": 0.67, "taskCompletion": 0.67 }
+}

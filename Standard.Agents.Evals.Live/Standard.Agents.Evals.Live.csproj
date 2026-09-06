@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The live evals: the same agent loop against a real model and real skills, opt-in and
+       outside the PR gate, because they cost time on someone's network and are not
+       deterministic. The deterministic orchestration evals stay in Standard.Agents.Evals. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Standard.Agents\Standard.Agents.csproj" />
+  </ItemGroup>
+
+</Project>

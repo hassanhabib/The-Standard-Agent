@@ -1,0 +1,14 @@
+{
+  "name": "agentic-skill-drives-the-first-move",
+  "description": "The extract-expert-skills skill from the PeerLLM registry tells the agent how to begin capturing expertise: establish consent, the domain and the scope, then interview. Asked to begin, LLooMA must open the way the skill says rather than lecture about month-end close.",
+  "skillset": "hassanhabib/the-standard-agentic-skills@1",
+  "protocol": "text",
+  "samples": 3,
+  "prompts": [
+    {
+      "prompt": "I want to capture how our senior accountant closes the books each month, so we can turn it into a reusable skill. Please begin.",
+      "answerMustContainAny": ["consent", "scope", "domain", "interview"]
+    }
+  ],
+  "thresholds": { "taskCompletion": 0.67 }
+}
