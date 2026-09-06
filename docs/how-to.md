@@ -1323,6 +1323,10 @@ The rules, and each is deliberate:
   (`"ruleGate": []`) is refused, because a control that lists nothing is not a control. The
   supplied host checks all of this without starting: `--validate path/to/agent.json`
   ([hosting.md](hosting.md)).
+- **The schema is emitted, not written.** `StandardAgent.DocumentSchemaJson()` (or the host's
+  `--schema`) returns a JSON Schema of the document for your editor, built from the same table
+  every section's shape is validated against, so what the editor offers and what the builder
+  refuses cannot drift apart; every example in it is one that composes, and a test says so.
 - **Tools stay code, because they are code** — except `mcp`, where a tool is a URL, which is
   data. Delegates (`On*`) and broker instances (`Use*`) stay code for the same reason.
 - **Data and code compose.** `FromJson` returns the same `StandardAgent`, so keep chaining:
