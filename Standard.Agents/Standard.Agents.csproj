@@ -512,8 +512,10 @@
          turn, between the prompt that asked for them and the answer they produced;
          SaveSessionAsync persists them; AgentTurnV1 carries them on the wire so a stateless
          caller can say which turn a call belongs to. Additive: the shipped constructor,
-         Deconstruct, Prompt and Answer are untouched, so no consumer must react. The model shape
-         changed: segment 1 advances, 2/3/4 reset. -->
+         Deconstruct, Prompt and Answer are untouched, so no consumer must react. Certified by
+         vectors 78 and 79, which fail against a build with the fix suppressed while all 77
+         pre-existing vectors pass against that same build. Spec-first: tracks SPEC.md v1.13
+         (SS3.2, SS4.11, SS6.2). The model shape changed: segment 1 advances, 2/3/4 reset. -->
     <Version>2.0.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
