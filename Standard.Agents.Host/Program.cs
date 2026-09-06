@@ -18,6 +18,15 @@ using Standard.Agents.Models.Clients.Agents.Exceptions;
 
 const string AgentHttpClientName = "standard-agent";
 
+// `--schema` prints the JSON Schema of the agent document, emitted from the same table the
+// document is validated against, for editors and pipelines (F-24).
+if (args.Contains("--schema"))
+{
+    Console.WriteLine(StandardAgent.DocumentSchemaJson());
+
+    return 0;
+}
+
 // A validate-only run: `--validate [path]` composes the document and says whether it composes,
 // naming the entry when it does not, without standing the host up - the check a deployment
 // pipeline runs before a green heartbeat could mislead it (principal review 2026-09-04, F-24).
