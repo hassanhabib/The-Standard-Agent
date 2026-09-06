@@ -54,7 +54,10 @@ public partial class DirectionCoordinationServiceTests
             new PolicyService(new NotConfiguredPolicyBroker(), this.loggingBrokerMock.Object),
             new ApprovalService(new NotConfiguredApprovalBroker(), this.loggingBrokerMock.Object),
             new EffectLedgerService(
-                new InMemoryEffectLedgerBroker(), new TimeBroker(), this.loggingBrokerMock.Object),
+                new InMemoryEffectLedgerBroker(),
+                new TimeBroker(),
+                this.loggingBrokerMock.Object,
+                TimeSpan.FromMinutes(5)),
             new TimeBroker(),
             this.loggingBrokerMock.Object);
 

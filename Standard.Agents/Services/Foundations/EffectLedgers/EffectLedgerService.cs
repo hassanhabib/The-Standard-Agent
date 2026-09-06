@@ -13,23 +13,26 @@ namespace Standard.Agents.Services.Foundations.EffectLedgers;
 
 public partial class EffectLedgerService : IEffectLedgerService
 {
-    // How long an in-flight claim is presumed live. Past it, a claim with no outcome is an
-    // earlier attempt whose fate is unknown, and a repeat is held for reconciliation rather than
-    // presumed either way (principal review 2026-09-04, F-08).
-    private static readonly TimeSpan Lease = TimeSpan.FromMinutes(5);
-
     private readonly IEffectLedgerBroker effectLedgerBroker;
     private readonly ITimeBroker timeBroker;
     private readonly ILoggingBroker loggingBroker;
 
+    // How long an in-flight claim is presumed live. Past it, a claim with no outcome is an
+    // earlier attempt whose fate is unknown, and a repeat is held for reconciliation rather than
+    // presumed either way (principal review 2026-09-04, F-08). The deployment sets it, because
+    // only the deployment knows how long its tools take.
+    private readonly TimeSpan lease;
+
     public EffectLedgerService(
         IEffectLedgerBroker effectLedgerBroker,
         ITimeBroker timeBroker,
-        ILoggingBroker loggingBroker)
+        ILoggingBroker loggingBroker,
+        TimeSpan lease)
     {
         this.effectLedgerBroker = effectLedgerBroker;
         this.timeBroker = timeBroker;
         this.loggingBroker = loggingBroker;
+        this.lease = lease;
     }
 
     public ValueTask<EffectRecord?> ClaimEffectAsync(AgentEffect effect) =>
@@ -45,7 +48,7 @@ public partial class EffectLedgerService : IEffectLedgerService
             State = EffectState.InFlight,
             Owner = effect.RunId,
             ClaimedOn = now,
-            LeaseUntil = now + Lease
+            LeaseUntil = now + this.lease
         };
 
         bool claimed = await this.effectLedgerBroker.InsertClaimAsync(claim);

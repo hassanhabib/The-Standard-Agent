@@ -53,7 +53,8 @@ public partial class PerimeterFoundationTests
         this.effectLedgerService = new EffectLedgerService(
             effectLedgerBroker: this.effectLedgerBrokerMock.Object,
             timeBroker: this.timeBrokerMock.Object,
-            loggingBroker: this.loggingBrokerMock.Object);
+            loggingBroker: this.loggingBrokerMock.Object,
+            lease: lease);
     }
 
     private static string CreateRandomString() =>

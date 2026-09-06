@@ -125,6 +125,7 @@ public sealed partial class StandardAgent : IAgent
     private IPolicyBroker? policyBroker;
     private IApprovalBroker? approvalBroker;
     private IEffectLedgerBroker? effectLedgerBroker;
+    private TimeSpan effectLease = TimeSpan.FromMinutes(5);
     private IEnumerable<string>? approvalRequiredTools;
     private bool screenToolOutput;
     private bool compensateOnFailure;
@@ -802,6 +803,17 @@ public sealed partial class StandardAgent : IAgent
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent EffectLedger(string path) =>
         Set(() => this.effectLedgerBroker = new FileEffectLedgerBroker(path));
+
+    /// <summary>
+    /// How long the ledger presumes an in-flight claim to be live. Past the lease, a claim with
+    /// no recorded outcome is an earlier attempt whose fate is unknown, and a repeat of the act
+    /// is held for reconciliation rather than performed or presumed done (SPEC.md §4.9). Five
+    /// minutes by default; set it to how long your slowest tool can take.
+    /// </summary>
+    /// <param name="lease">How long a claim stays live without an outcome.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent EffectLease(TimeSpan lease) =>
+        Set(() => this.effectLease = lease);
 
     /// <summary>
     /// Keeps the effect ledger wherever you say, in your own code — usually the store your

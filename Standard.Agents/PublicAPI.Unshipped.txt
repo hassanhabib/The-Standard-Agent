@@ -1,1 +1,4 @@
 #nullable enable
+*REMOVED*Standard.Agents.Services.Foundations.EffectLedgers.EffectLedgerService.EffectLedgerService(Standard.Agents.Brokers.Effects.IEffectLedgerBroker! effectLedgerBroker, Standard.Agents.Brokers.Times.ITimeBroker! timeBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+Standard.Agents.Services.Foundations.EffectLedgers.EffectLedgerService.EffectLedgerService(Standard.Agents.Brokers.Effects.IEffectLedgerBroker! effectLedgerBroker, Standard.Agents.Brokers.Times.ITimeBroker! timeBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, System.TimeSpan lease) -> void
+Standard.Agents.StandardAgent.EffectLease(System.TimeSpan lease) -> Standard.Agents.StandardAgent!
