@@ -98,12 +98,22 @@ ended `AwaitingInput` with the call as the pending effect, the caller ran it, an
 comes back in `toolExchanges` naming the `callId` the model minted. There is no separate resume
 route, because resuming is not a different operation; the session already holds everything.
 
-**Identity is not established by this door.** The `X-Api-Key` gate below authenticates
-possession of one shared secret and nothing more: it does not name a principal or a tenant, and
-the wire carries none. A deployment that needs identity in policy, sessions and audit puts an
-authenticating proxy or an ASP.NET authentication scheme in front of the host and resolves the
-principal where the agent is composed (`.Principal(...)`, [how-to.md §12](how-to.md)); the wire
-is deliberately not a place a caller can claim to be someone.
+**Identity comes from the authenticated user, never from the wire.** The wire carries no field
+in which a caller can claim to be someone. Who is acting is whoever the request's authentication
+scheme established, translated per act into the principal the policy decides on and the audit
+stamps (`sub` or the name identifier becomes the id, `tid` or `tenant` the tenant, `jurisdiction`
+and `act` the rest). Bearer tokens are the scheme in the box:
+
+```json
+{ "Host": { "Authentication": { "Authority": "https://login.example.com/", "Audience": "standard-agent" } } }
+```
+
+Name the issuer and every agent route wants a valid token: `401` without one, the heartbeat
+open as always, and a held act's `pendingEffect.principal` names the token's subject. Name no
+issuer and the door is as open as before, with no principal handed to the agent. Another scheme,
+a cookie or a proxy's headers, is one `AddAuthentication` registration in front of the same
+resolver; the agent never learns which. The `X-Api-Key` gate below is a separate, cruder lock
+and still proves possession of one shared secret and nothing more.
 
 ## Configuration
 
