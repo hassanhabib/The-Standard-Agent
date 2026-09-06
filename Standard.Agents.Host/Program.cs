@@ -7,6 +7,7 @@
 // behind HTTP: composition here is configuration, never new concepts - the appliance
 // guarantee holds at the exposure layer too.
 
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -51,6 +52,33 @@ builder.Services.AddControllers();
 // put a proxy, a certificate, a resilience handler or an observer under all of it.
 builder.Services.AddHttpClient(AgentHttpClientName);
 
+// Who is acting comes from the request's authenticated user, translated per act into the
+// principal the policy decides on and the audit stamps (principal review 2026-09-04, F-10). The
+// wire has no field in which a caller can claim to be someone; the scheme establishes them.
+// Bearer tokens are the scheme in the box: name the issuer (Host:Authentication:Authority) and,
+// optionally, the audience, and every agent route wants a valid token. Name nothing and the
+// door is as open as before, with no principal handed to the agent.
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<HttpPrincipalResolver>();
+
+string? authority = builder.Configuration["Host:Authentication:Authority"];
+bool authenticationConfigured = string.IsNullOrWhiteSpace(authority) is false;
+
+if (authenticationConfigured)
+{
+    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options =>
+        {
+            options.Authority = authority;
+            options.Audience = builder.Configuration["Host:Authentication:Audience"];
+            options.MapInboundClaims = false;
+        });
+}
+else
+{
+    builder.Services.AddAuthentication();
+}
+
 // Exporting is opt-in by the standard OTel switch: set OTEL_EXPORTER_OTLP_ENDPOINT and the
 // agent's spans and metrics (plus the HTTP server's) leave for your collector; leave it unset
 // and nothing is wired, so the default host stays exactly what it was. The library side needs
@@ -80,6 +108,8 @@ builder.Services.AddSingleton<IAgent>(provider =>
 
     IHttpMessageHandlerFactory httpHandlers =
         provider.GetRequiredService<IHttpMessageHandlerFactory>();
+
+    HttpPrincipalResolver principals = provider.GetRequiredService<HttpPrincipalResolver>();
 
     // The agent as data: Agent:Config names a JSON document, or an agent.json beside the
     // executable is picked up on its own — a low-code platform writes a file and has an agent,
@@ -125,7 +155,9 @@ builder.Services.AddSingleton<IAgent>(provider =>
                     + "\"nativeBrainAnthropic\" to agent.json, then restart the host.");
         }
 
-        return configured.Http(() => httpHandlers.CreateHandler(AgentHttpClientName));
+        return configured
+            .Principal(principals.Resolve)
+            .Http(() => httpHandlers.CreateHandler(AgentHttpClientName));
     }
 
     string? url = configuration["Agent:Url"];
@@ -163,7 +195,9 @@ builder.Services.AddSingleton<IAgent>(provider =>
     // laptop and load-bearing behind a collector.
     agent.Telemetry(configuration["Agent:Name"] ?? "standard-agent");
 
-    return agent.Http(() => httpHandlers.CreateHandler(AgentHttpClientName));
+    return agent
+        .Principal(principals.Resolve)
+        .Http(() => httpHandlers.CreateHandler(AgentHttpClientName));
 });
 
 var app = builder.Build();
@@ -171,22 +205,39 @@ var app = builder.Build();
 // The front door, before the routes: no configured Host:ApiKey means open (a laptop), one
 // configuration line means every agent route wants X-Api-Key (a deployment). The heartbeat
 // stays open either way - a probe cannot present a key and learns nothing.
+app.UseAuthentication();
+
 app.Use(async (context, next) =>
 {
-    bool allowed = ApiKeyGate.Allows(
+    bool keyAllowed = ApiKeyGate.Allows(
         configuredKey: app.Configuration["Host:ApiKey"],
         presentedKey: context.Request.Headers["X-Api-Key"],
         path: context.Request.Path);
 
-    if (allowed)
+    if (keyAllowed is false)
     {
-        await next();
+        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        await context.Response.WriteAsync("missing or invalid X-Api-Key");
 
         return;
     }
 
-    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-    await context.Response.WriteAsync("missing or invalid X-Api-Key");
+    // The second lock: with authentication configured, an agent route wants an authenticated
+    // user, established by the scheme above and handed to the agent as the principal.
+    bool identityAllowed = IdentityGate.Allows(
+        authenticationConfigured,
+        userIsAuthenticated: context.User.Identity?.IsAuthenticated is true,
+        path: context.Request.Path);
+
+    if (identityAllowed is false)
+    {
+        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        await context.Response.WriteAsync("an authenticated user is required");
+
+        return;
+    }
+
+    await next();
 });
 
 app.MapControllers();
