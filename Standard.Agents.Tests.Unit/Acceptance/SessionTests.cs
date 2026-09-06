@@ -9,9 +9,11 @@ using Standard.Agents.Brokers.Knowledges;
 using Standard.Agents.Brokers.Memorys;
 using Standard.Agents.Brokers.Sessions;
 using Standard.Agents.Brokers.Skills;
+using Standard.Agents.Models.Brokers.Generators.V1;
 using Standard.Agents.Models.Brokers.Sessions;
 using Standard.Agents.Models.Coordinations.Agents.Exceptions;
 using Standard.Agents.Models.Foundations.Skills;
+using Standard.Agents.Tools;
 using Xunit;
 
 namespace Standard.Agents.Tests.Unit.Acceptance;
@@ -222,5 +224,96 @@ public class SessionTests : IDisposable
 
         session.Should().NotBeNull();
         session!.History.Select(turn => turn.Prompt).Should().BeEquivalentTo(prompts);
+    }
+
+    private sealed class CalculatorTool : ITool
+    {
+        public string Name => "calculator";
+        public string Description => "Evaluates arithmetic.";
+
+        public string Parameters =>
+            """{"type":"object","properties":{"expression":{"type":"string"}}}""";
+
+        public async ValueTask<string> ExecuteAsync(string input) => "4183";
+    }
+
+    private StandardAgent NewNativeAgent(
+        ITool tool,
+        Func<IReadOnlyList<ConversationMessage>, GenerationResult> reply)
+    {
+        var skillBroker = new Mock<ISkillBroker>();
+        skillBroker.Setup(broker => broker.SelectSkillsAsync()).ReturnsAsync(new List<Skill>());
+
+        var memoryBroker = new Mock<IMemoryBroker>();
+        memoryBroker.Setup(broker => broker.SelectMemoriesAsync()).ReturnsAsync([]);
+
+        var knowledgeBroker = new Mock<IKnowledgeBroker>();
+
+        knowledgeBroker.Setup(broker => broker.SelectKnowledgeAsync(It.IsAny<string>()))
+            .ReturnsAsync([]);
+
+        return new StandardAgent()
+            .UseSkills(skillBroker.Object)
+            .UseMemory(memoryBroker.Object)
+            .UseKnowledge(knowledgeBroker.Object)
+            .Tool(tool)
+            .OnNativeBrain(async (messages, tools) => reply(messages))
+            .Sessions(this.sessionsPath);
+    }
+
+    // A session that forgets its tool work is wrong in the same way a session that forgets an
+    // answer would be. AgentTurn carries a prompt and an answer and nothing else, so the call the
+    // agent made on the first prompt and the result it acted on are dropped at the save and can
+    // never be recalled: the next prompt is told what the agent said, never what it did in order
+    // to be able to say it. The conversation the Brain sees on the follow-up must still carry the
+    // assistant's request and the tool's answer against the id that asked for it, which is the one
+    // thing narrated prose cannot express (SPEC.md 4.11, SPEC.md 6).
+    [Fact]
+    public async Task ShouldCarryAToolExchangeAcrossPromptsInOneSessionAsync()
+    {
+        // given
+        IReadOnlyList<ConversationMessage> followUpConversation = [];
+        int brainCalls = 0;
+
+        StandardAgent agent = NewNativeAgent(new CalculatorTool(), messages =>
+        {
+            int call = brainCalls++;
+
+            if (call == 0)
+            {
+                return new GenerationResult
+                {
+                    ToolCalls =
+                    [
+                        new ModelToolCall("call_7", "calculator", """{"expression":"47*89"}""")
+                    ]
+                };
+            }
+
+            if (call == 2)
+            {
+                followUpConversation = messages;
+            }
+
+            return new GenerationResult { Content = "4183" };
+        });
+
+        // when
+        await agent.ProcessPromptAsync("what is 47 times 89?", sessionId: "user-13");
+        await agent.ProcessPromptAsync("how did you get that?", sessionId: "user-13");
+
+        // then: the follow-up still carries the call and the answer that names it
+        ConversationMessage? request = followUpConversation.FirstOrDefault(message =>
+            message.Role is MessageRole.Assistant && message.ToolCalls.Count > 0);
+
+        ConversationMessage? answer = followUpConversation.FirstOrDefault(message =>
+            message.Role is MessageRole.Tool);
+
+        request.Should().NotBeNull();
+        request!.ToolCalls[0].Id.Should().Be("call_7");
+
+        answer.Should().NotBeNull();
+        answer!.ToolCallId.Should().Be("call_7");
+        answer.Content.Should().Be("4183");
     }
 }
