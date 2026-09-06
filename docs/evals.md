@@ -25,6 +25,37 @@ case misses a threshold, `2` when the run discovered no cases at all. A run that
 nothing is not a pass, so an empty or mistyped golden path fails loudly rather than printing
 `0 passed, 0 failed` in green; pass `--allow-empty` to accept an empty set on purpose.
 
+## Live evals: LLooMA and the registry skills
+
+`Standard.Agents.Evals.Live` runs the same loop against a real model on PeerLLM and real skills
+pulled from the PeerLLM registry, pinned to a skillset version. Where the deterministic evals
+pin how the loop treats a scripted Brain, these measure the Brain and the skills: does LLooMA
+read a skill and answer from it, does it pick the tool the task needs, does it stay off the
+fabrication the author named.
+
+```bash
+PEERLLM_API_KEY=psk_… dotnet run --project Standard.Agents.Evals.Live -- --report artifacts/live-evals/report.json
+dotnet run --project Standard.Agents.Evals.Live -- --key-file ~/peerllm-api-key.txt --samples 5 --max-cases 1
+```
+
+Opt-in and outside the PR gate on purpose: a live model is not deterministic and a flake in a
+required gate is a gate nobody trusts. So every prompt is sampled several times (`samples`, three
+by default), a metric is the pass rate over the samples, and a threshold is the pass rate the case
+must reach. The report records which model, which registry version of the skillset, which
+framework and when answered, and every answer, so a drop can be read rather than guessed at.
+Exit `0` when every threshold is met, `1` when one is not, `2` when no cases were found, `3` when
+there is no key, so a missing key never reads as a pass.
+
+The cases live in `evals/live`. Each names a pinned skillset (`owner/name@N`, an unpinned one
+is refused), optionally the members to load (a skillset can be far larger than a system prompt
+should be), the door the prompts enter by (`text` or `native`), the tools on offer, the prompts
+with their golden data, and cost controls: `maxTurns` and `maxTokensPerRun`, which the budget
+enforces. The metrics are `taskCompletion` (`answerMustContain`, `answerMustContainAny`),
+`groundedness` (`answerMustNotContain`) and `toolSelection` (`expectedTools`).
+
+The workflow `live-evals.yml` runs them weekly and on demand with the repository secret
+`PEERLLM_API_KEY`, and publishes the report as a build artifact.
+
 ## The metrics
 
 | Metric | Question it answers | Golden data on the prompt |
