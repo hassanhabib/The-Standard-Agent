@@ -10,7 +10,7 @@
     {
       "prompt": "Use the calculator tool to compute 47 times 89, then tell me the result it returned.",
       "expectedTools": ["calculator"],
-      "answerMustContain": ["4183"]
+      "answerMustContainAny": ["4183", "4,183"]
     }
   ],
   "thresholds": { "toolSelection": 0.67, "taskCompletion": 0.67 }
