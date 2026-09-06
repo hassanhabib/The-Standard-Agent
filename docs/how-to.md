@@ -1050,6 +1050,10 @@ claimed 2026-09-05 16:55:41Z); reconcile the ledger against the world - record t
 outcome, or release the claim - before this act can run again.
 ```
 
+The lease is five minutes by default; a deployment whose slowest tool takes longer, or far
+less, says so once: `.EffectLease(TimeSpan.FromMinutes(20))`, or `"effectLeaseSeconds": 1200`
+in the document.
+
 Reconciling is a person's act against the store you chose: read the record by the pending
 effect's `IdempotencyKey`, check the world, and either update it to `Completed` with the real
 outcome (the next run replays it) or delete the in-flight claim (the next run performs it). The
