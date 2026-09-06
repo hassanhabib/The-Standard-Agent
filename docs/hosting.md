@@ -142,6 +142,9 @@ So a pipeline asks before it deploys:
 dotnet run --project Standard.Agents.Host -- --validate path/to/agent.json
 ```
 
+And `dotnet run --project Standard.Agents.Host -- --schema` prints the document's JSON Schema
+for an editor, emitted from the same table the validation reads.
+
 Exit `0` and "composes", or exit `1` and the entry that does not: an unknown key at any depth,
 a value of the wrong type, a limit that is not positive, a section of the wrong shape, or a
 control that lists nothing. Every rule the document refuses is the same rule the builder verb
