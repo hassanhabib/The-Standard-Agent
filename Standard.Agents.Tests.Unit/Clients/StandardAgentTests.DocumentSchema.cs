@@ -72,17 +72,31 @@ public partial class StandardAgentFromJsonTests
         // given
         JsonObject properties = Schema()["properties"]!.AsObject();
 
-        // when . then — every object shape names its properties and admits nothing else
+        var openSections = new List<string>();
+
+        // when . then — every object shape with a property list admits nothing else; the one
+        // without a list is the contract, which is a JSON Schema of its own and stays open
         foreach ((string key, JsonNode? description) in properties)
         {
             foreach (JsonNode? shape in description!["anyOf"]!.AsArray())
             {
-                if (shape!["type"]?.GetValue<string>() == "object")
+                if (shape!["type"]?.GetValue<string>() != "object")
                 {
-                    shape["additionalProperties"]!.GetValue<bool>().Should().BeFalse(
-                        because: $"'{key}' is validated against a closed property list");
+                    continue;
                 }
+
+                if (shape["properties"] is null)
+                {
+                    openSections.Add(key);
+
+                    continue;
+                }
+
+                shape["additionalProperties"]!.GetValue<bool>().Should().BeFalse(
+                    because: $"'{key}' is validated against a closed property list");
             }
         }
+
+        openSections.Should().Equal("contract");
     }
 }

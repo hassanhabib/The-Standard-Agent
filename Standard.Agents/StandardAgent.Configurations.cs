@@ -102,7 +102,7 @@ public partial class StandardAgent
                 break;
 
             case "brain":
-                Shaped(value, key, "apiUrl", "apiKey", "model", "temperature", "maxTokens", "timeoutSeconds");
+                Shaped(value, key);
 
                 agent.Brain(
                     Text(value, key, "apiUrl"),
@@ -115,7 +115,7 @@ public partial class StandardAgent
                 break;
 
             case "nativeBrain":
-                Shaped(value, key, "apiUrl", "apiKey", "model", "temperature", "maxTokens");
+                Shaped(value, key);
 
                 agent.NativeBrain(
                     Text(value, key, "apiUrl"),
@@ -127,7 +127,7 @@ public partial class StandardAgent
                 break;
 
             case "nativeBrainAnthropic":
-                Shaped(value, key, "apiKey", "model", "temperature", "maxTokens");
+                Shaped(value, key);
 
                 agent.NativeBrainAnthropic(
                     Text(value, key, "apiKey"),
@@ -151,7 +151,7 @@ public partial class StandardAgent
                 break;
 
             case "knowledge" when value is JsonObject:
-                Shaped(value, key, "path", "pattern", "maxResults", "minScore");
+                Shaped(value, key);
 
                 agent.Knowledge(
                     Text(value, key, "path"),
@@ -209,7 +209,7 @@ public partial class StandardAgent
                 break;
 
             case "gate":
-                Shaped(value, key, "apiUrl", "apiKey", "model", "temperature", "maxTokens", "timeoutSeconds");
+                Shaped(value, key);
 
                 agent.Gate(
                     Text(value, key, "apiUrl"),
@@ -227,7 +227,7 @@ public partial class StandardAgent
                 break;
 
             case "judge":
-                Shaped(value, key, "apiUrl", "apiKey", "model", "temperature", "maxTokens", "timeoutSeconds");
+                Shaped(value, key);
 
                 agent.Judge(
                     Text(value, key, "apiUrl"),
@@ -262,12 +262,12 @@ public partial class StandardAgent
                 break;
 
             case "redact" when value is JsonObject rules:
-                Shaped(rules, key, "rules");
+                Shaped(rules, key);
 
                 agent.Redact([.. Listed(rules["rules"], "redact.rules").Select(rule =>
                     new RedactionRule
                     {
-                        Label = Text(Shaped(rule, "redact.rules", "label", "pattern"), "redact.rules", "label"),
+                        Label = Text(Shaped(rule, "redact.rules"), "redact.rules", "label"),
                         Pattern = Text(rule, "redact.rules", "pattern")
                     })]);
 
@@ -310,7 +310,7 @@ public partial class StandardAgent
                 break;
 
             case "logTo" when value is JsonObject:
-                Shaped(value, key, "path", "verbosity");
+                Shaped(value, key);
 
                 agent.LogTo(
                     Text(value, key, "path"),
@@ -351,7 +351,7 @@ public partial class StandardAgent
                 break;
 
             case "sessions" when value is JsonObject:
-                Shaped(value, key, "path", "maxHistoryTurns");
+                Shaped(value, key);
 
                 agent.Sessions(
                     Text(value, key, "path"),
@@ -389,7 +389,7 @@ public partial class StandardAgent
                 break;
 
             case "usage":
-                Shaped(value, key, "charactersPerToken");
+                Shaped(value, key);
 
                 agent.Usage(
                     PositiveNumber(
@@ -399,7 +399,7 @@ public partial class StandardAgent
                 break;
 
             case "resilience" when value is JsonObject:
-                Shaped(value, key, "retries");
+                Shaped(value, key);
 
                 agent.Resilience(
                     NonNegative(Whole(value, key, "retries", fallback: 3), $"{key}.retries"));
@@ -435,7 +435,7 @@ public partial class StandardAgent
     {
         const string key = "budget";
 
-        Shaped(budgetNode, key, "maxTokens", "maxCostUsd", "maxWallClockSeconds", "costPerThousandTokens");
+        Shaped(budgetNode, key);
 
         try
         {
@@ -496,15 +496,7 @@ public partial class StandardAgent
     {
         if (server is JsonObject)
         {
-            Shaped(
-                server,
-                key,
-                "endpointUrl",
-                "relativeUrl",
-                "timeoutSeconds",
-                "bearerToken",
-                "apiKey",
-                "apiKeyHeader");
+            Shaped(server, key);
 
             agent.Mcp(
                 Text(server, key, "endpointUrl"),
@@ -573,6 +565,11 @@ public partial class StandardAgent
     // F-24): it must be an object, and every key in it must be one the section accepts. A
     // nested typo used to be ignored, which is a control the author believes is on and is not,
     // the same failure the top-level unknown-key refusal exists to prevent.
+    // The section's accepted properties come from the one table the schema is emitted from
+    // (StandardAgent.Schema.cs), so an editor's completion list and this refusal cannot disagree.
+    private static JsonObject Shaped(JsonNode? node, string key) =>
+        Shaped(node, key, DocumentPropertyNames(key));
+
     private static JsonObject Shaped(JsonNode? node, string key, params string[] properties)
     {
         JsonObject section = node as JsonObject
