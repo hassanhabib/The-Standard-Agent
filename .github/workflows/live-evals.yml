@@ -43,7 +43,7 @@ jobs:
 
     - name: Publishing The Report
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: live-evals-report
         path: artifacts/live-evals/report.json
