@@ -33,9 +33,16 @@ public partial class RunManagementService
     // reading sentences (SPEC.md §3.6, v1.14). The message is the whole result the run carries, so
     // a caller reading either one is told the same thing.
     private static AgentFailure? StoppedFailure(string stoppedBecause, string result) =>
-        stoppedBecause is CancelledMessage
-            ? new AgentFailure(AgentFailureCategory.Service, AgentFailureCodes.Cancelled, result)
-            : null;
+        stoppedBecause switch
+        {
+            CancelledMessage =>
+                new AgentFailure(AgentFailureCategory.Service, AgentFailureCodes.Cancelled, result),
+
+            TokenBudgetMessage or CostBudgetMessage or TimeBudgetMessage =>
+                new AgentFailure(AgentFailureCategory.Service, AgentFailureCodes.BudgetExhausted, result),
+
+            _ => null
+        };
 
     private bool IsBudgetExhausted(
         AgentSpend spend,
