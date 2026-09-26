@@ -112,6 +112,38 @@ public partial class DirectionCoordinationServiceTests
         second.ToolExchanges.Select(exchange => exchange.Replayed).Should().Equal(false, true);
     }
 
+    [Fact]
+    public async Task ShouldAnswerAThirdIdenticalAskWithTheNoteAloneOnActAsync()
+    {
+        // given
+        // Watched live: a page of a file asked for fourteen more times, each answered with the same
+        // sixteen kilobytes and the same note. The note was right and was not enough, and every
+        // copy cost the person a turn's worth of context (SPEC.md §4.9, v1.14).
+        using IDisposable run = AgentRun.Begin();
+
+        this.internalToolServiceMock.Setup(service =>
+            service.HandlesAsync("read_file")).ReturnsAsync(true);
+
+        this.internalToolServiceMock.Setup(service =>
+            service.RunAsync("read_file", "a.txt")).ReturnsAsync("the whole page");
+
+        AgentContext first = await this.directionCoordinationService.ActAsync(
+            CreateContextWithDirection("read_file", "a.txt"));
+
+        AgentContext second = await this.directionCoordinationService.ActAsync(
+            first with { DirectionType = "read_file", Payload = "a.txt" });
+
+        // when
+        AgentContext third = await this.directionCoordinationService.ActAsync(
+            second with { DirectionType = "read_file", Payload = "a.txt" });
+
+        // then
+        // Not a third copy of the bytes: the model has had them twice.
+        second.Result.Should().StartWith("the whole page");
+        third.Result.Should().NotContain("the whole page");
+        third.Result.Should().Contain("asked for a third time with the same arguments");
+    }
+
     // A file tool pair over one scope: a Safe read and a Sensitive write, both naming the same file,
     // the way a coding agent's tools do.
     private DirectionCoordinationService NewScopedFileService() =>
