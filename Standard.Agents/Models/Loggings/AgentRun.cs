@@ -212,6 +212,9 @@ public sealed class AgentRun
         {
             this.performedEffects.Add(effect);
         }
+
+        // An act that ran is not a repeat, whatever came before it.
+        this.ReplaysOfLatestAsk = 0;
     }
 
     /// <summary>
@@ -225,10 +228,17 @@ public sealed class AgentRun
         {
             int replayed = this.replays.GetValueOrDefault(idempotencyKey) + 1;
             this.replays[idempotencyKey] = replayed;
+            this.ReplaysOfLatestAsk = replayed;
 
             return replayed;
         }
     }
+
+    /// <summary>
+    /// How many times the ledger has answered the most recent ask that reached it, or zero when that
+    /// ask was performed. What a repetition bound reads between turns (SPEC.md §4.10, v1.14).
+    /// </summary>
+    public int ReplaysOfLatestAsk { get; private set; }
 
     /// <summary>
     /// How many acts this run has performed on a scope that were not Safe: what a look at that
