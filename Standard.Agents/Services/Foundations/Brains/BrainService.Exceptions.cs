@@ -65,7 +65,7 @@ public partial class BrainService
         }
         catch (HttpRequestException httpRequestException)
         {
-            throw await CreateAndLogCriticalDependencyExceptionAsync(httpRequestException);
+            throw await CreateAndLogUnreachableExceptionAsync(httpRequestException);
         }
         catch (Exception exception)
         {
@@ -85,7 +85,7 @@ public partial class BrainService
                 await CreateAndLogValidationExceptionAsync(invalidBrainException),
 
             HttpRequestException httpRequestException =>
-                await CreateAndLogCriticalDependencyExceptionAsync(httpRequestException),
+                await CreateAndLogUnreachableExceptionAsync(httpRequestException),
 
             _ => await CreateAndLogServiceExceptionAsync(
                 new FailedBrainServiceException(
@@ -117,6 +117,30 @@ public partial class BrainService
         await this.loggingBroker.LogErrorAsync(brainDependencyValidationException);
 
         return brainDependencyValidationException;
+    }
+
+    // Nothing answered at all: a refused connection, a name that resolves to nothing, a request that
+    // never left the machine (SPEC.md §4.10, v1.14). Localised to a sentence about the address
+    // rather than "contact support", because the person's next step is the address and whatever
+    // should be listening at it. The native fault stays as the inner exception for whoever
+    // investigates, and it is still critical: a brain that cannot be reached is configuration.
+    private async ValueTask<BrainDependencyException> CreateAndLogUnreachableExceptionAsync(
+        HttpRequestException httpRequestException)
+    {
+        var unreachableBrainException =
+            new UnreachableBrainException(
+                message: "Nothing answered at the brain's address. Check that the address is right "
+                    + "and that the service is running.",
+                innerException: httpRequestException);
+
+        var brainDependencyException =
+            new BrainDependencyException(
+                message: "Brain dependency error occurred, contact support.",
+                innerException: unreachableBrainException);
+
+        await this.loggingBroker.LogCriticalAsync(brainDependencyException);
+
+        return brainDependencyException;
     }
 
     private async ValueTask<BrainDependencyException> CreateAndLogCriticalDependencyExceptionAsync(
