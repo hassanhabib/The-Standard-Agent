@@ -1,0 +1,16 @@
+{
+  "name": "a-replay-says-it-already-ran",
+  "description": "SPEC.md 4.9 (v1.14): a replayed outcome reaches the Brain whole, followed by a note saying the act already ran in this run with these arguments. Handed back bare, a replay reads as a fresh answer to a fresh ask, and a model that asked because it did not have what it wanted asks again. The tool still runs once.",
+  "generatorReplies": [
+    "ACTION: calculator: 2 + 2",
+    "ACTION: calculator: 2 + 2",
+    "FINAL: 4"
+  ],
+  "tools": { "calculator": "4" },
+  "prompt": "add two and two",
+  "expect": {
+    "result": "4",
+    "brainSees": "already ran in this run with the same arguments",
+    "toolRunCount": { "calculator": 1 }
+  }
+}

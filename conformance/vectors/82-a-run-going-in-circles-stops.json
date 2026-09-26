@@ -1,0 +1,16 @@
+{
+  "name": "a-run-going-in-circles-stops",
+  "description": "SPEC.md 4.10 and 3.6 (v1.14): a run that keeps asking for an act the ledger has already answered is stopped by the repetition bound between turns, with status Failed and the failure code going_in_circles. The bound counts replays only: the act ran once, and every ask after it was a replay. Watched live, twice: a model asked for the same thing eleven more times with the note in front of it, and a turn cap of sixty-four is sixty turns of the same question.",
+  "generatorReplies": ["ACTION: calculator: 1 + 1"],
+  "tools": { "calculator": "2" },
+  "maxTurns": 20,
+  "identicalCallLimit": 3,
+  "request": {},
+  "prompt": "add one and one",
+  "expect": {
+    "resultContains": "going in circles",
+    "status": "Failed",
+    "failureCode": "going_in_circles",
+    "toolRunCount": { "calculator": 1 }
+  }
+}
