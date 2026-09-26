@@ -748,11 +748,17 @@ public partial class RunManagementService : IRunManagementService
             this.telemetryBroker.RecordRunOutcome(
                 context.Status.ToString(), runPromptTokens, runCompletionTokens);
 
-            setOutcome(new AgentOutcome(
-                string.IsNullOrEmpty(cappedUnwound)
-                    ? TurnsExhaustedMessage
-                    : $"{TurnsExhaustedMessage} {cappedUnwound}",
-                context.Status));
+            string cappedResult = string.IsNullOrEmpty(cappedUnwound)
+                ? TurnsExhaustedMessage
+                : $"{TurnsExhaustedMessage} {cappedUnwound}";
+
+            // With the code that says why, beside the status that says it stopped mid-work
+            // (SPEC.md §3.6, v1.14).
+            setOutcome(new AgentOutcome(cappedResult, context.Status)
+            {
+                Failure = new AgentFailure(
+                    AgentFailureCategory.Service, AgentFailureCodes.TurnsExhausted, cappedResult)
+            });
 
             return;
         }
