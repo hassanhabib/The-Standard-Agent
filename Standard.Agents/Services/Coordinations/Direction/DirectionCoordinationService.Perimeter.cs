@@ -94,7 +94,7 @@ public partial class DirectionCoordinationService
         switch (claim.Verdict)
         {
             case EffectClaimVerdict.Replay:
-                return Observed(context, claim.Outcome ?? string.Empty);
+                return Observed(context, Replayed(effect.ToolName, claim.Outcome ?? string.Empty));
 
             case EffectClaimVerdict.InProgress:
                 return Denied(
@@ -383,6 +383,17 @@ public partial class DirectionCoordinationService
     // What the act is about to touch, as the tool named it. The framework never parses arguments:
     // only the tool knows what its own arguments mean, and a host reinventing that parsing inside
     // a policy delegate is how every deployment ends up with a different, unchecked answer.
+    // The same outcome, and the one thing the Brain did not already have (SPEC.md §4.9, v1.14).
+    //
+    // Run-once is right that the act runs once. What it hands back is the first outcome, and a
+    // model reading its own earlier answer back reads exactly what it was looking at when it decided
+    // to ask, so it decides the same thing again. The outcome comes first and whole, because that is
+    // the point of a replay and something downstream may be looking for a value inside it; the note
+    // is added after, saying only what is true.
+    private static string Replayed(string toolName, string outcome) =>
+        $"{outcome}\n\n[{toolName} already ran in this run with the same arguments, and this is what "
+            + "it said then. Asking again returns this same answer. Use it and do something else.]";
+
     // A look after a write to the same place is a new question, not the old one asked again
     // (SPEC.md §4.9, v1.14).
     //
