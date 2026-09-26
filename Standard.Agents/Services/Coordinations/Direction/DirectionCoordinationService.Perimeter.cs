@@ -56,6 +56,8 @@ public partial class DirectionCoordinationService
             // rather than inventing someone.
             principal: this.identityResolver?.Invoke());
 
+        effect = AfterWhatChangedIt(effect);
+
         // 1 — authorize
         AuthorizationDecision decision = await this.perimeterService.AuthorizeAsync(effect);
 
@@ -175,7 +177,9 @@ public partial class DirectionCoordinationService
         AgentRun.Current?.RecordPerformed(
             new PerformedEffect(effect.ToolName, effect.Arguments, output)
             {
-                IdempotencyKey = effect.IdempotencyKey
+                IdempotencyKey = effect.IdempotencyKey,
+                Scope = effect.Scope,
+                RiskLevel = effect.RiskLevel
             });
 
         // 5 — record the outcome, before the loop advances
@@ -379,6 +383,31 @@ public partial class DirectionCoordinationService
     // What the act is about to touch, as the tool named it. The framework never parses arguments:
     // only the tool knows what its own arguments mean, and a host reinventing that parsing inside
     // a policy delegate is how every deployment ends up with a different, unchecked answer.
+    // A look after a write to the same place is a new question, not the old one asked again
+    // (SPEC.md §4.9, v1.14).
+    //
+    // The ledger remembers what a read said and replays it to the same read for the rest of the
+    // run, which is right for an act and wrong for a look at something an act has since changed.
+    // Watched in both reference implementations: a model edited a file, read it back to check, and
+    // was handed the file as it was before the edit.
+    //
+    // So a Safe act whose scope this run has since written to is claimed under a key that counts
+    // the writes. It runs, and a second identical look after the same writes replays as before.
+    // Counted from what the run performed rather than from native exchanges, so it holds on the
+    // text protocol too. An act that is not Safe keeps its key exactly: a transfer proposed twice is
+    // one transfer, whatever else happened in between.
+    private static AgentEffect AfterWhatChangedIt(AgentEffect effect)
+    {
+        if (effect.RiskLevel is not RiskLevel.Safe || string.IsNullOrEmpty(effect.Scope))
+        {
+            return effect;
+        }
+
+        int writes = AgentRun.Current?.WritesTo(effect.Scope) ?? 0;
+
+        return writes is 0 ? effect : effect.AfterWrites(writes);
+    }
+
     private string ScopeFor(string toolName, string arguments) =>
         this.toolScope.TryGetValue(toolName, out Func<string, string>? scopeOf)
             ? scopeOf(arguments)

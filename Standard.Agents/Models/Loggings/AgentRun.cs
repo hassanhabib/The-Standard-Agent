@@ -213,6 +213,21 @@ public sealed class AgentRun
         }
     }
 
+    /// <summary>
+    /// How many acts this run has performed on a scope that were not Safe: what a look at that
+    /// scope would see has changed that many times since the run began (SPEC.md §4.9, v1.14).
+    /// Counted from what the run performed, so it holds on every protocol.
+    /// </summary>
+    public int WritesTo(string scope)
+    {
+        lock (this.performedEffects)
+        {
+            return this.performedEffects.Count(performed =>
+                performed.RiskLevel is not Orchestrations.Effects.RiskLevel.Safe
+                    && string.Equals(performed.Scope, scope, StringComparison.Ordinal));
+        }
+    }
+
     /// <summary>Restarts process numbering, called when a step begins.</summary>
     public void ResetProcessIndex() =>
         Interlocked.Exchange(ref this.processIndex, 0);

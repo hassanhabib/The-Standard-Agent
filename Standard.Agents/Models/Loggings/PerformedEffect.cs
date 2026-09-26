@@ -3,6 +3,8 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using Standard.Agents.Models.Orchestrations.Effects;
+
 namespace Standard.Agents.Models.Loggings;
 
 /// <summary>
@@ -22,4 +24,16 @@ public sealed record PerformedEffect(string ToolName, string Arguments, string O
     /// that says it happened (SPEC.md §4.9). Empty when the act was performed without a ledger.
     /// </summary>
     public string IdempotencyKey { get; init; } = "";
+
+    /// <summary>
+    /// What the act touched, as its tool named it, so a later look at the same place can be told
+    /// from the look before it (SPEC.md §4.9, v1.14). Empty when the tool names nothing.
+    /// </summary>
+    public string Scope { get; init; } = "";
+
+    /// <summary>
+    /// How consequential the act was. Only an act that is not Safe changes what a later look at its
+    /// scope would see.
+    /// </summary>
+    public RiskLevel RiskLevel { get; init; } = RiskLevel.Safe;
 }
