@@ -67,4 +67,23 @@ public class FailureCodeTests
         outcome.Failure.Category.Should().Be(AgentFailureCategory.Service);
         outcome.Failure.Message.Should().Be(outcome.Result);
     }
+
+    [Fact]
+    public async Task ShouldReportAnExhaustedBudgetAsBudgetExhaustedAsync()
+    {
+        // given
+        StandardAgent agent =
+            AgentThatLoops(turn => "ACTION: nonexistent_tool: keep going")
+                .MaxTurns(50)
+                .Budget(maxWallClock: TimeSpan.Zero);
+
+        // when
+        AgentOutcome outcome = await agent.RunAsync("loop forever");
+
+        // then
+        outcome.Status.Should().Be(AgentStatus.Failed);
+        outcome.Failure.Should().NotBeNull();
+        outcome.Failure!.Code.Should().Be(AgentFailureCodes.BudgetExhausted);
+        outcome.Failure.Message.Should().Be(outcome.Result);
+    }
 }
