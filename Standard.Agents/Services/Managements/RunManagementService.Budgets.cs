@@ -29,6 +29,14 @@ public partial class RunManagementService
     private const string TimeBudgetMessage =
         "The time budget for this request was exhausted before it completed.";
 
+    // Which kind of stop it was, as a code for the caller that switches on codes rather than
+    // reading sentences (SPEC.md §3.6, v1.14). The message is the whole result the run carries, so
+    // a caller reading either one is told the same thing.
+    private static AgentFailure? StoppedFailure(string stoppedBecause, string result) =>
+        stoppedBecause is CancelledMessage
+            ? new AgentFailure(AgentFailureCategory.Service, AgentFailureCodes.Cancelled, result)
+            : null;
+
     private bool IsBudgetExhausted(
         AgentSpend spend,
         DateTimeOffset startedOn,

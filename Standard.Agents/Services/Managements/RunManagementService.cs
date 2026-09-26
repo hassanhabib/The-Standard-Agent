@@ -708,11 +708,14 @@ public partial class RunManagementService : IRunManagementService
             this.telemetryBroker.RecordRunOutcome(
                 context.Status.ToString(), runPromptTokens, runCompletionTokens);
 
-            setOutcome(new AgentOutcome(
-                string.IsNullOrEmpty(stoppedUnwound)
-                    ? stoppedBecause
-                    : $"{stoppedBecause} {stoppedUnwound}",
-                AgentStatus.Failed));
+            string stoppedResult = string.IsNullOrEmpty(stoppedUnwound)
+                ? stoppedBecause
+                : $"{stoppedBecause} {stoppedUnwound}";
+
+            setOutcome(new AgentOutcome(stoppedResult, AgentStatus.Failed)
+            {
+                Failure = StoppedFailure(stoppedBecause, stoppedResult)
+            });
 
             return;
         }
