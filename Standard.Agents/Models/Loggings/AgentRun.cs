@@ -35,6 +35,7 @@ public sealed class AgentRun
     private readonly Dictionary<string, string> verdicts = [];
     private readonly HashSet<string> grants = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<PerformedEffect> performedEffects = [];
+    private readonly Dictionary<string, int> replays = new(StringComparer.Ordinal);
 
     private int sequence;
     private int processIndex;
@@ -210,6 +211,22 @@ public sealed class AgentRun
         lock (this.performedEffects)
         {
             this.performedEffects.Add(effect);
+        }
+    }
+
+    /// <summary>
+    /// Records that the run-once ledger answered this act again, and says how many times it has now
+    /// done so in this run (SPEC.md §4.9, v1.14). Kept by the act's key, so a look after a write,
+    /// which carries a different key, starts its own count, and it holds on every protocol.
+    /// </summary>
+    public int RecordReplay(string idempotencyKey)
+    {
+        lock (this.replays)
+        {
+            int replayed = this.replays.GetValueOrDefault(idempotencyKey) + 1;
+            this.replays[idempotencyKey] = replayed;
+
+            return replayed;
         }
     }
 
