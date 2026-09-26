@@ -94,7 +94,7 @@ public partial class DirectionCoordinationService
         switch (claim.Verdict)
         {
             case EffectClaimVerdict.Replay:
-                return Observed(context, Replayed(effect.ToolName, claim.Outcome ?? string.Empty));
+                return Observed(context, Replayed(effect.ToolName, claim.Outcome ?? string.Empty), replayed: true);
 
             case EffectClaimVerdict.InProgress:
                 return Denied(
@@ -332,14 +332,23 @@ public partial class DirectionCoordinationService
     // A call the model made gets an answer, whatever the answer is. A denial and a withheld
     // result are answers; leaving the call unanswered would strand it, and some providers reject
     // a conversation whose tool call has no matching tool message (SPEC.md §6).
-    private static IReadOnlyList<ToolExchange> WithExchange(AgentContext context, string result) =>
+    //
+    // Whether the ledger answered it rather than the tool rides with it (SPEC.md §3.2, v1.14): a
+    // loop that counts a run's asks has to tell a replay from a call that ran.
+    private static IReadOnlyList<ToolExchange> WithExchange(
+        AgentContext context,
+        string result,
+        bool replayed = false) =>
         string.IsNullOrEmpty(context.ToolCallId)
             ? context.ToolExchanges
             : [.. context.ToolExchanges,
                 new ToolExchange(
-                    context.ToolCallId, context.DirectionType, context.Payload, result)];
+                    context.ToolCallId, context.DirectionType, context.Payload, result)
+                {
+                    Replayed = replayed
+                }];
 
-    private static AgentContext Observed(AgentContext context, string output) =>
+    private static AgentContext Observed(AgentContext context, string output, bool replayed = false) =>
         context with
         {
             Result = output,
@@ -349,7 +358,7 @@ public partial class DirectionCoordinationService
             // the next turn can hand it back as a tool message rather than as narration
             // (SPEC.md §6). Observations still carry it too: they are what the V0 path reads,
             // and what the trace and the Judge read on both.
-            ToolExchanges = WithExchange(context, output),
+            ToolExchanges = WithExchange(context, output, replayed),
 
             Status = AgentStatus.Working
         };
