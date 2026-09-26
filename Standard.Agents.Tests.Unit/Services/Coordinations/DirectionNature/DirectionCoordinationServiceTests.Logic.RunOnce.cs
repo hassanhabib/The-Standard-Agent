@@ -57,6 +57,36 @@ public partial class DirectionCoordinationServiceTests
             service.RunAsync("read_file", "a.txt"), Times.Exactly(2));
     }
 
+    [Fact]
+    public async Task ShouldTellTheBrainAReplayAlreadyRanOnActAsync()
+    {
+        // given
+        // Handed back bare, a replay reads as a fresh answer to a fresh ask, and a model that asked
+        // because it did not have what it wanted asks again (SPEC.md §4.9, v1.14).
+        using IDisposable run = AgentRun.Begin();
+
+        this.internalToolServiceMock.Setup(service =>
+            service.HandlesAsync("calculator")).ReturnsAsync(true);
+
+        this.internalToolServiceMock.Setup(service =>
+            service.RunAsync("calculator", "2 + 2")).ReturnsAsync("4");
+
+        AgentContext first = await this.directionCoordinationService.ActAsync(
+            CreateContextWithDirection("calculator", "2 + 2"));
+
+        // when
+        AgentContext second = await this.directionCoordinationService.ActAsync(
+            first with { DirectionType = "calculator", Payload = "2 + 2" });
+
+        // then
+        // The first outcome whole, then the note. The tool ran once.
+        second.Result.Should().StartWith("4");
+        second.Result.Should().Contain("already ran in this run with the same arguments");
+
+        this.internalToolServiceMock.Verify(service =>
+            service.RunAsync("calculator", "2 + 2"), Times.Once);
+    }
+
     // A file tool pair over one scope: a Safe read and a Sensitive write, both naming the same file,
     // the way a coding agent's tools do.
     private DirectionCoordinationService NewScopedFileService() =>
