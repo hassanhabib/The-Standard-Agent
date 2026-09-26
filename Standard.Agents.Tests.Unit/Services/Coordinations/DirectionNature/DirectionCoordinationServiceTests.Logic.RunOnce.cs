@@ -87,6 +87,31 @@ public partial class DirectionCoordinationServiceTests
             service.RunAsync("calculator", "2 + 2"), Times.Once);
     }
 
+    [Fact]
+    public async Task ShouldMarkAnExchangeTheLedgerAnsweredAsReplayedOnActAsync()
+    {
+        // given
+        // A loop that counts a run's repeated asks has to tell a replay from a call that ran: a read
+        // after an edit is the same ask and is not a repeat (SPEC.md §3.2, v1.14).
+        using IDisposable run = AgentRun.Begin();
+
+        this.internalToolServiceMock.Setup(service =>
+            service.HandlesAsync("calculator")).ReturnsAsync(true);
+
+        this.internalToolServiceMock.Setup(service =>
+            service.RunAsync("calculator", "2 + 2")).ReturnsAsync("4");
+
+        AgentContext first = await this.directionCoordinationService.ActAsync(
+            CreateContextWithDirection("calculator", "2 + 2") with { ToolCallId = "call_1" });
+
+        // when
+        AgentContext second = await this.directionCoordinationService.ActAsync(
+            first with { DirectionType = "calculator", Payload = "2 + 2", ToolCallId = "call_2" });
+
+        // then
+        second.ToolExchanges.Select(exchange => exchange.Replayed).Should().Equal(false, true);
+    }
+
     // A file tool pair over one scope: a Safe read and a Sensitive write, both naming the same file,
     // the way a coding agent's tools do.
     private DirectionCoordinationService NewScopedFileService() =>

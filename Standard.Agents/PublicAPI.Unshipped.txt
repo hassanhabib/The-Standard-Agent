@@ -9,3 +9,5 @@ Standard.Agents.Models.Loggings.PerformedEffect.Scope.init -> void
 Standard.Agents.Models.Loggings.PerformedEffect.RiskLevel.get -> Standard.Agents.Models.Orchestrations.Effects.RiskLevel
 Standard.Agents.Models.Loggings.PerformedEffect.RiskLevel.init -> void
 Standard.Agents.Models.Orchestrations.Effects.AgentEffect.AfterWrites(int writes) -> Standard.Agents.Models.Orchestrations.Effects.AgentEffect!
+Standard.Agents.Models.Orchestrations.Agents.ToolExchange.Replayed.get -> bool
+Standard.Agents.Models.Orchestrations.Agents.ToolExchange.Replayed.init -> void

@@ -19,4 +19,13 @@ public sealed record ToolExchange(
     string CallId,
     string ToolName,
     string ArgumentsJson,
-    string Result);
+    string Result)
+{
+    /// <summary>
+    /// Whether the run-once ledger answered this call rather than the tool (SPEC.md §3.2, v1.14).
+    /// False by default, so an exchange recorded before this existed reads as a call that ran. A
+    /// loop that counts repeated asks has to tell the two apart: a read after an edit is the same
+    /// ask and is not a repeat.
+    /// </summary>
+    public bool Replayed { get; init; }
+}
