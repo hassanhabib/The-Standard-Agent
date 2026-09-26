@@ -86,4 +86,38 @@ public class FailureCodeTests
         outcome.Failure!.Code.Should().Be(AgentFailureCodes.BudgetExhausted);
         outcome.Failure.Message.Should().Be(outcome.Result);
     }
+
+    [Fact]
+    public async Task ShouldReportARunOutOfTurnsAsTurnsExhaustedAsync()
+    {
+        // given
+        StandardAgent agent =
+            AgentThatLoops(turn => "ACTION: nonexistent_tool: keep going")
+                .MaxTurns(2);
+
+        // when
+        AgentOutcome outcome = await agent.RunAsync("loop forever");
+
+        // then
+        // Still Working, because the run stopped mid-work, and now with the code that says so.
+        outcome.Status.Should().Be(AgentStatus.Working);
+        outcome.Failure.Should().NotBeNull();
+        outcome.Failure!.Code.Should().Be(AgentFailureCodes.TurnsExhausted);
+        outcome.Failure.Message.Should().Be(outcome.Result);
+    }
+
+    [Fact]
+    public async Task ShouldCarryNoFailureOnARunThatAnsweredAsync()
+    {
+        // given
+        StandardAgent agent = AgentThatLoops(turn => "FINAL: 42");
+
+        // when
+        AgentOutcome outcome = await agent.RunAsync("what is the answer?");
+
+        // then
+        // An answer is not a stop without an answer, and must never look like one.
+        outcome.Status.Should().Be(AgentStatus.Responded);
+        outcome.Failure.Should().BeNull();
+    }
 }
