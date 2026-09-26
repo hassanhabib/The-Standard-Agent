@@ -11,6 +11,7 @@ using Standard.Agents.Brokers.Skills;
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Foundations.Skills;
 using Standard.Agents.Models.Orchestrations.Agents;
+using Standard.Agents.Tools;
 using Xunit;
 
 namespace Standard.Agents.Tests.Unit.Acceptance;
@@ -104,6 +105,47 @@ public class FailureCodeTests
         outcome.Failure.Should().NotBeNull();
         outcome.Failure!.Code.Should().Be(AgentFailureCodes.TurnsExhausted);
         outcome.Failure.Message.Should().Be(outcome.Result);
+    }
+
+    [Fact]
+    public async Task ShouldStopARunGoingInCirclesAsync()
+    {
+        // given
+        // Watched live, twice: a model asked for the same thing eleven more times with the note in
+        // front of it, and a turn cap of sixty-four is sixty turns of the same question (SPEC.md
+        // §4.10, v1.14). The act runs once; every ask after it is a replay.
+        var tool = new CountingTool();
+
+        StandardAgent agent =
+            AgentThatLoops(turn => "ACTION: calculator: 1 + 1")
+                .Tool(tool)
+                .MaxTurns(20)
+                .IdenticalCallLimit(3);
+
+        // when
+        AgentOutcome outcome = await agent.RunAsync("add one and one");
+
+        // then
+        // Asked, replayed, told, and then told the run is over: not a refusal and not an answer.
+        tool.Calls.Should().Be(1);
+        outcome.Status.Should().Be(AgentStatus.Failed);
+        outcome.Failure.Should().NotBeNull();
+        outcome.Failure!.Code.Should().Be(AgentFailureCodes.GoingInCircles);
+        outcome.Failure.Message.Should().Be(outcome.Result);
+    }
+
+    private sealed class CountingTool : ITool
+    {
+        public string Name => "calculator";
+        public string Description => "Evaluates arithmetic.";
+        public int Calls { get; private set; }
+
+        public ValueTask<string> ExecuteAsync(string input)
+        {
+            Calls++;
+
+            return ValueTask.FromResult("2");
+        }
     }
 
     [Fact]

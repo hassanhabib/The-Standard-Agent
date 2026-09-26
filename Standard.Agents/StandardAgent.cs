@@ -102,6 +102,7 @@ public sealed partial class StandardAgent : IAgent
     private TraceVerbosity traceVerbosity = TraceVerbosity.Full;
     private string memoryPath = "memory.txt";
     private int maxTurns = 7;
+    private int identicalCallLimit = 8;
     private string knowledgePath = "Knowledge";
     private string knowledgePattern = "*.md";
     private int knowledgeMaxResults = 3;
@@ -885,6 +886,18 @@ public sealed partial class StandardAgent : IAgent
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent MaxTurns(int turns) =>
         Set(() => this.maxTurns = turns < 1 ? 1 : turns);
+
+    /// <summary>
+    /// How many times a run may ask for an act the run-once ledger has already answered before the
+    /// loop ends it as going in circles (SPEC.md §4.10, v1.14). Counts replays only: the act that
+    /// ran, plus each replay of the same tool with the same arguments, so a read after an edit is
+    /// not counted. Defaults to 8, above the default turn cap, so a composition that never set it is
+    /// bounded by the turn cap exactly as before. A value below 2 is treated as 2.
+    /// </summary>
+    /// <param name="times">How many identical asks are enough.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent IdenticalCallLimit(int times) =>
+        Set(() => this.identicalCallLimit = times < 2 ? 2 : times);
 
     /// <summary>
     /// Swaps in a custom skill broker, replacing the default file-backed one. For advanced hosts

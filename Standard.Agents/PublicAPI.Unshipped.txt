@@ -40,3 +40,4 @@ override Standard.Agents.Models.Clients.Agents.AgentFailure.GetHashCode() -> int
 override Standard.Agents.Models.Clients.Agents.AgentFailure.ToString() -> string!
 static Standard.Agents.Models.Clients.Agents.AgentFailure.operator !=(Standard.Agents.Models.Clients.Agents.AgentFailure? left, Standard.Agents.Models.Clients.Agents.AgentFailure? right) -> bool
 static Standard.Agents.Models.Clients.Agents.AgentFailure.operator ==(Standard.Agents.Models.Clients.Agents.AgentFailure? left, Standard.Agents.Models.Clients.Agents.AgentFailure? right) -> bool
+Standard.Agents.StandardAgent.IdenticalCallLimit(int times) -> Standard.Agents.StandardAgent!
