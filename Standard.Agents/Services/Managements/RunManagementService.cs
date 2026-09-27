@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using Standard.Agents.Brokers.Loggings;
 
@@ -16,6 +17,7 @@ using Standard.Agents.Models.Coordinations.Agents;
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Loggings;
 using Standard.Agents.Models.Orchestrations.Agents;
+using Standard.Agents.Models.Foundations.Usages;
 using Standard.Agents.Models.Orchestrations.Effects;
 using Standard.Agents.Services.Coordinations.Data;
 using Standard.Agents.Services.Coordinations.Decision;
@@ -553,6 +555,10 @@ public partial class RunManagementService : IRunManagementService
         int runPromptTokens = 0;
         int runCompletionTokens = 0;
 
+        // Whether any call in this run was counted here rather than reported (SPEC.md §3.4). One
+        // estimate in the sum makes the sum an estimate.
+        bool runUsageIsEstimated = false;
+
         for (int turn = 0; turn < this.maxTurns; turn++)
         {
             if (cancellationToken.IsCancellationRequested)
@@ -607,9 +613,27 @@ public partial class RunManagementService : IRunManagementService
             spend.AddTokens(context.PromptTokens, context.CompletionTokens);
             runPromptTokens += context.PromptTokens;
             runCompletionTokens += context.CompletionTokens;
+            runUsageIsEstimated |= context.UsageIsEstimated;
 
             this.telemetryBroker.RecordTurnUsage(
                 context.PromptTokens, context.CompletionTokens, context.UsageIsEstimated);
+
+            // What the run has spent so far, said the moment it is known (SPEC.md §4.14.1): the
+            // count the budget above reads, not a second one. Before a revision's `continue`,
+            // because a draft sent back was still written.
+            var runUsage = new AgentUsage(
+                PromptTokens: runPromptTokens,
+                CompletionTokens: runCompletionTokens,
+                IsEstimated: runUsageIsEstimated);
+
+            await events.WriteAsync(
+                new AgentStreamEvent(
+                    AgentStreamEventType.Usage,
+                    runUsage.TotalTokens.ToString(CultureInfo.InvariantCulture))
+                {
+                    Usage = runUsage
+                },
+                abandoned);
 
             if (context.Status is AgentStatus.Revising)
             {
