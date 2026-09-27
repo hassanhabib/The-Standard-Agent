@@ -179,7 +179,7 @@ jobs:
       run: bash scripts/dependency-budget.sh
 
     - name: Publishing The License Inventory
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: license-inventory
         path: licenses.json
