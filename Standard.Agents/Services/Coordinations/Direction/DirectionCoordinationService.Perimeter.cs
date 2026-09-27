@@ -56,7 +56,7 @@ public partial class DirectionCoordinationService
             // rather than inventing someone.
             principal: this.identityResolver?.Invoke());
 
-        effect = AfterWhatChangedIt(effect);
+        effect = AfterWhatChangedIt(context, effect);
 
         // 1 — authorize
         AuthorizationDecision decision = await this.perimeterService.AuthorizeAsync(effect);
@@ -443,16 +443,30 @@ public partial class DirectionCoordinationService
     // Counted from what the run performed rather than from native exchanges, so it holds on the
     // text protocol too. An act that is not Safe keeps its key exactly: a transfer proposed twice is
     // one transfer, whatever else happened in between.
-    private static AgentEffect AfterWhatChangedIt(AgentEffect effect)
+    //
+    // The exchanges still count, for a run resumed with a conversation: resumed, a run keeps its
+    // identity, so the ledger still holds the look from before the pause, and it begins with
+    // nothing performed. The writes before the pause are in the exchanges it was handed. Whichever
+    // saw more writes saw what happened.
+    private AgentEffect AfterWhatChangedIt(AgentContext context, AgentEffect effect)
     {
         if (effect.RiskLevel is not RiskLevel.Safe || string.IsNullOrEmpty(effect.Scope))
         {
             return effect;
         }
 
-        int writes = AgentRun.Current?.WritesTo(effect.Scope) ?? 0;
+        int performedWrites = AgentRun.Current?.WritesTo(effect.Scope) ?? 0;
+        int exchangedWrites = ExchangedWritesTo(context, effect.Scope);
+        int writes = Math.Max(performedWrites, exchangedWrites);
 
         return writes is 0 ? effect : effect.AfterWrites(writes);
+    }
+
+    private int ExchangedWritesTo(AgentContext context, string scope)
+    {
+        return context.ToolExchanges.Count(exchange =>
+            RiskLevelFor(exchange.ToolName) is not RiskLevel.Safe
+                && string.Equals(ScopeFor(exchange.ToolName, exchange.ArgumentsJson), scope, StringComparison.Ordinal));
     }
 
     private string ScopeFor(string toolName, string arguments) =>
