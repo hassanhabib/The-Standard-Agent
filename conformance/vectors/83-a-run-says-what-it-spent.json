@@ -1,0 +1,18 @@
+{
+  "name": "a-run-says-what-it-spent",
+  "description": "SPEC.md 4.14.1: after every model call the loop makes for the Brain, the stream carries a Usage event whose record is the run's usage so far, the same count the budget bounds. Two calls here, one to act and one to answer, so two events, each a running total larger than the last, each with that total as its text. The scripted Brain reports nothing, so every count is a local one and must say so (3.4). The first reply carries a long narration: it was written, so it was spent, and it never returns to the prompt (6.0), so the answering call costs less than the acting one. An implementation that reports each call's own figure instead of the total therefore reports a total that shrinks, and one that kept the count inside the loop carries no Usage event at all.",
+  "generatorReplies": [
+    "SAY: I am going to work this out carefully rather than guess, because multiplying two two-digit numbers in my head is exactly the kind of thing I get wrong when I rush it. The calculator is right there, it is exact, and it costs almost nothing to ask it, so I will hand it the two numbers you gave me, forty seven and eighty nine, and read back whatever it says rather than trusting my own arithmetic. Once it answers I will give you the product as a single number with nothing added to it, since that is what you asked for and anything more would only be in the way of reading it.\nACTION: calculator: 47*89",
+    "FINAL: 4183"
+  ],
+  "tools": { "calculator": "4183" },
+  "prompt": "what is 47 times 89?",
+  "streamed": true,
+  "request": {},
+  "expect": {
+    "result": "4183",
+    "toolRunCount": { "calculator": 1 },
+    "usageEvents": 2,
+    "usageEstimated": true
+  }
+}

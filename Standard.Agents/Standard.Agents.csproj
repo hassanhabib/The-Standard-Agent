@@ -533,7 +533,19 @@
          support". Certified by vectors 80, 81 and 82, each proven to fail against 2.0.0.0 while
          the 79 before them pass. Spec-first: tracks SPEC.md v1.14 (SS3.2, SS3.6, SS4.9, SS4.10).
          The model shape changed: segment 1 advances, 2/3/4 reset. -->
-    <Version>3.0.0.0</Version>
+    <!-- 4.0.0.0 "A Run Says What It Spent": the loop counted every model call, reported or
+         estimated, because the budget cannot bound what it does not count, and kept the count to
+         itself. Somebody watching a run could read a clock and nothing else. After every model
+         call the stream now carries AgentStreamEventType.Usage, whose AgentStreamEvent.Usage is
+         the run's running total (the count the budget reads, marked estimated when any call
+         was) and whose Content is that total as a number. A draft sent back for revision counts.
+         Also ships the resume fix held for 3.0.1.0: a look at a scope written before the run was
+         resumed runs again rather than replaying. Certified by vector 83, which fails against
+         3.0.0.0 on behaviour, and fails again against a build reporting each call's own figure,
+         while the 82 before it pass. Spec-first: tracks SPEC.md v1.15 (SS4.14.1). The model shape
+         changed (a new enum member and a new member of a shipped record): segment 1 advances,
+         2/3/4 reset. -->
+    <Version>4.0.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>

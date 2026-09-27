@@ -23,6 +23,7 @@
     "a-cost-budget-without-a-rate-refuses-to-compose",
     "a-budget-counts-every-turn",
     "a-generous-budget-lets-the-run-finish",
+    "a-run-says-what-it-spent",
     "guardian-screens-once-per-prompt",
     "open-circuit-falls-back-to-secondary",
     "open-circuit-falls-back-on-the-native-protocol",

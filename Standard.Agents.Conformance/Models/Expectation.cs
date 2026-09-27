@@ -146,4 +146,15 @@ public sealed record Expectation(
     //   FailureCode — the code the run's outcome reports for a stop without an answer
     //                 (SPEC.md §3.6, v1.14): cancelled, budget_exhausted, turns_exhausted,
     //                 going_in_circles.
-    string? FailureCode = null);
+    string? FailureCode = null,
+
+    // Usage as it is spent (SPEC.md §4.14.1, v1.15), observable only on a streamed run.
+    //
+    //   UsageEvents    — how many Usage events the run carried: one per model call the loop
+    //                    made for the Brain. Each must carry its record, a total that grows,
+    //                    and that total as its text.
+    //   UsageEstimated — whether the last one says it was counted locally rather than
+    //                    reported. The scripted Brain reports nothing, so every count here is
+    //                    estimated, and one presented as a measurement fails.
+    int? UsageEvents = null,
+    bool? UsageEstimated = null);

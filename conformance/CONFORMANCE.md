@@ -3,7 +3,7 @@
 A **language-neutral** set of behavioral test vectors that any Standard-Agents
 implementation runs to self-certify against
 [`SPEC.md`](https://github.com/hassanhabib/The-Standard-Agent-Specs/blob/main/SPEC.md).
-Eighty-two vectors, four readiness profiles, every vector proven able to fail.
+Eighty-three vectors, four readiness profiles, every vector proven able to fail.
 
 The vectors are the executable half of the specification. Prose can be read two ways; a vector
 cannot, which is why "conformant" here means *this suite passes* rather than *we believe we
@@ -102,6 +102,7 @@ capability it configures did not exist, which is why the early vectors still des
 | `brokerTemperature`, `brokerMaxTokens`, `brokerTemperatures` | what the Brain was handed, after precedence resolved at the boundary |
 | `brokerSchemaContains`, `brokerOptionsInclude`, `brokerOptionsExclude` | the surviving schema on the wire, and the passthrough after the core-owned-keys strip |
 | `narrationsContain`, `narrationsExclude` | what the Narration channel carried, in order — and what appeared on **no** stream event at all, which is what proves a withheld narration was withheld rather than rerouted. Requires `"streamed": true`: the batched door produces and discards its events |
+| `usageEvents`, `usageEstimated` | how many Usage events the stream carried, one per model call, each a running total that grows and that carries its total as its text; and whether the last says it was estimated. The numbers themselves are not pinned, because every implementation counts in its own way where nothing was reported. Requires `"streamed": true` (§4.14.1) |
 
 Two of those are worth singling out, because they are the difference between checking a control and
 checking the *report* of one. `policySawPrincipal` reads the decision's input rather than the audit
@@ -187,6 +188,7 @@ the deterministic core of the Standard.
 | `a-look-after-a-write-sees-the-write` | A Safe look at a scope the run has since written to is a new act; the check after an edit sees the edit, on the text protocol too (§4.9) |
 | `a-replay-says-it-already-ran` | A replayed outcome reaches the Brain with a note that the act already ran; the tool still runs once (§4.9) |
 | `a-run-going-in-circles-stops` | Replays of one act past the repetition bound stop the run as Failed with `going_in_circles`, long before the turn cap (§3.6, §4.10) |
+| `a-run-says-what-it-spent` | After every model call the stream carries the run's running total, marked estimated where nobody reported it (§3.4, §4.14.1) |
 | `an-allow-list-can-say-where` | Permission is what **and where**; the tool names the scope (§4.9) |
 | `ask-first-covers-what-nothing-permitted` | A mode answers for the acts no permission mentioned (§4.9) |
 | `deny-covers-what-nothing-permitted` | Deny refuses the unnamed act and still runs the named one (§4.9) |
