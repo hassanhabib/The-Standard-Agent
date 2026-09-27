@@ -476,10 +476,29 @@ Standard.Agents.Models.Brokers.Sessions.AgentTurn.Deconstruct(out string! Prompt
 Standard.Agents.Models.Brokers.Sessions.AgentTurn.Equals(Standard.Agents.Models.Brokers.Sessions.AgentTurn? other) -> bool
 Standard.Agents.Models.Brokers.Sessions.AgentTurn.Prompt.get -> string!
 Standard.Agents.Models.Brokers.Sessions.AgentTurn.Prompt.init -> void
+Standard.Agents.Models.Clients.Agents.AgentFailure
+Standard.Agents.Models.Clients.Agents.AgentFailure.<Clone>$() -> Standard.Agents.Models.Clients.Agents.AgentFailure!
+Standard.Agents.Models.Clients.Agents.AgentFailure.AgentFailure(Standard.Agents.Models.Clients.Agents.AgentFailureCategory Category, string! Code, string! Message) -> void
+Standard.Agents.Models.Clients.Agents.AgentFailure.Category.get -> Standard.Agents.Models.Clients.Agents.AgentFailureCategory
+Standard.Agents.Models.Clients.Agents.AgentFailure.Category.init -> void
+Standard.Agents.Models.Clients.Agents.AgentFailure.Code.get -> string!
+Standard.Agents.Models.Clients.Agents.AgentFailure.Code.init -> void
+Standard.Agents.Models.Clients.Agents.AgentFailure.Deconstruct(out Standard.Agents.Models.Clients.Agents.AgentFailureCategory Category, out string! Code, out string! Message) -> void
+Standard.Agents.Models.Clients.Agents.AgentFailure.Equals(Standard.Agents.Models.Clients.Agents.AgentFailure? other) -> bool
+Standard.Agents.Models.Clients.Agents.AgentFailure.Message.get -> string!
+Standard.Agents.Models.Clients.Agents.AgentFailure.Message.init -> void
+Standard.Agents.Models.Clients.Agents.AgentFailureCategory
+Standard.Agents.Models.Clients.Agents.AgentFailureCategory.Dependency = 2 -> Standard.Agents.Models.Clients.Agents.AgentFailureCategory
+Standard.Agents.Models.Clients.Agents.AgentFailureCategory.DependencyValidation = 1 -> Standard.Agents.Models.Clients.Agents.AgentFailureCategory
+Standard.Agents.Models.Clients.Agents.AgentFailureCategory.Service = 3 -> Standard.Agents.Models.Clients.Agents.AgentFailureCategory
+Standard.Agents.Models.Clients.Agents.AgentFailureCategory.Validation = 0 -> Standard.Agents.Models.Clients.Agents.AgentFailureCategory
+Standard.Agents.Models.Clients.Agents.AgentFailureCodes
 Standard.Agents.Models.Clients.Agents.AgentOutcome
 Standard.Agents.Models.Clients.Agents.AgentOutcome.AgentOutcome(Standard.Agents.Models.Clients.Agents.AgentOutcome! original) -> void
 Standard.Agents.Models.Clients.Agents.AgentOutcome.AgentOutcome(string! Result, Standard.Agents.Models.Orchestrations.Agents.AgentStatus Status, Standard.Agents.Models.Orchestrations.Effects.AgentEffect? PendingEffect = null) -> void
 Standard.Agents.Models.Clients.Agents.AgentOutcome.Deconstruct(out string! Result, out Standard.Agents.Models.Orchestrations.Agents.AgentStatus Status, out Standard.Agents.Models.Orchestrations.Effects.AgentEffect? PendingEffect) -> void
+Standard.Agents.Models.Clients.Agents.AgentOutcome.Failure.get -> Standard.Agents.Models.Clients.Agents.AgentFailure?
+Standard.Agents.Models.Clients.Agents.AgentOutcome.Failure.init -> void
 Standard.Agents.Models.Clients.Agents.AgentOutcome.PendingEffect.get -> Standard.Agents.Models.Orchestrations.Effects.AgentEffect?
 Standard.Agents.Models.Clients.Agents.AgentOutcome.PendingEffect.init -> void
 Standard.Agents.Models.Clients.Agents.AgentOutcome.Result.get -> string!
@@ -625,6 +644,8 @@ Standard.Agents.Models.Foundations.Brains.Exceptions.FailedBrainServiceException
 Standard.Agents.Models.Foundations.Brains.Exceptions.FailedBrainServiceException.FailedBrainServiceException(string! message, System.Exception! innerException) -> void
 Standard.Agents.Models.Foundations.Brains.Exceptions.InvalidBrainException
 Standard.Agents.Models.Foundations.Brains.Exceptions.InvalidBrainException.InvalidBrainException(string! message) -> void
+Standard.Agents.Models.Foundations.Brains.Exceptions.UnreachableBrainException
+Standard.Agents.Models.Foundations.Brains.Exceptions.UnreachableBrainException.UnreachableBrainException(string! message, System.Exception! innerException) -> void
 Standard.Agents.Models.Foundations.Brains.RedactionRule
 Standard.Agents.Models.Foundations.Brains.RedactionRule.Label.get -> string!
 Standard.Agents.Models.Foundations.Brains.RedactionRule.Label.init -> void
@@ -855,13 +876,16 @@ Standard.Agents.Models.Loggings.AgentRun.PerformedEffects.get -> System.Collecti
 Standard.Agents.Models.Loggings.AgentRun.Prompt.get -> string!
 Standard.Agents.Models.Loggings.AgentRun.Prompt.set -> void
 Standard.Agents.Models.Loggings.AgentRun.RecordPerformed(Standard.Agents.Models.Loggings.PerformedEffect! effect) -> void
+Standard.Agents.Models.Loggings.AgentRun.RecordReplay(string! idempotencyKey) -> int
 Standard.Agents.Models.Loggings.AgentRun.RememberGrant(string! toolName, string! scope) -> void
 Standard.Agents.Models.Loggings.AgentRun.RememberVerdict(string! prompt, string! verdict) -> void
+Standard.Agents.Models.Loggings.AgentRun.ReplaysOfLatestAsk.get -> int
 Standard.Agents.Models.Loggings.AgentRun.ResetProcessIndex() -> void
 Standard.Agents.Models.Loggings.AgentRun.StartedOn.get -> System.DateTimeOffset
 Standard.Agents.Models.Loggings.AgentRun.StartedOn.set -> void
 Standard.Agents.Models.Loggings.AgentRun.TryGetVerdict(string! prompt, out string! verdict) -> bool
 Standard.Agents.Models.Loggings.AgentRun.WasGranted(string! toolName, string! scope) -> bool
+Standard.Agents.Models.Loggings.AgentRun.WritesTo(string! scope) -> int
 Standard.Agents.Models.Loggings.AgentStep
 Standard.Agents.Models.Loggings.AgentStep.Data = 0 -> Standard.Agents.Models.Loggings.AgentStep
 Standard.Agents.Models.Loggings.AgentStep.Decision = 1 -> Standard.Agents.Models.Loggings.AgentStep
@@ -875,6 +899,10 @@ Standard.Agents.Models.Loggings.PerformedEffect.Equals(Standard.Agents.Models.Lo
 Standard.Agents.Models.Loggings.PerformedEffect.Outcome.get -> string!
 Standard.Agents.Models.Loggings.PerformedEffect.Outcome.init -> void
 Standard.Agents.Models.Loggings.PerformedEffect.PerformedEffect(string! ToolName, string! Arguments, string! Outcome) -> void
+Standard.Agents.Models.Loggings.PerformedEffect.RiskLevel.get -> Standard.Agents.Models.Orchestrations.Effects.RiskLevel
+Standard.Agents.Models.Loggings.PerformedEffect.RiskLevel.init -> void
+Standard.Agents.Models.Loggings.PerformedEffect.Scope.get -> string!
+Standard.Agents.Models.Loggings.PerformedEffect.Scope.init -> void
 Standard.Agents.Models.Loggings.PerformedEffect.ToolName.get -> string!
 Standard.Agents.Models.Loggings.PerformedEffect.ToolName.init -> void
 Standard.Agents.Models.Loggings.TraceVerbosity
@@ -957,6 +985,8 @@ Standard.Agents.Models.Orchestrations.Agents.ToolExchange.CallId.get -> string!
 Standard.Agents.Models.Orchestrations.Agents.ToolExchange.CallId.init -> void
 Standard.Agents.Models.Orchestrations.Agents.ToolExchange.Deconstruct(out string! CallId, out string! ToolName, out string! ArgumentsJson, out string! Result) -> void
 Standard.Agents.Models.Orchestrations.Agents.ToolExchange.Equals(Standard.Agents.Models.Orchestrations.Agents.ToolExchange? other) -> bool
+Standard.Agents.Models.Orchestrations.Agents.ToolExchange.Replayed.get -> bool
+Standard.Agents.Models.Orchestrations.Agents.ToolExchange.Replayed.init -> void
 Standard.Agents.Models.Orchestrations.Agents.ToolExchange.Result.get -> string!
 Standard.Agents.Models.Orchestrations.Agents.ToolExchange.Result.init -> void
 Standard.Agents.Models.Orchestrations.Agents.ToolExchange.ToolExchange(string! CallId, string! ToolName, string! ArgumentsJson, string! Result) -> void
@@ -964,6 +994,7 @@ Standard.Agents.Models.Orchestrations.Agents.ToolExchange.ToolName.get -> string
 Standard.Agents.Models.Orchestrations.Agents.ToolExchange.ToolName.init -> void
 Standard.Agents.Models.Orchestrations.Effects.AgentEffect
 Standard.Agents.Models.Orchestrations.Effects.AgentEffect.<Clone>$() -> Standard.Agents.Models.Orchestrations.Effects.AgentEffect!
+Standard.Agents.Models.Orchestrations.Effects.AgentEffect.AfterWrites(int writes) -> Standard.Agents.Models.Orchestrations.Effects.AgentEffect!
 Standard.Agents.Models.Orchestrations.Effects.AgentEffect.AgentEffect() -> void
 Standard.Agents.Models.Orchestrations.Effects.AgentEffect.ApprovalRequired.get -> bool
 Standard.Agents.Models.Orchestrations.Effects.AgentEffect.ApprovalRequired.init -> void
@@ -1081,6 +1112,7 @@ Standard.Agents.Services.Foundations.Contracts.ContractService.ContractService(S
 Standard.Agents.Services.Foundations.Contracts.IContractService
 Standard.Agents.Services.Foundations.Contracts.IContractService.CheckAsync(string! answer, string! schema) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Foundations.Contracts.ContractVerdict!>
 Standard.Agents.Services.Foundations.EffectLedgers.EffectLedgerService
+Standard.Agents.Services.Foundations.EffectLedgers.EffectLedgerService.EffectLedgerService(Standard.Agents.Brokers.Effects.IEffectLedgerBroker! effectLedgerBroker, Standard.Agents.Brokers.Times.ITimeBroker! timeBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, System.TimeSpan lease) -> void
 Standard.Agents.Services.Foundations.EffectLedgers.EffectLedgerService.RecordOutcomeAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect, string! outcome) -> System.Threading.Tasks.ValueTask
 Standard.Agents.Services.Foundations.EffectLedgers.EffectLedgerService.ReleaseClaimAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask
 Standard.Agents.Services.Foundations.EffectLedgers.IEffectLedgerService
@@ -1183,6 +1215,7 @@ Standard.Agents.Services.Managements.RunManagementService.ProcessPromptStreamAsy
 Standard.Agents.Services.Managements.RunManagementService.RunAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
 Standard.Agents.Services.Managements.RunManagementService.RunAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
 Standard.Agents.Services.Managements.RunManagementService.RunAsync(string! prompt, string! sessionId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
+Standard.Agents.Services.Managements.RunManagementService.RunManagementService(Standard.Agents.Services.Coordinations.Data.IDataCoordinationService! dataCoordinationService, Standard.Agents.Services.Coordinations.Decision.IDecisionCoordinationService! decisionCoordinationService, Standard.Agents.Services.Coordinations.Direction.IDirectionCoordinationService! directionCoordinationService, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, int maxTurns = 7, Standard.Agents.Brokers.Times.ITimeBroker? timeBroker = null, Standard.Agents.Models.Coordinations.Agents.AgentBudget? budget = null, int maxHistoryTurns = 20, bool compensateOnFailure = false, bool screenToolOutput = false, Standard.Agents.Brokers.Telemetries.ITelemetryBroker? telemetryBroker = null, string? contractSchema = null, double? configuredTemperature = null, int? configuredMaxTokens = null, System.Collections.Generic.IEnumerable<string!>? configuredToolNames = null, System.Collections.Generic.IReadOnlyDictionary<string!, Standard.Agents.Models.Coordinations.Agents.ToolNarration!>? toolNarrations = null, Standard.Agents.Models.Coordinations.Agents.ToolSelector? toolSelector = null, System.Collections.Generic.IEnumerable<string!>? describedToolNames = null, Standard.Agents.Models.Coordinations.Agents.PrincipalResolver? principalResolver = null, int identicalCallLimit = 8) -> void
 Standard.Agents.Services.Managements.RunManagementService.RunStreamAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request) -> Standard.Agents.Models.Clients.Agents.AgentRunStream!
 Standard.Agents.Services.Managements.RunManagementService.RunStreamAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request, System.Threading.CancellationToken cancellationToken) -> Standard.Agents.Models.Clients.Agents.AgentRunStream!
 Standard.Agents.Services.Orchestrations.Data.Recollections.IRecollectionOrchestrationService
@@ -1252,10 +1285,12 @@ Standard.Agents.StandardAgent.Constitution(string! path) -> Standard.Agents.Stan
 Standard.Agents.StandardAgent.Consumption(string! path) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Contract(string! jsonSchema) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Description.get -> string!
+Standard.Agents.StandardAgent.EffectLease(System.TimeSpan lease) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.EffectLedger(string! path) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.EnforceSelection() -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Fallback(System.Func<System.Threading.Tasks.ValueTask<string!>>! fallback, int retries = 0, int failuresBeforeOpen = 3) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Gate(string! apiUrl, string! apiKey, string! model, double temperature = 0, int maxTokens = 16, int timeoutSeconds = 30) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.IdenticalCallLimit(int times) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Identity(string! name, string! description = "") -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Judge(string! apiUrl, string! apiKey, string! model, double temperature = 0, int maxTokens = 16, int timeoutSeconds = 30) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Knowledge(string! path, string! pattern = "*.md", int maxResults = 3, double minScore = 0) -> Standard.Agents.StandardAgent!
@@ -1370,6 +1405,10 @@ Standard.Agents.Tools.RememberTool.RememberTool(System.Func<string!, System.Thre
 const Standard.Agents.Brokers.Telemetries.ActivityTelemetryBroker.SourceName = "Standard.Agents" -> string!
 const Standard.Agents.Models.Brokers.Generators.ResolvedInference.DefaultMaxTokens = 1024 -> int
 const Standard.Agents.Models.Brokers.Generators.ResolvedInference.DefaultTemperature = 0.7 -> double
+const Standard.Agents.Models.Clients.Agents.AgentFailureCodes.BudgetExhausted = "budget_exhausted" -> string!
+const Standard.Agents.Models.Clients.Agents.AgentFailureCodes.Cancelled = "cancelled" -> string!
+const Standard.Agents.Models.Clients.Agents.AgentFailureCodes.GoingInCircles = "going_in_circles" -> string!
+const Standard.Agents.Models.Clients.Agents.AgentFailureCodes.TurnsExhausted = "turns_exhausted" -> string!
 const Standard.Agents.Tools.AgentTool.GroundedHandoff = "The user asked: {prompt}\n\nYour task: {input}" -> string!
 override Standard.Agents.Models.Brokers.Agents.RegisteredAgent.Equals(object? obj) -> bool
 override Standard.Agents.Models.Brokers.Agents.RegisteredAgent.GetHashCode() -> int
@@ -1404,6 +1443,9 @@ override Standard.Agents.Models.Brokers.Sessions.AgentSession.ToString() -> stri
 override Standard.Agents.Models.Brokers.Sessions.AgentTurn.Equals(object? obj) -> bool
 override Standard.Agents.Models.Brokers.Sessions.AgentTurn.GetHashCode() -> int
 override Standard.Agents.Models.Brokers.Sessions.AgentTurn.ToString() -> string!
+override Standard.Agents.Models.Clients.Agents.AgentFailure.Equals(object? obj) -> bool
+override Standard.Agents.Models.Clients.Agents.AgentFailure.GetHashCode() -> int
+override Standard.Agents.Models.Clients.Agents.AgentFailure.ToString() -> string!
 override Standard.Agents.Models.Clients.Agents.AgentOutcome.Equals(object? obj) -> bool
 override Standard.Agents.Models.Clients.Agents.AgentOutcome.GetHashCode() -> int
 override Standard.Agents.Models.Clients.Agents.AgentOutcome.ToString() -> string!
@@ -1489,6 +1531,8 @@ static Standard.Agents.Models.Brokers.Sessions.AgentSession.operator !=(Standard
 static Standard.Agents.Models.Brokers.Sessions.AgentSession.operator ==(Standard.Agents.Models.Brokers.Sessions.AgentSession? left, Standard.Agents.Models.Brokers.Sessions.AgentSession? right) -> bool
 static Standard.Agents.Models.Brokers.Sessions.AgentTurn.operator !=(Standard.Agents.Models.Brokers.Sessions.AgentTurn? left, Standard.Agents.Models.Brokers.Sessions.AgentTurn? right) -> bool
 static Standard.Agents.Models.Brokers.Sessions.AgentTurn.operator ==(Standard.Agents.Models.Brokers.Sessions.AgentTurn? left, Standard.Agents.Models.Brokers.Sessions.AgentTurn? right) -> bool
+static Standard.Agents.Models.Clients.Agents.AgentFailure.operator !=(Standard.Agents.Models.Clients.Agents.AgentFailure? left, Standard.Agents.Models.Clients.Agents.AgentFailure? right) -> bool
+static Standard.Agents.Models.Clients.Agents.AgentFailure.operator ==(Standard.Agents.Models.Clients.Agents.AgentFailure? left, Standard.Agents.Models.Clients.Agents.AgentFailure? right) -> bool
 static Standard.Agents.Models.Clients.Agents.AgentOutcome.operator !=(Standard.Agents.Models.Clients.Agents.AgentOutcome? left, Standard.Agents.Models.Clients.Agents.AgentOutcome? right) -> bool
 static Standard.Agents.Models.Clients.Agents.AgentOutcome.operator ==(Standard.Agents.Models.Clients.Agents.AgentOutcome? left, Standard.Agents.Models.Clients.Agents.AgentOutcome? right) -> bool
 static Standard.Agents.Models.Clients.Agents.AgentStreamEvent.operator !=(Standard.Agents.Models.Clients.Agents.AgentStreamEvent? left, Standard.Agents.Models.Clients.Agents.AgentStreamEvent? right) -> bool
@@ -1538,6 +1582,7 @@ static Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision.opera
 static Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision.operator ==(Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision? left, Standard.Agents.Models.Orchestrations.Effects.AuthorizationDecision? right) -> bool
 static Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome.operator !=(Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome? left, Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome? right) -> bool
 static Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome.operator ==(Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome? left, Standard.Agents.Models.Orchestrations.Effects.CompensationOutcome? right) -> bool
+static Standard.Agents.StandardAgent.DocumentSchemaJson() -> string!
 static Standard.Agents.StandardAgent.FromJson(string! json) -> Standard.Agents.StandardAgent!
 static Standard.Agents.StandardAgent.FromJsonFile(string! path) -> Standard.Agents.StandardAgent!
 virtual Standard.Agents.Models.Clients.Agents.AgentOutcome.<Clone>$() -> Standard.Agents.Models.Clients.Agents.AgentOutcome!
@@ -1599,7 +1644,6 @@ Standard.Agents.Models.Foundations.Sessions.Exceptions.StaleSessionException
 Standard.Agents.Models.Foundations.Sessions.Exceptions.StaleSessionException.StaleSessionException(string! message, System.Exception! innerException) -> void
 Standard.Agents.Models.Foundations.Sessions.Exceptions.SessionDependencyValidationException
 Standard.Agents.Models.Foundations.Sessions.Exceptions.SessionDependencyValidationException.SessionDependencyValidationException(string! message, Xeptions.Xeption! innerException) -> void
-Standard.Agents.Services.Managements.RunManagementService.RunManagementService(Standard.Agents.Services.Coordinations.Data.IDataCoordinationService! dataCoordinationService, Standard.Agents.Services.Coordinations.Decision.IDecisionCoordinationService! decisionCoordinationService, Standard.Agents.Services.Coordinations.Direction.IDirectionCoordinationService! directionCoordinationService, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, int maxTurns = 7, Standard.Agents.Brokers.Times.ITimeBroker? timeBroker = null, Standard.Agents.Models.Coordinations.Agents.AgentBudget? budget = null, int maxHistoryTurns = 20, bool compensateOnFailure = false, bool screenToolOutput = false, Standard.Agents.Brokers.Telemetries.ITelemetryBroker? telemetryBroker = null, string? contractSchema = null, double? configuredTemperature = null, int? configuredMaxTokens = null, System.Collections.Generic.IEnumerable<string!>? configuredToolNames = null, System.Collections.Generic.IReadOnlyDictionary<string!, Standard.Agents.Models.Coordinations.Agents.ToolNarration!>? toolNarrations = null, Standard.Agents.Models.Coordinations.Agents.ToolSelector? toolSelector = null, System.Collections.Generic.IEnumerable<string!>? describedToolNames = null, Standard.Agents.Models.Coordinations.Agents.PrincipalResolver? principalResolver = null) -> void
 Standard.Agents.Models.Coordinations.Agents.PrincipalResolver
 Standard.Agents.Models.Coordinations.Agents.PrincipalResolver.PrincipalResolver(System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal?>! resolve) -> void
 Standard.Agents.Models.Coordinations.Agents.PrincipalResolver.Resolve() -> Standard.Agents.Models.Orchestrations.Effects.AgentPrincipal?
@@ -1711,7 +1755,6 @@ Standard.Agents.Models.Orchestrations.Effects.EffectClaimVerdict.Proceed = 0 -> 
 Standard.Agents.Models.Orchestrations.Effects.EffectClaimVerdict.Replay = 1 -> Standard.Agents.Models.Orchestrations.Effects.EffectClaimVerdict
 Standard.Agents.Models.Orchestrations.Effects.EffectClaimVerdict.Unreconciled = 3 -> Standard.Agents.Models.Orchestrations.Effects.EffectClaimVerdict
 Standard.Agents.Services.Foundations.EffectLedgers.EffectLedgerService.ClaimEffectAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Effects.EffectRecord?>
-Standard.Agents.Services.Foundations.EffectLedgers.EffectLedgerService.EffectLedgerService(Standard.Agents.Brokers.Effects.IEffectLedgerBroker! effectLedgerBroker, Standard.Agents.Brokers.Times.ITimeBroker! timeBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
 Standard.Agents.Services.Foundations.EffectLedgers.EffectLedgerService.RecordCompensationAsync(string! idempotencyKey, string! detail) -> System.Threading.Tasks.ValueTask
 Standard.Agents.Services.Foundations.EffectLedgers.EffectLedgerService.RecordCompensationIntentAsync(string! idempotencyKey) -> System.Threading.Tasks.ValueTask
 Standard.Agents.Services.Foundations.EffectLedgers.EffectLedgerService.RecordFailureAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect, string! detail) -> System.Threading.Tasks.ValueTask
