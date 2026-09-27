@@ -56,6 +56,8 @@ public partial class DirectionCoordinationService
             // rather than inventing someone.
             principal: this.identityResolver?.Invoke());
 
+        effect = AfterWhatChangedIt(effect);
+
         // 1 — authorize
         AuthorizationDecision decision = await this.perimeterService.AuthorizeAsync(effect);
 
@@ -92,7 +94,7 @@ public partial class DirectionCoordinationService
         switch (claim.Verdict)
         {
             case EffectClaimVerdict.Replay:
-                return Observed(context, claim.Outcome ?? string.Empty);
+                return await ReplayedObservedAsync(context, effect, claim.Outcome ?? string.Empty);
 
             case EffectClaimVerdict.InProgress:
                 return Denied(
@@ -175,7 +177,9 @@ public partial class DirectionCoordinationService
         AgentRun.Current?.RecordPerformed(
             new PerformedEffect(effect.ToolName, effect.Arguments, output)
             {
-                IdempotencyKey = effect.IdempotencyKey
+                IdempotencyKey = effect.IdempotencyKey,
+                Scope = effect.Scope,
+                RiskLevel = effect.RiskLevel
             });
 
         // 5 — record the outcome, before the loop advances
@@ -328,14 +332,23 @@ public partial class DirectionCoordinationService
     // A call the model made gets an answer, whatever the answer is. A denial and a withheld
     // result are answers; leaving the call unanswered would strand it, and some providers reject
     // a conversation whose tool call has no matching tool message (SPEC.md §6).
-    private static IReadOnlyList<ToolExchange> WithExchange(AgentContext context, string result) =>
+    //
+    // Whether the ledger answered it rather than the tool rides with it (SPEC.md §3.2, v1.14): a
+    // loop that counts a run's asks has to tell a replay from a call that ran.
+    private static IReadOnlyList<ToolExchange> WithExchange(
+        AgentContext context,
+        string result,
+        bool replayed = false) =>
         string.IsNullOrEmpty(context.ToolCallId)
             ? context.ToolExchanges
             : [.. context.ToolExchanges,
                 new ToolExchange(
-                    context.ToolCallId, context.DirectionType, context.Payload, result)];
+                    context.ToolCallId, context.DirectionType, context.Payload, result)
+                {
+                    Replayed = replayed
+                }];
 
-    private static AgentContext Observed(AgentContext context, string output) =>
+    private static AgentContext Observed(AgentContext context, string output, bool replayed = false) =>
         context with
         {
             Result = output,
@@ -345,7 +358,7 @@ public partial class DirectionCoordinationService
             // the next turn can hand it back as a tool message rather than as narration
             // (SPEC.md §6). Observations still carry it too: they are what the V0 path reads,
             // and what the trace and the Judge read on both.
-            ToolExchanges = WithExchange(context, output),
+            ToolExchanges = WithExchange(context, output, replayed),
 
             Status = AgentStatus.Working
         };
@@ -379,6 +392,69 @@ public partial class DirectionCoordinationService
     // What the act is about to touch, as the tool named it. The framework never parses arguments:
     // only the tool knows what its own arguments mean, and a host reinventing that parsing inside
     // a policy delegate is how every deployment ends up with a different, unchecked answer.
+    // Once is a replay, with a note saying so. From the third identical ask on it is the note
+    // alone: the bytes have been handed back twice, and a third copy costs the person context and
+    // buys the model nothing it did not already have (SPEC.md §4.9, v1.14). This implementation
+    // never trims a conversation, so the answer the note points to is always still in view.
+    private async ValueTask<AgentContext> ReplayedObservedAsync(
+        AgentContext context,
+        AgentEffect effect,
+        string outcome)
+    {
+        int replays = AgentRun.Current?.RecordReplay(effect.IdempotencyKey) ?? 1;
+
+        if (replays < 2)
+        {
+            return Observed(context, Replayed(effect.ToolName, outcome), replayed: true);
+        }
+
+        await this.loggingBroker.LogProcessAsync(
+            "Direction",
+            $"'{effect.ToolName}' asked for a third time with the same arguments → note only");
+
+        return Observed(context, ReplayedAgain(effect.ToolName), replayed: true);
+    }
+
+    private static string ReplayedAgain(string toolName) =>
+        $"[{toolName} was asked for a third time with the same arguments. Its answer is above, from "
+            + "the first time, and is not repeated. Use it, ask for something different, or answer.]";
+
+    // The same outcome, and the one thing the Brain did not already have (SPEC.md §4.9, v1.14).
+    //
+    // Run-once is right that the act runs once. What it hands back is the first outcome, and a
+    // model reading its own earlier answer back reads exactly what it was looking at when it decided
+    // to ask, so it decides the same thing again. The outcome comes first and whole, because that is
+    // the point of a replay and something downstream may be looking for a value inside it; the note
+    // is added after, saying only what is true.
+    private static string Replayed(string toolName, string outcome) =>
+        $"{outcome}\n\n[{toolName} already ran in this run with the same arguments, and this is what "
+            + "it said then. Asking again returns this same answer. Use it and do something else.]";
+
+    // A look after a write to the same place is a new question, not the old one asked again
+    // (SPEC.md §4.9, v1.14).
+    //
+    // The ledger remembers what a read said and replays it to the same read for the rest of the
+    // run, which is right for an act and wrong for a look at something an act has since changed.
+    // Watched in both reference implementations: a model edited a file, read it back to check, and
+    // was handed the file as it was before the edit.
+    //
+    // So a Safe act whose scope this run has since written to is claimed under a key that counts
+    // the writes. It runs, and a second identical look after the same writes replays as before.
+    // Counted from what the run performed rather than from native exchanges, so it holds on the
+    // text protocol too. An act that is not Safe keeps its key exactly: a transfer proposed twice is
+    // one transfer, whatever else happened in between.
+    private static AgentEffect AfterWhatChangedIt(AgentEffect effect)
+    {
+        if (effect.RiskLevel is not RiskLevel.Safe || string.IsNullOrEmpty(effect.Scope))
+        {
+            return effect;
+        }
+
+        int writes = AgentRun.Current?.WritesTo(effect.Scope) ?? 0;
+
+        return writes is 0 ? effect : effect.AfterWrites(writes);
+    }
+
     private string ScopeFor(string toolName, string arguments) =>
         this.toolScope.TryGetValue(toolName, out Func<string, string>? scopeOf)
             ? scopeOf(arguments)

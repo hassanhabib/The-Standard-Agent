@@ -1,0 +1,18 @@
+{
+  "name": "a-look-after-a-write-sees-the-write",
+  "description": "SPEC.md 4.9 (v1.14): a Safe look at a scope this run has since written to is a new act, not a replay. The Brain reads a file, writes to the same file, and reads it again with the same arguments; the second read must run, because the file it would replay is the file as it was before the write. Watched in both reference implementations: a model edited a file, read it back to check its edit, and was handed the old file. On the text protocol, because the count comes from what the run performed and not from native exchanges.",
+  "generatorReplies": [
+    "ACTION: read_file: a.txt",
+    "ACTION: write_file: a.txt version two",
+    "ACTION: read_file: a.txt",
+    "FINAL: done"
+  ],
+  "tools": { "read_file": "the file", "write_file": "written" },
+  "toolRisk": { "write_file": "Sensitive" },
+  "toolScopeFirstWord": ["read_file", "write_file"],
+  "prompt": "change the file and check it",
+  "expect": {
+    "result": "done",
+    "toolRunCount": { "read_file": 2, "write_file": 1 }
+  }
+}

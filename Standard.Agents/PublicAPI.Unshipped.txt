@@ -3,3 +3,46 @@
 Standard.Agents.Services.Foundations.EffectLedgers.EffectLedgerService.EffectLedgerService(Standard.Agents.Brokers.Effects.IEffectLedgerBroker! effectLedgerBroker, Standard.Agents.Brokers.Times.ITimeBroker! timeBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, System.TimeSpan lease) -> void
 Standard.Agents.StandardAgent.EffectLease(System.TimeSpan lease) -> Standard.Agents.StandardAgent!
 static Standard.Agents.StandardAgent.DocumentSchemaJson() -> string!
+Standard.Agents.Models.Loggings.AgentRun.WritesTo(string! scope) -> int
+Standard.Agents.Models.Loggings.PerformedEffect.Scope.get -> string!
+Standard.Agents.Models.Loggings.PerformedEffect.Scope.init -> void
+Standard.Agents.Models.Loggings.PerformedEffect.RiskLevel.get -> Standard.Agents.Models.Orchestrations.Effects.RiskLevel
+Standard.Agents.Models.Loggings.PerformedEffect.RiskLevel.init -> void
+Standard.Agents.Models.Orchestrations.Effects.AgentEffect.AfterWrites(int writes) -> Standard.Agents.Models.Orchestrations.Effects.AgentEffect!
+Standard.Agents.Models.Orchestrations.Agents.ToolExchange.Replayed.get -> bool
+Standard.Agents.Models.Orchestrations.Agents.ToolExchange.Replayed.init -> void
+Standard.Agents.Models.Loggings.AgentRun.RecordReplay(string! idempotencyKey) -> int
+Standard.Agents.Models.Clients.Agents.AgentFailure
+Standard.Agents.Models.Clients.Agents.AgentFailure.AgentFailure(Standard.Agents.Models.Clients.Agents.AgentFailureCategory Category, string! Code, string! Message) -> void
+Standard.Agents.Models.Clients.Agents.AgentFailure.Category.get -> Standard.Agents.Models.Clients.Agents.AgentFailureCategory
+Standard.Agents.Models.Clients.Agents.AgentFailure.Category.init -> void
+Standard.Agents.Models.Clients.Agents.AgentFailure.Code.get -> string!
+Standard.Agents.Models.Clients.Agents.AgentFailure.Code.init -> void
+Standard.Agents.Models.Clients.Agents.AgentFailure.Message.get -> string!
+Standard.Agents.Models.Clients.Agents.AgentFailure.Message.init -> void
+Standard.Agents.Models.Clients.Agents.AgentFailure.Deconstruct(out Standard.Agents.Models.Clients.Agents.AgentFailureCategory Category, out string! Code, out string! Message) -> void
+Standard.Agents.Models.Clients.Agents.AgentFailureCategory
+Standard.Agents.Models.Clients.Agents.AgentFailureCategory.Validation = 0 -> Standard.Agents.Models.Clients.Agents.AgentFailureCategory
+Standard.Agents.Models.Clients.Agents.AgentFailureCategory.DependencyValidation = 1 -> Standard.Agents.Models.Clients.Agents.AgentFailureCategory
+Standard.Agents.Models.Clients.Agents.AgentFailureCategory.Dependency = 2 -> Standard.Agents.Models.Clients.Agents.AgentFailureCategory
+Standard.Agents.Models.Clients.Agents.AgentFailureCategory.Service = 3 -> Standard.Agents.Models.Clients.Agents.AgentFailureCategory
+Standard.Agents.Models.Clients.Agents.AgentFailureCodes
+const Standard.Agents.Models.Clients.Agents.AgentFailureCodes.Cancelled = "cancelled" -> string!
+const Standard.Agents.Models.Clients.Agents.AgentFailureCodes.BudgetExhausted = "budget_exhausted" -> string!
+const Standard.Agents.Models.Clients.Agents.AgentFailureCodes.TurnsExhausted = "turns_exhausted" -> string!
+const Standard.Agents.Models.Clients.Agents.AgentFailureCodes.GoingInCircles = "going_in_circles" -> string!
+Standard.Agents.Models.Clients.Agents.AgentOutcome.Failure.get -> Standard.Agents.Models.Clients.Agents.AgentFailure?
+Standard.Agents.Models.Clients.Agents.AgentOutcome.Failure.init -> void
+Standard.Agents.Models.Clients.Agents.AgentFailure.<Clone>$() -> Standard.Agents.Models.Clients.Agents.AgentFailure!
+Standard.Agents.Models.Clients.Agents.AgentFailure.Equals(Standard.Agents.Models.Clients.Agents.AgentFailure? other) -> bool
+override Standard.Agents.Models.Clients.Agents.AgentFailure.Equals(object? obj) -> bool
+override Standard.Agents.Models.Clients.Agents.AgentFailure.GetHashCode() -> int
+override Standard.Agents.Models.Clients.Agents.AgentFailure.ToString() -> string!
+static Standard.Agents.Models.Clients.Agents.AgentFailure.operator !=(Standard.Agents.Models.Clients.Agents.AgentFailure? left, Standard.Agents.Models.Clients.Agents.AgentFailure? right) -> bool
+static Standard.Agents.Models.Clients.Agents.AgentFailure.operator ==(Standard.Agents.Models.Clients.Agents.AgentFailure? left, Standard.Agents.Models.Clients.Agents.AgentFailure? right) -> bool
+Standard.Agents.StandardAgent.IdenticalCallLimit(int times) -> Standard.Agents.StandardAgent!
+*REMOVED*Standard.Agents.Services.Managements.RunManagementService.RunManagementService(Standard.Agents.Services.Coordinations.Data.IDataCoordinationService! dataCoordinationService, Standard.Agents.Services.Coordinations.Decision.IDecisionCoordinationService! decisionCoordinationService, Standard.Agents.Services.Coordinations.Direction.IDirectionCoordinationService! directionCoordinationService, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, int maxTurns = 7, Standard.Agents.Brokers.Times.ITimeBroker? timeBroker = null, Standard.Agents.Models.Coordinations.Agents.AgentBudget? budget = null, int maxHistoryTurns = 20, bool compensateOnFailure = false, bool screenToolOutput = false, Standard.Agents.Brokers.Telemetries.ITelemetryBroker? telemetryBroker = null, string? contractSchema = null, double? configuredTemperature = null, int? configuredMaxTokens = null, System.Collections.Generic.IEnumerable<string!>? configuredToolNames = null, System.Collections.Generic.IReadOnlyDictionary<string!, Standard.Agents.Models.Coordinations.Agents.ToolNarration!>? toolNarrations = null, Standard.Agents.Models.Coordinations.Agents.ToolSelector? toolSelector = null, System.Collections.Generic.IEnumerable<string!>? describedToolNames = null, Standard.Agents.Models.Coordinations.Agents.PrincipalResolver? principalResolver = null) -> void
+Standard.Agents.Models.Loggings.AgentRun.ReplaysOfLatestAsk.get -> int
+Standard.Agents.Services.Managements.RunManagementService.RunManagementService(Standard.Agents.Services.Coordinations.Data.IDataCoordinationService! dataCoordinationService, Standard.Agents.Services.Coordinations.Decision.IDecisionCoordinationService! decisionCoordinationService, Standard.Agents.Services.Coordinations.Direction.IDirectionCoordinationService! directionCoordinationService, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, int maxTurns = 7, Standard.Agents.Brokers.Times.ITimeBroker? timeBroker = null, Standard.Agents.Models.Coordinations.Agents.AgentBudget? budget = null, int maxHistoryTurns = 20, bool compensateOnFailure = false, bool screenToolOutput = false, Standard.Agents.Brokers.Telemetries.ITelemetryBroker? telemetryBroker = null, string? contractSchema = null, double? configuredTemperature = null, int? configuredMaxTokens = null, System.Collections.Generic.IEnumerable<string!>? configuredToolNames = null, System.Collections.Generic.IReadOnlyDictionary<string!, Standard.Agents.Models.Coordinations.Agents.ToolNarration!>? toolNarrations = null, Standard.Agents.Models.Coordinations.Agents.ToolSelector? toolSelector = null, System.Collections.Generic.IEnumerable<string!>? describedToolNames = null, Standard.Agents.Models.Coordinations.Agents.PrincipalResolver? principalResolver = null, int identicalCallLimit = 8) -> void
+Standard.Agents.Models.Foundations.Brains.Exceptions.UnreachableBrainException
+Standard.Agents.Models.Foundations.Brains.Exceptions.UnreachableBrainException.UnreachableBrainException(string! message, System.Exception! innerException) -> void

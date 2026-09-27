@@ -90,6 +90,18 @@ public sealed record AgentEffect
             IdempotencyKey = DeriveKey(runId, toolName, arguments)
         };
 
+    /// <summary>
+    /// The same look, after the run has written to what it looks at. A different act in the
+    /// ledger, so it runs and sees what the writes left, while a second identical look after the
+    /// same writes replays as before (SPEC.md §4.9, v1.14). Still derived, never supplied: the
+    /// count is the run's, not the caller's or the Brain's.
+    /// </summary>
+    public AgentEffect AfterWrites(int writes) =>
+        this with
+        {
+            IdempotencyKey = DeriveKey(this.RunId, this.ToolName, $"{this.Arguments}|after-writes:{writes}")
+        };
+
     // Whitespace- and case-insensitive on the tool name, so "calculator: 2 + 2" and
     // "calculator:2+2" are one act rather than two. Anything more clever belongs to the tool,
     // which is the only thing that knows what its arguments mean.

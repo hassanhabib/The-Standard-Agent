@@ -176,7 +176,10 @@ public sealed record Vector(
     // Whether the offering BINDS at the Direction perimeter (SPEC.md §4.15, enforced): an act
     // naming an advertised tool the run was not offered is denied rather than reachable.
     bool EnforceSelection = false,
-    Dictionary<string, string>? ToolDescriptions = null);
+    Dictionary<string, string>? ToolDescriptions = null,
+
+    // How many times a run may ask for an act the ledger already answered (SPEC.md §4.10, v1.14).
+    int? IdenticalCallLimit = null);
 
 /// <summary>A stub tool's declared narration templates, as a vector writes them.</summary>
 // A typo'd field must fail loudly, not silently delete the assertion or the input it

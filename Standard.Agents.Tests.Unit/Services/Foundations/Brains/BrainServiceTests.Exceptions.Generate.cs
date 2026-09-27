@@ -19,8 +19,7 @@ public partial class BrainServiceTests
             new HttpResponseUnauthorizedException(),
             new HttpResponseForbiddenException(),
             new HttpResponseNotFoundException(),
-            new HttpResponseUrlNotFoundException(),
-            new HttpRequestException()
+            new HttpResponseUrlNotFoundException()
         };
 
     public static TheoryData<Exception> DependencyExceptions() =>
@@ -52,6 +51,56 @@ public partial class BrainServiceTests
         this.generatorBrokerMock.Setup(broker =>
             broker.GenerateAsync(randomSystemPrompt, randomUserPrompt))
                 .ThrowsAsync(criticalDependencyException);
+
+        // when
+        ValueTask<string> generateTask =
+            this.brainService.GenerateAsync(randomSystemPrompt, randomUserPrompt);
+
+        BrainDependencyException actualBrainDependencyException =
+            await Assert.ThrowsAsync<BrainDependencyException>(
+                generateTask.AsTask);
+
+        // then
+        actualBrainDependencyException.Should()
+            .BeEquivalentTo(expectedBrainDependencyException);
+
+        this.generatorBrokerMock.Verify(broker =>
+            broker.GenerateAsync(randomSystemPrompt, randomUserPrompt),
+                Times.Once);
+
+        this.loggingBrokerMock.Verify(broker =>
+            broker.LogCriticalAsync(It.Is(SameExceptionAs(
+                expectedBrainDependencyException))),
+                    Times.Once);
+
+        this.generatorBrokerMock.VerifyNoOtherCalls();
+        this.loggingBrokerMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task ShouldThrowCriticalDependencyExceptionOnGenerateIfNothingAnsweredAndLogItAsync()
+    {
+        // given
+        // A refused connection, a name that resolves to nothing, a request that never left the
+        // machine. The person's next step is the address, not support (SPEC.md §4.10, v1.14).
+        string randomSystemPrompt = CreateRandomString();
+        string randomUserPrompt = CreateRandomString();
+        var httpRequestException = new HttpRequestException();
+
+        var unreachableBrainException =
+            new UnreachableBrainException(
+                message: "Nothing answered at the brain's address. Check that the address is right "
+                    + "and that the service is running.",
+                innerException: httpRequestException);
+
+        var expectedBrainDependencyException =
+            new BrainDependencyException(
+                message: "Brain dependency error occurred, contact support.",
+                innerException: unreachableBrainException);
+
+        this.generatorBrokerMock.Setup(broker =>
+            broker.GenerateAsync(randomSystemPrompt, randomUserPrompt))
+                .ThrowsAsync(httpRequestException);
 
         // when
         ValueTask<string> generateTask =

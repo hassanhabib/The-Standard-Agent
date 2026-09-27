@@ -5,6 +5,7 @@
 
 using System.Runtime.CompilerServices;
 using Standard.Agents.Models.Coordinations.Agents;
+using Standard.Agents.Models.Loggings;
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Models.Orchestrations.Effects;
@@ -28,6 +29,40 @@ public partial class RunManagementService
 
     private const string TimeBudgetMessage =
         "The time budget for this request was exhausted before it completed.";
+
+    // Which kind of stop it was, as a code for the caller that switches on codes rather than
+    // reading sentences (SPEC.md §3.6, v1.14). The message is the whole result the run carries, so
+    // a caller reading either one is told the same thing.
+    private AgentFailure? StoppedFailure(string stoppedBecause, string result)
+    {
+        if (stoppedBecause == CirclesMessage)
+        {
+            return new AgentFailure(AgentFailureCategory.Service, AgentFailureCodes.GoingInCircles, result);
+        }
+
+        return stoppedBecause switch
+        {
+            CancelledMessage =>
+                new AgentFailure(AgentFailureCategory.Service, AgentFailureCodes.Cancelled, result),
+
+            TokenBudgetMessage or CostBudgetMessage or TimeBudgetMessage =>
+                new AgentFailure(AgentFailureCategory.Service, AgentFailureCodes.BudgetExhausted, result),
+
+            _ => null
+        };
+    }
+
+    // A run asking for an act the ledger has already answered, again and again (SPEC.md §4.10,
+    // v1.14). Watched live, twice: a model asked for the same page of the same file eleven more
+    // times with the note in front of it. Counts replays only: the act that ran, plus each time the
+    // ledger answered the same ask since, so a read after an edit, which runs, is never counted.
+    private bool IsGoingInCircles() =>
+        (AgentRun.Current?.ReplaysOfLatestAsk ?? 0) + 1 >= this.identicalCallLimit;
+
+    private string CirclesMessage =>
+        $"I asked for the same thing {this.identicalCallLimit} times and stopped: the run was going "
+            + "in circles, so it ended rather than spend the rest of its turns the same way; nothing "
+            + "was delivered.";
 
     private bool IsBudgetExhausted(
         AgentSpend spend,

@@ -634,6 +634,11 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
             agent.MaxTurns(maxTurns);
         }
 
+        if (vector.IdenticalCallLimit is int identicalCallLimit)
+        {
+            agent.IdenticalCallLimit(identicalCallLimit);
+        }
+
         if (vector.BudgetMaxWallClockSeconds is double seconds)
         {
             agent.Budget(maxWallClock: TimeSpan.FromSeconds(seconds));
@@ -728,6 +733,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
     string result;
     AgentStatus? runStatus = null;
     string? outcomePendingEffectTool = null;
+    string? runFailureCode = null;
     List<string> promptResults = [];
 
     // Every event a streamed run produced, so a vector can certify the Narration channel —
@@ -776,6 +782,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         result = outcomes[0].Result;
         runStatus = outcomes[0].Status;
         outcomePendingEffectTool = outcomes[0].PendingEffect?.ToolName;
+        runFailureCode = outcomes[0].Failure?.Code;
     }
     else if (vector.Request is not null)
     {
@@ -801,6 +808,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
             result = string.Join(string.Empty, responses);
             runStatus = runStream.Outcome.Status;
             outcomePendingEffectTool = runStream.Outcome.PendingEffect?.ToolName;
+            runFailureCode = runStream.Outcome.Failure?.Code;
         }
         else if (vector.Streamed)
         {
@@ -825,6 +833,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
             result = outcome.Result;
             runStatus = outcome.Status;
             outcomePendingEffectTool = outcome.PendingEffect?.ToolName;
+            runFailureCode = outcome.Failure?.Code;
         }
     }
     else if (vector.Concurrent)
@@ -892,7 +901,7 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         brainInputs, promptScreenings, auditRecords, compensationOrder, nativeGenerator,
         policyPrincipals, [.. scriptedMcpServers.Select(server => server.CallCount)],
         agentInputs, runStatus, pendingEffectTool, honoringGenerator?.Inferences ?? [],
-        streamedEvents, sessionTurnCount);
+        streamedEvents, sessionTurnCount, runFailureCode);
 }
 
 // The decision log's guarantees, certified from the records themselves: one run per prompt,
@@ -1286,6 +1295,16 @@ static bool RequestConformant(Vector vector, VectorRun run, out string? failure)
         }
     }
 
+    // Why a run stopped without an answer, as the code a caller switches on (SPEC.md §3.6, v1.14).
+    if (expect.FailureCode is string expectedCode
+        && string.Equals(run.FailureCode, expectedCode, StringComparison.Ordinal) is false)
+    {
+        failure = $"the run reported failure code '{run.FailureCode ?? "(none)"}', "
+            + $"expected '{expectedCode}'";
+
+        return false;
+    }
+
     if (expect.PendingEffectTool is string expectedTool
         && string.Equals(run.PendingEffectTool, expectedTool, StringComparison.Ordinal) is false)
     {
@@ -1541,4 +1560,5 @@ internal sealed record VectorRun(
     string? PendingEffectTool,
     IReadOnlyList<ResolvedInference> BrokerInferences,
     List<AgentStreamEvent> StreamedEvents,
-    int? SessionTurnCount);
+    int? SessionTurnCount,
+    string? FailureCode);

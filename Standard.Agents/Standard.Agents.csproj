@@ -516,7 +516,24 @@
          vectors 78 and 79, which fail against a build with the fix suppressed while all 77
          pre-existing vectors pass against that same build. Spec-first: tracks SPEC.md v1.13
          (SS3.2, SS4.11, SS6.2). The model shape changed: segment 1 advances, 2/3/4 reset. -->
-    <Version>2.0.0.0</Version>
+    <!-- 3.0.0.0 "A Run Knows What It Already Did": run-once answered a repeated act from the
+         ledger, which is right for a write and wrong for a look taken after one. A model edited
+         a file, read it back to check its edit, and was handed the file as it was before the
+         edit; the replay came back bare, so it read as a fresh answer, and the model asked again,
+         eleven times, until the turn cap ended the run as if it had merely run long. Four
+         changes, one ledger: a Safe look at a scope the run has since written to is a new act
+         (AgentEffect.AfterWrites re-keys it from AgentRun.WritesTo, counted from what the run
+         PERFORMED, so the text protocol is covered, not only native exchanges); a replay reaches
+         the Brain with a note that it already ran, and from the third ask the note alone
+         (ToolExchange.Replayed says which answers the ledger gave); a repetition bound stops a
+         run going in circles, IdenticalCallLimit, default 8, counting replays only; and every
+         run that stops without an answer says why as a code a caller can switch on
+         (AgentOutcome.Failure: cancelled, budget_exhausted, turns_exhausted, going_in_circles).
+         A brain that nothing answered at is reported as unreachable rather than "contact
+         support". Certified by vectors 80, 81 and 82, each proven to fail against 2.0.0.0 while
+         the 79 before them pass. Spec-first: tracks SPEC.md v1.14 (SS3.2, SS3.6, SS4.9, SS4.10).
+         The model shape changed: segment 1 advances, 2/3/4 reset. -->
+    <Version>3.0.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>

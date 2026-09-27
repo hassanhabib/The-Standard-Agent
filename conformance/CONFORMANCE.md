@@ -3,7 +3,7 @@
 A **language-neutral** set of behavioral test vectors that any Standard-Agents
 implementation runs to self-certify against
 [`SPEC.md`](https://github.com/hassanhabib/The-Standard-Agent-Specs/blob/main/SPEC.md).
-Seventy-seven vectors, four readiness profiles, every vector proven able to fail.
+Eighty-two vectors, four readiness profiles, every vector proven able to fail.
 
 The vectors are the executable half of the specification. Prose can be read two ways; a vector
 cannot, which is why "conformant" here means *this suite passes* rather than *we believe we
@@ -52,6 +52,7 @@ capability it configures did not exist, which is why the early vectors still des
 |---|---|
 | `prompts`, `concurrent` | drive several prompts through one agent, in order or all at once |
 | `maxTurns` | cap the loop |
+| `identicalCallLimit` | the repetition bound (§4.10): how many replays of one act a run may ask for before it is stopped as going in circles |
 | `constitution`, `consumption` | inline markdown, written to a file the real builder is pointed at |
 | `gateVerdict`, `judgeScore`, `gateVerdictOnToolOutput` | scripted guardian answers (default `allow` / `1.0`) |
 | `redact` | boundary redaction |
@@ -96,6 +97,7 @@ capability it configures did not exist, which is why the early vectors still des
 | `toolResultAnswersCall` | the call id was replayed and answered |
 | `policySawPrincipal` | the identity the policy broker was **handed when it decided** |
 | `status`, `pendingEffectTool` | how the run ended, and the caller's call riding the session as a pending effect |
+| `failureCode` | the machine-readable code on the outcome's failure (§3.6), so a caller can tell why a run stopped without reading its prose |
 | `sessionTurnCount` | how many turns the session holds once every prompt has run, read from the store afterwards (§4.11) |
 | `brokerTemperature`, `brokerMaxTokens`, `brokerTemperatures` | what the Brain was handed, after precedence resolved at the boundary |
 | `brokerSchemaContains`, `brokerOptionsInclude`, `brokerOptionsExclude` | the surviving schema on the wire, and the passthrough after the core-owned-keys strip |
@@ -182,6 +184,9 @@ the deterministic core of the Standard.
 | `an-enforced-offering-binds-a-remote-tool` | With enforcement on, an unoffered remote tool is denied at the perimeter, its server never called, and the run recovers (§4.15) |
 | `concurrent-turns-in-one-session-all-survive` | Four prompts in one session at once leave four turns; a versioned write is refused when stale and retried, never erased by a slower writer (§4.11) |
 | `a-repeat-in-a-session-is-a-new-act` | Run-once is scoped to a run; a repeat in a later run performs (§4.9) |
+| `a-look-after-a-write-sees-the-write` | A Safe look at a scope the run has since written to is a new act; the check after an edit sees the edit, on the text protocol too (§4.9) |
+| `a-replay-says-it-already-ran` | A replayed outcome reaches the Brain with a note that the act already ran; the tool still runs once (§4.9) |
+| `a-run-going-in-circles-stops` | Replays of one act past the repetition bound stop the run as Failed with `going_in_circles`, long before the turn cap (§3.6, §4.10) |
 | `an-allow-list-can-say-where` | Permission is what **and where**; the tool names the scope (§4.9) |
 | `ask-first-covers-what-nothing-permitted` | A mode answers for the acts no permission mentioned (§4.9) |
 | `deny-covers-what-nothing-permitted` | Deny refuses the unnamed act and still runs the named one (§4.9) |

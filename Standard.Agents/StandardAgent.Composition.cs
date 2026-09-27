@@ -502,7 +502,8 @@ public sealed partial class StandardAgent
             RenderToolNarrations(allTools),
             this.localToolSelector is null ? null : new ToolSelector(this.localToolSelector),
             Advertised(allTools).Select(tool => tool.Name),
-            this.identityResolver is null ? null : new PrincipalResolver(this.identityResolver));
+            this.identityResolver is null ? null : new PrincipalResolver(this.identityResolver),
+            this.identicalCallLimit);
     }
 
     // The catalog a "{{tools}}" marker in the agent's Data expands into. Only tools that

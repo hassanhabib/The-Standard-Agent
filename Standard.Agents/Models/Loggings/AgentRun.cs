@@ -35,6 +35,7 @@ public sealed class AgentRun
     private readonly Dictionary<string, string> verdicts = [];
     private readonly HashSet<string> grants = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<PerformedEffect> performedEffects = [];
+    private readonly Dictionary<string, int> replays = new(StringComparer.Ordinal);
 
     private int sequence;
     private int processIndex;
@@ -210,6 +211,47 @@ public sealed class AgentRun
         lock (this.performedEffects)
         {
             this.performedEffects.Add(effect);
+        }
+
+        // An act that ran is not a repeat, whatever came before it.
+        this.ReplaysOfLatestAsk = 0;
+    }
+
+    /// <summary>
+    /// Records that the run-once ledger answered this act again, and says how many times it has now
+    /// done so in this run (SPEC.md §4.9, v1.14). Kept by the act's key, so a look after a write,
+    /// which carries a different key, starts its own count, and it holds on every protocol.
+    /// </summary>
+    public int RecordReplay(string idempotencyKey)
+    {
+        lock (this.replays)
+        {
+            int replayed = this.replays.GetValueOrDefault(idempotencyKey) + 1;
+            this.replays[idempotencyKey] = replayed;
+            this.ReplaysOfLatestAsk = replayed;
+
+            return replayed;
+        }
+    }
+
+    /// <summary>
+    /// How many times the ledger has answered the most recent ask that reached it, or zero when that
+    /// ask was performed. What a repetition bound reads between turns (SPEC.md §4.10, v1.14).
+    /// </summary>
+    public int ReplaysOfLatestAsk { get; private set; }
+
+    /// <summary>
+    /// How many acts this run has performed on a scope that were not Safe: what a look at that
+    /// scope would see has changed that many times since the run began (SPEC.md §4.9, v1.14).
+    /// Counted from what the run performed, so it holds on every protocol.
+    /// </summary>
+    public int WritesTo(string scope)
+    {
+        lock (this.performedEffects)
+        {
+            return this.performedEffects.Count(performed =>
+                performed.RiskLevel is not Orchestrations.Effects.RiskLevel.Safe
+                    && string.Equals(performed.Scope, scope, StringComparison.Ordinal));
         }
     }
 

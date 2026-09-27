@@ -55,22 +55,25 @@ public partial class BrainServiceTests
     }
 
     [Fact]
-    public async Task ShouldThrowCriticalDependencyExceptionOnGenerateStreamIfHttpRequestErrorOccursAndLogItAsync()
+    public async Task ShouldThrowCriticalDependencyExceptionOnGenerateStreamIfNothingAnsweredAndLogItAsync()
     {
         // given
         string randomSystemPrompt = CreateRandomString();
         string randomUserPrompt = CreateRandomString();
         var httpRequestException = new HttpRequestException();
 
-        var failedBrainDependencyException =
-            new FailedBrainDependencyException(
-                message: "Failed brain dependency error occurred, contact support.",
+        // The same sentence the batched path gives: whichever way the brain was asked, nothing
+        // answering is an address to check, not a fault to take to support (SPEC.md §4.10, v1.14).
+        var unreachableBrainException =
+            new UnreachableBrainException(
+                message: "Nothing answered at the brain's address. Check that the address is right "
+                    + "and that the service is running.",
                 innerException: httpRequestException);
 
         var expectedBrainDependencyException =
             new BrainDependencyException(
                 message: "Brain dependency error occurred, contact support.",
-                innerException: failedBrainDependencyException);
+                innerException: unreachableBrainException);
 
         this.generatorBrokerMock.Setup(broker =>
             broker.GenerateStreamAsync(

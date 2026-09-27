@@ -28,4 +28,12 @@ namespace Standard.Agents.Models.Clients.Agents;
 public record AgentOutcome(
     string Result,
     AgentStatus Status,
-    Standard.Agents.Models.Orchestrations.Effects.AgentEffect? PendingEffect = null);
+    Standard.Agents.Models.Orchestrations.Effects.AgentEffect? PendingEffect = null)
+{
+    /// <summary>
+    /// Why the run stopped without an answer, as a code a caller can switch on (SPEC.md §3.6, v1.14).
+    /// Null when the run answered, asked, refused or is waiting for approval: none of those is a
+    /// stop without an answer.
+    /// </summary>
+    public AgentFailure? Failure { get; init; }
+}

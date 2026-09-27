@@ -141,4 +141,9 @@ public sealed record Expectation(
     //                       what proves a withheld narration was withheld and never leaked
     //                       into Thinking on its way to the verdict.
     List<string>? NarrationsContain = null,
-    List<string>? NarrationsExclude = null);
+    List<string>? NarrationsExclude = null,
+
+    //   FailureCode — the code the run's outcome reports for a stop without an answer
+    //                 (SPEC.md §3.6, v1.14): cancelled, budget_exhausted, turns_exhausted,
+    //                 going_in_circles.
+    string? FailureCode = null);

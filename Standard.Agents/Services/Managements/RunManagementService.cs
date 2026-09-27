@@ -33,6 +33,12 @@ public partial class RunManagementService : IRunManagementService
     private const string TurnsExhaustedMessage =
         "I ran out of turns before an answer was ready; nothing was delivered.";
 
+    // Above the default turn cap, so a composition that never set it is bounded by the turn cap
+    // exactly as before (SPEC.md §4.10, v1.14).
+    private const int DefaultIdenticalCallLimit = 8;
+
+    private readonly int identicalCallLimit;
+
     private readonly IDataCoordinationService dataCoordinationService;
     private readonly IDecisionCoordinationService decisionCoordinationService;
     private readonly IDirectionCoordinationService directionCoordinationService;
@@ -88,8 +94,10 @@ public partial class RunManagementService : IRunManagementService
         IReadOnlyDictionary<string, ToolNarration>? toolNarrations = null,
         ToolSelector? toolSelector = null,
         IEnumerable<string>? describedToolNames = null,
-        PrincipalResolver? principalResolver = null)
+        PrincipalResolver? principalResolver = null,
+        int identicalCallLimit = DefaultIdenticalCallLimit)
     {
+        this.identicalCallLimit = identicalCallLimit;
         this.compensateOnFailure = compensateOnFailure;
         this.dataCoordinationService = dataCoordinationService;
         this.decisionCoordinationService = decisionCoordinationService;
@@ -561,6 +569,13 @@ public partial class RunManagementService : IRunManagementService
                 break;
             }
 
+            if (IsGoingInCircles())
+            {
+                stoppedBecause = CirclesMessage;
+
+                break;
+            }
+
             // Scoped to the iteration: `continue` and `break` both close the turn span.
             using IDisposable? telemetryTurn = this.telemetryBroker.StartTurn(turn);
 
@@ -708,11 +723,14 @@ public partial class RunManagementService : IRunManagementService
             this.telemetryBroker.RecordRunOutcome(
                 context.Status.ToString(), runPromptTokens, runCompletionTokens);
 
-            setOutcome(new AgentOutcome(
-                string.IsNullOrEmpty(stoppedUnwound)
-                    ? stoppedBecause
-                    : $"{stoppedBecause} {stoppedUnwound}",
-                AgentStatus.Failed));
+            string stoppedResult = string.IsNullOrEmpty(stoppedUnwound)
+                ? stoppedBecause
+                : $"{stoppedBecause} {stoppedUnwound}";
+
+            setOutcome(new AgentOutcome(stoppedResult, AgentStatus.Failed)
+            {
+                Failure = StoppedFailure(stoppedBecause, stoppedResult)
+            });
 
             return;
         }
@@ -745,11 +763,17 @@ public partial class RunManagementService : IRunManagementService
             this.telemetryBroker.RecordRunOutcome(
                 context.Status.ToString(), runPromptTokens, runCompletionTokens);
 
-            setOutcome(new AgentOutcome(
-                string.IsNullOrEmpty(cappedUnwound)
-                    ? TurnsExhaustedMessage
-                    : $"{TurnsExhaustedMessage} {cappedUnwound}",
-                context.Status));
+            string cappedResult = string.IsNullOrEmpty(cappedUnwound)
+                ? TurnsExhaustedMessage
+                : $"{TurnsExhaustedMessage} {cappedUnwound}";
+
+            // With the code that says why, beside the status that says it stopped mid-work
+            // (SPEC.md §3.6, v1.14).
+            setOutcome(new AgentOutcome(cappedResult, context.Status)
+            {
+                Failure = new AgentFailure(
+                    AgentFailureCategory.Service, AgentFailureCodes.TurnsExhausted, cappedResult)
+            });
 
             return;
         }
