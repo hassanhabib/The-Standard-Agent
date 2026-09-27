@@ -58,6 +58,65 @@ public partial class DirectionCoordinationServiceTests
     }
 
     [Fact]
+    public async Task ShouldLookAgainAtAScopeWrittenToBeforeTheRunWasResumedOnActAsync()
+    {
+        // given
+        // A run read a file, wrote to it, and paused. Resumed, it keeps its identity, so the ledger
+        // still holds the read from before the write, and it begins with nothing performed. The
+        // writes before the pause are in the conversation it was resumed with, and a count read from
+        // the run alone handed the resumed read the file as it was before the write.
+        IDirectionCoordinationService scopedService = NewScopedFileService();
+        string runId = Guid.NewGuid().ToString("n");
+
+        this.internalToolServiceMock.Setup(service =>
+            service.HandlesAsync(It.IsAny<string>())).ReturnsAsync(true);
+
+        this.internalToolServiceMock.SetupSequence(service =>
+            service.RunAsync("read_file", "a.txt"))
+                .ReturnsAsync("version one")
+                .ReturnsAsync("version two");
+
+        this.internalToolServiceMock.Setup(service =>
+            service.RunAsync("write_file", "version two")).ReturnsAsync("written");
+
+        AgentContext written;
+
+        using (AgentRun.Begin(runId))
+        {
+            AgentContext firstRead = await scopedService.ActAsync(
+                CreateContextWithDirection("read_file", "a.txt"));
+
+            written = await scopedService.ActAsync(
+                firstRead with { DirectionType = "write_file", Payload = "version two" });
+        }
+
+        AgentContext resumed = written with
+        {
+            DirectionType = "read_file",
+            Payload = "a.txt",
+            ToolExchanges =
+            [
+                new ToolExchange("call-1", "read_file", "a.txt", "version one"),
+                new ToolExchange("call-2", "write_file", "version two", "written")
+            ]
+        };
+
+        // when
+        AgentContext secondRead;
+
+        using (AgentRun.Begin(runId))
+        {
+            secondRead = await scopedService.ActAsync(resumed);
+        }
+
+        // then
+        secondRead.Result.Should().Be("version two");
+
+        this.internalToolServiceMock.Verify(service =>
+            service.RunAsync("read_file", "a.txt"), Times.Exactly(2));
+    }
+
+    [Fact]
     public async Task ShouldTellTheBrainAReplayAlreadyRanOnActAsync()
     {
         // given
