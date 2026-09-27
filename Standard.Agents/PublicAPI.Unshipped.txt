@@ -1,4 +1,1 @@
 #nullable enable
-Standard.Agents.Models.Clients.Agents.AgentStreamEvent.Usage.get -> Standard.Agents.Models.Foundations.Usages.AgentUsage?
-Standard.Agents.Models.Clients.Agents.AgentStreamEvent.Usage.init -> void
-Standard.Agents.Models.Clients.Agents.AgentStreamEventType.Usage = 5 -> Standard.Agents.Models.Clients.Agents.AgentStreamEventType

@@ -518,12 +518,15 @@ Standard.Agents.Models.Clients.Agents.AgentStreamEvent.Deconstruct(out Standard.
 Standard.Agents.Models.Clients.Agents.AgentStreamEvent.Equals(Standard.Agents.Models.Clients.Agents.AgentStreamEvent? other) -> bool
 Standard.Agents.Models.Clients.Agents.AgentStreamEvent.Type.get -> Standard.Agents.Models.Clients.Agents.AgentStreamEventType
 Standard.Agents.Models.Clients.Agents.AgentStreamEvent.Type.init -> void
+Standard.Agents.Models.Clients.Agents.AgentStreamEvent.Usage.get -> Standard.Agents.Models.Foundations.Usages.AgentUsage?
+Standard.Agents.Models.Clients.Agents.AgentStreamEvent.Usage.init -> void
 Standard.Agents.Models.Clients.Agents.AgentStreamEventType
 Standard.Agents.Models.Clients.Agents.AgentStreamEventType.Narration = 4 -> Standard.Agents.Models.Clients.Agents.AgentStreamEventType
 Standard.Agents.Models.Clients.Agents.AgentStreamEventType.Response = 3 -> Standard.Agents.Models.Clients.Agents.AgentStreamEventType
 Standard.Agents.Models.Clients.Agents.AgentStreamEventType.Status = 0 -> Standard.Agents.Models.Clients.Agents.AgentStreamEventType
 Standard.Agents.Models.Clients.Agents.AgentStreamEventType.Thinking = 1 -> Standard.Agents.Models.Clients.Agents.AgentStreamEventType
 Standard.Agents.Models.Clients.Agents.AgentStreamEventType.Tool = 2 -> Standard.Agents.Models.Clients.Agents.AgentStreamEventType
+Standard.Agents.Models.Clients.Agents.AgentStreamEventType.Usage = 5 -> Standard.Agents.Models.Clients.Agents.AgentStreamEventType
 Standard.Agents.Models.Clients.Agents.Exceptions.InvalidAgentCompositionException
 Standard.Agents.Models.Clients.Agents.Exceptions.InvalidAgentCompositionException.InvalidAgentCompositionException(string! message) -> void
 Standard.Agents.Models.Clients.Agents.Exceptions.InvalidAgentConfigurationException
