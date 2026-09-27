@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Globalization;
 using System.Text.Json;
 using Standard.Agents;
 using Standard.Agents.Brokers.Approvals;
@@ -130,6 +131,9 @@ foreach (string vectorFile in
     bool narrationConformant =
         NarrationConformant(vector, run, out string? narrationFailure);
 
+    bool usageConformant =
+        UsageConformant(vector, run, out string? usageFailure);
+
     // The handoff's content, certified at the specialist: grounding is only real if the text
     // actually arrived (SPEC.md §4.8 v1.6).
     bool agentInputConformant = vector.Expect.AgentInput is null
@@ -146,7 +150,8 @@ foreach (string vectorFile in
         && guardianInputConformant
         && requestConformant
         && agentInputConformant
-        && narrationConformant)
+        && narrationConformant
+        && usageConformant)
     {
         passed++;
         passedVectors.Add(vector.Name);
@@ -240,6 +245,11 @@ foreach (string vectorFile in
         if (narrationConformant is false)
         {
             Console.WriteLine($"        narration: {narrationFailure}");
+        }
+
+        if (usageConformant is false)
+        {
+            Console.WriteLine($"        usage: {usageFailure}");
         }
     }
 }
@@ -1453,6 +1463,88 @@ static bool NarrationConformant(Vector vector, VectorRun run, out string? failur
 
             return false;
         }
+    }
+
+    return true;
+}
+
+// Usage as it is spent, certified from the streamed events themselves (SPEC.md §4.14.1): one
+// event per model call, each carrying the run's total so far as a record and as its text, a total
+// that grows with every call, and marked estimated when nobody reported it.
+//
+// Not the numbers themselves. Every implementation counts in its own way where the provider says
+// nothing, so a vector that pinned a figure would certify a tokenizer rather than the stream.
+static bool UsageConformant(Vector vector, VectorRun run, out string? failure)
+{
+    failure = null;
+
+    Expectation expect = vector.Expect;
+
+    if (expect.UsageEvents is null && expect.UsageEstimated is null)
+    {
+        return true;
+    }
+
+    if (vector.Streamed is false && vector.StreamedOutcome is false)
+    {
+        failure = "usage expectations require \"streamed\" or \"streamedOutcome\": true; "
+            + "the batched door produces and discards its events";
+
+        return false;
+    }
+
+    List<AgentStreamEvent> usages =
+        [.. run.StreamedEvents
+            .Where(streamEvent => streamEvent.Type is AgentStreamEventType.Usage)];
+
+    if (expect.UsageEvents is int expectedCount && usages.Count != expectedCount)
+    {
+        failure = $"the stream carried {usages.Count} Usage event(s), expected {expectedCount}, "
+            + "one after every model call";
+
+        return false;
+    }
+
+    int previousTotal = 0;
+
+    foreach (AgentStreamEvent usage in usages)
+    {
+        if (usage.Usage is null)
+        {
+            failure = $"a Usage event carried no record; its text was {Show(usage.Content)}";
+
+            return false;
+        }
+
+        string totalText = usage.Usage.TotalTokens.ToString(CultureInfo.InvariantCulture);
+
+        if (string.Equals(usage.Content, totalText, StringComparison.Ordinal) is false)
+        {
+            failure = $"a Usage event's text was {Show(usage.Content)} while its record "
+                + $"totals {totalText}";
+
+            return false;
+        }
+
+        if (usage.Usage.TotalTokens <= previousTotal)
+        {
+            failure = $"the running total went from {previousTotal} to {usage.Usage.TotalTokens}; "
+                + "every model call spends something, so the total grows";
+
+            return false;
+        }
+
+        previousTotal = usage.Usage.TotalTokens;
+    }
+
+    if (expect.UsageEstimated is bool expectedEstimate
+        && usages.Count > 0
+        && usages[^1].Usage?.IsEstimated != expectedEstimate)
+    {
+        failure = $"the last Usage event said estimated={usages[^1].Usage?.IsEstimated}, "
+            + $"expected {expectedEstimate}";
+
+        return false;
     }
 
     return true;
