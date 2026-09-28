@@ -545,7 +545,16 @@
          while the 82 before it pass. Spec-first: tracks SPEC.md v1.15 (SS4.14.1). The model shape
          changed (a new enum member and a new member of a shipped record): segment 1 advances,
          2/3/4 reset. -->
-    <Version>4.0.0.0</Version>
+    <!-- 5.0.0.0 "A Stopped Run Says Why, Everywhere": 3.0.0.0 gave a run that stops without an
+         answer a failure code, and a bound on going in circles; neither reached every surface an
+         agent is reached through. The Host's V1 run response, documented
+         as answering with everything AgentOutcome reports, dropped the failure, so a caller
+         across HTTP could only read the sentence. It now carries failure (category, code,
+         message), null on every run that answered. And the agent document could not set the
+         going-in-circles bound its builder verb sets: "identicalCallLimit" is now a document key,
+         refused unless positive, named by the emitted schema. No SPEC change. The Host's wire
+         model changed (a new member of a shipped response): segment 1 advances, 2/3/4 reset. -->
+    <Version>5.0.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>
