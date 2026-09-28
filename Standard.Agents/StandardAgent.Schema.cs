@@ -114,6 +114,8 @@ public sealed partial class StandardAgent
             [BooleanKind, ObjectKind], "true",
             Properties: [new("rules", ArrayKind, Required: true)]),
         new("maxTurns", "How many turns a run may take.", [IntegerKind], "7"),
+        new("identicalCallLimit", "How many times a run may ask for an act the ledger already answered.",
+            [IntegerKind], "8"),
         new("allowTools", "The only tools the agent may call; empty closes the perimeter.", [ArrayKind],
             "[\"calculator\"]", ItemsKind: StringKind),
         new("permissions", "The disposition toward acts nothing names.", [StringKind], "\"Ask\"",
