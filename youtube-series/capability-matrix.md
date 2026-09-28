@@ -3,7 +3,7 @@
 **Every capability is shown all three ways, on camera, in the episode that introduces it.** Not
 named. Not tabled. Demonstrated, run, and left working.
 
-This is the framework's central claim — nineteen capabilities, three verbs each, and a build that
+This is the framework's central claim — twenty capabilities, three verbs each, and a build that
 fails if one is missing. A series that shows only the Local mode has taught the easy third and
 quietly withheld the reason anyone would adopt this over an afternoon's worth of glue code.
 
@@ -17,7 +17,7 @@ quietly withheld the reason anyone would adopt this over an afternoon's worth of
 
 ---
 
-## The nineteen, with exact signatures
+## The twenty, with exact signatures
 
 | # | Capability | Local | External | Custom | Episode |
 |---|---|---|---|---|---|
@@ -40,13 +40,20 @@ quietly withheld the reason anyone would adopt this over an afternoon's worth of
 | 17 | Redaction | `Redact(rules)` | `UseRedaction(IRedactionBroker)` | `OnRedaction(redact, rehydrate)` | 4.2 |
 | 18 | Telemetry | `Telemetry(name)` | `UseTelemetry(ITelemetryBroker)` | `OnTelemetry((eventName, attrs) => …)` | 4.3 |
 | 19 | Contract | `Contract(schema)` | `UseContract(broker)` | `OnContract(delegate)` | 7.3 |
+| 20 | Agents (the fleet) | `Agents(path)` | `UseAgents(IAgentRegistryBroker)` | `OnAgents(Func<ValueTask<IReadOnlyList<RegisteredAgent>>>)` | 6.3 |
+
+**Three of them are plural.** Skills, Tools (MCP servers included) and Agents *accumulate*: a second call adds a source
+rather than replacing the first, and when two sources claim one name the first registered wins.
+Knowledge and Memory deliberately stay single-slot — merging relevance scores across rankers, and
+choosing which store a `remember` writes to, are questions a framework must not answer silently.
+Say both halves on camera in 2.1 and 2.3.
 
 **The two dashes are the only gaps in the whole framework**, and they are documented
 impossibilities rather than debt: *Local* means "in the box, no dependency", and running a model
 in-process needs an inference runtime. Say that out loud in 1.7 — a framework that names its two
 gaps and explains them is making a different kind of promise than one that leaves you to find them.
 
-**Beyond the triads — the loop capabilities (1.13–1.16), deliberately not rows:**
+**Beyond the triads — the loop capabilities (1.13–1.16, 3.0, 4.0), deliberately not rows:**
 
 | Capability | Surface | Episode |
 |---|---|---|
@@ -54,9 +61,11 @@ gaps and explains them is making a different kind of promise than one that leave
 | Streamed outcome | `RunStreamAsync` — every event live, completion carries the structured outcome | 7.9 |
 | Selection | `OnSelectTools((task, described) => offered)` | 7.10 |
 | Enforced selection | `EnforceSelection()` | 7.10 |
+| Spend, live | `AgentStreamEventType.Usage` — the budget's own running total, after every Brain call | 1.6 / 4.7 |
+| Going in circles | `IdenticalCallLimit(int)` — a bound on asks the ledger already answered | 4.5 |
 
-These are not backends, so the three-verb rule does not govern them: a channel, a door, a
-judgment delegate and a switch. Say that on camera rather than letting a viewer hunt for
+These are not backends, so the three-verb rule does not govern them: two channels, a door, a
+judgment delegate, a switch and a bound. Say that on camera rather than letting a viewer hunt for
 `UseSelection(broker)` — a matrix that explains its own boundaries is the same promise as one
 that names its gaps.
 

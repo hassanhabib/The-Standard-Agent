@@ -125,6 +125,9 @@ teams re-pick their model three times.
   argued with), and facts that change (those are Knowledge).
 - One concern per file. Skills compose, and a 900-line monolith cannot be reviewed by the person who
   should own it.
+- **The description is the trigger.** A skill's frontmatter `description` is what the `{{skills}}`
+  index shows the model (2.1), so it decides *when* the skill is reached for. Write it as what the
+  skill does and when to use it — the same discipline as a tool's description, for the same reason.
 - Write for the reader who will edit it next, who is frequently not an engineer.
 - Version them. A skill change is a behaviour change and deserves the same review as a code change —
   which is the argument for the registry mode in 2.1.
