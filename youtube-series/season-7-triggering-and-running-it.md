@@ -517,7 +517,7 @@ the agent it composes is the one the code composes.
 - The endpoints: `api/agents/runs` (prompt in, result and status out), `api/agents/streams` (every
   event kind as the SSE event name — `Status`, `Thinking`, `Narration`, `Tool`, `Response`,
   `Usage`), and the `V1` routes that carry the whole `PromptRequest` in and the whole outcome out,
-  pending effect included (7.11). Continuing a held run, or answering a caller's tool call, is the
+  pending effect and the `failure` code included (7.11, 7.6). Continuing a held run, or answering a caller's tool call, is the
   same request on the same `sessionId` — there is no resume route, because resuming is not a
   different operation.
 - **Locking the door.** `Host:ApiKey` — one shared secret in `X-Api-Key`, compared fixed-time. Then
