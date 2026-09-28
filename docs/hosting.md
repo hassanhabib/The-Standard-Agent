@@ -17,7 +17,7 @@ dotnet run --project Standard.Agents.Host
 | `GET api/home` | Aliveness, nothing else — no security, no dependencies. What a load balancer checks. |
 | `POST api/agents/runs` | `{ "prompt": "..." }` → `{ "result": "...", "status": "Responded" }`. Status travels beside result because only `Responded` makes the result an answer. An empty prompt is `400` before any run starts. |
 | `POST api/agents/streams` | The same run as server-sent events — each event's kind as the SSE event name (`Status`, `Thinking`, `Narration`, `Tool`, `Response`, `Usage`), its content as data, one `data:` line per line of content, which any SSE client joins back with a newline. Filtering to `Response` events equals what `runs` returns. |
-| `POST api/V1/agents/runs` | The whole run: version 1 of the wire carries everything `PromptRequest` carries and answers with everything `AgentOutcome` reports, the pending effect included. The enterprise door; see below. |
+| `POST api/V1/agents/runs` | The whole run: version 1 of the wire carries everything `PromptRequest` carries and answers with everything `AgentOutcome` reports, the pending effect and the failure code included. The enterprise door; see below. |
 | `POST api/V1/agents/streams` | The same V1 request, as server-sent events, framed exactly as `api/agents/streams`. |
 
 Closing the connection cancels the run at its next turn boundary — and, through the nesting
@@ -58,7 +58,8 @@ POST api/V1/agents/runs
 {
   "result": "About 2.1 million.",
   "status": "Responded",
-  "pendingEffect": null
+  "pendingEffect": null,
+  "failure": null
 }
 ```
 
@@ -86,6 +87,26 @@ can see it, perform it, approve it, or answer it:
     "approvalRequired": true,
     "idempotencyKey": "5b1e…",
     "principal": null
+  },
+  "failure": null
+}
+```
+
+**The failure.** A run that stopped without an answer says why as a code, so a caller across
+HTTP decides whether to retry the same way a caller in process does — by switching on `code`,
+never by reading the sentence (how-to.md §13). The codes are `cancelled`, `budget_exhausted`,
+`turns_exhausted` and `going_in_circles`; `failure` is `null` on every run that answered, asked,
+refused or is waiting, so a caller that never reads it sees the response it always saw:
+
+```json
+{
+  "result": "I ran out of turns before finishing.",
+  "status": "Working",
+  "pendingEffect": null,
+  "failure": {
+    "category": "Service",
+    "code": "turns_exhausted",
+    "message": "I ran out of turns before finishing."
   }
 }
 ```

@@ -185,6 +185,44 @@ public partial class AgentsV1ControllerTests
     }
 
     [Fact]
+    public async Task ShouldPostRunAndCarryTheFailureAsync()
+    {
+        // given — a run that stopped without an answer, and says why as a code
+        var request = new AgentRunRequestV1 { Prompt = "loop forever", SessionId = "trip-3" };
+
+        var failure = new AgentFailure(
+            Category: AgentFailureCategory.Service,
+            Code: AgentFailureCodes.TurnsExhausted,
+            Message: "I ran out of turns before finishing.");
+
+        this.agentMock.Setup(agent =>
+            agent.RunAsync(It.IsAny<PromptRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AgentOutcome(
+                    Result: "I ran out of turns before finishing.",
+                    Status: AgentStatus.Working)
+                {
+                    Failure = failure
+                });
+
+        var expectedResponse = new AgentRunResponseV1(
+            Result: "I ran out of turns before finishing.",
+            Status: "Working",
+            PendingEffect: null,
+            Failure: new FailureV1(
+                Category: "Service",
+                Code: "turns_exhausted",
+                Message: "I ran out of turns before finishing."));
+
+        // when
+        ActionResult<AgentRunResponseV1> actualResult =
+            await this.agentsV1Controller.PostRunAsync(request);
+
+        // then — the code crossed the wire, so a caller across HTTP decides on it, not the sentence
+        OkObjectResult okResult = actualResult.Result.Should().BeOfType<OkObjectResult>().Subject;
+        okResult.Value.Should().BeEquivalentTo(expectedResponse);
+    }
+
+    [Fact]
     public async Task ShouldReturnBadRequestOnPostRunIfPromptIsEmptyAsync()
     {
         // given
