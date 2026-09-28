@@ -16,7 +16,7 @@ dotnet run --project Standard.Agents.Host
 |---|---|
 | `GET api/home` | Aliveness, nothing else — no security, no dependencies. What a load balancer checks. |
 | `POST api/agents/runs` | `{ "prompt": "..." }` → `{ "result": "...", "status": "Responded" }`. Status travels beside result because only `Responded` makes the result an answer. An empty prompt is `400` before any run starts. |
-| `POST api/agents/streams` | The same run as server-sent events — each event's kind as the SSE event name (`Status`, `Thinking`, `Narration`, `Tool`, `Response`), its content as data, one `data:` line per line of content, which any SSE client joins back with a newline. Filtering to `Response` events equals what `runs` returns. |
+| `POST api/agents/streams` | The same run as server-sent events — each event's kind as the SSE event name (`Status`, `Thinking`, `Narration`, `Tool`, `Response`, `Usage`), its content as data, one `data:` line per line of content, which any SSE client joins back with a newline. Filtering to `Response` events equals what `runs` returns. |
 | `POST api/V1/agents/runs` | The whole run: version 1 of the wire carries everything `PromptRequest` carries and answers with everything `AgentOutcome` reports, the pending effect included. The enterprise door; see below. |
 | `POST api/V1/agents/streams` | The same V1 request, as server-sent events, framed exactly as `api/agents/streams`. |
 

@@ -189,6 +189,7 @@ await foreach (AgentStreamEvent streamEvent in agent.StreamPromptAsync("What is 
         case AgentStreamEventType.Response:  /* the answer, token by token */               break;
         case AgentStreamEventType.Tool:      /* a tool ran, and its result */               break;
         case AgentStreamEventType.Status:    /* lifecycle: turns, gate, judge */            break;
+        case AgentStreamEventType.Usage:     /* tokens spent so far, after every call */    break;
     }
 }
 ```

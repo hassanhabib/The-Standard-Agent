@@ -1071,6 +1071,30 @@ itself, not your queue from its own redeliveries.
 The key is *derived* from the run, the tool and a canonical form of the arguments — never supplied
 by you and never by the model, because a key the model can choose is a key the model can vary.
 
+**A run knows what it already did.** Replaying is right for a write and wrong for a look taken
+after one: a model that edits a file and reads it back to check the edit must see the edit, not
+the file as it was. So a Safe act at a scope the run has since written to is a *new* act, not a
+replay — its key carries how many writes the run has performed there (`AgentEffect.AfterWrites`),
+on the text protocol as well as the native one. A run resumed in a new process counts the writes
+already recorded in its session too, so a look after the pause still sees what was written before
+it.
+
+A replay also says it is one. The ledger's answer reaches the Brain whole, followed by a note that
+the act already ran in this run with the same arguments; from the third ask of the same act the
+note goes alone, because the answer is already above it. `ToolExchange.Replayed` marks which
+answers in `AgentTurn.Exchanges` came from the ledger.
+
+**Going in circles, with `.IdenticalCallLimit(...)`.** A run that keeps asking for the same answer
+is stopped rather than left to burn its turns:
+
+```csharp
+.IdenticalCallLimit(8)                 // the default; values below 2 become 2
+```
+
+Only asks the ledger *answered* count toward it, so a look the run legitimately repeats after a
+write never trips it. A run that reaches it ends with the failure code `going_in_circles`
+(section 13).
+
 Put together, an act that was held on Monday and approved on Tuesday runs once, on Tuesday, in a
 different process:
 
@@ -1170,8 +1194,56 @@ one, which is enough to enforce a bound and not enough to reconcile against a bi
 Whether a number was reported or counted travels with it, so a trace or an audit never presents an
 estimate as a measurement.
 
+**Watching the spend live.** The count the budget bounds is also on the stream. After every Brain
+call, `StreamPromptAsync` and `RunStreamAsync` yield an `AgentStreamEventType.Usage` event whose
+`Usage` is the run's total **so far** — not that call's figure:
+
+```csharp
+case AgentStreamEventType.Usage:
+    AgentUsage usage = streamEvent.Usage;
+    // usage.PromptTokens, usage.CompletionTokens, usage.TotalTokens;
+    // usage.IsEstimated is true when any call so far was counted locally, not reported
+    break;
+```
+
+It is the same count the budget bounds, not a second one, so a rejected draft shows in it. Its
+`Content` is the total as a decimal number, for a consumer that reads only text. It is never part
+of the answer: concatenating the `Response` events still equals the result. A local model thinking
+for four minutes and a paid one spending forty thousand tokens no longer look alike until they end.
+
+**Mind the default branch.** A `switch` over `AgentStreamEventType` whose default treats an unknown
+kind as answer text will print the count into the answer. Handle `Usage` or ignore it; a consumer
+that filters for `Response` is unaffected.
+
 **Cancellation.** Pass a token to `ProcessPromptAsync` and the run stops at the next turn boundary.
 A cancelled run is never reported as an answer and never written to the conversation.
+
+**Why a run stopped, with `AgentOutcome.Failure`.** A run that stops without an answer says why as
+a code, so a caller switches on the code instead of reading the sentence:
+
+```csharp
+AgentOutcome outcome = await agent.RunAsync(prompt);
+
+switch (outcome.Failure?.Code)
+{
+    case null:                                break; // it answered, or it is waiting on you
+    case AgentFailureCodes.Cancelled:         break;
+    case AgentFailureCodes.BudgetExhausted:   break; // "I ran out", not "I will not"
+    case AgentFailureCodes.TurnsExhausted:    break;
+    case AgentFailureCodes.GoingInCircles:    break; // section 12
+}
+```
+
+`Failure` is an `AgentFailure` — a category (`Validation`, `DependencyValidation`, `Dependency`,
+`Service`), a code and a message — and it is null on every run that answered. A run that exhausts
+its turns keeps the status it had before and now also carries `turns_exhausted`.
+
+**A brain nothing answers at.** A refused connection or an address that resolves to nothing is not
+a fault to take to support; it is an address to check. The run throws its dependency exception
+with an `UnreachableBrainException` inside it, which says so — *"Nothing answered at the brain's
+address. Check that the address is right and that the service is running."* — and keeps the native
+`HttpRequestException` inside that. It is the first thing a local setup sees when the model server
+is not running.
 
 ---
 
@@ -1591,13 +1663,13 @@ AgentRunStream run = agent.RunStreamAsync(request, cancellationToken);
 
 await foreach (AgentStreamEvent streamEvent in run)
 {
-    // Status, Thinking, Narration, Tool, Response — live, exactly as StreamPromptAsync
+    // Status, Thinking, Narration, Tool, Response, Usage — live, exactly as StreamPromptAsync
     // yields them, with every control and every screening intact.
 }
 
 AgentOutcome outcome = run.Outcome;
 // The SAME outcome RunAsync returns for this run: outcome.Status, outcome.Result,
-// outcome.PendingEffect (tool name, arguments, the model-minted CallId).
+// outcome.PendingEffect (tool name, arguments, the model-minted CallId), outcome.Failure.
 ```
 
 Three guarantees, each pinned by `LoopParityTests`' derived third-door theory and by
