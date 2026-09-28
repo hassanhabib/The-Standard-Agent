@@ -17,7 +17,7 @@
        ActivitySource with zero dependencies, and shipping those spans somewhere is a
        deployment concern - exactly what a host is for. -->
   <ItemGroup>
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.18.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.19.1" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.18.0" />
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.18.0" />
     <!-- Bearer-token authentication from configuration (Host:Authentication:Authority and
