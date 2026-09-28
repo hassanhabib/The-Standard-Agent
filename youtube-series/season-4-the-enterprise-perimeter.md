@@ -195,7 +195,8 @@ Three fixes, each demonstrated with a write tool and a read tool:
 - **A replay says it is one.** The ledger's answer reaches the Brain followed by a note that the
   act already ran in this run with the same arguments; from the third ask the note goes alone.
   `ToolExchange.Replayed` marks it in the turn's record.
-- **Going in circles stops.** `.IdenticalCallLimit(8)` — the default; values below 2 become 2. Only
+- **Going in circles stops.** `.IdenticalCallLimit(8)`, or `"identicalCallLimit": 8` in the
+  document (7.12) — the default; values below 2 become 2. Only
   asks the ledger *answered* count, so a legitimate re-read after a write never trips it. Script a
   Brain that asks the same thing forever and watch the run stop with `going_in_circles` (4.7).
 

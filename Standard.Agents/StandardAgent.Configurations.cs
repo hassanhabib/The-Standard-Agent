@@ -286,6 +286,11 @@ public partial class StandardAgent
 
                 break;
 
+            case "identicalCallLimit":
+                agent.IdenticalCallLimit(Positive(Whole(value, key), key));
+
+                break;
+
             case "allowTools":
                 agent.AllowTools(Texts(value, key));
 

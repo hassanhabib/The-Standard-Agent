@@ -4,7 +4,9 @@
 // ---------------------------------------------------------------
 
 using FluentAssertions;
+using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Clients.Agents.Exceptions;
+using Standard.Agents.Tools;
 using Xunit;
 
 namespace Standard.Agents.Tests.Unit.Clients;
@@ -49,6 +51,43 @@ public partial class StandardAgentFromJsonTests
 
         // then — one turn, then the honest stop the fluent .MaxTurns(1) produces.
         answer.Should().Contain("ran out of turns");
+    }
+
+    // How many identical asks are enough is the deployment's to say, in the document as in code.
+    // Five turns would end the run as out of turns; three identical asks end it first, as going
+    // in circles — which the default of eight never would inside five turns.
+    [Fact]
+    public async Task ShouldStopARunGoingInCirclesFromJsonAsync()
+    {
+        // given
+        var tool = new CountingTool();
+
+        StandardAgent agent = StandardAgent
+            .FromJson("""{ "maxTurns": 5, "identicalCallLimit": 3 }""")
+            .Tool(tool)
+            .OnBrain(async (systemPrompt, userPrompt) => "ACTION: calculator: 1 + 1");
+
+        // when
+        AgentOutcome actualOutcome = await agent.RunAsync("add one and one");
+
+        // then
+        tool.Calls.Should().Be(1);
+        actualOutcome.Failure.Should().NotBeNull();
+        actualOutcome.Failure!.Code.Should().Be(AgentFailureCodes.GoingInCircles);
+    }
+
+    private sealed class CountingTool : ITool
+    {
+        public string Name => "calculator";
+        public string Description => "Evaluates arithmetic.";
+        public int Calls { get; private set; }
+
+        public ValueTask<string> ExecuteAsync(string input)
+        {
+            Calls++;
+
+            return ValueTask.FromResult("2");
+        }
     }
 
     // Identity is what makes an agent document registrable: the name a handoff calls, the
