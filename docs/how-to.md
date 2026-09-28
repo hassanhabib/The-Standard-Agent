@@ -1093,7 +1093,8 @@ is stopped rather than left to burn its turns:
 
 Only asks the ledger *answered* count toward it, so a look the run legitimately repeats after a
 write never trips it. A run that reaches it ends with the failure code `going_in_circles`
-(section 13).
+(section 13). In the document it is `"identicalCallLimit": 8`; zero or less is refused rather
+than composed as if set.
 
 Put together, an act that was held on Monday and approved on Tuesday runs once, on Tuesday, in a
 different process:
