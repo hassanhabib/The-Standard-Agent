@@ -48,17 +48,18 @@ Nine parts, matching the nine parts of the series, ~38 chapters.
 | **V · The Perimeter** | 16–20 | Season 4 | The longest part. Enterprise buys the book for this. |
 | **VI · Mission Critical** | 21–24 | Season 5 | Failure, recovery, proof |
 | **VII · Systems of Agents** | 25–28 | Season 6 | The destination |
-| **VIII · Triggering and Operating** | 29–35 | Part 7 | Triggers, lifetime, hosting, narration, selection, testing, upgrades |
+| **VIII · Triggering and Operating** | 29–35 | Part 7 | Triggers, lifetime, the request, the agent as a document, hosting, narration, selection, testing, upgrades |
 | **IX · The Architecture** | 36–38 | Part 8 | For porters, reviewers, and the curious |
 
 **Appendices** — and these are the pages that get dog-eared:
 
-- **A · The capability matrix.** All nineteen, three modes each, exact signatures, the two
+- **A · The capability matrix.** All twenty, three modes each, exact signatures, the two
   documented gaps with their reasons — and the loop capabilities (narration, streamed outcome,
-  selection, enforcement) with why they are deliberately not triads.
+  selection, enforcement, live spend, the going-in-circles bound) with why they are deliberately
+  not triads.
 - **B · The readiness profiles.** What each requires, verbatim, and how to certify.
-- **C · The conformance vectors.** All 69 (and counting — selection added one), what each pins,
-  and how to write your own.
+- **C · The conformance vectors.** All 83 (and counting — every release adds the vector that
+  proves it, failing first), what each pins, and how to write your own.
 - **D · Exception families.** What each tells a caller about whether to retry.
 - **E · The design worksheet** from chapter 2, as a one-page form.
 - **F · Standard Versioning.** `v1.2.3.4`, and why it is deliberately not semver.
@@ -91,7 +92,9 @@ Write these first, at full quality, and the rest follows their standard:
 1. **Ch. 2 — Designing the agent before you write it.** The worksheet, the reversibility column, and
    choosing a profile at design time. This is the chapter a reader photocopies.
 2. **Ch. 17 — Run once, even across a crash.** Atomicity as the whole mechanism, and *retries
-   without a ledger are a way to pay twice.*
+   without a ledger are a way to pay twice.* Then the sequel: the ledger that replayed a read
+   taken after a write, handed the model the file as it was before its own edit, and watched it
+   ask again eleven times — and the three things a run now knows about what it already did.
 3. **Ch. 20 — Budgets that actually bound.** The eight-release defect, why the spec permitted it,
    and what a specification is for. The best cautionary tale in the material.
 4. **Ch. 27 — Budgets, identity and approval across agents.** The propagation gap. The chapter that
@@ -120,9 +123,10 @@ The framework's own documentation sets it, and the book should not drift from it
 - **Say the cost, not the feature.** "A budget that silently does not apply is worse than no budget,
   because it is claimed in the profile."
 - **Name the failure that motivated the design.** Every rule here has a corpse behind it. Show it.
-- **Admit what is unresolved.** The decorating-broker tension. The flattened sub-agent status. A book
-  that admits its open questions is trusted on the closed ones.
-- **No hedging and no marketing.** "Nineteen capabilities, three verbs each, and a test fails the
+- **Admit what is unresolved.** The decorating-broker tension. The sub-agent status that is now
+  marked but is still only text. A book that admits its open questions is trusted on the closed
+  ones.
+- **No hedging and no marketing.** "Twenty capabilities, three verbs each, and a test fails the
   build if one is missing" is a stronger sentence than any adjective available.
 
 ---

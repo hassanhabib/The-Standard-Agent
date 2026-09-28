@@ -1,7 +1,7 @@
 # The Standard for Agents — the video series
 
-**66 episodes across nine parts — ~14h 45m of content.** At a ~10 minute target that cuts to
-**~109 videos.** From deciding whether to build one at all, to a five-agent system moving real
+**69 episodes across nine parts — ~15h 45m of content.** At a ~10 minute target that cuts to
+**~110 videos.** From deciding whether to build one at all, to a five-agent system moving real
 money for a regulated enterprise.
 
 The same material is also a book — a different deliverable, not the scripts reformatted. See
@@ -18,7 +18,7 @@ seasons are shot.
 **Every capability is shown all three ways — Local, External, Custom — in the episode that
 introduces it.** Demonstrated and run, not named and tabled.
 
-This is the framework's central claim: nineteen capabilities, three verbs each, and a build that
+This is the framework's central claim: twenty capabilities, three verbs each, and a build that
 fails if one is missing. A series that shows only the Local mode has taught the easy third and
 withheld the reason anyone would choose this over an afternoon of glue code. (The loop
 capabilities — narration, the streamed outcome, selection and its enforcement — are deliberately
@@ -43,14 +43,14 @@ that are already there.
 | Part | Eps | Videos | Runtime | Profile | The promise |
 |---|---|---|---|---|---|
 | **0 · From an Idea** | 5 | 6 | 58m | — | You know whether to build one, and exactly what. |
-| **1 · Your First Agent** | 7 | 7 | 57m | — | It talks. Remote or local, one line apart. |
-| **2 · Giving It Substance** | 7 | 11 | 95m | Core | It knows who it is and what it has read. |
+| **1 · Your First Agent** | 7 | 7 | 59m | — | It talks. Remote or local, one line apart. |
+| **2 · Giving It Substance** | 7 | 11 | 97m | Core | It knows who it is and what it has read. |
 | **3 · Giving It a Conscience** | 6 | 9 | 79m | Reliable | It can refuse, and explain itself. |
-| **4 · The Enterprise Perimeter** | 8 | 14 | 117m | Enterprise | It can be trusted with someone else's money. |
-| **5 · Mission Critical** | 7 | 14 | 113m | Critical | It survives the process it started in. |
-| **6 · Multi-Agent Systems** | 7 | 15 | 113m | Critical | Five agents, one customer, real money. |
-| **7 · Triggering It, and Running It** | 10 | 17 | 137m | — | It starts the right way, speaks while it works, and you are on call for it. |
-| **8 · The Architecture** | 9 | 14 | 115m | — | For porting, extending, or judging it. |
+| **4 · The Enterprise Perimeter** | 8 | 14 | 122m | Enterprise | It can be trusted with someone else's money. |
+| **5 · Mission Critical** | 7 | 14 | 115m | Critical | It survives the process it started in. |
+| **6 · Multi-Agent Systems** | 7 | 15 | 117m | Critical | Five agents, one customer, real money. |
+| **7 · Triggering It, and Running It** | 13 | 20 | 182m | — | It starts the right way, serves every caller from one document, speaks while it works, and you are on call for it. |
+| **8 · The Architecture** | 9 | 14 | 117m | — | For porting, extending, or judging it. |
 
 Parts 0–7 are for people **using** the framework. Part 8 is for people **building on or against**
 it — a different audience, and worth its own playlist.
@@ -81,8 +81,9 @@ budget, not identity, not run-once scope. That is seven episodes of engineering,
 The framework has no trigger abstraction and correctly should not — a trigger is the exposer tier.
 But the trigger KIND decides which capabilities stop being optional: whether a human can approve
 in-session, whether identity exists at all, whether a budget is advisory, and whether run-once
-actually protects you. Plus the operational half: thread safety, hosting, cancellation, testing, and
-the four questions an architecture review will ask.
+actually protects you. Plus the operational half: thread safety, the per-request contract, the
+agent as a document, the supplied Host, cancellation, testing and evals, and the four questions an
+architecture review will ask.
 
 ---
 
@@ -111,9 +112,9 @@ the four questions an architecture review will ask.
 
 ## Splitting to ~10 minutes
 
-64 episodes → ~104 videos. Splitting doesn't preserve runtime: each new video pays a cold open,
+69 episodes → ~110 videos. Splitting doesn't preserve runtime: each new video pays a cold open,
 recap and outro tax of ~1.5–2 min, so a 14-minute episode becomes two 9-minute videos, not two
-7-minute ones. Budget ~15h 30m of finished content.
+7-minute ones. Budget ~16h 30m of finished content.
 
 Most splits have an obvious seam already in the plan — the three-mode block is frequently the
 natural cut point, since "here's the capability" and "here are the three ways to back it" are two

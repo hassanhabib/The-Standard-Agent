@@ -1,6 +1,6 @@
 # Part 7 — Triggering It, and Running It
 
-10 episodes · 10–16 min each · no new profile — this is how the agent **starts**, and how you operate it
+13 episodes · 10–16 min each · no new profile — this is how the agent **starts**, and how you operate it
 
 Every episode until now assumed something called `ProcessPromptAsync`. This part is about what that
 something is, and about the fact that nobody ships a console app.
@@ -100,13 +100,15 @@ same code, different trigger, different minimum configuration.
 **Beats**
 - ASP.NET minimal API in front of the part 4 agent. Singleton registration, one endpoint.
 - Map `sessionId` to the caller's conversation — the session per user, one agent for everyone.
-- Streaming over the wire: `StreamPromptAsync` → SSE, with the four event types preserved so the
-  client can render Thinking and Response differently.
+- Streaming over the wire: `StreamPromptAsync` → SSE, with every event kind preserved as the SSE
+  event name so the client can render Thinking, Narration, Response and the live `Usage` meter
+  differently. (7.13 shows the same thing with no code of yours at all.)
 - `.Contract(schema)` — the response as a contract, and the per-request form (`ResponseSchemaJson`)
   for a caller that needs a different shape than the agent's default. All three modes here:
   `Contract(schema)` / `UseContract(broker)` / `OnContract(delegate)`.
 - `.Principal(() => currentUser.Id)` wired to the **real** authenticated user from `HttpContext` —
-  this is where 4.1's "resolved per act, not captured at composition" stops being theory.
+  this is where 4.1's "resolved per act, not captured at composition" stops being theory. (The
+  Host does this translation for you from a JWT; 7.13.)
 - Approval when a human *is* present: the run stops at `AwaitingInput`, the API returns that state,
   the UI asks, the next call resumes the session. Show the round trip.
 - Config and secrets from configuration, never source.
@@ -222,7 +224,7 @@ has to discover it as a duplicate transaction.
 
 ## 7.6 — Stopping: cancellation and timeouts
 
-**Runtime** 10 min · **Branch** `series/s7e6-cancellation`
+**Runtime** 11 min · **Branch** `series/s7e6-cancellation`
 
 **Cold open**
 > "The user closed the tab nine seconds ago. Your agent is still spending their money."
@@ -232,7 +234,8 @@ has to discover it as a duplicate transaction.
 - The run stops at the **next turn boundary** — the smallest unit the loop can stop between without
   leaving an effect half-recorded.
 - **Cancellation is never reported as success.** A cancelled run's result is not an answer; it
-  arrives as `Status`, distinguishable from a refusal and from an exhausted budget.
+  arrives as `Status`, distinguishable from a refusal and from an exhausted budget — and
+  `RunAsync` reports it as a code: `outcome.Failure.Code == AgentFailureCodes.Cancelled`.
 - An in-flight *effect* is never abandoned half-recorded: its outcome is written before the loop
   notices the cancellation, or the effect never began. Demo with the ledger from 4.5.
 - Wire it to `HttpContext.RequestAborted` in the 7.3 API and close the browser tab on camera.
@@ -242,7 +245,9 @@ has to discover it as a duplicate transaction.
 **The gotcha**
 Cancellation, budget exhaustion and refusal are **three different outcomes**, and a caller that
 collapses them into "it didn't work" cannot decide whether to retry. Show all three arriving as
-distinct statuses in one session.
+distinct outcomes in one session: a refusal is a status the run *chose*, while `cancelled` and
+`budget_exhausted` are `AgentFailure` codes for a run that was *stopped* — switch on the code,
+never on the sentence.
 
 **What changed in the shape** — nothing. A control that was always there, now demonstrated.
 
@@ -250,7 +255,7 @@ distinct statuses in one session.
 
 ## 7.7 — Testing the agent you built
 
-**Runtime** 13 min · **Branch** `series/s7e7-testing`
+**Runtime** 15 min · **Branch** `series/s7e7-testing` · **Docs** evals.md
 
 **Cold open**
 > "Your agent passed code review. How do you know it still refuses what it refused last month?"
@@ -270,6 +275,18 @@ distinct statuses in one session.
   neither needs a model.
 - Then borrow the framework's own trick: **sabotage-verify your test.** Break the behaviour, watch it
   go red, revert.
+- **Quality, pinned the same way (+2 min).** Conformance pins *contracts*; `Standard.Agents.Evals`
+  pins *orchestration quality* against a golden set — task completion, groundedness, retrieval
+  precision and recall, tool selection, refusal correctness in both directions, revision
+  effectiveness. Deterministic, thresholded, no keys, CI-gated:
+  ```bash
+  dotnet run --project Standard.Agents.Evals -- path/to/golden
+  ```
+  Exit `1` when a threshold is missed, `2` when no case was discovered at all — **a run that
+  certifies nothing is not a pass.** Say what it cannot see: the Brain is scripted, so a worse model
+  or a worse skill is invisible to it. That is `Standard.Agents.Evals.Live`'s job — real model, real
+  skills, repeated samples — opt-in and outside CI, because a flake in a required gate is a gate
+  nobody trusts.
 
 **The gotcha**
 Testing that "the agent gives a good answer" is a trap — you'll be tuning assertions against model
@@ -300,7 +317,20 @@ prose isn't.
   *kind* of change happened and why.
 - **Standard Versioning**: `v1.2.3.4` = **model · service/routine · fix/config · build**. Deliberately
   **not** semver — the segments say what kind of change happened, so a model change can never hide in
-  the service segment. Walk 1.0 → 1.4 and say what each bump meant.
+  the service segment. Walk 1.0 → 1.4 and say what each bump meant. Then show the three most recent
+  majors: **2.0** added `AgentTurn.Exchanges`, **3.0** added `AgentOutcome.Failure` and
+  `ToolExchange.Replayed`, **4.0** added the `Usage` stream event. For code composed through
+  `StandardAgent` each was additive — it compiled unchanged — and each still advanced segment 1,
+  because a new member of a shipped model *is* a model change. Read the "Upgrading" section of the
+  3.0 and 4.0 notes on camera too: each names the behaviour that changed on purpose (a look after a
+  write now runs again; a `switch` with a careless default now sees a sixth kind). A major number
+  that moves on every model change is information; one that only moves on breakage is a promise
+  nobody can check.
+- **The surface is guarded by the build.** `PublicAPI.Shipped.txt` declares every public symbol, so
+  a segment change is a visible diff rather than a discipline. Show the diff a model change
+  produces.
+- **Targets** — the package multi-targets **net8.0 and net10.0** with the full suite green on each,
+  and a key, an audit chain or a session file written on one reads identically on the other.
 - **Supply chain** — the core package is dependency-free by design; provider packages are opt-in and
   each brings exactly one backend. SBOM in the release artifacts (`bom.json`). Show it.
 
@@ -309,6 +339,8 @@ prose isn't.
 and a Postgres knowledge store coexist without a version fight — each provider package brings its own
 tree and nothing is forced on anyone who doesn't opt in. Contrast with a framework that pulls forty
 transitive packages to say hello.
+
+---
 
 ## 7.9 — Narration and the streamed outcome: the agent speaks while it works
 
@@ -326,8 +358,10 @@ transitive packages to say hello.
   narration is withheld everywhere and recorded as WITHHELD. The user hears the agent, never an
   injection speaking through it.
 - `RunStreamAsync` — the third door: every event live, and the enumeration's completion still
-  carries the structured outcome (`status`, `result`, the pending effect with its call id). The
-  caller never chooses between the answer's structure and the run's story.
+  carries the structured outcome (`status`, `result`, the pending effect with its call id, and the
+  `Failure` code when it stopped without an answer). The caller never chooses between the answer's
+  structure and the run's story — and the story now includes what it spent, as `Usage` events
+  beside the narration.
 - Bridge it to the 7.3 SSE endpoint: forward each event as it arrives, read `Outcome` for the
   terminal frame.
 
@@ -378,6 +412,137 @@ gained step 0. Both spec'd first (SPEC.md §4.15, v1.11–v1.12), both found in 
 
 ---
 
+## 7.11 — One agent, many callers: the request
+
+**Runtime** 15 min · **Branch** `series/s7e11-request` · **Docs** how-to §18, per-request-inference.md
+
+**Cold open**
+> "Forty callers, one agent. One wants temperature 0.2 and JSON. One wants to run the tool on its
+> own machine. None of them gets to change your budget."
+
+**Beats**
+- `ProcessPromptAsync(new PromptRequest { Prompt, Temperature, MaxTokens, Seed, Stop,
+  ResponseSchemaJson, ProviderOptionsJson, CallerTools, History, ToolExchanges })` — the prompt
+  carrying its own inference options. `RunAsync(request)` reports **how the run ended** as well as
+  what it produced, which an exposer cannot do without.
+- The rule that governs every field: **what is established and hard-configured takes precedence,
+  always.** Configured → request → framework default. Show a request's temperature lose to
+  `.Brain(..., temperature: 0.3)`, and a request's schema be *discarded, not merged* under a
+  configured `.Contract(...)` — with the trace saying so.
+- One schema seeds both the wire (`response_format`) and the Contract guardian, so an engine that
+  quietly ignores `response_format` still returns the right shape. Constrained decoding is an
+  optimization over a guarantee, never the guarantee.
+- `ProviderOptionsJson` — the bag for what the core cannot model (a GBNF grammar, template
+  arguments). Try to smuggle `tools` through it on camera; it is stripped at the boundary and
+  logged.
+- **`CallerTools` are vocabulary, never capability.** A call naming one ends the run
+  `AwaitingInput`, with the call on `AgentOutcome.PendingEffect` carrying the model's own `CallId`.
+  The caller runs it and answers in the next request's `ToolExchanges`. A caller tool named like a
+  configured one is dropped: nobody shadows the deployment's own tool.
+- **The stateless caller.** An OpenAI-style client owns the transcript and re-posts it each turn in
+  `History` — and each `AgentTurn` carries its own `Exchanges`, the calls that turn made and what
+  they returned. When a session exists, it wins: the deployment's record beats the caller's
+  retelling.
+- What a request can never carry: executable tools, permissions, budgets, approvals, the principal.
+  There is no field in which to ask for them.
+
+**The gotcha — a real production bug, and the reason 2.0.0 exists**
+`History` and `ToolExchanges` are not interchangeable. `ToolExchanges` is the work of the turn
+being asked **now**. An editor client that put a finished call from turn one there got that edit
+handed to the model as evidence for every later prompt — and watched the agent report *"file
+edited"* on every follow-up. The model was not hallucinating; it was reporting the evidence it was
+given. A past call belongs on its turn's `Exchanges`. Reproduce it with the call in the wrong list,
+then move it and watch the symptom vanish.
+
+**What changed in the shape** — nothing below the entry. The raw request resolves once, at the top
+of the run, into what rides the loop; no tier learns that precedence exists.
+
+---
+
+## 7.12 — The agent as a document
+
+**Runtime** 13 min · **Branch** `series/s7e12-document` · **Docs** how-to §16
+
+**Cold open**
+> "Your product manager built this agent in a form. There is no C# in it. It has a budget, a
+> gate, an approval step and an audit log."
+
+**Beats**
+- `StandardAgent.FromJson(json)` / `FromJsonFile("agent.json")` — one key per capability, named
+  exactly as the builder verbs, camelCased. Walk a real document top to bottom and point at the
+  episode that taught each key.
+- **An unknown key refuses to compose, with the key named — at any depth.** Typo `"buget"` on
+  camera. A form that typos a control must not get an agent that *looks* configured; a control you
+  believe is on and is not is worse than an error. Then `"maxTurns": 0`, `"ruleGate": []`, and a
+  cost budget with no rate — each refused, each naming why.
+- **The schema is emitted, not written.** `StandardAgent.DocumentSchemaJson()` produces a JSON
+  Schema from the same table the document is validated against, so the editor's autocomplete and
+  the builder's refusals cannot drift apart. Load it into VS Code and get completion on an agent.
+- **Data and code compose.** `FromJson` returns the same `StandardAgent`, so keep chaining:
+  `StandardAgent.FromJson(formBody).Tool(new CalculatorTool()).OnApproval(...)`. Tools, delegates
+  and broker instances stay code because they are code — except MCP, where a tool is a URL, which
+  is data.
+- Plural keys: `"skills"` and `"mcp"` take one value or an array; `"agents"` declares a whole fleet
+  (6.3), each member a folder or an inline document.
+- **The parity gate** — a test composes a document carrying every data-expressible key, so a
+  builder verb added without a JSON binding fails the build, not a code review. Show it.
+
+**The gotcha**
+The document now holds secrets the moment you put an API key in it. Store it the way you store any
+secret, keep the real one out of the repository (the repo already ignores `agent.json` and ships
+`agent.example.json` instead — 7.13),
+and prefer a key from your secret store over one typed into a form.
+
+**What changed in the shape** — nothing. The document is a second way to call the same builder;
+the agent it composes is the one the code composes.
+
+---
+
+## 7.13 — The Host: the same agent behind HTTP, with no code of yours
+
+**Runtime** 14 min · **Branch** `series/s7e13-host` · **Docs** hosting.md
+
+**Cold open**
+> "7.3 took fifteen minutes and an ASP.NET project. This takes one command and a JSON file."
+
+**Beats**
+- `Standard.Agents.Host` — the exposure layer as The Standard defines one: controllers that are
+  pure mapping over one `IAgent`, a heartbeat with no security, and composition that is
+  configuration. Nothing was added to the builder to make it possible.
+- Drop `agent.json` beside it (7.12) and run. Zero config still stands: a host with no brain
+  heartbeats and answers every run with what to configure.
+- **Before you deploy, ask:** `--validate path/to/agent.json` exits `0` and "composes", or `1` naming
+  the entry that does not. Why it matters: a document that refuses to compose is composed on the
+  *first request*, so a green heartbeat is not proof. `--schema` prints the document's JSON Schema.
+- The endpoints: `api/agents/runs` (prompt in, result and status out), `api/agents/streams` (every
+  event kind as the SSE event name — `Status`, `Thinking`, `Narration`, `Tool`, `Response`,
+  `Usage`), and the `V1` routes that carry the whole `PromptRequest` in and the whole outcome out,
+  pending effect included (7.11). Continuing a held run, or answering a caller's tool call, is the
+  same request on the same `sessionId` — there is no resume route, because resuming is not a
+  different operation.
+- **Locking the door.** `Host:ApiKey` — one shared secret in `X-Api-Key`, compared fixed-time. Then
+  the real one: `Host:Authentication:Authority` registers JWT bearer, and the authenticated user
+  becomes the principal policy decides on and audit stamps (`sub`, `tid`, …). **The wire has no
+  field in which a caller can claim to be someone.** Show a held act's `pendingEffect.principal`
+  naming the token's subject.
+- **Telemetry out.** Set `OTEL_EXPORTER_OTLP_ENDPOINT` and spans and metrics leave over OTLP, named
+  by the OTel GenAI conventions. The core emits through the BCL with zero dependencies; shipping
+  spans somewhere is a deployment concern, which is exactly what a host is for.
+- Closing the connection cancels the run at its next turn boundary — and any sub-agents it started
+  (6.4). Close the tab on camera.
+
+**The gotcha**
+**Memory is off in the host unless you turn it on.** One instance serves every caller, so one
+memory file would be one memory for all of them — one caller's facts in another's context, and one
+caller able to poison memory for everyone after. Turning it on is a deliberate choice every caller
+of that host shares. Say that out loud; it is the difference between a demo and a service.
+
+**What changed in the shape** — the agent gained a standard exposer. Nothing inside it moved, and
+nothing inside it knows.
+
+---
+
 **Part close** — "It starts the right way, stops when told, speaks while it works, offers each
-run only what its task needs, is tested, and you can answer the architecture review. Last part
-is for people who want to take it apart."
+run only what its task needs, takes each caller's request without letting any caller widen it,
+composes from a document, stands up behind HTTP with no code of yours, is tested, and you can
+answer the architecture review. Last part is for people who want to take it apart."

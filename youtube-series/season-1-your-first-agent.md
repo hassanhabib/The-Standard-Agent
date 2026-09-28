@@ -70,7 +70,7 @@ still runs.
 
 ## 1.3 — Remote inference: the hosted brain
 
-**Runtime** 8 min · **Branch** `series/s1e3-remote`
+**Runtime** 9 min · **Branch** `series/s1e3-remote`
 
 **Cold open**
 > "Your prompt just left the building. Let's look at exactly what went with it."
@@ -82,6 +82,12 @@ still runs.
 - What travels: system prompt + user message. What comes back: text.
 - Latency, cost, and privacy as three separate axes — not one "cloud vs local" slider.
 - Any OpenAI-compatible endpoint works: hosted providers, a gateway, vLLM, Ollama's compat API.
+- **Stop the server and run it again.** Point at a local Ollama, stop it, and show what comes
+  back: the run's dependency exception with an `UnreachableBrainException` inside it — *"Nothing
+  answered at the brain's address. Check that the address is right and that the service is
+  running."* — and the native `HttpRequestException` still inside that. An address to check, not a
+  fault to take to support. It's the first error every viewer with a local server will hit; show
+  it before they do.
 
 **The gotcha**
 The hosted brain is the *External* mode of one capability, not the framework's foundation. It looks
@@ -133,8 +139,13 @@ knew it happened.
 
 **Beats**
 - Same program, two configurations, side by side in one terminal.
-- Measure, don't assert: first-token latency, total latency, and — using `.Budget()` and the trace
-  — tokens consumed. (Full budget treatment is 4.7; here it's a measuring tape.)
+- Measure, don't assert: first-token latency, total latency, and tokens consumed — read live off
+  the stream's `Usage` events (1.6), which carry the run's running total after every model call.
+  The local side reports `IsEstimated: true` when its tokens were counted rather than reported;
+  say what that means for the comparison. (Full budget treatment is 4.7; here it's a measuring
+  tape.)
+- Contrast the failure modes too: the remote agent can be *unreachable* (1.3), the in-process one
+  has no address to lose.
 - Honest scoring across five axes: **latency, cost, privacy, capability, operability.** Local wins
   privacy and marginal cost outright; hosted usually wins capability and operability. Say so.
 - The hybrid that most people actually want: local brain, hosted guardians — or the reverse for a
@@ -154,7 +165,7 @@ line where that happens so it isn't mistaken for the model being broken.
 
 ## 1.6 — Streaming
 
-**Runtime** 8 min · **Branch** `series/s1e6-streaming`
+**Runtime** 9 min · **Branch** `series/s1e6-streaming`
 
 **Cold open**
 > "Waiting eleven seconds for a wall of text is a product bug, not a model limitation."
@@ -165,23 +176,31 @@ line where that happens so it isn't mistaken for the model being broken.
   {
       switch (streamEvent.Type)
       {
-          case AgentStreamEventType.Thinking: /* deliberating / tool reasoning */ break;
-          case AgentStreamEventType.Response: /* the answer, token by token */    break;
-          case AgentStreamEventType.Tool:     /* a tool ran, and its result */    break;
-          case AgentStreamEventType.Status:   /* lifecycle: turns, gate, judge */ break;
+          case AgentStreamEventType.Thinking:  /* deliberating / tool reasoning */ break;
+          case AgentStreamEventType.Narration: /* "Let me check..." — see 7.9 */   break;
+          case AgentStreamEventType.Response:  /* the answer, token by token */    break;
+          case AgentStreamEventType.Tool:      /* a tool ran, and its result */    break;
+          case AgentStreamEventType.Status:    /* lifecycle: turns, gate, judge */ break;
+          case AgentStreamEventType.Usage:     /* tokens spent so far */           break;
       }
   }
   ```
-- Wire it to a console with each type rendered differently. Four events, four colours.
+- Wire it to a console with each type rendered differently. Six events, six colours — and put the
+  `Usage` total in a status line that climbs while the model works. A local model thinking for four
+  minutes and a paid one spending forty thousand tokens used to look identical until each ended.
 - **Why a draft streams as `Thinking` and not `Response`:** the answer isn't an answer until the
   Judge has settled it. Filtering a stream to `Response` therefore equals exactly what
   `ProcessPromptAsync` returns. Demo it — that parity is a promise the framework keeps and most
-  frameworks don't.
+  frameworks don't. `Usage` is never part of the answer either; the parity still holds.
 
 **The gotcha**
 Every control the batched loop enforces — cancellation, budgets, sessions, compensation — is
 enforced on the streamed loop too. A control a caller can step around by changing method is not a
 control. This was a real defect once; it's worth ten seconds of "and here's why you can trust that."
+
+And a second, shorter one, because the list of kinds grows: a `switch` whose `default` branch
+treats an unknown kind as answer text printed the token count into the answer the day `Usage`
+shipped (4.0.0). Handle every kind you know, ignore the rest — or filter for `Response`.
 
 **What changed in the shape** — nothing. Same loop, second door.
 
@@ -205,7 +224,7 @@ control. This was a real defect once; it's worth ten seconds of "and here's why 
   - **`.X(...)`** — Local. Point at something in the box.
   - **`.UseX(broker)`** — External. A provider package.
   - **`.OnX(delegate)`** — Custom. Your own code, inline.
-- Sixteen capabilities, the same three verbs each, and a **test fails the build** if a capability
+- Twenty capabilities, the same three verbs each, and a **test fails the build** if a capability
   offers fewer. Show `StandardAgentCapabilityTests` for five seconds — it lands better as evidence
   than as a claim.
 - Why Brain has no Local mode: running a model in-process needs an inference runtime, and the core

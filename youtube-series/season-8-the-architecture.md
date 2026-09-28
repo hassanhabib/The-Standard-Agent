@@ -75,7 +75,8 @@ both sides; this is a live design tension, not settled dogma.
   a **negative** token count subtracts from the run's spend, turning a budget into something an
   unusual reply can *extend* rather than exhaust. A custom counter is host code, so that one is
   reachable.
-- Fourteen foundations. Ten always present, four optional.
+- Fifteen foundations. Eleven always present — the nine, plus `Usage` and `Contract` — and four
+  that arrive with the enterprise capabilities: Session, Policy, Approval, EffectLedger.
 
 **The gotcha**
 The role may be **versioned** — `IGeneratorBrokerV1` is the same seam as `IGeneratorBroker` under a
@@ -134,7 +135,7 @@ rather than treating it as something the count implies.
 
 ## 8.6 — Exceptions: the Xeption model
 
-**Runtime** 11 min · **Branch** `series/s8e6-exceptions`
+**Runtime** 13 min · **Branch** `series/s8e6-exceptions`
 
 **Beats**
 - The families: `Validation`, `DependencyValidation`, `Dependency`, `Service` — and what each tells a
@@ -146,6 +147,15 @@ rather than treating it as something the count implies.
 - Why the categories matter operationally: retry decisions are made on **category, not message**
   (5.1), and that only works if the categories are honest.
 - Exception *models* per foundation, six or seven small files. Boring on purpose.
+- A worked localization, end to end: a refused connection is a native `HttpRequestException`.
+  `BrainService` localizes it into `UnreachableBrainException` — a sentence about the *address* —
+  categorizes it as `BrainDependencyException`, and every tier above unwraps the category and keeps
+  the local exception, so the caller receives `AgentCoordinationDependencyException` →
+  `UnreachableBrainException` → `HttpRequestException`. Walk the chain in the debugger; it is the
+  whole taxonomy in one stack.
+- The same honesty on the outcome side: a run that *stops* rather than *throws* carries an
+  `AgentFailure` with the same four categories and a stable code (`cancelled`, `budget_exhausted`,
+  `turns_exhausted`, `going_in_circles`), so a caller never parses a sentence to decide a retry.
 
 **The gotcha**
 The whole point of foundations, restated with evidence: a full disk in the effect ledger arrived as a
@@ -231,6 +241,6 @@ SPEC 1.1 states it outright, and two new vectors certify it — both proven able
 added. That's the closing note for the whole series: the value of a spec isn't that it reads well,
 it's whether someone who has never seen your code can build one that passes the same tests.
 
-**Series close** — "Sixteen capabilities, three verbs each, fourteen foundations, one loop. And an
+**Series close** — "Twenty capabilities, three verbs each, fifteen foundations, one loop. And an
 architecture that fails the build when it drifts, because the only rules that survive are the ones
 something is checking."

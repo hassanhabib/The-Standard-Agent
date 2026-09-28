@@ -162,7 +162,7 @@ possible motivation for 4.5, so run the two episodes back to back.
 
 ## 4.5 — Run once, even across a crash
 
-**Runtime** 16 min · **Branch** `series/s4e5-effectledger` · **Docs** how-to §12
+**Runtime** 19 min · **Branch** `series/s4e5-effectledger` · **Docs** how-to §12
 
 **Cold open**
 > "The transfer succeeded. Then the process died before it could record that. What happens on
@@ -175,7 +175,29 @@ possible motivation for 4.5, so run the two episodes back to back.
 - `AgentEffect`, `AgentPrincipal`, and the idempotency key: what makes two acts *the same act*.
 - Kill the process mid-flight on camera. Restart. Watch the already-performed act get **replayed
   rather than performed twice.**
+- An in-flight claim is presumed live for its **lease** — five minutes by default. A deployment
+  whose slowest tool takes longer says so once: `.EffectLease(TimeSpan.FromMinutes(20))`, or
+  `"effectLeaseSeconds": 1200` in the document (7.12).
 - `UseEffectLedger` for a real store when a file won't do.
+
+**A run knows what it already did (+3 min)**
+
+Replaying is right for a write and wrong for a *look taken after one*. Tell the production story,
+because it is the whole segment: a model edited a file, read it back to check the edit, and was
+handed the file **as it was before the edit** — the read had been replayed from the ledger. The
+replay came back bare, so it read as a fresh answer, and the model asked again. Eleven times,
+until the turn cap ended the run as if it had only run long.
+
+Three fixes, each demonstrated with a write tool and a read tool:
+- **A look after a write sees the write.** A Safe act at a scope the run has since written to is a
+  new act — its key carries the run's writes there (`AgentEffect.AfterWrites`). Edit, read back,
+  see the edit.
+- **A replay says it is one.** The ledger's answer reaches the Brain followed by a note that the
+  act already ran in this run with the same arguments; from the third ask the note goes alone.
+  `ToolExchange.Replayed` marks it in the turn's record.
+- **Going in circles stops.** `.IdenticalCallLimit(8)` — the default; values below 2 become 2. Only
+  asks the ledger *answered* count, so a legitimate re-read after a write never trips it. Script a
+  Brain that asks the same thing forever and watch the run stop with `going_in_circles` (4.7).
 
 **All three modes — all demonstrated (+3 min)**
 - **Local** `.EffectLedger("ledger")` — atomic file creation as the claim.
@@ -224,7 +246,7 @@ question.**
 
 ## 4.7 — Budgets and usage: what one prompt may spend
 
-**Runtime** 17 min · **Branch** `series/s4e7-budget` · **Docs** how-to §13
+**Runtime** 19 min · **Branch** `series/s4e7-budget` · **Docs** how-to §13
 
 **Cold open**
 > "One prompt. Fourteen tool calls, nine revisions, and a bill you did not agree to."
@@ -234,11 +256,19 @@ question.**
 - Checked at the **turn boundary** — the smallest unit the loop can stop between without leaving an
   effect half-recorded.
 - Exhaustion is reported **distinguishably**: not a refusal and not an answer. A caller that cannot
-  tell *"I will not"* from *"I ran out"* cannot decide whether to retry.
+  tell *"I will not"* from *"I ran out"* cannot decide whether to retry. It is a code, not a
+  sentence to parse: `AgentOutcome.Failure` is an `AgentFailure(Category, Code, Message)`, and
+  `Code` is `budget_exhausted` — beside `cancelled`, `turns_exhausted` and `going_in_circles` (4.5).
+  `Failure` is null on every run that answered. Switch on `AgentFailureCodes` on camera.
 - `.Usage(charactersPerToken:)` / `.UseUsage(broker)` / `.OnUsage(count)` — the counter behind it.
 - **Counting is always on; blocking is not.** An agent given no budget is measured and never stopped.
 - `AgentUsage.IsEstimated` — reported by the provider, or counted locally. Both enforce a bound; only
   one reconciles against an invoice.
+- **Watch it spend.** The count the budget bounds is on the stream: a `Usage` event after every
+  Brain call carrying the run's total so far (1.6). Put a live meter beside the run and let it
+  climb into the bound. Let the Judge reject a draft on camera — the meter moves, because a
+  rejected draft still cost a model call, and a revision loop the budget cannot see is where a run
+  burns tokens fastest.
 
 **All three modes — all demonstrated (+3 min)**
 - **Local** `.Usage(charactersPerToken: 4.0)` — the word-aware counter in the box; lower the ratio for code.

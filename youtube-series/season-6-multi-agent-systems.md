@@ -6,10 +6,15 @@ Season 3.6 showed that an agent satisfies `ITool`, so an agent can be a tool of 
 was one episode and a party trick. This season is the engineering.
 
 **The governing fact, and it decides every episode here:** `RunManagementService` calls
-`AgentRun.Begin` at the start of every run. A nested agent calls `ProcessPromptAsync`, which
-**begins its own run.** So nothing propagates automatically — not the budget, not the identity, not
-the run-once scope, not the trace correlation. Each of the seven episodes is a consequence of that
+`AgentRun.Begin` at the start of every run. A nested agent is asked through `RunAsync`, which
+**begins its own run.** So almost nothing propagates — not the budget, not the identity, not the
+run-once scope, not the trace correlation. Each of the seven episodes is a consequence of that
 one sentence.
+
+Two things do cross, and both are deliberate. **The stop crosses in:** cancelling the outer run
+stops the whole tree at each agent's next turn boundary. **Honesty crosses back:** a sub-agent
+that was held, refused, or ran out of turns returns marked `[did not complete]` with its status,
+never as prose that reads like an answer.
 
 That is not a defect. A sub-agent with its own guardians and its own turn cap is exactly what makes
 it a *distinct conscience* rather than a subroutine. But it means a multi-agent system is a
@@ -49,7 +54,7 @@ how people design.
 
 ## 6.2 — The handoff: what one agent tells another
 
-**Runtime** 14 min · **Branch** `series/s6e2-handoff`
+**Runtime** 15 min · **Branch** `series/s6e2-handoff` · **Docs** how-to §17
 
 **Cold open**
 > "Passing the user's raw prompt to your sub-agent is the multi-agent equivalent of a global
@@ -65,43 +70,71 @@ how people design.
       description: "Finds and cites background material. Use before drafting.",
       parameters: "{ \"type\": \"object\", \"properties\": { \"topic\": { \"type\": \"string\" } } }");
   ```
-- **The handoff template** is the contract between agents. `{input}` is replaced with whatever the
-  outer agent supplied; everything around it is the brief. Left at its default it is exactly
-  `{input}`, so the raw input passes straight through — which is the behaviour of 3.6 and rarely
-  what you want past the demo.
+- **The handoff template** is the contract between agents. Two slots: `{input}` is the task the
+  outer model wrote, `{prompt}` is what the user originally asked. Everything around them is the
+  brief, and a template with neither shares nothing at all. Left at its default an `AgentTool` is
+  exactly `{input}`, so the raw input passes straight through — the behaviour of 3.6, and rarely
+  what you want past the demo. The fleet's default is `AgentTool.GroundedHandoff` — *"The user
+  asked: {prompt} — Your task: {input}"* — the task plus just enough context to do it (6.3).
 - **The description is the routing logic.** The outer model chooses this agent over another by
   reading it. Write it as *what it does and when to use it*, and remember 2.2's rule: no
   description, not advertised.
 - **The parameters schema** is what makes the sub-agent addressable on the native protocol (5.3).
-- `AgentTool` takes an **`IAgent`**, not a `StandardAgent` — two methods, `ProcessPromptAsync` and
-  `StreamPromptAsync`. That is a smaller surface than it looks and it is the season's most useful
-  extension point: **anything that satisfies `IAgent` can be nested**, including a facade over an
-  agent running in another process, another language, or behind an HTTP call. Implement one on
-  camera in ten lines and nest a remote agent — the outer agent cannot tell the difference.
+- `AgentTool` takes an **`IAgent`**, not a `StandardAgent` — two required members,
+  `RunAsync(PromptRequest, CancellationToken)` and `StreamPromptAsync(PromptRequest,
+  CancellationToken)`; every other door (`ProcessPromptAsync`, `RunStreamAsync`, the string
+  overloads) has a default built on those two. That is a smaller surface than it looks and it is
+  the season's most useful extension point: **anything that satisfies `IAgent` can be nested**,
+  including a facade over an agent running in another process, another language, or behind an HTTP
+  call. Implement one on camera in ten lines and nest a remote agent — the outer agent cannot tell
+  the difference.
 - Design the return contract deliberately: the outer agent receives a **string**. Decide its shape —
   bullet points, JSON, a one-line verdict — and put that in the handoff.
 
 **The gotcha**
-`AgentTool.ExecuteAsync` returns whatever `ProcessPromptAsync` returned, which means **a sub-agent's
-status is flattened into text.** If the inner agent hits `AwaitingInput` waiting on an approval, the
-outer agent receives a *sentence about waiting*, not a status it can act on. Design around it: keep
-approval-bearing acts in the outer agent, or have the inner agent return a parseable marker the
-outer skill knows how to route. This is the sharpest edge in the season — do not skip it.
+The outer agent still receives a string, so a sub-agent's *status* can only come back as text. It
+used to come back unmarked: an inner agent held on an approval returned a *sentence about
+waiting*, which reads exactly like an answer, and an outer agent could report held work as done.
+Now anything but an answer comes back as `[did not complete] the sub-agent 'researcher' ended
+AwaitingApproval: …` — marked, with the status and the sub-agent's own words. Show both halves: the
+marker makes the failure unmistakable, and it is **still not a status the outer run can act on**.
+Keep approval-bearing acts in the outer agent. This is the sharpest edge in the season — do not
+skip it.
 
 ---
 
 ## 6.3 — Topologies: supervisor, pipeline, panel
 
-**Runtime** 15 min · **Branch** `series/s6e3-topologies`
+**Runtime** 17 min · **Branch** `series/s6e3-topologies` · **Docs** how-to §17
 
 **Cold open**
 > "There are three shapes that work, and about nine that people try first."
 
+**The fleet — the capability that registers other agents (+3 min, all three modes)**
+- **Local** `.Agents("Fleet")` — a folder where every `.json` file *is* an agent, the same
+  document `FromJson` composes (7.12). Its `"name"` is what a handoff calls, its `"description"`
+  advertises it.
+- **External** `.UseAgents(IAgentRegistryBroker)` — a provider's registry.
+- **Custom** `.OnAgents(() => …)` — your code decides the fleet, as `RegisteredAgent`s.
+
+Registries accumulate, and the first to claim a name keeps it — the MCP rule (2.3). **A registered
+agent materializes as a tool**, and that one decision is the whole design: a handoff is an act, so
+`AllowTools` can forbid one, `RequireApproval` can put a human before one, and audit, telemetry and
+cancellation already apply. Nothing new was needed to govern it.
+
 **Beats**
-- **Supervisor / worker.** One outer agent with several sub-agents as tools. It routes. This is the
-  default, it composes with everything in seasons 4–5, and it is what `AgentTool` is built for.
+- **Supervisor / worker.** One outer agent with several sub-agents as tools — `ACTION: billing:
+  refund order 7741`. It routes, and synthesizes the answer. This is the default, it composes with
+  everything in seasons 4–5, and it is what the fleet is built for.
+- **Transfer.** The outer brain recognizes the *whole* prompt belongs to a specialist —
+  `TRANSFER: billing` — and the specialist's answer **is** the run's answer, verbatim. No synthesis
+  turn, no rewriting. A transfer that does not deliver (refused, held, out of turns) comes back
+  `[did not complete]` as an observation and the outer brain keeps working: a refusal is never
+  presented as the user's answer. Show both on camera.
 - **Pipeline.** Agent A's output is the handoff to agent B. Cheap, predictable, and the shape most
-  often better served by a *workflow* calling two agents than by nesting them — say so.
+  often better served by a *workflow* calling two agents than by nesting them — say so. That's the
+  fleet's **chain**: your code calling agents in order, where determinism belongs; every link keeps
+  its own guardians, budget and perimeter.
 - **Panel / adversarial.** Several sub-agents answer the same question with different skills or
   different models, and the outer agent reconciles. This is 3.6's independent conscience,
   generalised — and it is the shape that genuinely buys quality rather than just structure.
@@ -134,6 +167,10 @@ deadlock, which is *better* than hanging and still an outage. Bound every agent 
   you.
 - And of **run-once**: the inner run has its own `RunId`, so the idempotency scope differs. An
   effect claimed by the inner agent is claimed under the inner run.
+- The one control that *does* cross: **cancellation.** The outer run's token rides the ambient run
+  the way its identity does, so cancelling the outer run stops every nested run at its next turn
+  boundary. Show a nested tool that used to keep executing after the outer run was cancelled — and
+  now executes once.
 - The discipline that follows: **configure every sub-agent as deliberately as the outer one.**
   Build a small factory that stamps budget, principal resolver, ledger and audit onto every agent in
   the system, so the controls cannot be forgotten one at a time.
@@ -187,7 +224,7 @@ incident you can reconstruct and one you can only apologise for.
 
 ## 6.6 — Failure, compensation, and partial success
 
-**Runtime** 16 min · **Branch** `series/s6e6-failure`
+**Runtime** 17 min · **Branch** `series/s6e6-failure`
 
 **Cold open**
 > "Agent three succeeded. Agent four failed. Agent three's effect is real and nobody is going to
@@ -206,9 +243,11 @@ incident you can reconstruct and one you can only apologise for.
      you have left agent territory for workflow territory — which is sometimes the honest answer.
 - Partial success as a first-class outcome: report which agents succeeded and which stand, never a
   single boolean.
-- What a sub-agent failure looks like to the outer agent: a string. Design the failure contract in
-  the handoff (6.2) so it is distinguishable from a successful answer that happens to mention a
-  problem.
+- What a sub-agent failure looks like to the outer agent: a string — but a **marked** one. The
+  framework prefixes every non-answer with `[did not complete]` and the sub-agent's status (6.2),
+  so a failure is never mistaken for a successful answer that happens to mention a problem. Teach
+  the outer skill what the marker means, and design the rest of the failure contract in the
+  handoff: what the outer agent should do next, not just that something went wrong.
 
 **The gotcha**
 The recommendation is deliberately conservative: **advise widely, act narrowly.** Fan out for
@@ -233,7 +272,12 @@ incidents nobody can reconstruct.
   - **Drafting** — generation, gated and judged.
   - **Settlement** — the only agent with an irreversible tool, an effect ledger, approval, and the
     strictest policy.
-- Build it with the `Governed(...)` factory from 6.4 so no agent can be under-configured.
+- Build it with the `Governed(...)` factory from 6.4 so no agent can be under-configured, and
+  register the four specialists on Triage as a fleet (6.3) — so every handoff passes Triage's
+  perimeter, and Settlement's is one `RequireApproval` away from a human.
+- Then show the same fleet **as data**: four agent documents in a `Fleet/` folder, `"agents":
+  ["Fleet"]` in Triage's document, composed by `FromJson` (7.12). Same system, no C# for the
+  topology.
 - One audit sink, one correlation id, cost attributed per agent.
 - Then break it, at system scale:
   1. Research returns an injected instruction → screened at the boundary.

@@ -114,7 +114,7 @@ omits its usage object still gets a bounded budget.
 
 ## 5.4 — Crash recovery: a run is not confined to a process
 
-**Runtime** 15 min · **Branch** `series/s5e4-continuity`
+**Runtime** 16 min · **Branch** `series/s5e4-continuity`
 
 **Cold open**
 > "Pull the plug in the middle of a wire transfer. Now bring it back."
@@ -130,6 +130,12 @@ omits its usage object still gets a bounded budget.
 - `FileEffectLedgerBroker` makes run-once outlive the process that claimed it.
 - How this composes with approval: an act held for an authority survives the restart, and the
   approval is still meaningful when it arrives.
+- **And with a look after a write (4.5).** The resumed process never performed the write — the
+  process before it did. The perimeter counts the writes already recorded in the session's turn
+  exchanges, not only its own, so a read of a scope written before the crash runs again instead of
+  being answered from the ledger with the old contents. Write, kill, resume, read back: the write
+  is there. It shipped in 4.0.0 — a clean example of a guarantee that has to hold across the
+  process boundary, not just inside one.
 
 **The gotcha**
 This is the mechanism SPEC 1.0 required results from **without describing** — run continuity across
@@ -143,7 +149,7 @@ who has never seen your code build one that passes the same tests.
 
 ## 5.5 — Readiness profiles: claiming a level, and proving it
 
-**Runtime** 12 min · **Branch** `series/s5e5-profiles`
+**Runtime** 13 min · **Branch** `series/s5e5-profiles`
 
 **Cold open**
 > "Anyone can say their agent is enterprise-ready. Here's a command that decides."
@@ -156,7 +162,11 @@ who has never seen your code build one that passes the same tests.
   - **Enterprise** — identity-aware authorization, approval before irreversible acts, run-once
     effects, budgets, ranked retrieval.
   - **Critical** — conversation and effects that survive a process, compensation, native tool calls
-    that round-trip.
+    that round-trip, and **adversarial evaluation**: a poisoned knowledge passage, a poisoned
+    memory, and a cross-tenant request, each with the Brain scripted as *fooled*. The defense
+    under certification is never the model's judgment — it is that a fooled model still cannot
+    act outside the perimeter. Each vector asserts the poison *reached* the Brain, so a pass means
+    the attack landed and was contained, not dodged.
 - ```bash
   dotnet run --project Standard.Agents.Conformance -- --profile Critical
   ```
@@ -184,7 +194,7 @@ That's an unusual and honest thing for a project to do — show the file.
 **Beats**
 - How the vectors work: agent behaviour involves an LLM and is non-deterministic, so it cannot be
   asserted directly. The vectors pin the **deterministic** contracts by scripting the Brain.
-- **Every double replaces a broker, never a service** — the whole 1·3·6·14 under test is the real
+- **Every double replaces a broker, never a service** — the whole 1·3·6·15 under test is the real
   library.
 - Write a vector on camera.
 - **Sabotage verification**: break the behaviour, watch the vector go red, revert. Do it live.

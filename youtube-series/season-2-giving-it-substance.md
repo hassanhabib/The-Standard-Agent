@@ -12,26 +12,42 @@ By 2.7 the viewer can run a complete agent with no network connection anywhere.
 
 ## 2.1 — Skills: who the agent is, in Markdown
 
-**Runtime** 14 min · **Branch** `series/s2e1-skills` · **Docs** how-to §2
+**Runtime** 15 min · **Branch** `series/s2e1-skills` · **Docs** how-to §2
 
 **Cold open**
 > "Your agent's personality does not belong in a C# string literal."
 
 **Beats**
-- `.Skills("Skills")` — point at a folder of Markdown.
+- `.Skills("Skills")` — point at a folder of Markdown. Every `.md` under it, **subfolders
+  included**, loads in path order — so `the-standard-skill/SKILL.md` works exactly as a flat file
+  does.
 - Write one on camera. Show it changing behaviour on the very next run with no rebuild of intent.
 - Why Markdown and not code: the people who should own an agent's instructions are frequently not
   the people who can open a `.cs` file.
-- The `{{tools}}` marker — how the tool catalogue expands into the prompt. (Tools land in 2.2; this
-  is the forward reference that makes 2.2 feel inevitable.)
+- YAML frontmatter (`name:` / `description:`) is stripped from what the brain sees and becomes the
+  skill's index entry. Then the `{{skills}}` marker: one `- name — description` line per
+  **described** skill, so the model knows which specialist skill it has and reaches for it.
+- The `{{tools}}` marker — the same idea for the tool catalogue. (Tools land in 2.2; this is the
+  forward reference that makes 2.2 feel inevitable.)
 - Local / External / Custom for skills: a folder, the PeerLLM registry, or your own delegate.
 
 **All three modes — all demonstrated (+3 min)**
 - **Local** `.Skills("Skills")` — a folder of Markdown.
-- **External** `.UseSkills(new PeerLLMSkillBroker("hassanhabib/my-skills", SkillSync.Hybrid))` — versioned skills pulled from the registry at runtime.
+- **External** `.UseSkills(new PeerLLMSkillBroker("hassanhabib/my-skills", SkillSync.Hybrid))` — versioned skills pulled from the registry at runtime (`Standard.Agents.Data.Skills.PeerLLM`).
 - **Custom** `.OnSkills(async () => await LoadSkillsFromMyCmsAsync())` — returns `IReadOnlyList<Skill>`.
 
-Run all three. Same agent, same answer, three sources.
+Run all three. Same agent, same answer, three sources. **Then keep all three.** Sources
+accumulate: a second `.Skills`, `.UseSkills` or `.OnSkills` *adds* a source rather than replacing
+the first, and the skills concatenate in registration order — so the team's registry skillset
+sits beside the local folder that says who this particular agent is.
+
+```csharp
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .Skills("Skills")                          // who this agent is
+    .UseSkills(new PeerLLMSkillBroker(         // what the team knows
+        "hassanhabib/my-skills",
+        SkillSync.Hybrid));
+```
 
 **The gotcha**
 Skills are **Data**, not Decision. They're something the agent *has*, not something it *thinks*.
@@ -87,7 +103,7 @@ widening what the model may reach for. Demonstrate both halves.
 
 ## 2.3 — MCP: tools you didn't write
 
-**Runtime** 12 min · **Branch** `series/s2e3-mcp` · **Docs** how-to §3
+**Runtime** 13 min · **Branch** `series/s2e3-mcp` · **Docs** how-to §3
 
 **Cold open**
 > "There is an entire ecosystem of tools already built. You don't have to reimplement any of it."
@@ -95,6 +111,14 @@ widening what the model may reach for. Demonstrate both halves.
 **Beats**
 - `.Mcp(...)` — Model Context Protocol servers as external tools.
 - Connect a real MCP server, list what it exposes, call one.
+- **Then connect a second.** `.Mcp(...)` accumulates: the agent asks each server for its
+  `tools/list` catalog and routes every call to the server that owns the name. Two servers
+  claiming one name — the **first registered wins**, the same precedence local tools already have.
+  Stop one server on camera: only *its* tools go unavailable, and it is asked again on the next
+  call rather than cached as "has no tools".
+- Auth is per server and optional: nothing, an `apiKey` in a header you can rename, a
+  `bearerToken`, or a `bearerTokenProvider` delegate asked before every request for OAuth refresh
+  flows. Your OAuth client runs the flow; the agent carries the result.
 - Internal tools vs external tools as two distinct foundations — and why that split exists rather
   than one "tools" bucket: they fail differently, and a failure should name which kind failed.
 - Treat MCP output as what it is: **someone else's data entering your context.** Flag it hard, and
@@ -189,7 +213,7 @@ Memory.
 > "Production doesn't run on text files. Here's the entire migration."
 
 **Beats**
-- Put the capability table on screen — Local / External / Custom for all sixteen.
+- Put the capability table on screen — Local / External / Custom for all twenty.
 - Live migration, one line at a time, running the agent between each:
   ```csharp
   var agent = new StandardAgent(url, key, "LLooMA2.0")
