@@ -119,7 +119,21 @@ public class AgentsV1Controller : ControllerBase
         return new AgentRunResponseV1(
             Result: outcome.Result,
             Status: outcome.Status.ToString(),
-            PendingEffect: ToPendingEffect(outcome.PendingEffect));
+            PendingEffect: ToPendingEffect(outcome.PendingEffect),
+            Failure: ToFailure(outcome.Failure));
+    }
+
+    private static FailureV1? ToFailure(AgentFailure? failure)
+    {
+        if (failure is null)
+        {
+            return null;
+        }
+
+        return new FailureV1(
+            Category: failure.Category.ToString(),
+            Code: failure.Code,
+            Message: failure.Message);
     }
 
     private static PendingEffectV1? ToPendingEffect(AgentEffect? effect)
