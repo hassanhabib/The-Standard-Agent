@@ -3,6 +3,8 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Standard.Agents.Models.Brokers.Mcps;
@@ -22,18 +24,111 @@ public sealed class StdioMcpBroker : IMcpBroker
     private const string PingMethod = "ping";
     private const int MethodNotFoundCode = -32601;
 
-    private readonly TextReader serverOutput;
-    private readonly TextWriter serverInput;
+    private readonly Func<(TextReader ServerOutput, TextWriter ServerInput)> connect;
     private readonly TimeSpan timeout;
     private readonly SemaphoreSlim exchangeLock = new(initialCount: 1, maxCount: 1);
+    private TextReader? serverOutput;
+    private TextWriter? serverInput;
     private int requestId;
     private bool isInitialized;
 
     public StdioMcpBroker(TextReader serverOutput, TextWriter serverInput, int timeoutSeconds)
     {
-        this.serverOutput = serverOutput;
-        this.serverInput = serverInput;
+        this.connect = () => (serverOutput, serverInput);
         this.timeout = TimeSpan.FromSeconds(timeoutSeconds);
+    }
+
+    public StdioMcpBroker(
+        string command,
+        IEnumerable<string> arguments,
+        IReadOnlyDictionary<string, string>? environmentVariables,
+        string? workingDirectory,
+        int timeoutSeconds)
+    {
+        string[] processArguments = [.. arguments];
+
+        this.connect = () => StartServerProcess(
+            command,
+            processArguments,
+            environmentVariables,
+            workingDirectory);
+
+        this.timeout = TimeSpan.FromSeconds(timeoutSeconds);
+    }
+
+    private static (TextReader ServerOutput, TextWriter ServerInput) StartServerProcess(
+        string command,
+        string[] arguments,
+        IReadOnlyDictionary<string, string>? environmentVariables,
+        string? workingDirectory)
+    {
+        var startInfo = new ProcessStartInfo(ResolveCommand(command))
+        {
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            StandardInputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
+            StandardOutputEncoding = Encoding.UTF8,
+            WorkingDirectory = workingDirectory ?? string.Empty
+        };
+
+        foreach (string argument in arguments)
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
+
+        IReadOnlyDictionary<string, string> serverEnvironment =
+            environmentVariables ?? new Dictionary<string, string>();
+
+        foreach (KeyValuePair<string, string> environmentVariable in serverEnvironment)
+        {
+            startInfo.Environment[environmentVariable.Key] = environmentVariable.Value;
+        }
+
+        Process serverProcess = Process.Start(startInfo)
+            ?? throw new HttpRequestException($"The MCP server '{command}' did not start.");
+
+        serverProcess.ErrorDataReceived += (_, _) => { };
+        serverProcess.BeginErrorReadLine();
+        serverProcess.StandardInput.NewLine = "\n";
+
+        AppDomain.CurrentDomain.ProcessExit += (_, _) => StopServerProcess(serverProcess);
+
+        return (serverProcess.StandardOutput, serverProcess.StandardInput);
+    }
+
+    private static void StopServerProcess(Process serverProcess)
+    {
+        try
+        {
+            serverProcess.Kill(entireProcessTree: true);
+        }
+        catch (InvalidOperationException)
+        {
+        }
+    }
+
+    private static string ResolveCommand(string command)
+    {
+        if (OperatingSystem.IsWindows() is false || Path.HasExtension(command))
+        {
+            return command;
+        }
+
+        string[] directories = (Environment.GetEnvironmentVariable("PATH") ?? string.Empty)
+            .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
+
+        string[] extensions = (Environment.GetEnvironmentVariable("PATHEXT") ?? ".EXE;.CMD;.BAT")
+            .Split(';', StringSplitOptions.RemoveEmptyEntries);
+
+        IEnumerable<string> candidates = directories.SelectMany(directory =>
+            extensions.Select(extension => Path.Combine(directory, command + extension)));
+
+        string? resolved = candidates.FirstOrDefault(File.Exists);
+
+        return resolved ?? command;
     }
 
     public async ValueTask<string> CallAsync(string name, string argumentsJson)
@@ -122,6 +217,8 @@ public sealed class StdioMcpBroker : IMcpBroker
             return;
         }
 
+        (this.serverOutput, this.serverInput) = this.connect();
+
         var initializeParameters = new JsonObject
         {
             ["protocolVersion"] = LatestProtocolVersion,
@@ -171,8 +268,8 @@ public sealed class StdioMcpBroker : IMcpBroker
 
         while (true)
         {
-            string line = await this.serverOutput.ReadLineAsync(timeoutSource.Token)
-                ?? throw new HttpRequestException("The MCP server ended its output before answering.");
+            string line = await this.serverOutput!.ReadLineAsync(timeoutSource.Token)
+                ?? throw Disconnect();
 
             JsonObject? message = ToMessage(line);
 
@@ -188,6 +285,13 @@ public sealed class StdioMcpBroker : IMcpBroker
                 return message!;
             }
         }
+    }
+
+    private HttpRequestException Disconnect()
+    {
+        this.isInitialized = false;
+
+        return new HttpRequestException("The MCP server ended its output before answering.");
     }
 
     private static JsonObject? ToMessage(string line)
@@ -238,7 +342,7 @@ public sealed class StdioMcpBroker : IMcpBroker
 
     private async ValueTask WriteAsync(JsonObject message)
     {
-        await this.serverInput.WriteLineAsync(message.ToJsonString());
+        await this.serverInput!.WriteLineAsync(message.ToJsonString());
         await this.serverInput.FlushAsync();
     }
 }
