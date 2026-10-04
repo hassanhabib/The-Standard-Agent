@@ -121,4 +121,28 @@ public class StdioMcpWireContractTests
 
         actualText.Should().Be("student: Hassan[resource_link record: file:///1.json]");
     }
+
+    [Fact]
+    public async Task ShouldThrowHttpRequestExceptionOnAJsonRpcErrorOverStandardInputAsync()
+    {
+        // given — a server that refuses the call with a protocol error
+        var server = new ScriptedStdioServer(message =>
+            message["method"]?.GetValue<string>() switch
+            {
+                "initialize" => Answer(message, InitializeResult.Replace("\"id\":1", "\"id\":{id}")),
+                "tools/call" => Answer(message,
+                    "{\"jsonrpc\":\"2.0\",\"id\":{id},\"error\":{\"code\":-32602,\"message\":\"unknown tool\"}}"),
+                _ => []
+            });
+
+        var broker = new StdioMcpBroker(server.Output, server.Input, timeoutSeconds: 30);
+
+        // when
+        Func<Task> callAsync = async () => await broker.CallAsync("nope", "{}");
+
+        // then — the server's own words, as the same native exception the HTTP broker raises,
+        // so the foundation localizes both transports alike
+        (await callAsync.Should().ThrowAsync<HttpRequestException>())
+            .WithMessage("unknown tool");
+    }
 }
