@@ -5,5 +5,6 @@
   <Project Path="Standard.Agents.Evals/Standard.Agents.Evals.csproj" />
   <Project Path="Standard.Agents.Evals.Live/Standard.Agents.Evals.Live.csproj" />
   <Project Path="Standard.Agents.Host/Standard.Agents.Host.csproj" />
+  <Project Path="Standard.Agents.Tests.McpServer/Standard.Agents.Tests.McpServer.csproj" />
   <Project Path="Standard.Agents.Tests.Unit/Standard.Agents.Tests.Unit.csproj" />
 </Solution>
