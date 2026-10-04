@@ -3,10 +3,12 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Net;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using RESTFulSense.Clients;
+using RESTFulSense.Services;
 using Standard.Agents.Models.Brokers.Mcps;
 
 namespace Standard.Agents.Brokers.Mcps;
@@ -14,9 +16,18 @@ namespace Standard.Agents.Brokers.Mcps;
 public sealed class McpBroker : IMcpBroker
 {
     private const string JsonMediaType = "application/json";
+    private const string EventStreamMediaType = "text/event-stream";
+    private const string DataFieldPrefix = "data:";
     private const string JsonRpcVersion = "2.0";
     private const string ToolsCallMethod = "tools/call";
     private const string ToolsListMethod = "tools/list";
+    private const string InitializeMethod = "initialize";
+    private const string InitializedMethod = "notifications/initialized";
+    private const string LatestProtocolVersion = "2025-06-18";
+    private const string ClientName = "Standard.Agents";
+    private const string SessionIdHeader = "Mcp-Session-Id";
+    private const string ProtocolVersionHeader = "MCP-Protocol-Version";
+    private const int MethodNotFoundCode = -32601;
     private const string OpenObjectSchema = "{}";
 
     private static readonly JsonSerializerOptions jsonOptions = new()
@@ -26,9 +37,13 @@ public sealed class McpBroker : IMcpBroker
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    private readonly IRESTFulApiFactoryClient apiClient;
+    private readonly HttpClient httpClient;
     private readonly string relativeUrl;
+    private readonly SemaphoreSlim initializationLock = new(initialCount: 1, maxCount: 1);
     private int requestId;
+    private bool isInitialized;
+    private string? sessionId;
+    private string? protocolVersion;
 
     public McpBroker(
         string endpointUrl,
@@ -74,6 +89,12 @@ public sealed class McpBroker : IMcpBroker
         httpClient.BaseAddress = new Uri(endpointUrl);
         httpClient.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
 
+        httpClient.DefaultRequestHeaders.Accept.Add(
+            new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue(JsonMediaType));
+
+        httpClient.DefaultRequestHeaders.Accept.Add(
+            new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue(EventStreamMediaType));
+
         if (bearerTokenProvider is null && string.IsNullOrEmpty(bearerToken) is false)
         {
             httpClient.DefaultRequestHeaders.Authorization =
@@ -85,7 +106,7 @@ public sealed class McpBroker : IMcpBroker
             httpClient.DefaultRequestHeaders.Add(apiKeyHeader, apiKey);
         }
 
-        this.apiClient = new RESTFulApiFactoryClient(httpClient);
+        this.httpClient = httpClient;
         this.relativeUrl = relativeUrl;
     }
 
@@ -113,6 +134,8 @@ public sealed class McpBroker : IMcpBroker
 
     public async ValueTask<string> CallAsync(string name, string argumentsJson)
     {
+        await EnsureInitializedAsync();
+
         JsonRpcRequest jsonRpcRequest = new(
             JsonRpc: JsonRpcVersion,
             Id: Interlocked.Increment(ref this.requestId),
@@ -131,6 +154,8 @@ public sealed class McpBroker : IMcpBroker
 
     public async ValueTask<IReadOnlyList<McpTool>> ListToolsAsync()
     {
+        await EnsureInitializedAsync();
+
         JsonRpcRequest jsonRpcRequest = new(
             JsonRpc: JsonRpcVersion,
             Id: Interlocked.Increment(ref this.requestId),
@@ -154,6 +179,77 @@ public sealed class McpBroker : IMcpBroker
                 tool.InputSchema?.GetRawText() ?? OpenObjectSchema))];
     }
 
+    private async ValueTask EnsureInitializedAsync()
+    {
+        if (this.isInitialized)
+        {
+            return;
+        }
+
+        await this.initializationLock.WaitAsync();
+
+        try
+        {
+            if (this.isInitialized is false)
+            {
+                await InitializeAsync();
+                this.isInitialized = true;
+            }
+        }
+        finally
+        {
+            this.initializationLock.Release();
+        }
+    }
+
+    private async ValueTask InitializeAsync()
+    {
+        JsonRpcRequest initializeRequest = new(
+            JsonRpc: JsonRpcVersion,
+            Id: Interlocked.Increment(ref this.requestId),
+            Method: InitializeMethod,
+            Params: new InitializeParams(
+                ProtocolVersion: LatestProtocolVersion,
+                Capabilities: new JsonObject(),
+                ClientInfo: new ClientInfo(
+                    Name: ClientName,
+                    Version: typeof(McpBroker).Assembly.GetName().Version?.ToString() ?? string.Empty)));
+
+        using var timeout = new CancellationTokenSource(this.httpClient.Timeout);
+
+        using HttpResponseMessage initializeHttpResponse =
+            await SendAsync(this.relativeUrl, initializeRequest, timeout.Token);
+
+        JsonRpcInitializeResponse initializeResponse =
+            await ReadAsync<JsonRpcInitializeResponse>(initializeHttpResponse, timeout.Token);
+
+        if (initializeResponse.Error?.Code is MethodNotFoundCode)
+        {
+            return;
+        }
+
+        if (initializeResponse.Error is not null)
+        {
+            throw new HttpRequestException(initializeResponse.Error.Message);
+        }
+
+        this.sessionId = initializeHttpResponse.Headers.TryGetValues(
+            SessionIdHeader,
+            out IEnumerable<string>? sessionIds)
+                ? sessionIds.First()
+                : null;
+
+        this.protocolVersion = initializeResponse.Result?.ProtocolVersion;
+
+        JsonRpcRequest initializedNotification = new(
+            JsonRpc: JsonRpcVersion,
+            Id: null,
+            Method: InitializedMethod,
+            Params: null);
+
+        await NotifyAsync(this.relativeUrl, initializedNotification);
+    }
+
     private static string ToText(JsonRpcResponse jsonRpcResponse)
     {
         if (jsonRpcResponse.Error is not null)
@@ -169,13 +265,153 @@ public sealed class McpBroker : IMcpBroker
         string relativeUrl,
         TContent content)
     {
-        return await this.apiClient.PostContentAsync<TContent, TResult>(
-            relativeUrl,
-            content,
-            mediaType: JsonMediaType,
-            serializationFunction: async value =>
-                JsonSerializer.Serialize(value, jsonOptions),
-            deserializationFunction: async json =>
-                JsonSerializer.Deserialize<TResult>(json, jsonOptions)!);
+        using var timeout = new CancellationTokenSource(this.httpClient.Timeout);
+        string? sentSessionId = this.sessionId;
+
+        using HttpResponseMessage httpResponse =
+            await SendAsync(relativeUrl, content, timeout.Token);
+
+        if (IsExpiredSession(httpResponse, sentSessionId))
+        {
+            await RestartSessionAsync(sentSessionId!);
+
+            using HttpResponseMessage retriedHttpResponse =
+                await SendAsync(relativeUrl, content, timeout.Token);
+
+            return await ReadAsync<TResult>(retriedHttpResponse, timeout.Token);
+        }
+
+        return await ReadAsync<TResult>(httpResponse, timeout.Token);
+    }
+
+    private static bool IsExpiredSession(HttpResponseMessage httpResponse, string? sentSessionId) =>
+        httpResponse.StatusCode is HttpStatusCode.NotFound && sentSessionId is not null;
+
+    private async ValueTask RestartSessionAsync(string expiredSessionId)
+    {
+        await this.initializationLock.WaitAsync();
+
+        try
+        {
+            if (this.sessionId == expiredSessionId)
+            {
+                this.sessionId = null;
+                this.protocolVersion = null;
+                await InitializeAsync();
+            }
+        }
+        finally
+        {
+            this.initializationLock.Release();
+        }
+    }
+
+    private static async ValueTask<TResult> ReadAsync<TResult>(
+        HttpResponseMessage httpResponse,
+        CancellationToken cancellationToken)
+    {
+        await ValidationService.ValidateHttpResponseAsync(httpResponse);
+
+        string responseJson = IsEventStream(httpResponse)
+            ? await ReadResponseFromEventStreamAsync(httpResponse, cancellationToken)
+            : await httpResponse.Content.ReadAsStringAsync(cancellationToken);
+
+        return JsonSerializer.Deserialize<TResult>(responseJson, jsonOptions)!;
+    }
+
+    private async ValueTask NotifyAsync<TContent>(string relativeUrl, TContent content)
+    {
+        using var timeout = new CancellationTokenSource(this.httpClient.Timeout);
+
+        using HttpResponseMessage httpResponse =
+            await SendAsync(relativeUrl, content, timeout.Token);
+    }
+
+    private async ValueTask<HttpResponseMessage> SendAsync<TContent>(
+        string relativeUrl,
+        TContent content,
+        CancellationToken cancellationToken)
+    {
+        string requestJson = JsonSerializer.Serialize(content, jsonOptions);
+
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, relativeUrl)
+        {
+            Content = new StringContent(requestJson, Encoding.UTF8, JsonMediaType)
+        };
+
+        if (this.sessionId is not null)
+        {
+            httpRequest.Headers.Add(SessionIdHeader, this.sessionId);
+        }
+
+        if (this.protocolVersion is not null)
+        {
+            httpRequest.Headers.Add(ProtocolVersionHeader, this.protocolVersion);
+        }
+
+        return await this.httpClient.SendAsync(
+            httpRequest,
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken);
+    }
+
+    private static bool IsEventStream(HttpResponseMessage httpResponse) =>
+        httpResponse.Content.Headers.ContentType?.MediaType == EventStreamMediaType;
+
+    private static async ValueTask<string> ReadResponseFromEventStreamAsync(
+        HttpResponseMessage httpResponse,
+        CancellationToken cancellationToken)
+    {
+        await using Stream responseStream =
+            await httpResponse.Content.ReadAsStreamAsync(cancellationToken);
+
+        using var reader = new StreamReader(responseStream);
+        var eventData = new StringBuilder();
+
+        while (await reader.ReadLineAsync(cancellationToken) is string line)
+        {
+            if (line.StartsWith(DataFieldPrefix))
+            {
+                eventData.AppendLine(ToFieldValue(line));
+
+                continue;
+            }
+
+            if (line.Length is 0 && IsResponse(eventData.ToString()))
+            {
+                return eventData.ToString();
+            }
+
+            if (line.Length is 0)
+            {
+                eventData.Clear();
+            }
+        }
+
+        return IsResponse(eventData.ToString())
+            ? eventData.ToString()
+            : throw new HttpRequestException(
+                "The MCP server closed its event stream without a response.");
+    }
+
+    private static string ToFieldValue(string line)
+    {
+        string value = line[DataFieldPrefix.Length..];
+
+        return value.StartsWith(' ')
+            ? value[1..]
+            : value;
+    }
+
+    private static bool IsResponse(string eventData)
+    {
+        if (string.IsNullOrWhiteSpace(eventData))
+        {
+            return false;
+        }
+
+        JsonObject? message = JsonNode.Parse(eventData) as JsonObject;
+
+        return message?.ContainsKey("result") is true || message?.ContainsKey("error") is true;
     }
 }

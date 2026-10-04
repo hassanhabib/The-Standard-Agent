@@ -136,10 +136,14 @@ public class StandardAgentHttpTests
         // when
         await agent.ProcessPromptAsync("anything");
 
-        // then — discovery went out through the host's handler, credentials intact
-        handler.Requests.Should().ContainSingle();
-        handler.Requests[0].RequestUri.Should().Be(new Uri("http://mcp.test/"));
-        handler.Requests[0].Headers.GetValues("X-Api-Key").Should().ContainSingle("mcp-key");
-        handler.Bodies[0].Should().Contain("tools/list");
+        // then — the handshake and discovery went out through the host's handler, credentials intact
+        handler.Requests.Should().AllSatisfy(request =>
+        {
+            request.RequestUri.Should().Be(new Uri("http://mcp.test/"));
+            request.Headers.GetValues("X-Api-Key").Should().ContainSingle("mcp-key");
+        });
+
+        handler.Bodies[0].Should().Contain("\"initialize\"");
+        handler.Bodies[^1].Should().Contain("tools/list");
     }
 }

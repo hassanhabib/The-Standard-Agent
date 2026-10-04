@@ -11,6 +11,6 @@ namespace Standard.Agents.Models.Brokers.Mcps;
 // (WhenWritingNull) rather than sending "params": null, which some servers reject.
 internal sealed record JsonRpcRequest(
     [property: JsonPropertyName("jsonrpc")] string JsonRpc,
-    int Id,
+    int? Id,
     string Method,
-    ToolCallParams? Params);
+    object? Params);
