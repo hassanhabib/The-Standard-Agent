@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Standard.Agents.Models.Brokers.Mcps;
 
@@ -17,6 +18,8 @@ public sealed class StdioMcpBroker : IMcpBroker
     private const string LatestProtocolVersion = "2025-06-18";
     private const string ClientName = "Standard.Agents";
     private const string OpenObjectSchema = "{}";
+    private const string PingMethod = "ping";
+    private const int MethodNotFoundCode = -32601;
 
     private readonly TextReader serverOutput;
     private readonly TextWriter serverInput;
@@ -111,13 +114,66 @@ public sealed class StdioMcpBroker : IMcpBroker
             string line = await this.serverOutput.ReadLineAsync(timeoutSource.Token)
                 ?? throw new HttpRequestException("The MCP server ended its output before answering.");
 
-            JsonObject? message = JsonNode.Parse(line) as JsonObject;
+            JsonObject? message = ToMessage(line);
 
-            if (message?["id"]?.GetValue<int>() == id)
+            if (message?.ContainsKey("method") is true)
             {
-                return message["result"];
+                await AnswerServerAsync(message);
+
+                continue;
+            }
+
+            if (IsAnswerTo(message, id))
+            {
+                return message!["result"];
             }
         }
+    }
+
+    private static JsonObject? ToMessage(string line)
+    {
+        try
+        {
+            return JsonNode.Parse(line) as JsonObject;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static bool IsAnswerTo(JsonObject? message, int id) =>
+        message?["id"] is JsonValue answerId
+            && answerId.TryGetValue(out int answeredId)
+            && answeredId == id;
+
+    private async ValueTask AnswerServerAsync(JsonObject serverMessage)
+    {
+        if (serverMessage["id"] is null)
+        {
+            return;
+        }
+
+        var answer = new JsonObject
+        {
+            ["jsonrpc"] = JsonRpcVersion,
+            ["id"] = serverMessage["id"]!.DeepClone()
+        };
+
+        if (serverMessage["method"]?.GetValue<string>() is PingMethod)
+        {
+            answer["result"] = new JsonObject();
+        }
+        else
+        {
+            answer["error"] = new JsonObject
+            {
+                ["code"] = MethodNotFoundCode,
+                ["message"] = "The client does not offer this method."
+            };
+        }
+
+        await WriteAsync(answer);
     }
 
     private async ValueTask WriteAsync(JsonObject message)
