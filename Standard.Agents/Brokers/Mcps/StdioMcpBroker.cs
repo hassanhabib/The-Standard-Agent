@@ -13,6 +13,7 @@ public sealed class StdioMcpBroker : IMcpBroker
 {
     private const string JsonRpcVersion = "2.0";
     private const string ToolsListMethod = "tools/list";
+    private const string ToolsCallMethod = "tools/call";
     private const string InitializeMethod = "initialize";
     private const string InitializedMethod = "notifications/initialized";
     private const string LatestProtocolVersion = "2025-06-18";
@@ -35,8 +36,37 @@ public sealed class StdioMcpBroker : IMcpBroker
         this.timeout = TimeSpan.FromSeconds(timeoutSeconds);
     }
 
-    public ValueTask<string> CallAsync(string name, string argumentsJson) =>
-        throw new NotImplementedException();
+    public async ValueTask<string> CallAsync(string name, string argumentsJson)
+    {
+        var parameters = new JsonObject
+        {
+            ["name"] = name,
+            ["arguments"] = JsonNode.Parse(argumentsJson)
+        };
+
+        JsonNode? result = await RequestAsync(ToolsCallMethod, parameters);
+        JsonArray content = result?["content"] as JsonArray ?? [];
+        string text = string.Concat(content.Select(ToText));
+
+        return text.Length is 0 && result?["structuredContent"] is JsonNode structuredContent
+            ? structuredContent.ToJsonString()
+            : text;
+    }
+
+    private static string ToText(JsonNode? content)
+    {
+        string? type = content?["type"]?.GetValue<string>();
+
+        return type switch
+        {
+            "text" => content!["text"]?.GetValue<string>() ?? string.Empty,
+            "resource" => content!["resource"]?["text"]?.GetValue<string>()
+                ?? $"[resource {content["resource"]?["uri"]?.GetValue<string>()}]",
+            "resource_link" =>
+                $"[resource_link {content!["name"]?.GetValue<string>()}: {content["uri"]?.GetValue<string>()}]",
+            _ => $"[{type} {content?["mimeType"]?.GetValue<string>()}]"
+        };
+    }
 
     public async ValueTask<IReadOnlyList<McpTool>> ListToolsAsync()
     {
