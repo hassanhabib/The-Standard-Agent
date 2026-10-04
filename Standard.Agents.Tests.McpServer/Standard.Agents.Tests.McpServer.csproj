@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- A real MCP server over standard input and output, for the tests to start as a process:
+       built with the solution, no network, no package. It answers the lifecycle, lists one tool,
+       and answers that tool with the argument it was given, the first command-line argument and
+       one environment variable, so a test can prove all three reached the process. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+</Project>

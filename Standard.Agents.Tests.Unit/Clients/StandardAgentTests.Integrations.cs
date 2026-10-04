@@ -61,6 +61,41 @@ public class StandardAgentIntegrationTests
     }
 
     [Fact]
+    public async Task ShouldStartAnMcpServerProcessAndCallItsToolAsync()
+    {
+        // given — a real MCP server process the agent starts itself, with an argument and an
+        // environment variable it must pass through
+        string serverPath = Path.Combine(AppContext.BaseDirectory, "Standard.Agents.Tests.McpServer.dll");
+        string? observedPrompt = null;
+        int turn = 0;
+
+        StandardAgent agent = new StandardAgent()
+            .UseMemory(EmptyMemory())
+            .UseKnowledge(EmptyKnowledge())
+            .McpProcess(
+                command: "dotnet",
+                arguments: [serverPath, "fall"],
+                environmentVariables: new Dictionary<string, string> { ["STUDENTS_SCHOOL"] = "Redmond High" })
+            .OnBrain(async (systemPrompt, userPrompt) =>
+            {
+                if (++turn is 1)
+                {
+                    return "ACTION: find_student: 1";
+                }
+
+                observedPrompt = userPrompt;
+
+                return "FINAL: done";
+            });
+
+        // when
+        await agent.ProcessPromptAsync("who is student 1?");
+
+        // then — the tool was found in the process's catalog, called, and its answer came back
+        observedPrompt.Should().Contain("student 1 is Hassan, at Redmond High, for the fall term");
+    }
+
+    [Fact]
     public async Task ShouldReadSkillsFromEveryRegisteredSourceAsync()
     {
         // given — a broker-backed source and a delegate source, registered in that order.

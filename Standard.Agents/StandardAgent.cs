@@ -536,6 +536,41 @@ public sealed partial class StandardAgent : IAgent
             bearerTokenProvider)));
 
     /// <summary>
+    /// Starts an MCP server as a process and speaks to it over its standard input and output -
+    /// the transport of the servers people run locally with <c>npx</c>, <c>uvx</c>,
+    /// <c>dotnet</c> or <c>python</c>. Its tools join the agent's external tools exactly as an
+    /// HTTP server's do (<see cref="Mcp"/>).
+    /// </summary>
+    /// <param name="command">
+    /// The program to start, such as <c>npx</c> or <c>dotnet</c>. On Windows a bare name resolves
+    /// through <c>PATH</c> and <c>PATHEXT</c>, so <c>npx</c> finds <c>npx.cmd</c>.
+    /// </param>
+    /// <param name="arguments">The arguments to start it with, one per entry, unquoted.</param>
+    /// <param name="environmentVariables">
+    /// Environment variables added to the process's environment - where a server's API key
+    /// usually goes.
+    /// </param>
+    /// <param name="workingDirectory">The directory to start it in. Defaults to the host's.</param>
+    /// <param name="timeoutSeconds">How long one request may wait for its answer. Defaults to 30.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    /// <remarks>The process starts on the agent's first use of its tools, starts again on the
+    /// call after it exits, and is stopped with the host. Servers accumulate across
+    /// <see cref="Mcp"/>, <see cref="McpProcess"/> and <see cref="UseMcp"/>; the first-registered
+    /// server wins a name two of them claim.</remarks>
+    public StandardAgent McpProcess(
+        string command,
+        IEnumerable<string>? arguments = null,
+        IReadOnlyDictionary<string, string>? environmentVariables = null,
+        string? workingDirectory = null,
+        int timeoutSeconds = 30) =>
+        Set(() => this.mcpSources.Add(() => new StdioMcpBroker(
+            command,
+            arguments ?? [],
+            environmentVariables,
+            workingDirectory,
+            timeoutSeconds)));
+
+    /// <summary>
     /// Registers one tool the agent may call. It is only advertised to the brain when it carries a
     /// description and a skill contains the <c>{{tools}}</c> marker (SPEC.md §6.1); otherwise it
     /// stays available but unlisted.
