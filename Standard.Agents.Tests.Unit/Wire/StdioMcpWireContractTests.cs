@@ -145,4 +145,28 @@ public class StdioMcpWireContractTests
         (await callAsync.Should().ThrowAsync<HttpRequestException>())
             .WithMessage("unknown tool");
     }
+
+    [Fact]
+    public async Task ShouldFollowTheCursorOverStandardInputUntilTheCatalogEndsAsync()
+    {
+        // given — a server that pages its catalog
+        var server = new ScriptedStdioServer(message =>
+            (message["method"]?.GetValue<string>(), message["params"]?["cursor"]?.GetValue<string>()) switch
+            {
+                ("initialize", _) => Answer(message, InitializeResult.Replace("\"id\":1", "\"id\":{id}")),
+                ("tools/list", null) => Answer(message,
+                    "{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{\"tools\":[{\"name\":\"first\"}],\"nextCursor\":\"page-2\"}}"),
+                ("tools/list", "page-2") => Answer(message,
+                    "{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{\"tools\":[{\"name\":\"second\"}]}}"),
+                _ => []
+            });
+
+        var broker = new StdioMcpBroker(server.Output, server.Input, timeoutSeconds: 30);
+
+        // when
+        IReadOnlyList<McpTool> actualTools = await broker.ListToolsAsync();
+
+        // then
+        actualTools.Select(tool => tool.Name).Should().Equal("first", "second");
+    }
 }
