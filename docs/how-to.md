@@ -308,8 +308,49 @@ discovery keeps only its own tools unavailable, and is asked again on the next c
 Auth is per server and entirely optional — a server that wants none takes one argument. An API
 key travels in a header you can rename (`apiKeyHeader:`); a bearer token covers OAuth access
 tokens and PATs; and for refresh flows, hand over a delegate — your OAuth client runs the flow,
-the agent carries the current token. Anything stranger (a transport the HTTP broker does not
-speak) implements `IMcpBroker` and joins through `.UseMcp(...)`, which also accumulates.
+the agent carries the current token.
+
+**Any MCP server over HTTP.** `.Mcp(url)` speaks the protocol's Streamable HTTP transport, so a
+server built with any of the official SDKs works as written — stateful or stateless:
+
+- every request accepts both `application/json` and `text/event-stream`, and a reply that
+  arrives as an event stream is read past the notifications a server may send ahead of it;
+- the session opens with `initialize` and `notifications/initialized`, once, before the first
+  request, and every request after carries the `Mcp-Session-Id` the server issued and the
+  `MCP-Protocol-Version` it settled on;
+- a server that ends a session (it answers 404) gets a fresh one, and the request is retried
+  once;
+- a server older than the lifecycle — it answers `initialize` with `-32601` — keeps working, with
+  no session.
+
+**Servers that run as a process.** Most servers people run locally — `npx`, `uvx`, `dotnet`,
+`python` — speak MCP over standard input and output. `.McpProcess(...)` starts one and speaks
+to it there:
+
+```csharp
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .McpProcess("npx", ["-y", "@modelcontextprotocol/server-everything"])
+    .McpProcess(
+        command: "dotnet",
+        arguments: ["Students.Mcp.dll"],
+        environmentVariables: new Dictionary<string, string> { ["STUDENTS_API"] = apiUrl });
+```
+
+The process starts on the agent's first use of its tools, starts again on the call after it
+exits, and is stopped with the host. On Windows a bare command resolves through `PATH` and
+`PATHEXT` the way a shell does, so `npx` finds `npx.cmd`. A process server is a server like any
+other: it accumulates beside `.Mcp(...)` and `.UseMcp(...)`, and the first registered wins a name
+two of them claim. Over a pair of streams you already hold — an in-process server, a socket, a
+test — `new StdioMcpBroker(reader, writer, timeoutSeconds)` joins through `.UseMcp(...)`.
+
+**Whatever a tool returns reaches the brain.** Both transports page a large catalog by its
+`nextCursor` until the server stops returning one, and read every kind of content a tool can
+return: text as written, an embedded resource as its text, a resource link as
+`[resource_link name: uri]`, an image or audio as `[image image/png]` so the model knows something
+came back, and a result carried only in `structuredContent` as that JSON.
+
+Anything stranger still (a transport neither broker speaks) implements `IMcpBroker` and joins
+through `.UseMcp(...)`, which also accumulates.
 
 ---
 
@@ -1360,7 +1401,8 @@ var agent = StandardAgent.FromJson(json);        // or StandardAgent.FromJsonFil
   "memory": "memory.txt",
   "mcp": [
     "https://tools.example/",
-    { "endpointUrl": "https://internal.example/", "apiKey": "psk-1" }
+    { "endpointUrl": "https://internal.example/", "apiKey": "psk-1" },
+    { "command": "npx", "args": ["-y", "@modelcontextprotocol/server-everything"] }
   ],
   "ruleGate": ["password", "ssn"],
   "ruleJudge": ["Sources:"],
@@ -1400,8 +1442,8 @@ The rules, and each is deliberate:
   `--schema`) returns a JSON Schema of the document for your editor, built from the same table
   every section's shape is validated against, so what the editor offers and what the builder
   refuses cannot drift apart; every example in it is one that composes, and a test says so.
-- **Tools stay code, because they are code** — except `mcp`, where a tool is a URL, which is
-  data. Delegates (`On*`) and broker instances (`Use*`) stay code for the same reason.
+- **Tools stay code, because they are code** — except `mcp`, where a tool is a URL or a
+  command, which is data. Delegates (`On*`) and broker instances (`Use*`) stay code for the same reason.
 - **Data and code compose.** `FromJson` returns the same `StandardAgent`, so keep chaining:
 
 ```csharp
@@ -1416,9 +1458,13 @@ var agent = StandardAgent.FromJson(formBody)     // everything that is data
   optional fields as the builder verbs (`"knowledge": { "path", "pattern", "maxResults",
   "minScore" }`, `"sessions": { "path", "maxHistoryTurns" }`, and so on).
 - **Integrations are plural in the document too**: `"skills"` and `"mcp"` accept a single value
-  or an array, and each MCP entry may be a bare URL (no auth) or an object carrying its own
+  or an array, and each MCP entry may be a bare URL (no auth), an object carrying its own
   credentials — `{ "endpointUrl", "relativeUrl", "timeoutSeconds", "bearerToken", "apiKey",
-  "apiKeyHeader" }`. A refresh-flow token is code, not data: it arrives as a delegate through
+  "apiKeyHeader" }` — or a command that starts a server as a process — `{ "command",
+  "arguments", "environmentVariables", "workingDirectory", "timeoutSeconds" }`. A command entry
+  also takes the words MCP clients' own configuration files use (`"args"`, `"env"`), so a
+  server's published setup pastes in unchanged:
+  `{ "command": "npx", "args": ["-y", "@modelcontextprotocol/server-everything"] }`. A refresh-flow token is code, not data: it arrives as a delegate through
   `.UseMcp(...)`/`.Mcp(bearerTokenProvider: …)`, never through the document — and remember the
   document now holds secrets when you put keys in it; store it accordingly.
 - **The `contract` schema rides embedded** — real JSON inside the JSON, never an escaped string

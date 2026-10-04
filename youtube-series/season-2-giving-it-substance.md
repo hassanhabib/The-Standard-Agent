@@ -110,7 +110,12 @@ widening what the model may reach for. Demonstrate both halves.
 
 **Beats**
 - `.Mcp(...)` — Model Context Protocol servers as external tools.
-- Connect a real MCP server, list what it exposes, call one.
+- Connect a real MCP server, list what it exposes, call one. Build it with an official SDK on
+  camera: the agent speaks the Streamable HTTP transport (event-stream replies, the
+  `initialize` handshake, the session), so the server needs nothing special for it.
+- **Then the ones that run as a process.** `.McpProcess("npx", [...])` starts a local server and
+  speaks to it over standard input and output — the transport most of the ecosystem ships. The
+  same entry pastes into an agent document as `{ "command": "npx", "args": [...] }`.
 - **Then connect a second.** `.Mcp(...)` accumulates: the agent asks each server for its
   `tools/list` catalog and routes every call to the server that owns the name. Two servers
   claiming one name — the **first registered wins**, the same precedence local tools already have.
@@ -126,7 +131,8 @@ widening what the model may reach for. Demonstrate both halves.
 
 **All three modes — all demonstrated (+2 min)**
 - **Local** — internal tools, from 2.2.
-- **External** `.Mcp(endpointUrl, relativeUrl, timeoutSeconds)` — a server by URL.
+- **External** `.Mcp(endpointUrl, relativeUrl, timeoutSeconds)` — a server by URL;
+  `.McpProcess(command, arguments, environmentVariables)` — a server the agent starts.
 - **Custom** `.UseMcp(new MyMcpBroker(...))` — your own transport, auth, or in-process stub.
 
 The stub is not a toy: it is how you test MCP integration without a live server (7.7).

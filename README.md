@@ -144,8 +144,10 @@ there are six of them.
 
 And what the agent integrates *with* is always plural: tools, MCP servers, skill sources, and
 registered agents all **accumulate** — a second `.Mcp(...)` adds a server (each with its own
-optional auth: none, an API key, or an OAuth bearer token), a second `.Skills(...)` adds a
-folder, and calls route to whichever source's catalog owns the name, first registered winning.
+optional auth: none, an API key, or an OAuth bearer token), `.McpProcess("npx", [...])` adds one
+that runs as a local process, a second `.Skills(...)` adds a folder, and calls route to whichever
+source's catalog owns the name, first registered winning. MCP servers built with any of the
+official SDKs work as written, over HTTP or standard input and output.
 
 ### Agent as data — the whole thing as JSON
 
@@ -170,7 +172,7 @@ var agent = StandardAgent.FromJson(formBody);   // data
 
 A key the agent does not know **refuses to compose, with the key named** — a typo'd `"buget"`
 must never produce an unbounded agent that looks configured. Tools stay code because they are
-code — except MCP, where a tool is a URL, which is data. And the deployment half is one file:
+code — except MCP, where a tool is a URL or a command, which is data. And the deployment half is one file:
 drop an `agent.json` beside `Standard.Agents.Host` and the hosted agent composes entirely from
 it — no C# anywhere
 ([docs/how-to.md §16](https://github.com/hassanhabib/The-Standard-Agent/blob/main/docs/how-to.md)).
