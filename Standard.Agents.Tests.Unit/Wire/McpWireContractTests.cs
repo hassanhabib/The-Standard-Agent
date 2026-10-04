@@ -216,6 +216,45 @@ public class McpWireContractTests
     }
 
     [Fact]
+    public async Task ShouldCarryTheSessionAndTheNegotiatedVersionAfterInitializeAsync()
+    {
+        // given — a server that opens a session and settles on an older protocol version
+        var server = new ScriptedServerHandler((_, body) =>
+        {
+            if (body.Contains("\"initialize\""))
+            {
+                HttpResponseMessage initializeResponse = ScriptedServerHandler.Json(
+                    HttpStatusCode.OK,
+                    "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-03-26\","
+                        + "\"capabilities\":{\"tools\":{}},\"serverInfo\":{\"name\":\"s\",\"version\":\"1\"}}}");
+
+                initializeResponse.Headers.Add("Mcp-Session-Id", "session-7");
+
+                return initializeResponse;
+            }
+
+            return ScriptedServerHandler.Json(
+                HttpStatusCode.OK,
+                "{\"jsonrpc\":\"2.0\",\"id\":3,\"result\":{\"tools\":[]}}");
+        });
+
+        McpBroker broker = CreateBroker(server);
+
+        // when
+        await broker.ListToolsAsync();
+
+        // then — initialize opens the session; everything after it carries the session
+        // and the version the server chose
+        server.Requests[0].Headers.Contains("Mcp-Session-Id").Should().BeFalse();
+
+        server.Requests.Skip(1).Should().AllSatisfy(request =>
+        {
+            request.Headers.GetValues("Mcp-Session-Id").Should().ContainSingle("session-7");
+            request.Headers.GetValues("MCP-Protocol-Version").Should().ContainSingle("2025-03-26");
+        });
+    }
+
+    [Fact]
     public async Task ShouldAskTheTokenProviderOnEveryRequestAsync()
     {
         // given — an access token that changes between calls, as an OAuth token does
