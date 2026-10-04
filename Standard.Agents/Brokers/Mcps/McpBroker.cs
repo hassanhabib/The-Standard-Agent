@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -259,11 +260,44 @@ public sealed class McpBroker : IMcpBroker
         TContent content)
     {
         using var timeout = new CancellationTokenSource(this.httpClient.Timeout);
+        string? sentSessionId = this.sessionId;
 
         using HttpResponseMessage httpResponse =
             await SendAsync(relativeUrl, content, timeout.Token);
 
+        if (IsExpiredSession(httpResponse, sentSessionId))
+        {
+            await RestartSessionAsync(sentSessionId!);
+
+            using HttpResponseMessage retriedHttpResponse =
+                await SendAsync(relativeUrl, content, timeout.Token);
+
+            return await ReadAsync<TResult>(retriedHttpResponse, timeout.Token);
+        }
+
         return await ReadAsync<TResult>(httpResponse, timeout.Token);
+    }
+
+    private static bool IsExpiredSession(HttpResponseMessage httpResponse, string? sentSessionId) =>
+        httpResponse.StatusCode is HttpStatusCode.NotFound && sentSessionId is not null;
+
+    private async ValueTask RestartSessionAsync(string expiredSessionId)
+    {
+        await this.initializationLock.WaitAsync();
+
+        try
+        {
+            if (this.sessionId == expiredSessionId)
+            {
+                this.sessionId = null;
+                this.protocolVersion = null;
+                await InitializeAsync();
+            }
+        }
+        finally
+        {
+            this.initializationLock.Release();
+        }
     }
 
     private static async ValueTask<TResult> ReadAsync<TResult>(
