@@ -27,6 +27,7 @@ public sealed class McpBroker : IMcpBroker
     private const string ClientName = "Standard.Agents";
     private const string SessionIdHeader = "Mcp-Session-Id";
     private const string ProtocolVersionHeader = "MCP-Protocol-Version";
+    private const int MethodNotFoundCode = -32601;
     private const string OpenObjectSchema = "{}";
 
     private static readonly JsonSerializerOptions jsonOptions = new()
@@ -221,6 +222,11 @@ public sealed class McpBroker : IMcpBroker
 
         JsonRpcInitializeResponse initializeResponse =
             await ReadAsync<JsonRpcInitializeResponse>(initializeHttpResponse, timeout.Token);
+
+        if (initializeResponse.Error?.Code is MethodNotFoundCode)
+        {
+            return;
+        }
 
         if (initializeResponse.Error is not null)
         {
