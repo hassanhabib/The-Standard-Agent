@@ -255,6 +255,59 @@ public class McpWireContractTests
     }
 
     [Fact]
+    public async Task ShouldStartANewSessionWhenTheServerForgetsTheOldOneAsync()
+    {
+        // given — a server that ends its first session after one listing, answering 404 to it
+        // from then on, as the protocol says a server that terminated a session does
+        int openedSessions = 0;
+        int listings = 0;
+
+        var server = new ScriptedServerHandler((request, body) =>
+        {
+            if (body.Contains("\"initialize\""))
+            {
+                HttpResponseMessage initializeResponse = ScriptedServerHandler.Json(
+                    HttpStatusCode.OK,
+                    "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-06-18\","
+                        + "\"capabilities\":{},\"serverInfo\":{\"name\":\"s\",\"version\":\"1\"}}}");
+
+                initializeResponse.Headers.Add("Mcp-Session-Id", $"session-{++openedSessions}");
+
+                return initializeResponse;
+            }
+
+            bool isFirstSession =
+                request.Headers.TryGetValues("Mcp-Session-Id", out IEnumerable<string>? sessionIds)
+                    && sessionIds.Single() == "session-1";
+
+            if (body.Contains("tools/list") && isFirstSession && listings++ > 0)
+            {
+                return new HttpResponseMessage(HttpStatusCode.NotFound);
+            }
+
+            return ScriptedServerHandler.Json(
+                HttpStatusCode.OK,
+                "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"tools\":[{\"name\":\"lookup\"}]}}");
+        });
+
+        McpBroker broker = CreateBroker(server);
+        await broker.ListToolsAsync();
+
+        // when
+        IReadOnlyList<McpTool> actualTools = await broker.ListToolsAsync();
+
+        // then — a fresh initialize, without the dead session, and the listing retried on the new one
+        actualTools.Should().ContainSingle(tool => tool.Name == "lookup");
+        openedSessions.Should().Be(2);
+
+        HttpRequestMessage reinitialize = server.Requests[4];
+        server.Bodies[4].Should().Contain("\"initialize\"");
+        reinitialize.Headers.Contains("Mcp-Session-Id").Should().BeFalse();
+
+        server.Requests[^1].Headers.GetValues("Mcp-Session-Id").Should().ContainSingle("session-2");
+    }
+
+    [Fact]
     public async Task ShouldAskTheTokenProviderOnEveryRequestAsync()
     {
         // given — an access token that changes between calls, as an OAuth token does
