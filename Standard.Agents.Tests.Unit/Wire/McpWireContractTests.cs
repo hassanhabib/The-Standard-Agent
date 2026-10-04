@@ -368,6 +368,44 @@ public class McpWireContractTests
     }
 
     [Fact]
+    public async Task ShouldReadEveryKindOfContentAsTextTheBrainCanUseAsync()
+    {
+        // given — a tool answering with more than text: an embedded resource, a link, an image
+        ScriptedServerHandler server = ScriptedServerHandler.Answering(
+            "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"content\":["
+                + "{\"type\":\"text\",\"text\":\"owed: \"},"
+                + "{\"type\":\"resource\",\"resource\":{\"uri\":\"ledger://42\",\"mimeType\":\"text/plain\",\"text\":\"12\"}},"
+                + "{\"type\":\"resource_link\",\"uri\":\"file:///statement.pdf\",\"name\":\"statement\"},"
+                + "{\"type\":\"image\",\"data\":\"iVBORw0KGgo=\",\"mimeType\":\"image/png\"}]}}");
+
+        McpBroker broker = CreateBroker(server);
+
+        // when
+        string actualText = await broker.CallAsync("lookup", "{}");
+
+        // then — nothing the tool returned is silently dropped
+        actualText.Should().Be(
+            "owed: 12[resource_link statement: file:///statement.pdf][image image/png]");
+    }
+
+    [Fact]
+    public async Task ShouldReadStructuredContentWhenATextBlockIsAbsentAsync()
+    {
+        // given — a tool answering only with structured content
+        ScriptedServerHandler server = ScriptedServerHandler.Answering(
+            "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"content\":[],"
+                + "\"structuredContent\":{\"account\":\"42\",\"owed\":12}}}");
+
+        McpBroker broker = CreateBroker(server);
+
+        // when
+        string actualText = await broker.CallAsync("lookup", "{}");
+
+        // then
+        actualText.Should().Be("{\"account\":\"42\",\"owed\":12}");
+    }
+
+    [Fact]
     public async Task ShouldAskTheTokenProviderOnEveryRequestAsync()
     {
         // given — an access token that changes between calls, as an OAuth token does
