@@ -273,6 +273,49 @@ public partial class StandardAgentFromJsonTests
     }
 
     [Fact]
+    public async Task ShouldStartAnMcpServerProcessFromJsonAsync()
+    {
+        // given — a server entry that is a command rather than a URL, in the builder's words
+        // and in the words MCP clients' own configuration files already use (args, env), so a
+        // server's published setup pastes in unchanged
+        string serverPath = Path.Combine(AppContext.BaseDirectory, "Standard.Agents.Tests.McpServer.dll")
+            .Replace("\\", "\\\\");
+
+        string document = $$"""
+        {
+          "mcp": [
+            { "command": "dotnet", "arguments": ["{{serverPath}}", "fall"],
+              "environmentVariables": { "STUDENTS_SCHOOL": "Redmond High" } },
+            { "command": "dotnet", "args": ["{{serverPath}}", "spring"],
+              "env": { "STUDENTS_SCHOOL": "Kent Meridian" }, "timeoutSeconds": 20 }
+          ]
+        }
+        """;
+
+        string? observedPrompt = null;
+        int turn = 0;
+
+        StandardAgent agent = StandardAgent.FromJson(document)
+            .OnBrain(async (systemPrompt, userPrompt) =>
+            {
+                if (++turn is 1)
+                {
+                    return "ACTION: find_student: 1";
+                }
+
+                observedPrompt = userPrompt;
+
+                return "FINAL: done";
+            });
+
+        // when
+        await agent.ProcessPromptAsync("who is student 1?");
+
+        // then — the first-registered process owns the name, started as the document said
+        observedPrompt.Should().Contain("student 1 is Hassan, at Redmond High, for the fall term");
+    }
+
+    [Fact]
     public void ShouldComposeMultipleIntegrationsFromJson()
     {
         // given — integrations are plural in the document the same way they are in code: a
