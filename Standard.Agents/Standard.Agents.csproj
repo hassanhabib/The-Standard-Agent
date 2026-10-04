@@ -554,7 +554,16 @@
          going-in-circles bound its builder verb sets: "identicalCallLimit" is now a document key,
          refused unless positive, named by the emitted schema. No SPEC change. The Host's wire
          model changed (a new member of a shipped response): segment 1 advances, 2/3/4 reset. -->
-    <Version>5.0.0.0</Version>
+    <!-- 5.1.0.0 "Any MCP Server": .Mcp(url) sent plain JSON-RPC posts, so every server built with
+         an official MCP SDK refused it (406, "Client must accept both application/json and
+         text/event-stream"), and servers that run as a process were unreachable. The HTTP broker
+         now speaks Streamable HTTP: it accepts event streams, opens the session with initialize,
+         carries Mcp-Session-Id and MCP-Protocol-Version, renews a session the server ended, and
+         keeps servers without initialize working. StdioMcpBroker and McpProcess(...) reach a
+         server over standard input and output, and the agent document's mcp entry may be a
+         command. Both transports page tools/list and read every kind of content. No SPEC change.
+         New routines, no shipped model changed: segment 2 advances, 3/4 reset. -->
+    <Version>5.1.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>

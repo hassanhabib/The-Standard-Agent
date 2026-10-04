@@ -154,6 +154,11 @@ Standard.Agents.Brokers.Mcps.McpBroker.McpBroker(string! endpointUrl, string! re
 Standard.Agents.Brokers.Mcps.NotConfiguredMcpBroker
 Standard.Agents.Brokers.Mcps.NotConfiguredMcpBroker.ListToolsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Mcps.McpTool!>!>
 Standard.Agents.Brokers.Mcps.NotConfiguredMcpBroker.NotConfiguredMcpBroker() -> void
+Standard.Agents.Brokers.Mcps.StdioMcpBroker
+Standard.Agents.Brokers.Mcps.StdioMcpBroker.CallAsync(string! name, string! argumentsJson) -> System.Threading.Tasks.ValueTask<string!>
+Standard.Agents.Brokers.Mcps.StdioMcpBroker.ListToolsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Mcps.McpTool!>!>
+Standard.Agents.Brokers.Mcps.StdioMcpBroker.StdioMcpBroker(System.IO.TextReader! serverOutput, System.IO.TextWriter! serverInput, int timeoutSeconds) -> void
+Standard.Agents.Brokers.Mcps.StdioMcpBroker.StdioMcpBroker(string! command, System.Collections.Generic.IEnumerable<string!>! arguments, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? environmentVariables, string? workingDirectory, int timeoutSeconds) -> void
 Standard.Agents.Brokers.Memorys.FunctionMemoryBroker
 Standard.Agents.Brokers.Memorys.FunctionMemoryBroker.FunctionMemoryBroker(System.Func<System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>>! recall, System.Func<string!, System.Threading.Tasks.ValueTask>! remember) -> void
 Standard.Agents.Brokers.Memorys.FunctionMemoryBroker.InsertMemoryAsync(string! memory) -> System.Threading.Tasks.ValueTask
@@ -1303,6 +1308,7 @@ Standard.Agents.StandardAgent.LocalJudge(System.Func<string!, string!, System.Th
 Standard.Agents.StandardAgent.LogTo(string! path, Standard.Agents.Models.Loggings.TraceVerbosity verbosity = Standard.Agents.Models.Loggings.TraceVerbosity.Full) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.MaxTurns(int turns) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Mcp(string! endpointUrl, string! relativeUrl = "", int timeoutSeconds = 30, string? bearerToken = null, string? apiKey = null, string! apiKeyHeader = "X-Api-Key", System.Func<System.Threading.Tasks.ValueTask<string!>>? bearerTokenProvider = null) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.McpProcess(string! command, System.Collections.Generic.IEnumerable<string!>? arguments = null, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? environmentVariables = null, string? workingDirectory = null, int timeoutSeconds = 30) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Memory(string! path) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Name.get -> string!
 Standard.Agents.StandardAgent.NativeBrain(string! apiUrl, string! apiKey, string! model, double temperature = 0.7, int maxTokens = 1024) -> Standard.Agents.StandardAgent!

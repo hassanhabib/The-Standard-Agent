@@ -1,7 +1,1 @@
 #nullable enable
-Standard.Agents.Brokers.Mcps.StdioMcpBroker
-Standard.Agents.Brokers.Mcps.StdioMcpBroker.CallAsync(string! name, string! argumentsJson) -> System.Threading.Tasks.ValueTask<string!>
-Standard.Agents.Brokers.Mcps.StdioMcpBroker.ListToolsAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Mcps.McpTool!>!>
-Standard.Agents.Brokers.Mcps.StdioMcpBroker.StdioMcpBroker(System.IO.TextReader! serverOutput, System.IO.TextWriter! serverInput, int timeoutSeconds) -> void
-Standard.Agents.Brokers.Mcps.StdioMcpBroker.StdioMcpBroker(string! command, System.Collections.Generic.IEnumerable<string!>! arguments, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? environmentVariables, string? workingDirectory, int timeoutSeconds) -> void
-Standard.Agents.StandardAgent.McpProcess(string! command, System.Collections.Generic.IEnumerable<string!>? arguments = null, System.Collections.Generic.IReadOnlyDictionary<string!, string!>? environmentVariables = null, string? workingDirectory = null, int timeoutSeconds = 30) -> Standard.Agents.StandardAgent!
