@@ -3,10 +3,11 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using RESTFulSense.Clients;
+using RESTFulSense.Services;
 using Standard.Agents.Models.Brokers.Mcps;
 
 namespace Standard.Agents.Brokers.Mcps;
@@ -15,6 +16,7 @@ public sealed class McpBroker : IMcpBroker
 {
     private const string JsonMediaType = "application/json";
     private const string EventStreamMediaType = "text/event-stream";
+    private const string DataFieldPrefix = "data:";
     private const string JsonRpcVersion = "2.0";
     private const string ToolsCallMethod = "tools/call";
     private const string ToolsListMethod = "tools/list";
@@ -27,7 +29,7 @@ public sealed class McpBroker : IMcpBroker
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    private readonly IRESTFulApiFactoryClient apiClient;
+    private readonly HttpClient httpClient;
     private readonly string relativeUrl;
     private int requestId;
 
@@ -92,7 +94,7 @@ public sealed class McpBroker : IMcpBroker
             httpClient.DefaultRequestHeaders.Add(apiKeyHeader, apiKey);
         }
 
-        this.apiClient = new RESTFulApiFactoryClient(httpClient);
+        this.httpClient = httpClient;
         this.relativeUrl = relativeUrl;
     }
 
@@ -176,13 +178,86 @@ public sealed class McpBroker : IMcpBroker
         string relativeUrl,
         TContent content)
     {
-        return await this.apiClient.PostContentAsync<TContent, TResult>(
-            relativeUrl,
-            content,
-            mediaType: JsonMediaType,
-            serializationFunction: async value =>
-                JsonSerializer.Serialize(value, jsonOptions),
-            deserializationFunction: async json =>
-                JsonSerializer.Deserialize<TResult>(json, jsonOptions)!);
+        string requestJson = JsonSerializer.Serialize(content, jsonOptions);
+
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, relativeUrl)
+        {
+            Content = new StringContent(requestJson, Encoding.UTF8, JsonMediaType)
+        };
+
+        using var timeout = new CancellationTokenSource(this.httpClient.Timeout);
+
+        using HttpResponseMessage httpResponse = await this.httpClient.SendAsync(
+            httpRequest,
+            HttpCompletionOption.ResponseHeadersRead,
+            timeout.Token);
+
+        await ValidationService.ValidateHttpResponseAsync(httpResponse);
+
+        string responseJson = IsEventStream(httpResponse)
+            ? await ReadResponseFromEventStreamAsync(httpResponse, timeout.Token)
+            : await httpResponse.Content.ReadAsStringAsync(timeout.Token);
+
+        return JsonSerializer.Deserialize<TResult>(responseJson, jsonOptions)!;
+    }
+
+    private static bool IsEventStream(HttpResponseMessage httpResponse) =>
+        httpResponse.Content.Headers.ContentType?.MediaType == EventStreamMediaType;
+
+    private static async ValueTask<string> ReadResponseFromEventStreamAsync(
+        HttpResponseMessage httpResponse,
+        CancellationToken cancellationToken)
+    {
+        await using Stream responseStream =
+            await httpResponse.Content.ReadAsStreamAsync(cancellationToken);
+
+        using var reader = new StreamReader(responseStream);
+        var eventData = new StringBuilder();
+
+        while (await reader.ReadLineAsync(cancellationToken) is string line)
+        {
+            if (line.StartsWith(DataFieldPrefix))
+            {
+                eventData.AppendLine(ToFieldValue(line));
+
+                continue;
+            }
+
+            if (line.Length is 0 && IsResponse(eventData.ToString()))
+            {
+                return eventData.ToString();
+            }
+
+            if (line.Length is 0)
+            {
+                eventData.Clear();
+            }
+        }
+
+        return IsResponse(eventData.ToString())
+            ? eventData.ToString()
+            : throw new HttpRequestException(
+                "The MCP server closed its event stream without a response.");
+    }
+
+    private static string ToFieldValue(string line)
+    {
+        string value = line[DataFieldPrefix.Length..];
+
+        return value.StartsWith(' ')
+            ? value[1..]
+            : value;
+    }
+
+    private static bool IsResponse(string eventData)
+    {
+        if (string.IsNullOrWhiteSpace(eventData))
+        {
+            return false;
+        }
+
+        JsonObject? message = JsonNode.Parse(eventData) as JsonObject;
+
+        return message?.ContainsKey("result") is true || message?.ContainsKey("error") is true;
     }
 }
