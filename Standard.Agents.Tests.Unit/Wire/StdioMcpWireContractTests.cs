@@ -90,4 +90,35 @@ public class StdioMcpWireContractTests
         pong["result"].Should().BeOfType<JsonObject>();
         pong["method"].Should().BeNull();
     }
+
+    [Fact]
+    public async Task ShouldCallAToolWithItsArgumentsAndReadEveryKindOfContentAsync()
+    {
+        // given — a tool that answers with text, an embedded resource and a link
+        var server = new ScriptedStdioServer(message =>
+            message["method"]?.GetValue<string>() switch
+            {
+                "initialize" => Answer(message, InitializeResult.Replace("\"id\":1", "\"id\":{id}")),
+                "tools/call" => Answer(message,
+                    "{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{\"content\":["
+                        + "{\"type\":\"text\",\"text\":\"student: \"},"
+                        + "{\"type\":\"resource\",\"resource\":{\"uri\":\"students://1\",\"text\":\"Hassan\"}},"
+                        + "{\"type\":\"resource_link\",\"uri\":\"file:///1.json\",\"name\":\"record\"}]}}"),
+                _ => []
+            });
+
+        var broker = new StdioMcpBroker(server.Output, server.Input, timeoutSeconds: 30);
+
+        // when
+        string actualText = await broker.CallAsync("find_student", "{\"id\":1,\"deep\":{\"n\":2}}");
+
+        // then — the arguments travel as the object the model wrote, and nothing returned is dropped
+        JsonNode call = JsonNode.Parse(server.Lines[^1])!;
+        call["method"]!.GetValue<string>().Should().Be("tools/call");
+        call["params"]!["name"]!.GetValue<string>().Should().Be("find_student");
+        call["params"]!["arguments"]!["id"]!.GetValue<int>().Should().Be(1);
+        call["params"]!["arguments"]!["deep"]!["n"]!.GetValue<int>().Should().Be(2);
+
+        actualText.Should().Be("student: Hassan[resource_link record: file:///1.json]");
+    }
 }
