@@ -57,15 +57,15 @@ public class McpWireContractTests
         // when
         IReadOnlyList<McpTool> actualTools = await broker.ListToolsAsync();
 
-        // then — the route, the credential header, the envelope
-        HttpRequestMessage request = server.Requests.Should().ContainSingle().Subject;
+        // then — the route, the credential header, the envelope, after the handshake
+        HttpRequestMessage request = server.Requests[^1];
         request.RequestUri.Should().Be(new Uri("http://mcp.test/rpc"));
         request.Headers.GetValues("X-Api-Key").Should().ContainSingle("mcp-key");
 
-        JsonNode body = JsonNode.Parse(server.Bodies[0])!;
+        JsonNode body = JsonNode.Parse(server.Bodies[^1])!;
         body["jsonrpc"]!.GetValue<string>().Should().Be("2.0");
         body["method"]!.GetValue<string>().Should().Be("tools/list");
-        body["id"]!.GetValue<int>().Should().Be(1);
+        body["id"]!.GetValue<int>().Should().Be(2);
 
         // and the schema, verbatim (F-03)
         actualTools.Should().BeEquivalentTo(expectedTools);
@@ -92,15 +92,15 @@ public class McpWireContractTests
         string actualText = await broker.CallAsync("lookup", "{\"account\":\"42\",\"deep\":{\"n\":1}}");
 
         // then — params as the protocol reads them, id advanced, text blocks joined
-        JsonNode call = JsonNode.Parse(server.Bodies[1])!;
+        JsonNode call = JsonNode.Parse(server.Bodies[^1])!;
         call["method"]!.GetValue<string>().Should().Be("tools/call");
-        call["id"]!.GetValue<int>().Should().Be(2);
+        call["id"]!.GetValue<int>().Should().Be(3);
         call["params"]!["name"]!.GetValue<string>().Should().Be("lookup");
         call["params"]!["arguments"]!["account"]!.GetValue<string>().Should().Be("42");
         call["params"]!["arguments"]!["deep"]!["n"]!.GetValue<int>().Should().Be(1);
 
-        server.Requests[1].Headers.Authorization?.Scheme.Should().Be("Bearer");
-        server.Requests[1].Headers.Authorization?.Parameter.Should().Be("static-token");
+        server.Requests[^1].Headers.Authorization?.Scheme.Should().Be("Bearer");
+        server.Requests[^1].Headers.Authorization?.Parameter.Should().Be("static-token");
         actualText.Should().Be("owed: 12");
     }
 
@@ -171,6 +171,48 @@ public class McpWireContractTests
 
         // then — the response is found past the notification, the schema whole
         actualTools.Should().BeEquivalentTo(expectedTools);
+    }
+
+    [Fact]
+    public async Task ShouldInitializeOnceBeforeTheFirstRequestAsync()
+    {
+        // given — a server that expects the lifecycle the protocol defines
+        var server = new ScriptedServerHandler((_, body) =>
+            JsonNode.Parse(body)!["method"]!.GetValue<string>() switch
+            {
+                "initialize" => ScriptedServerHandler.Json(
+                    HttpStatusCode.OK,
+                    "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-06-18\","
+                        + "\"capabilities\":{\"tools\":{}},\"serverInfo\":{\"name\":\"students\",\"version\":\"1.0.0\"}}}"),
+
+                "notifications/initialized" => new HttpResponseMessage(HttpStatusCode.Accepted),
+
+                _ => ScriptedServerHandler.Json(
+                    HttpStatusCode.OK,
+                    "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"tools\":[]}}")
+            });
+
+        McpBroker broker = CreateBroker(server);
+
+        // when
+        await broker.ListToolsAsync();
+        await broker.ListToolsAsync();
+
+        // then — initialize, then the initialized notification, then the work; once only
+        List<JsonNode> messages = [.. server.Bodies.Select(body => JsonNode.Parse(body)!)];
+
+        messages.Select(message => message["method"]!.GetValue<string>()).Should().Equal(
+            "initialize",
+            "notifications/initialized",
+            "tools/list",
+            "tools/list");
+
+        JsonNode initialize = messages[0];
+        initialize["id"].Should().NotBeNull();
+        initialize["params"]!["protocolVersion"]!.GetValue<string>().Should().Be("2025-06-18");
+        initialize["params"]!["capabilities"].Should().BeOfType<JsonObject>();
+        initialize["params"]!["clientInfo"]!["name"]!.GetValue<string>().Should().Be("Standard.Agents");
+        messages[1]["id"].Should().BeNull();
     }
 
     [Fact]
