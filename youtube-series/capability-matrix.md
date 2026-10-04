@@ -28,7 +28,7 @@ quietly withheld the reason anyone would adopt this over an afternoon's worth of
 | 5 | Native brain | — *same reason* | `UseNativeBrain(broker)` · `NativeBrain(...)` | `OnNativeBrain(delegate)` | 5.3 |
 | 6 | Gate | `RuleGate(...)` | `Gate(url,key,model)` · `UseGate(IClassifierBroker)` | `OnGate(delegate)` | 3.1 / 3.3 |
 | 7 | Judge | `RuleJudge(...)` | `Judge(url,key,model)` · `UseJudge(IVerifierBroker)` | `OnJudge(delegate)` | 3.2 / 3.3 |
-| 8 | Tools | `Tool(ITool)` · `Tools(...)` | `Mcp(endpointUrl)` · `UseMcp(IMcpBroker)` | `Tool(ITool)` — your own class | 2.2 / 2.3 |
+| 8 | Tools | `Tool(ITool)` · `Tools(...)` | `Mcp(endpointUrl)` · `McpProcess(command)` · `UseMcp(IMcpBroker)` | `Tool(ITool)` — your own class | 2.2 / 2.3 |
 | 9 | Trace | `LogTo(path, verbosity)` | `UseLogging(ILoggingBroker)` | `UseLogging(ILoggingBroker)` | 4.3 |
 | 10 | Audit | `Audit(path)` | `UseAudit(IAuditBroker)` | `OnAudit(Func<AuditRecord, ValueTask>)` | 4.3 |
 | 11 | Policy | `AllowTools(...)` | `UsePolicy(IPolicyBroker)` | `OnPolicy(delegate)` | 4.1 |
