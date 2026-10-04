@@ -87,8 +87,11 @@ public sealed class StdioMcpBroker : IMcpBroker
         try
         {
             await EnsureInitializedAsync();
+            JsonObject answer = await ExchangeAsync(method, parameters);
 
-            return await ExchangeAsync(method, parameters);
+            return answer["error"] is JsonNode error
+                ? throw new HttpRequestException(error["message"]?.GetValue<string>())
+                : answer["result"];
         }
         finally
         {
@@ -114,12 +117,23 @@ public sealed class StdioMcpBroker : IMcpBroker
             }
         };
 
-        await ExchangeAsync(InitializeMethod, initializeParameters);
-        await WriteAsync(new JsonObject { ["jsonrpc"] = JsonRpcVersion, ["method"] = InitializedMethod });
+        JsonObject answer = await ExchangeAsync(InitializeMethod, initializeParameters);
+        int? errorCode = answer["error"]?["code"]?.GetValue<int>();
+
+        if (errorCode is not null and not MethodNotFoundCode)
+        {
+            throw new HttpRequestException(answer["error"]!["message"]?.GetValue<string>());
+        }
+
+        if (errorCode is null)
+        {
+            await WriteAsync(new JsonObject { ["jsonrpc"] = JsonRpcVersion, ["method"] = InitializedMethod });
+        }
+
         this.isInitialized = true;
     }
 
-    private async ValueTask<JsonNode?> ExchangeAsync(string method, JsonNode? parameters)
+    private async ValueTask<JsonObject> ExchangeAsync(string method, JsonNode? parameters)
     {
         int id = ++this.requestId;
 
@@ -155,7 +169,7 @@ public sealed class StdioMcpBroker : IMcpBroker
 
             if (IsAnswerTo(message, id))
             {
-                return message!["result"];
+                return message!;
             }
         }
     }
