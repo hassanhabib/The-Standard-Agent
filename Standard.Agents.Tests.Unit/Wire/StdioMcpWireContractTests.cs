@@ -169,4 +169,44 @@ public class StdioMcpWireContractTests
         // then
         actualTools.Select(tool => tool.Name).Should().Equal("first", "second");
     }
+
+    [Fact]
+    public async Task ShouldCarryOnWhenTheServerHasNoInitializeOverStandardInputAsync()
+    {
+        // given — a server older than the lifecycle: it knows its tools, not initialize
+        var server = new ScriptedStdioServer(message =>
+            message["method"]?.GetValue<string>() switch
+            {
+                "initialize" => Answer(message,
+                    "{\"jsonrpc\":\"2.0\",\"id\":{id},\"error\":{\"code\":-32601,\"message\":\"Method not found\"}}"),
+                "tools/list" => Answer(message,
+                    "{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{\"tools\":[{\"name\":\"lookup\"}]}}"),
+                _ => []
+            });
+
+        var broker = new StdioMcpBroker(server.Output, server.Input, timeoutSeconds: 30);
+
+        // when
+        IReadOnlyList<McpTool> actualTools = await broker.ListToolsAsync();
+
+        // then — its tools still reach the agent, and nothing announces a session that never opened
+        actualTools.Should().ContainSingle(tool => tool.Name == "lookup");
+        server.Lines.Should().NotContain(line => line.Contains("notifications/initialized"));
+    }
+
+    [Fact]
+    public async Task ShouldThrowHttpRequestExceptionWhenTheServerEndsItsOutputAsync()
+    {
+        // given — a server process that exits before it answers anything
+        var server = new ScriptedStdioServer(_ => []);
+        server.End();
+
+        var broker = new StdioMcpBroker(server.Output, server.Input, timeoutSeconds: 30);
+
+        // when
+        Func<Task> listToolsAsync = async () => await broker.ListToolsAsync();
+
+        // then — a dependency that went away, raised as the HTTP broker raises one
+        await listToolsAsync.Should().ThrowAsync<HttpRequestException>();
+    }
 }
