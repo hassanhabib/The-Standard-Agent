@@ -14,6 +14,7 @@ namespace Standard.Agents.Brokers.Mcps;
 public sealed class McpBroker : IMcpBroker
 {
     private const string JsonMediaType = "application/json";
+    private const string EventStreamMediaType = "text/event-stream";
     private const string JsonRpcVersion = "2.0";
     private const string ToolsCallMethod = "tools/call";
     private const string ToolsListMethod = "tools/list";
@@ -73,6 +74,12 @@ public sealed class McpBroker : IMcpBroker
 
         httpClient.BaseAddress = new Uri(endpointUrl);
         httpClient.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
+
+        httpClient.DefaultRequestHeaders.Accept.Add(
+            new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue(JsonMediaType));
+
+        httpClient.DefaultRequestHeaders.Accept.Add(
+            new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue(EventStreamMediaType));
 
         if (bearerTokenProvider is null && string.IsNullOrEmpty(bearerToken) is false)
         {
