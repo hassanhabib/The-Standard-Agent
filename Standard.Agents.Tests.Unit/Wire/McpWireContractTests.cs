@@ -308,6 +308,29 @@ public class McpWireContractTests
     }
 
     [Fact]
+    public async Task ShouldCarryOnWithoutASessionWhenTheServerHasNoInitializeAsync()
+    {
+        // given — a server older than the lifecycle: it knows its tools, not initialize
+        var server = new ScriptedServerHandler((_, body) =>
+            body.Contains("\"initialize\"")
+                ? ScriptedServerHandler.Json(
+                    HttpStatusCode.OK,
+                    "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32601,\"message\":\"Method not found\"}}")
+                : ScriptedServerHandler.Json(
+                    HttpStatusCode.OK,
+                    "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"tools\":[{\"name\":\"lookup\"}]}}"));
+
+        McpBroker broker = CreateBroker(server);
+
+        // when
+        IReadOnlyList<McpTool> actualTools = await broker.ListToolsAsync();
+
+        // then — its tools still reach the agent, and nothing announces a session that never opened
+        actualTools.Should().ContainSingle(tool => tool.Name == "lookup");
+        server.Bodies.Should().NotContain(body => body.Contains("notifications/initialized"));
+    }
+
+    [Fact]
     public async Task ShouldAskTheTokenProviderOnEveryRequestAsync()
     {
         // given — an access token that changes between calls, as an OAuth token does
