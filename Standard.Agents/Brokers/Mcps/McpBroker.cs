@@ -156,11 +156,34 @@ public sealed class McpBroker : IMcpBroker
     {
         await EnsureInitializedAsync();
 
+        List<McpTool> tools = [];
+        HashSet<string> visitedCursors = [];
+        string? cursor = null;
+
+        do
+        {
+            ToolListResult? page = await ListToolsPageAsync(cursor);
+
+            tools.AddRange((page?.Tools ?? []).Select(tool =>
+                new McpTool(
+                    tool.Name,
+                    tool.Description ?? string.Empty,
+                    tool.InputSchema?.GetRawText() ?? OpenObjectSchema)));
+
+            cursor = page?.NextCursor;
+        }
+        while (string.IsNullOrEmpty(cursor) is false && visitedCursors.Add(cursor));
+
+        return tools;
+    }
+
+    private async ValueTask<ToolListResult?> ListToolsPageAsync(string? cursor)
+    {
         JsonRpcRequest jsonRpcRequest = new(
             JsonRpc: JsonRpcVersion,
             Id: Interlocked.Increment(ref this.requestId),
             Method: ToolsListMethod,
-            Params: null);
+            Params: cursor is null ? null : new ToolListParams(cursor));
 
         JsonRpcToolListResponse jsonRpcResponse =
             await PostAsync<JsonRpcRequest, JsonRpcToolListResponse>(
@@ -172,11 +195,7 @@ public sealed class McpBroker : IMcpBroker
             throw new HttpRequestException(jsonRpcResponse.Error.Message);
         }
 
-        return [.. (jsonRpcResponse.Result?.Tools ?? []).Select(tool =>
-            new McpTool(
-                tool.Name,
-                tool.Description ?? string.Empty,
-                tool.InputSchema?.GetRawText() ?? OpenObjectSchema))];
+        return jsonRpcResponse.Result;
     }
 
     private async ValueTask EnsureInitializedAsync()
