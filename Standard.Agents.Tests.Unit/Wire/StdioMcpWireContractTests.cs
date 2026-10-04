@@ -1,0 +1,212 @@
+// ---------------------------------------------------------------
+// Copyright (c) Hassan Habib All rights reserved.
+// Licensed under the The Standard Software License (TSSL)
+// ---------------------------------------------------------------
+
+using System.Text.Json.Nodes;
+using FluentAssertions;
+using Standard.Agents.Brokers.Mcps;
+using Standard.Agents.Models.Brokers.Mcps;
+using Xunit;
+
+namespace Standard.Agents.Tests.Unit.Wire;
+
+// The MCP stdio wire, read from the lines the real broker writes: one JSON-RPC message per line,
+// the lifecycle first, notifications skipped, a server's own requests answered.
+public class StdioMcpWireContractTests
+{
+    private const string InitializeResult =
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-06-18\","
+            + "\"capabilities\":{\"tools\":{}},\"serverInfo\":{\"name\":\"students\",\"version\":\"1.0.0\"}}}";
+
+    private static IEnumerable<string> Answer(JsonNode message, params string[] lines) =>
+        lines.Select(line => line.Replace("{id}", message["id"]!.ToJsonString()));
+
+    [Fact]
+    public async Task ShouldInitializeOverStandardInputBeforeTheFirstRequestAsync()
+    {
+        // given — a server that expects the lifecycle before anything else
+        var server = new ScriptedStdioServer(message =>
+            message["method"]!.GetValue<string>() switch
+            {
+                "initialize" => Answer(message, InitializeResult.Replace("\"id\":1", "\"id\":{id}")),
+                "notifications/initialized" => [],
+                _ => Answer(message,
+                    "{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{\"tools\":[{\"name\":\"find_student\","
+                        + "\"description\":\"Finds a student by their id.\","
+                        + "\"inputSchema\":{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"integer\"}}}}]}}")
+            });
+
+        var broker = new StdioMcpBroker(server.Output, server.Input, timeoutSeconds: 30);
+
+        var expectedTools = new List<McpTool>
+        {
+            new(
+                Name: "find_student",
+                Description: "Finds a student by their id.",
+                InputSchemaJson: "{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"integer\"}}}")
+        };
+
+        // when
+        IReadOnlyList<McpTool> actualTools = await broker.ListToolsAsync();
+
+        // then — initialize, the initialized notification, then the listing; one message per line
+        server.Lines.Select(line => JsonNode.Parse(line)!["method"]!.GetValue<string>()).Should().Equal(
+            "initialize",
+            "notifications/initialized",
+            "tools/list");
+
+        server.Lines.Should().AllSatisfy(line => line.Should().NotContain("\n"));
+        actualTools.Should().BeEquivalentTo(expectedTools);
+    }
+
+    [Fact]
+    public async Task ShouldSkipWhatIsNotItsAnswerAndAnswerThePingsOfTheServerAsync()
+    {
+        // given — a server that, before answering, logs a line to its output, sends a
+        // notification, and pings the client with an id that collides with the client's own
+        var server = new ScriptedStdioServer(message =>
+            message["method"]?.GetValue<string>() switch
+            {
+                "initialize" => Answer(message, InitializeResult.Replace("\"id\":1", "\"id\":{id}")),
+                "tools/list" => Answer(message,
+                    "server ready on stdio",
+                    "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/message\",\"params\":{\"level\":\"info\"}}",
+                    "{\"jsonrpc\":\"2.0\",\"id\":{id},\"method\":\"ping\"}",
+                    "{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{\"tools\":[{\"name\":\"find_student\"}]}}"),
+                _ => []
+            });
+
+        var broker = new StdioMcpBroker(server.Output, server.Input, timeoutSeconds: 30);
+
+        // when
+        IReadOnlyList<McpTool> actualTools = await broker.ListToolsAsync();
+
+        // then — the answer is found past the noise, and the ping was answered
+        actualTools.Should().ContainSingle(tool => tool.Name == "find_student");
+
+        JsonNode pong = JsonNode.Parse(server.Lines[^1])!;
+        pong["id"]!.GetValue<int>().Should().Be(2);
+        pong["result"].Should().BeOfType<JsonObject>();
+        pong["method"].Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ShouldCallAToolWithItsArgumentsAndReadEveryKindOfContentAsync()
+    {
+        // given — a tool that answers with text, an embedded resource and a link
+        var server = new ScriptedStdioServer(message =>
+            message["method"]?.GetValue<string>() switch
+            {
+                "initialize" => Answer(message, InitializeResult.Replace("\"id\":1", "\"id\":{id}")),
+                "tools/call" => Answer(message,
+                    "{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{\"content\":["
+                        + "{\"type\":\"text\",\"text\":\"student: \"},"
+                        + "{\"type\":\"resource\",\"resource\":{\"uri\":\"students://1\",\"text\":\"Hassan\"}},"
+                        + "{\"type\":\"resource_link\",\"uri\":\"file:///1.json\",\"name\":\"record\"}]}}"),
+                _ => []
+            });
+
+        var broker = new StdioMcpBroker(server.Output, server.Input, timeoutSeconds: 30);
+
+        // when
+        string actualText = await broker.CallAsync("find_student", "{\"id\":1,\"deep\":{\"n\":2}}");
+
+        // then — the arguments travel as the object the model wrote, and nothing returned is dropped
+        JsonNode call = JsonNode.Parse(server.Lines[^1])!;
+        call["method"]!.GetValue<string>().Should().Be("tools/call");
+        call["params"]!["name"]!.GetValue<string>().Should().Be("find_student");
+        call["params"]!["arguments"]!["id"]!.GetValue<int>().Should().Be(1);
+        call["params"]!["arguments"]!["deep"]!["n"]!.GetValue<int>().Should().Be(2);
+
+        actualText.Should().Be("student: Hassan[resource_link record: file:///1.json]");
+    }
+
+    [Fact]
+    public async Task ShouldThrowHttpRequestExceptionOnAJsonRpcErrorOverStandardInputAsync()
+    {
+        // given — a server that refuses the call with a protocol error
+        var server = new ScriptedStdioServer(message =>
+            message["method"]?.GetValue<string>() switch
+            {
+                "initialize" => Answer(message, InitializeResult.Replace("\"id\":1", "\"id\":{id}")),
+                "tools/call" => Answer(message,
+                    "{\"jsonrpc\":\"2.0\",\"id\":{id},\"error\":{\"code\":-32602,\"message\":\"unknown tool\"}}"),
+                _ => []
+            });
+
+        var broker = new StdioMcpBroker(server.Output, server.Input, timeoutSeconds: 30);
+
+        // when
+        Func<Task> callAsync = async () => await broker.CallAsync("nope", "{}");
+
+        // then — the server's own words, as the same native exception the HTTP broker raises,
+        // so the foundation localizes both transports alike
+        (await callAsync.Should().ThrowAsync<HttpRequestException>())
+            .WithMessage("unknown tool");
+    }
+
+    [Fact]
+    public async Task ShouldFollowTheCursorOverStandardInputUntilTheCatalogEndsAsync()
+    {
+        // given — a server that pages its catalog
+        var server = new ScriptedStdioServer(message =>
+            (message["method"]?.GetValue<string>(), message["params"]?["cursor"]?.GetValue<string>()) switch
+            {
+                ("initialize", _) => Answer(message, InitializeResult.Replace("\"id\":1", "\"id\":{id}")),
+                ("tools/list", null) => Answer(message,
+                    "{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{\"tools\":[{\"name\":\"first\"}],\"nextCursor\":\"page-2\"}}"),
+                ("tools/list", "page-2") => Answer(message,
+                    "{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{\"tools\":[{\"name\":\"second\"}]}}"),
+                _ => []
+            });
+
+        var broker = new StdioMcpBroker(server.Output, server.Input, timeoutSeconds: 30);
+
+        // when
+        IReadOnlyList<McpTool> actualTools = await broker.ListToolsAsync();
+
+        // then
+        actualTools.Select(tool => tool.Name).Should().Equal("first", "second");
+    }
+
+    [Fact]
+    public async Task ShouldCarryOnWhenTheServerHasNoInitializeOverStandardInputAsync()
+    {
+        // given — a server older than the lifecycle: it knows its tools, not initialize
+        var server = new ScriptedStdioServer(message =>
+            message["method"]?.GetValue<string>() switch
+            {
+                "initialize" => Answer(message,
+                    "{\"jsonrpc\":\"2.0\",\"id\":{id},\"error\":{\"code\":-32601,\"message\":\"Method not found\"}}"),
+                "tools/list" => Answer(message,
+                    "{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{\"tools\":[{\"name\":\"lookup\"}]}}"),
+                _ => []
+            });
+
+        var broker = new StdioMcpBroker(server.Output, server.Input, timeoutSeconds: 30);
+
+        // when
+        IReadOnlyList<McpTool> actualTools = await broker.ListToolsAsync();
+
+        // then — its tools still reach the agent, and nothing announces a session that never opened
+        actualTools.Should().ContainSingle(tool => tool.Name == "lookup");
+        server.Lines.Should().NotContain(line => line.Contains("notifications/initialized"));
+    }
+
+    [Fact]
+    public async Task ShouldThrowHttpRequestExceptionWhenTheServerEndsItsOutputAsync()
+    {
+        // given — a server process that exits before it answers anything
+        var server = new ScriptedStdioServer(_ => []);
+        server.End();
+
+        var broker = new StdioMcpBroker(server.Output, server.Input, timeoutSeconds: 30);
+
+        // when
+        Func<Task> listToolsAsync = async () => await broker.ListToolsAsync();
+
+        // then — a dependency that went away, raised as the HTTP broker raises one
+        await listToolsAsync.Should().ThrowAsync<HttpRequestException>();
+    }
+}
