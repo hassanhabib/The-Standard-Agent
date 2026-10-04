@@ -84,16 +84,23 @@ public sealed partial class StandardAgent
             ]),
         new("memory", "A memory file, or false to run without one.", [StringKind, BooleanKind], "\"memory.txt\"",
             BooleanMustBeFalse: true),
-        new("mcp", "An MCP server by URL, or with its auth, or several.", [StringKind, ObjectKind, ArrayKind],
+        new("mcp", "An MCP server by URL, or with its auth, or a command that starts one, or several.",
+            [StringKind, ObjectKind, ArrayKind],
             "\"http://localhost:8080/mcp/\"",
             Properties:
             [
-                new("endpointUrl", StringKind, Required: true),
+                new("endpointUrl", StringKind),
                 new("relativeUrl", StringKind),
                 new("timeoutSeconds", IntegerKind, Positive: true),
                 new("bearerToken", StringKind),
                 new("apiKey", StringKind),
-                new("apiKeyHeader", StringKind)
+                new("apiKeyHeader", StringKind),
+                new("command", StringKind),
+                new("arguments", ArrayKind),
+                new("args", ArrayKind),
+                new("environmentVariables", ObjectKind),
+                new("env", ObjectKind),
+                new("workingDirectory", StringKind)
             ],
             ItemsSection: "mcp"),
         new("agents", "A folder of agent documents, or inline members, for handoffs.", [StringKind, ArrayKind],

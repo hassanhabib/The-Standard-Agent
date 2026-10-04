@@ -499,6 +499,20 @@ public partial class StandardAgent
     // through UseMcp, never through the document.
     private static void ApplyMcpServer(StandardAgent agent, JsonNode? server, string key)
     {
+        if (server is JsonObject serverEntry && serverEntry.ContainsKey("command"))
+        {
+            Shaped(server, key);
+
+            agent.McpProcess(
+                Text(server, key, "command"),
+                McpArguments(serverEntry, key),
+                McpEnvironmentVariables(serverEntry, key),
+                OptionalText(server, "workingDirectory"),
+                PositiveWhole(server, key, "timeoutSeconds", fallback: 30));
+
+            return;
+        }
+
         if (server is JsonObject)
         {
             Shaped(server, key);
@@ -515,6 +529,37 @@ public partial class StandardAgent
         }
 
         agent.Mcp(Text(server, key));
+    }
+
+    // A process server takes the builder's words, or the words MCP clients' own configuration
+    // files already use, so a server's published setup pastes in unchanged.
+    private static string[] McpArguments(JsonObject server, string key)
+    {
+        JsonNode? arguments = server["arguments"] ?? server["args"];
+
+        return arguments is null
+            ? []
+            : [.. (arguments as JsonArray
+                ?? throw new InvalidAgentConfigurationException($"'{key}' arguments must be an array."))
+                    .Select(argument => Text(argument, key))];
+    }
+
+    private static Dictionary<string, string>? McpEnvironmentVariables(JsonObject server, string key)
+    {
+        JsonNode? environmentVariables = server["environmentVariables"] ?? server["env"];
+
+        if (environmentVariables is null)
+        {
+            return null;
+        }
+
+        JsonObject variables = environmentVariables as JsonObject
+            ?? throw new InvalidAgentConfigurationException(
+                $"'{key}' environment variables must be an object.");
+
+        return variables.ToDictionary(
+            variable => variable.Key,
+            variable => Text(variable.Value, key));
     }
 
     private static string? OptionalText(JsonNode? node, string property) =>

@@ -51,7 +51,8 @@ public partial class StandardAgentFromJsonTests
     [InlineData(
         """{ "mcp": { "endpointUrl": "http://mcp.test/", "token": "t" } }""",
         "'mcp' does not accept 'token'. It accepts: endpointUrl, relativeUrl, timeoutSeconds, "
-            + "bearerToken, apiKey, apiKeyHeader.")]
+            + "bearerToken, apiKey, apiKeyHeader, command, arguments, args, environmentVariables, env, "
+            + "workingDirectory.")]
     [InlineData(
         """{ "redact": { "rules": [ { "label": "SSN", "regex": "\\d+" } ] } }""",
         "'redact.rules' does not accept 'regex'. It accepts: label, pattern.")]
