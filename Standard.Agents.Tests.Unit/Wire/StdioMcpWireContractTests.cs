@@ -59,4 +59,35 @@ public class StdioMcpWireContractTests
         server.Lines.Should().AllSatisfy(line => line.Should().NotContain("\n"));
         actualTools.Should().BeEquivalentTo(expectedTools);
     }
+
+    [Fact]
+    public async Task ShouldSkipWhatIsNotItsAnswerAndAnswerThePingsOfTheServerAsync()
+    {
+        // given — a server that, before answering, logs a line to its output, sends a
+        // notification, and pings the client with an id that collides with the client's own
+        var server = new ScriptedStdioServer(message =>
+            message["method"]?.GetValue<string>() switch
+            {
+                "initialize" => Answer(message, InitializeResult.Replace("\"id\":1", "\"id\":{id}")),
+                "tools/list" => Answer(message,
+                    "server ready on stdio",
+                    "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/message\",\"params\":{\"level\":\"info\"}}",
+                    "{\"jsonrpc\":\"2.0\",\"id\":{id},\"method\":\"ping\"}",
+                    "{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{\"tools\":[{\"name\":\"find_student\"}]}}"),
+                _ => []
+            });
+
+        var broker = new StdioMcpBroker(server.Output, server.Input, timeoutSeconds: 30);
+
+        // when
+        IReadOnlyList<McpTool> actualTools = await broker.ListToolsAsync();
+
+        // then — the answer is found past the noise, and the ping was answered
+        actualTools.Should().ContainSingle(tool => tool.Name == "find_student");
+
+        JsonNode pong = JsonNode.Parse(server.Lines[^1])!;
+        pong["id"]!.GetValue<int>().Should().Be(2);
+        pong["result"].Should().BeOfType<JsonObject>();
+        pong["method"].Should().BeNull();
+    }
 }
