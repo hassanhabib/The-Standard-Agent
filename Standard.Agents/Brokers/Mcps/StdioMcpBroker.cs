@@ -70,14 +70,30 @@ public sealed class StdioMcpBroker : IMcpBroker
 
     public async ValueTask<IReadOnlyList<McpTool>> ListToolsAsync()
     {
-        JsonNode? result = await RequestAsync(ToolsListMethod, parameters: null);
-        JsonArray tools = result?["tools"] as JsonArray ?? [];
+        List<McpTool> tools = [];
+        HashSet<string> visitedCursors = [];
+        string? cursor = null;
 
-        return [.. tools.Select(tool =>
-            new McpTool(
-                tool!["name"]!.GetValue<string>(),
-                tool["description"]?.GetValue<string>() ?? string.Empty,
-                tool["inputSchema"]?.ToJsonString() ?? OpenObjectSchema))];
+        do
+        {
+            JsonObject? parameters = cursor is null
+                ? null
+                : new JsonObject { ["cursor"] = cursor };
+
+            JsonNode? page = await RequestAsync(ToolsListMethod, parameters);
+            JsonArray pageTools = page?["tools"] as JsonArray ?? [];
+
+            tools.AddRange(pageTools.Select(tool =>
+                new McpTool(
+                    tool!["name"]!.GetValue<string>(),
+                    tool["description"]?.GetValue<string>() ?? string.Empty,
+                    tool["inputSchema"]?.ToJsonString() ?? OpenObjectSchema)));
+
+            cursor = page?["nextCursor"]?.GetValue<string>();
+        }
+        while (string.IsNullOrEmpty(cursor) is false && visitedCursors.Add(cursor));
+
+        return tools;
     }
 
     private async ValueTask<JsonNode?> RequestAsync(string method, JsonNode? parameters)
