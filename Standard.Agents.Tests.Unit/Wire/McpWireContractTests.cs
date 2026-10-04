@@ -122,6 +122,24 @@ public class McpWireContractTests
     }
 
     [Fact]
+    public async Task ShouldAcceptJsonAndAnEventStreamOnEveryRequestAsync()
+    {
+        // given — a server free to answer either way, as the Streamable HTTP transport allows
+        ScriptedServerHandler server = ScriptedServerHandler.Answering(
+            "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"tools\":[]}}");
+
+        McpBroker broker = CreateBroker(server);
+
+        // when
+        await broker.ListToolsAsync();
+
+        // then — every request says it reads both
+        server.Requests.Should().AllSatisfy(request =>
+            request.Headers.Accept.Select(accept => accept.MediaType)
+                .Should().Contain(["application/json", "text/event-stream"]));
+    }
+
+    [Fact]
     public async Task ShouldAskTheTokenProviderOnEveryRequestAsync()
     {
         // given — an access token that changes between calls, as an OAuth token does
