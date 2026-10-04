@@ -536,6 +536,23 @@ public sealed partial class StandardAgent : IAgent
             bearerTokenProvider)));
 
     /// <summary>
+    /// Starts an MCP server as a process and speaks to it over its standard input and output.
+    /// </summary>
+    /// <param name="command">The program to start.</param>
+    /// <param name="arguments">The arguments to start it with.</param>
+    /// <param name="environmentVariables">Environment variables to start it with.</param>
+    /// <param name="workingDirectory">The directory to start it in.</param>
+    /// <param name="timeoutSeconds">How long one request may wait for its answer.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent McpProcess(
+        string command,
+        IEnumerable<string>? arguments = null,
+        IReadOnlyDictionary<string, string>? environmentVariables = null,
+        string? workingDirectory = null,
+        int timeoutSeconds = 30) =>
+        throw new NotImplementedException();
+
+    /// <summary>
     /// Registers one tool the agent may call. It is only advertised to the brain when it carries a
     /// description and a skill contains the <c>{{tools}}</c> marker (SPEC.md §6.1); otherwise it
     /// stays available but unlisted.
