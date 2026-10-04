@@ -20,6 +20,10 @@ public sealed class McpBroker : IMcpBroker
     private const string JsonRpcVersion = "2.0";
     private const string ToolsCallMethod = "tools/call";
     private const string ToolsListMethod = "tools/list";
+    private const string InitializeMethod = "initialize";
+    private const string InitializedMethod = "notifications/initialized";
+    private const string LatestProtocolVersion = "2025-06-18";
+    private const string ClientName = "Standard.Agents";
     private const string OpenObjectSchema = "{}";
 
     private static readonly JsonSerializerOptions jsonOptions = new()
@@ -31,7 +35,9 @@ public sealed class McpBroker : IMcpBroker
 
     private readonly HttpClient httpClient;
     private readonly string relativeUrl;
+    private readonly SemaphoreSlim initializationLock = new(initialCount: 1, maxCount: 1);
     private int requestId;
+    private bool isInitialized;
 
     public McpBroker(
         string endpointUrl,
@@ -122,6 +128,8 @@ public sealed class McpBroker : IMcpBroker
 
     public async ValueTask<string> CallAsync(string name, string argumentsJson)
     {
+        await EnsureInitializedAsync();
+
         JsonRpcRequest jsonRpcRequest = new(
             JsonRpc: JsonRpcVersion,
             Id: Interlocked.Increment(ref this.requestId),
@@ -140,6 +148,8 @@ public sealed class McpBroker : IMcpBroker
 
     public async ValueTask<IReadOnlyList<McpTool>> ListToolsAsync()
     {
+        await EnsureInitializedAsync();
+
         JsonRpcRequest jsonRpcRequest = new(
             JsonRpc: JsonRpcVersion,
             Id: Interlocked.Increment(ref this.requestId),
@@ -163,6 +173,61 @@ public sealed class McpBroker : IMcpBroker
                 tool.InputSchema?.GetRawText() ?? OpenObjectSchema))];
     }
 
+    private async ValueTask EnsureInitializedAsync()
+    {
+        if (this.isInitialized)
+        {
+            return;
+        }
+
+        await this.initializationLock.WaitAsync();
+
+        try
+        {
+            if (this.isInitialized is false)
+            {
+                await InitializeAsync();
+                this.isInitialized = true;
+            }
+        }
+        finally
+        {
+            this.initializationLock.Release();
+        }
+    }
+
+    private async ValueTask InitializeAsync()
+    {
+        JsonRpcRequest initializeRequest = new(
+            JsonRpc: JsonRpcVersion,
+            Id: Interlocked.Increment(ref this.requestId),
+            Method: InitializeMethod,
+            Params: new InitializeParams(
+                ProtocolVersion: LatestProtocolVersion,
+                Capabilities: new JsonObject(),
+                ClientInfo: new ClientInfo(
+                    Name: ClientName,
+                    Version: typeof(McpBroker).Assembly.GetName().Version?.ToString() ?? string.Empty)));
+
+        JsonRpcInitializeResponse initializeResponse =
+            await PostAsync<JsonRpcRequest, JsonRpcInitializeResponse>(
+                this.relativeUrl,
+                initializeRequest);
+
+        if (initializeResponse.Error is not null)
+        {
+            throw new HttpRequestException(initializeResponse.Error.Message);
+        }
+
+        JsonRpcRequest initializedNotification = new(
+            JsonRpc: JsonRpcVersion,
+            Id: null,
+            Method: InitializedMethod,
+            Params: null);
+
+        await NotifyAsync(this.relativeUrl, initializedNotification);
+    }
+
     private static string ToText(JsonRpcResponse jsonRpcResponse)
     {
         if (jsonRpcResponse.Error is not null)
@@ -178,19 +243,10 @@ public sealed class McpBroker : IMcpBroker
         string relativeUrl,
         TContent content)
     {
-        string requestJson = JsonSerializer.Serialize(content, jsonOptions);
-
-        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, relativeUrl)
-        {
-            Content = new StringContent(requestJson, Encoding.UTF8, JsonMediaType)
-        };
-
         using var timeout = new CancellationTokenSource(this.httpClient.Timeout);
 
-        using HttpResponseMessage httpResponse = await this.httpClient.SendAsync(
-            httpRequest,
-            HttpCompletionOption.ResponseHeadersRead,
-            timeout.Token);
+        using HttpResponseMessage httpResponse =
+            await SendAsync(relativeUrl, content, timeout.Token);
 
         await ValidationService.ValidateHttpResponseAsync(httpResponse);
 
@@ -199,6 +255,32 @@ public sealed class McpBroker : IMcpBroker
             : await httpResponse.Content.ReadAsStringAsync(timeout.Token);
 
         return JsonSerializer.Deserialize<TResult>(responseJson, jsonOptions)!;
+    }
+
+    private async ValueTask NotifyAsync<TContent>(string relativeUrl, TContent content)
+    {
+        using var timeout = new CancellationTokenSource(this.httpClient.Timeout);
+
+        using HttpResponseMessage httpResponse =
+            await SendAsync(relativeUrl, content, timeout.Token);
+    }
+
+    private async ValueTask<HttpResponseMessage> SendAsync<TContent>(
+        string relativeUrl,
+        TContent content,
+        CancellationToken cancellationToken)
+    {
+        string requestJson = JsonSerializer.Serialize(content, jsonOptions);
+
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, relativeUrl)
+        {
+            Content = new StringContent(requestJson, Encoding.UTF8, JsonMediaType)
+        };
+
+        return await this.httpClient.SendAsync(
+            httpRequest,
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken);
     }
 
     private static bool IsEventStream(HttpResponseMessage httpResponse) =>
