@@ -6,7 +6,8 @@
 namespace Standard.Agents.Models.Brokers.Mcps;
 
 internal sealed record ToolListResult(
-    IReadOnlyList<ToolListEntry> Tools);
+    IReadOnlyList<ToolListEntry> Tools,
+    string? NextCursor);
 
 // The schema rides as the raw element it arrived as: the broker hands it on as text and never
 // interprets it, so a server's own vocabulary reaches the model unchanged.
