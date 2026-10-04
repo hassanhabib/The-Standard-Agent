@@ -140,6 +140,40 @@ public class McpWireContractTests
     }
 
     [Fact]
+    public async Task ShouldReadTheReplyFromAnEventStreamAsync()
+    {
+        // given — a server answering as the official SDKs do: an event stream, where a
+        // notification may arrive before the response it carries
+        ScriptedServerHandler server = ScriptedServerHandler.Answering(
+            "event: message\n"
+                + "data: {\"jsonrpc\":\"2.0\",\"method\":\"notifications/message\","
+                + "\"params\":{\"level\":\"info\",\"data\":\"listing\"}}\n"
+                + "\n"
+                + "event: message\n"
+                + "data: {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"tools\":[{\"name\":\"find_student\","
+                + "\"description\":\"Finds a student by their id.\","
+                + "\"inputSchema\":{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"integer\"}}}}]}}\n"
+                + "\n",
+            mediaType: "text/event-stream");
+
+        McpBroker broker = CreateBroker(server);
+
+        var expectedTools = new List<McpTool>
+        {
+            new(
+                Name: "find_student",
+                Description: "Finds a student by their id.",
+                InputSchemaJson: "{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"integer\"}}}")
+        };
+
+        // when
+        IReadOnlyList<McpTool> actualTools = await broker.ListToolsAsync();
+
+        // then — the response is found past the notification, the schema whole
+        actualTools.Should().BeEquivalentTo(expectedTools);
+    }
+
+    [Fact]
     public async Task ShouldAskTheTokenProviderOnEveryRequestAsync()
     {
         // given — an access token that changes between calls, as an OAuth token does
