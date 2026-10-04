@@ -24,6 +24,8 @@ public sealed class McpBroker : IMcpBroker
     private const string InitializedMethod = "notifications/initialized";
     private const string LatestProtocolVersion = "2025-06-18";
     private const string ClientName = "Standard.Agents";
+    private const string SessionIdHeader = "Mcp-Session-Id";
+    private const string ProtocolVersionHeader = "MCP-Protocol-Version";
     private const string OpenObjectSchema = "{}";
 
     private static readonly JsonSerializerOptions jsonOptions = new()
@@ -38,6 +40,8 @@ public sealed class McpBroker : IMcpBroker
     private readonly SemaphoreSlim initializationLock = new(initialCount: 1, maxCount: 1);
     private int requestId;
     private bool isInitialized;
+    private string? sessionId;
+    private string? protocolVersion;
 
     public McpBroker(
         string endpointUrl,
@@ -209,15 +213,26 @@ public sealed class McpBroker : IMcpBroker
                     Name: ClientName,
                     Version: typeof(McpBroker).Assembly.GetName().Version?.ToString() ?? string.Empty)));
 
+        using var timeout = new CancellationTokenSource(this.httpClient.Timeout);
+
+        using HttpResponseMessage initializeHttpResponse =
+            await SendAsync(this.relativeUrl, initializeRequest, timeout.Token);
+
         JsonRpcInitializeResponse initializeResponse =
-            await PostAsync<JsonRpcRequest, JsonRpcInitializeResponse>(
-                this.relativeUrl,
-                initializeRequest);
+            await ReadAsync<JsonRpcInitializeResponse>(initializeHttpResponse, timeout.Token);
 
         if (initializeResponse.Error is not null)
         {
             throw new HttpRequestException(initializeResponse.Error.Message);
         }
+
+        this.sessionId = initializeHttpResponse.Headers.TryGetValues(
+            SessionIdHeader,
+            out IEnumerable<string>? sessionIds)
+                ? sessionIds.First()
+                : null;
+
+        this.protocolVersion = initializeResponse.Result?.ProtocolVersion;
 
         JsonRpcRequest initializedNotification = new(
             JsonRpc: JsonRpcVersion,
@@ -248,11 +263,18 @@ public sealed class McpBroker : IMcpBroker
         using HttpResponseMessage httpResponse =
             await SendAsync(relativeUrl, content, timeout.Token);
 
+        return await ReadAsync<TResult>(httpResponse, timeout.Token);
+    }
+
+    private static async ValueTask<TResult> ReadAsync<TResult>(
+        HttpResponseMessage httpResponse,
+        CancellationToken cancellationToken)
+    {
         await ValidationService.ValidateHttpResponseAsync(httpResponse);
 
         string responseJson = IsEventStream(httpResponse)
-            ? await ReadResponseFromEventStreamAsync(httpResponse, timeout.Token)
-            : await httpResponse.Content.ReadAsStringAsync(timeout.Token);
+            ? await ReadResponseFromEventStreamAsync(httpResponse, cancellationToken)
+            : await httpResponse.Content.ReadAsStringAsync(cancellationToken);
 
         return JsonSerializer.Deserialize<TResult>(responseJson, jsonOptions)!;
     }
@@ -276,6 +298,16 @@ public sealed class McpBroker : IMcpBroker
         {
             Content = new StringContent(requestJson, Encoding.UTF8, JsonMediaType)
         };
+
+        if (this.sessionId is not null)
+        {
+            httpRequest.Headers.Add(SessionIdHeader, this.sessionId);
+        }
+
+        if (this.protocolVersion is not null)
+        {
+            httpRequest.Headers.Add(ProtocolVersionHeader, this.protocolVersion);
+        }
 
         return await this.httpClient.SendAsync(
             httpRequest,
