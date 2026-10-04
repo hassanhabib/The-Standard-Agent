@@ -331,6 +331,43 @@ public class McpWireContractTests
     }
 
     [Fact]
+    public async Task ShouldFollowTheCursorUntilTheCatalogEndsAsync()
+    {
+        // given — a server that pages its catalog, as servers with many tools do
+        var server = new ScriptedServerHandler((_, body) =>
+        {
+            JsonNode message = JsonNode.Parse(body)!;
+            string? cursor = message["params"]?["cursor"]?.GetValue<string>();
+
+            return message["method"]!.GetValue<string>() switch
+            {
+                "tools/list" when cursor is null => ScriptedServerHandler.Json(
+                    HttpStatusCode.OK,
+                    "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"tools\":[{\"name\":\"first\"}],"
+                        + "\"nextCursor\":\"page-2\"}}"),
+
+                "tools/list" when cursor is "page-2" => ScriptedServerHandler.Json(
+                    HttpStatusCode.OK,
+                    "{\"jsonrpc\":\"2.0\",\"id\":3,\"result\":{\"tools\":[{\"name\":\"second\"}]}}"),
+
+                _ => ScriptedServerHandler.Json(
+                    HttpStatusCode.OK,
+                    "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-06-18\"}}")
+            };
+        });
+
+        McpBroker broker = CreateBroker(server);
+
+        // when
+        IReadOnlyList<McpTool> actualTools = await broker.ListToolsAsync();
+
+        // then — every page reaches the agent, in order, and the walk stops where the server says
+        actualTools.Select(tool => tool.Name).Should().Equal("first", "second");
+
+        server.Bodies.Count(body => body.Contains("tools/list")).Should().Be(2);
+    }
+
+    [Fact]
     public async Task ShouldAskTheTokenProviderOnEveryRequestAsync()
     {
         // given — an access token that changes between calls, as an OAuth token does
