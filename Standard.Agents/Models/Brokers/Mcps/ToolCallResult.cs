@@ -6,4 +6,5 @@
 namespace Standard.Agents.Models.Brokers.Mcps;
 
 internal sealed record ToolCallResult(
-    IReadOnlyList<ToolCallContent> Content);
+    IReadOnlyList<ToolCallContent>? Content,
+    System.Text.Json.JsonElement? StructuredContent);

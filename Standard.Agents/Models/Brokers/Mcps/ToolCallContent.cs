@@ -7,4 +7,12 @@ namespace Standard.Agents.Models.Brokers.Mcps;
 
 internal sealed record ToolCallContent(
     string Type,
-    string Text);
+    string? Text,
+    EmbeddedResource? Resource,
+    string? Uri,
+    string? Name,
+    string? MimeType);
+
+internal sealed record EmbeddedResource(
+    string? Uri,
+    string? Text);

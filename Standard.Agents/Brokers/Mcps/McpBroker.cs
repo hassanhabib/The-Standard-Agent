@@ -276,8 +276,23 @@ public sealed class McpBroker : IMcpBroker
             throw new HttpRequestException(jsonRpcResponse.Error.Message);
         }
 
-        return string.Concat(
-            jsonRpcResponse.Result!.Content.Select(content => content.Text));
+        string text = string.Concat(
+            (jsonRpcResponse.Result?.Content ?? []).Select(ToText));
+
+        return text.Length is 0 && jsonRpcResponse.Result?.StructuredContent is JsonElement structuredContent
+            ? structuredContent.GetRawText()
+            : text;
+    }
+
+    private static string ToText(ToolCallContent content)
+    {
+        return content.Type switch
+        {
+            "text" => content.Text ?? string.Empty,
+            "resource" => content.Resource?.Text ?? $"[resource {content.Resource?.Uri}]",
+            "resource_link" => $"[resource_link {content.Name}: {content.Uri}]",
+            _ => $"[{content.Type} {content.MimeType}]"
+        };
     }
 
     private async ValueTask<TResult> PostAsync<TContent, TResult>(
