@@ -115,11 +115,14 @@ upgrade** (real tokenized full-text instead of full-prompt substring), with no i
 
 ## Non-goals for v1 (deliberate)
 
-- **No embeddings / vector / semantic search yet.** That would change the *result shape* (scored,
-  chunked, citable) and pull in an embedding dependency — a real evolution of the Data contract, and
-  therefore a **SPEC** conversation, not something to smuggle into an adapter. Full-text search
-  covers a lot of ground first. When we do it, it's `KnowledgeResult { Text, Score, Source }` + an
+- **No embeddings / vector / semantic search yet.** That would pull in an embedding dependency — a
+  real evolution of the Data contract, and therefore a **SPEC** conversation, not something to
+  smuggle into an adapter. Full-text search covers a lot of ground first. When we do it, it's an
   `IEmbeddingBroker`, designed on purpose.
+- **The result shape landed in 6.0.0 (SPEC 1.18).** `KnowledgeResult { Text, Score, Source }` and
+  `ISourcedKnowledgeBroker` sit beside the string broker, which still works, and `.CiteKnowledge()`
+  credits the sources that grounded an answer. An adapter that knows a row's title or URL can
+  implement the sourced broker; the existing ones keep returning text and are simply never cited.
 - **No ingestion/indexing in the broker.** Brokers *read* (and memory appends). Bulk-loading a
   knowledge store (chunk → index) is an out-of-band concern — a small indexer/CLI later. The broker
   stays a clean read seam.

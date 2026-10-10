@@ -67,4 +67,12 @@ public sealed record PromptRequest
     // is Anthropic's, grammar (GBNF) is llama.cpp's. Carried opaquely, never read by the core,
     // handed to the broker whole — under the core-owned-keys merge rule (§4.4 of the design).
     public string? ProviderOptionsJson { get; init; }
+
+    /// <summary>
+    /// Whether this answer ends with the sources of the knowledge recalled into its run (SPEC.md
+    /// §4.2). Null means the caller expressed no opinion. What the deployment configured wins:
+    /// a deployment that must cite cannot be switched off by a caller, and one that never cites
+    /// cannot be switched on.
+    /// </summary>
+    public bool? CiteKnowledge { get; init; }
 }

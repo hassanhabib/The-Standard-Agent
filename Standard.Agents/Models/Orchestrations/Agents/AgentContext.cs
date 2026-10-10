@@ -29,6 +29,12 @@ public sealed record AgentContext
     public string SystemPrompt { get; init; } = "";
     public IReadOnlyList<string> Observations { get; init; } = [];
 
+    // Where the knowledge recalled into this run came from (SPEC.md §3.2, §3.7): each non-empty
+    // source once, in the order first recalled. Beside the observations rather than inside them,
+    // so the Brain is shown exactly the passages it was always shown, and a citation can be a
+    // fact the run knows rather than a line the model may or may not write (§4.2).
+    public IReadOnlyList<string> GroundingSources { get; init; } = [];
+
     // What a native call asked for and what came back, kept as a pair (SPEC.md §6). Observations
     // alone cannot express this: they are prose, and prose cannot say WHICH call a result answers.
     // On the V0 text path this stays empty and observations remain the whole record, which is the

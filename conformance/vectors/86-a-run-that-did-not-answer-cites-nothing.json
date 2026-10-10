@@ -1,0 +1,17 @@
+{
+  "name": "a-run-that-did-not-answer-cites-nothing",
+  "description": "SPEC.md 4.2 (v1.18): a run that ended Refused, AwaitingInput, AwaitingApproval or Failed is never cited. Recall runs first, so the knowledge was recalled into this run; the Gate then refuses the task, and the refusal is returned exactly, with no line crediting a source for an answer that was never given.",
+  "generatorReplies": ["FINAL: enterprise customers have 90 days"],
+  "tools": {},
+  "prompt": "what is our refund policy for enterprise customers",
+  "knowledge": {
+    "refunds.md": "Refund policy. Enterprise customers may request a refund within 90 days of purchase.",
+    "shipping.md": "Shipping policy. Orders ship within two business days."
+  },
+  "knowledgeMaxResults": 1,
+  "citeKnowledge": true,
+  "gateVerdict": "refuse: out of scope",
+  "expect": {
+    "result": "I'm not able to help with that."
+  }
+}

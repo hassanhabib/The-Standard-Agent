@@ -1,0 +1,20 @@
+{
+  "name": "a-configured-citation-cannot-be-declined-by-a-request",
+  "description": "SPEC.md 4.2 (v1.18): citation obeys the precedence every request field obeys - what the deployment configured wins, then the request, then off. A deployment that must cite, such as one giving regulated answers, configured it with its own prefix; a caller asking for no citation still receives the cited answer.",
+  "generatorReplies": ["FINAL: enterprise customers have 90 days"],
+  "tools": {},
+  "prompt": "what is our refund policy for enterprise customers",
+  "knowledge": {
+    "refunds.md": "Refund policy. Enterprise customers may request a refund within 90 days of purchase.",
+    "shipping.md": "Shipping policy. Orders ship within two business days."
+  },
+  "knowledgeMaxResults": 1,
+  "citeKnowledge": true,
+  "citationPrefix": "Reference: ",
+  "request": {
+    "citeKnowledge": false
+  },
+  "expect": {
+    "result": "enterprise customers have 90 days\n\nReference: refunds.md"
+  }
+}

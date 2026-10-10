@@ -6,6 +6,7 @@
 using FluentAssertions;
 using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Clients.Agents.Exceptions;
+using Standard.Agents.Models.Foundations.Knowledges;
 using Standard.Agents.Tools;
 using Xunit;
 
@@ -74,6 +75,37 @@ public partial class StandardAgentFromJsonTests
         tool.Calls.Should().Be(1);
         actualOutcome.Failure.Should().NotBeNull();
         actualOutcome.Failure!.Code.Should().Be(AgentFailureCodes.GoingInCircles);
+    }
+
+    // Citation is a deployment's decision (SPEC.md §4.2), so it is data: true cites with the
+    // default prefix, a string cites with that prefix. The knowledge itself is code here, the same
+    // way a tool is — a sourced broker is outside the document.
+    [Theory]
+    [InlineData("true", "Source: ")]
+    [InlineData("\"Reference: \"", "Reference: ")]
+    public async Task ShouldCiteKnowledgeFromJsonAsync(string citeKnowledge, string expectedPrefix)
+    {
+        // given
+        IReadOnlyList<KnowledgeResult> knowledgeResults =
+        [
+            new KnowledgeResult
+            {
+                Text = "Enterprise customers may request a refund within 90 days.",
+                Score = 0.9,
+                Source = "Refund Policy"
+            }
+        ];
+
+        StandardAgent agent = StandardAgent
+            .FromJson($$"""{ "citeKnowledge": {{citeKnowledge}} }""")
+            .OnSourcedKnowledge(async query => knowledgeResults)
+            .OnBrain(async (systemPrompt, userPrompt) => "FINAL: 90 days.");
+
+        // when
+        string actualResult = await agent.ProcessPromptAsync("what is the refund window?");
+
+        // then
+        actualResult.Should().Be($"90 days.\n\n{expectedPrefix}Refund Policy");
     }
 
     private sealed class CountingTool : ITool

@@ -353,15 +353,22 @@ public sealed partial class StandardAgent
 
         ISkillService skillService = new SkillService(skills, logging);
 
-        IKnowledgeService knowledgeService = this.knowledgeBroker is null
-            ? new KnowledgeService(
+        IKnowledgeService knowledgeService = (this.sourcedKnowledgeBroker, this.knowledgeBroker) switch
+        {
+            (ISourcedKnowledgeBroker sourcedKnowledgeBroker, _) =>
+                new KnowledgeService(sourcedKnowledgeBroker, logging),
+
+            (_, IKnowledgeBroker knowledgeBroker) =>
+                new KnowledgeService(knowledgeBroker, logging),
+
+            _ => new KnowledgeService(
                 file,
                 Path.GetFullPath(this.knowledgePath),
                 this.knowledgePattern,
                 this.knowledgeMaxResults,
                 logging,
                 this.knowledgeMinScore)
-            : new KnowledgeService(this.knowledgeBroker, logging);
+        };
 
         // One foundation over the remote tools, shared by the two natures that need it: Data
         // advertises what the servers offer, Direction performs what the Brain chose. A single
@@ -503,7 +510,9 @@ public sealed partial class StandardAgent
             this.localToolSelector is null ? null : new ToolSelector(this.localToolSelector),
             Advertised(allTools).Select(tool => tool.Name),
             this.identityResolver is null ? null : new PrincipalResolver(this.identityResolver),
-            this.identicalCallLimit);
+            this.identicalCallLimit,
+            this.citeKnowledge,
+            this.knowledgeCitationPrefix);
     }
 
     // The catalog a "{{tools}}" marker in the agent's Data expands into. Only tools that

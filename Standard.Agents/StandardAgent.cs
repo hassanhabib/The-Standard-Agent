@@ -42,6 +42,7 @@ using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Coordinations.Agents;
 using Standard.Agents.Models.Coordinations.Directions;
 using Standard.Agents.Models.Foundations.Brains;
+using Standard.Agents.Models.Foundations.Knowledges;
 using Standard.Agents.Models.Foundations.Skills;
 using Standard.Agents.Models.Orchestrations.Effects;
 using Standard.Agents.Models.Loggings;
@@ -115,6 +116,12 @@ public sealed partial class StandardAgent : IAgent
     private IGeneratorBroker? generatorBroker;
     private IMemoryBroker? memoryBroker;
     private IKnowledgeBroker? knowledgeBroker;
+    private ISourcedKnowledgeBroker? sourcedKnowledgeBroker;
+
+    // Citation (SPEC.md §4.2): null means the deployment expressed no opinion, which is what lets
+    // a request's choice take effect — the same precedence every request field obeys.
+    private bool? citeKnowledge;
+    private string knowledgeCitationPrefix = "Source: ";
     private IClassifierBroker? classifierBroker;
     private IVerifierBroker? verifierBroker;
     private Func<string, string, ValueTask<string>>? localGateScreen;
@@ -1140,7 +1147,11 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="broker">The knowledge broker to use.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent UseKnowledge(IKnowledgeBroker broker) =>
-        Set(() => this.knowledgeBroker = broker);
+    Set(() =>
+    {
+        this.knowledgeBroker = broker;
+        this.sourcedKnowledgeBroker = null;
+    });
 
     /// <summary>
     /// Retrieves knowledge with your own code — the <b>Custom</b> mode (SPEC.md §4.8). Ranking is
@@ -1149,7 +1160,60 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="retrieve">A <c>query =&gt; passages</c> delegate.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent OnKnowledge(Func<string, ValueTask<IReadOnlyList<string>>> retrieve) =>
-        Set(() => this.knowledgeBroker = new FunctionKnowledgeBroker(retrieve));
+    Set(() =>
+    {
+        this.knowledgeBroker = new FunctionKnowledgeBroker(retrieve);
+        this.sourcedKnowledgeBroker = null;
+    });
+
+    /// <summary>
+    /// Swaps in a knowledge broker that says where each passage came from — the <b>External</b>
+    /// mode for sourced knowledge (SPEC.md §3.7, §4.1). Its passages reach the brain exactly as a
+    /// plain broker's would; their sources ride the run, so <see cref="CiteKnowledge"/> can credit
+    /// them.
+    /// </summary>
+    /// <param name="broker">The sourced knowledge broker to use.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent UseKnowledge(ISourcedKnowledgeBroker broker) =>
+    Set(() =>
+    {
+        this.sourcedKnowledgeBroker = broker;
+        this.knowledgeBroker = null;
+    });
+
+    /// <summary>
+    /// Retrieves sourced knowledge with your own code — the <b>Custom</b> mode (SPEC.md §4.8):
+    /// return the passages relevant to the query, best first, each with the score you ranked it by
+    /// and the source a reader can follow back to it.
+    /// </summary>
+    /// <param name="retrieve">A <c>query =&gt; results</c> delegate.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent OnSourcedKnowledge(
+        Func<string, ValueTask<IReadOnlyList<KnowledgeResult>>> retrieve) =>
+    Set(() =>
+    {
+        this.sourcedKnowledgeBroker = new FunctionSourcedKnowledgeBroker(retrieve);
+        this.knowledgeBroker = null;
+    });
+
+    /// <summary>
+    /// Ends every answer with the sources of the knowledge recalled into its run (SPEC.md §4.2):
+    /// one line per source, made of <paramref name="prefix"/> and the source, after a blank line.
+    /// The model is not asked to cite; the agent cites, after the judge, so the line is a fact
+    /// rather than something the model may or may not write. A run that refused, asked, is waiting
+    /// or failed is never cited, nor is an answer held to a response schema, and a source the
+    /// answer already credits is not repeated. What is configured here wins over a request's
+    /// <see cref="PromptRequest.CiteKnowledge"/>; leave it uncalled to let each request decide.
+    /// </summary>
+    /// <param name="cite">Whether answers are cited. <c>false</c> forbids it for every request.</param>
+    /// <param name="prefix">What each citation line starts with. Defaults to <c>Source: </c>.</param>
+    /// <returns>The same agent, so calls can be chained.</returns>
+    public StandardAgent CiteKnowledge(bool cite = true, string prefix = "Source: ") =>
+    Set(() =>
+    {
+        this.citeKnowledge = cite;
+        this.knowledgeCitationPrefix = prefix;
+    });
 
     /// <summary>
     /// Swaps in a custom classifier broker to back the Gate, replacing the endpoint-backed one set

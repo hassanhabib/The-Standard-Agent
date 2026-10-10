@@ -890,6 +890,45 @@ full-text index — each package's README has the one-time SQL. Now `"how much d
 row containing `"Pro plan pricing: $29/month"`, because full-text matches on tokens and stems where
 the file default's substring match wouldn't.
 
+### Citing what grounded the answer
+
+A bank's policy assistant, a helpdesk answering from runbooks, a coding agent answering from API
+references: each has to tell the reader *where* an answer came from. Asking the model to cite does
+not do it — models cite when they feel like it. So the agent cites, from facts the run already
+holds (SPEC.md §4.2):
+
+```csharp
+var agent = new StandardAgent(url, key, "LLooMA2.0")
+    .Knowledge("Knowledge")
+    .CiteKnowledge();          // ← off unless you ask; .CiteKnowledge(prefix: "Reference: ") to reword
+```
+
+```
+Enterprise customers may request a refund within 90 days.
+
+Source: policies/refunds.md
+```
+
+- **Where a source comes from.** The knowledge folder names each passage by its path relative to
+  the folder, with forward slashes on every platform. A store that knows better — a title, a
+  document URL — implements `ISourcedKnowledgeBroker` (`.UseKnowledge(broker)`) or hands back
+  `KnowledgeResult { Text, Score, Source }` from `.OnSourcedKnowledge(query => ...)`. A plain
+  `IKnowledgeBroker` keeps working unchanged; its passages simply have no source, and a passage
+  with no source is never cited.
+- **What the model sees does not change.** The passage text is the observation, exactly as before;
+  the source rides the run beside it, so turning citation on never changes what the brain is shown.
+- **When it cites.** Only when the run **answered**: never on a refusal, a question back, a held
+  act or a failure. Never inside an answer held to a response schema, because a line after JSON
+  breaks the JSON. Once per source, in the order recalled, skipping a source the answer already
+  credits. After the judge, so the judge scores the model's words, not the agent's.
+- **One answer everywhere.** `ProcessPromptAsync`, `RunAsync`, the streamed `Response` and the
+  streamed outcome all carry the same cited text, and the session records it.
+- **Who decides.** `.CiteKnowledge()` on the agent wins; `.CiteKnowledge(cite: false)` forbids it.
+  Leave it uncalled and each caller decides with `PromptRequest.CiteKnowledge`. In the agent
+  document it is `"citeKnowledge": true`, `false`, or the prefix: `"citeKnowledge": "Reference: "`.
+- **What a citation claims.** That the source was recalled into the run that produced the answer.
+  It is not proof the model relied on it, and should not be presented as such.
+
 ### Multiple knowledge or memory sources
 
 The integration rule elsewhere in this guide is *plural*: tools, MCP servers (§3) and skill
@@ -1454,7 +1493,7 @@ var agent = StandardAgent.FromJson(formBody)     // everything that is data
 
 - **Short forms for form-builders**: where the long form is an object, a bare value works —
   `"knowledge": "Knowledge"`, `"mcp": "url"`, `"redact": true`, `"telemetry": true`,
-  `"sessions": "path"`, `"logTo": "path"`, `"resilience": 3`. The long forms carry the same
+  `"sessions": "path"`, `"logTo": "path"`, `"resilience": 3`, `"citeKnowledge": true`. The long forms carry the same
   optional fields as the builder verbs (`"knowledge": { "path", "pattern", "maxResults",
   "minScore" }`, `"sessions": { "path", "maxHistoryTurns" }`, and so on).
 - **Integrations are plural in the document too**: `"skills"` and `"mcp"` accept a single value
@@ -1864,6 +1903,7 @@ enforces it.
 | Skills | `Skills(path)` | `UseSkills` | `OnSkills` |
 | Memory | `Memory(path)` | `UseMemory` | `OnMemory` |
 | Knowledge | `Knowledge(path)` | `UseKnowledge` | `OnKnowledge` |
+| Sourced knowledge | `Knowledge(path)` *(sourced by path)* | `UseKnowledge(ISourcedKnowledgeBroker)` | `OnSourcedKnowledge` |
 | Brain | — *(needs a runtime)* | `UseGenerator` | `OnBrain` |
 | Native brain | — *(same reason)* | `UseNativeBrain` | `OnNativeBrain` |
 | Gate | `RuleGate` | `Gate` | `OnGate` |

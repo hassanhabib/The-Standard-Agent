@@ -18,8 +18,12 @@ public interface IRetrievalOrchestrationService
     /// </summary>
     ValueTask<string> RetrieveInstructionsAsync(string route);
 
-    /// <summary>The passages that answer this prompt, best first.</summary>
-    ValueTask<IReadOnlyList<string>> RetrieveGroundingAsync(string query);
+    /// <summary>
+    /// The passages that answer this prompt, best first, each with the source it came from
+    /// (SPEC.md §3.7) — empty when the knowledge broker cannot say.
+    /// </summary>
+    ValueTask<IReadOnlyList<Models.Foundations.Knowledges.KnowledgeResult>> RetrieveGroundingAsync(
+        string query);
 
     /// <summary>
     /// The remote tools the configured servers offer, discovered once and kept: what a run may

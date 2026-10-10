@@ -6,6 +6,7 @@
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models.Brokers.Generators.V1;
 using Standard.Agents.Models.Brokers.Sessions;
+using Standard.Agents.Models.Foundations.Knowledges;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Services.Orchestrations.Data.Recollections;
 using Standard.Agents.Services.Orchestrations.Data.Retrievals;
@@ -52,8 +53,11 @@ public partial class DataCoordinationService : IDataCoordinationService
 
         IReadOnlyList<string> memories = await this.recollectionService.RecallMemoriesAsync();
 
-        IReadOnlyList<string> knowledge =
+        IReadOnlyList<KnowledgeResult> knowledge =
             await this.retrievalService.RetrieveGroundingAsync(context.Prompt);
+
+        IEnumerable<string> passages =
+            knowledge.Select(knowledgeResult => knowledgeResult.Text);
 
         await this.loggingBroker.LogPayloadAsync(
             "Data", "System prompt sent to Decision", systemPrompt, detail: true);
@@ -61,9 +65,24 @@ public partial class DataCoordinationService : IDataCoordinationService
         return context with
         {
             SystemPrompt = systemPrompt,
-            Observations = [.. context.Observations, .. memories, .. knowledge]
+            Observations = [.. context.Observations, .. memories, .. passages],
+            GroundingSources = WithGroundingSources(context.GroundingSources, knowledge)
         };
     });
+
+    // Each source once, in the order first recalled, and never an empty one: a passage whose
+    // origin is unknown can never be cited (SPEC.md §3.2, §3.7). Recall runs every turn, so what
+    // an earlier turn recalled is already here and keeps its place.
+    private static IReadOnlyList<string> WithGroundingSources(
+        IReadOnlyList<string> groundingSources,
+        IReadOnlyList<KnowledgeResult> knowledge)
+    {
+        IEnumerable<string> recalledSources = knowledge
+            .Select(knowledgeResult => knowledgeResult.Source)
+                .Where(source => string.IsNullOrWhiteSpace(source) is false);
+
+        return [.. groundingSources.Concat(recalledSources).Distinct(StringComparer.Ordinal)];
+    }
 
     // The same line format the tool catalog uses, under a heading that says who executes: the
     // model may name these words, and the agent never runs one — a call naming a caller tool is

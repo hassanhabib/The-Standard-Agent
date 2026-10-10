@@ -6,6 +6,7 @@
 using System.Linq.Expressions;
 using Moq;
 using Standard.Agents.Brokers.Loggings;
+using Standard.Agents.Models.Foundations.Knowledges;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Services.Foundations.ExternalTools;
 using Standard.Agents.Services.Foundations.Knowledges;
@@ -41,7 +42,7 @@ public partial class DataCoordinationServiceTests
         this.loggingBrokerMock = new Mock<ILoggingBroker>();
 
         this.knowledgeServiceMock.Setup(service =>
-            service.RetrieveKnowledgeAsync(It.IsAny<string>()))
+            service.RetrieveSourcedKnowledgeAsync(It.IsAny<string>()))
                 .ReturnsAsync([]);
 
         // No remote servers in these tests: the foundation answers with an empty catalog, the
@@ -68,6 +69,16 @@ public partial class DataCoordinationServiceTests
 
     private static string CreateRandomString() =>
         new MnemonicString().GetValue();
+
+    private static KnowledgeResult CreateRandomKnowledgeResult(string source)
+    {
+        return new KnowledgeResult
+        {
+            Text = CreateRandomString(),
+            Score = new DoubleRange(minValue: 0.1, maxValue: 10.0).GetValue(),
+            Source = source
+        };
+    }
 
     private static AgentContext CreateRandomAgentContext() =>
         new() { Prompt = CreateRandomString() };

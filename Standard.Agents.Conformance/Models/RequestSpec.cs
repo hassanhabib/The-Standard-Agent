@@ -19,6 +19,9 @@ public sealed record RequestSpec(
     string? ProviderOptionsJson = null,
     List<CallerToolSpec>? CallerTools = null,
 
+    // Whether this caller asked for citation (SPEC.md §4.2): what the deployment configured wins.
+    bool? CiteKnowledge = null,
+
     // The caller-owned transcript (design §3): the exposed protocols are stateless and the
     // client re-posts the conversation. When a session exists it wins.
     List<TurnSpec>? History = null);

@@ -1,0 +1,17 @@
+{
+  "name": "citation-is-off-unless-asked-for",
+  "description": "SPEC.md 4.2 (v1.18): citation is opt-in and off by default. The same grounded run as a-grounded-answer-cites-its-sources, with nobody asking for citation, returns the answer byte for byte as an implementation without citation always returned it.",
+  "generatorReplies": ["FINAL: enterprise customers have 90 days"],
+  "tools": {},
+  "prompt": "what is our refund policy for enterprise customers",
+  "knowledge": {
+    "refunds.md": "Refund policy. Enterprise customers may request a refund within 90 days of purchase.",
+    "shipping.md": "Shipping policy. Orders ship within two business days.",
+    "holidays.md": "The office is closed on public holidays."
+  },
+  "knowledgeMaxResults": 1,
+  "expect": {
+    "result": "enterprise customers have 90 days",
+    "brainSees": "90 days"
+  }
+}
