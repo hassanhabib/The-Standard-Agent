@@ -34,4 +34,5 @@ public sealed record AgentRunRequestV1
     public int? Seed { get; init; }
     public IReadOnlyList<string> Stop { get; init; } = [];
     public string? ProviderOptionsJson { get; init; }
+    public bool? CiteKnowledge { get; init; }
 }
