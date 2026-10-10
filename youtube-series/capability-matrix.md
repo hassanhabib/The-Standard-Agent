@@ -23,7 +23,7 @@ quietly withheld the reason anyone would adopt this over an afternoon's worth of
 |---|---|---|---|---|---|
 | 1 | Skills | `Skills(path)` | `UseSkills(broker)` | `OnSkills(Func<ValueTask<IReadOnlyList<Skill>>>)` | 2.1 |
 | 2 | Memory | `Memory(path)` | `UseMemory(broker)` | `OnMemory(...)` | 2.4 |
-| 3 | Knowledge | `Knowledge(path)` | `UseKnowledge(broker)` | `OnKnowledge(Func<string, ValueTask<IReadOnlyList<string>>>)` | 2.5 |
+| 3 | Knowledge | `Knowledge(path)` — sourced by relative path | `UseKnowledge(IKnowledgeBroker)` · `UseKnowledge(ISourcedKnowledgeBroker)` | `OnKnowledge(Func<string, ValueTask<IReadOnlyList<string>>>)` · `OnSourcedKnowledge(Func<string, ValueTask<IReadOnlyList<KnowledgeResult>>>)` | 2.5 |
 | 4 | Brain | — *documented N/A* | `UseGenerator(broker)` · `Brain(url,key,model)` | `OnBrain(delegate)` | 1.3 / 1.4 / 1.7 |
 | 5 | Native brain | — *same reason* | `UseNativeBrain(broker)` · `NativeBrain(...)` | `OnNativeBrain(delegate)` | 5.3 |
 | 6 | Gate | `RuleGate(...)` | `Gate(url,key,model)` · `UseGate(IClassifierBroker)` | `OnGate(delegate)` | 3.1 / 3.3 |
@@ -63,9 +63,11 @@ gaps and explains them is making a different kind of promise than one that leave
 | Enforced selection | `EnforceSelection()` | 7.10 |
 | Spend, live | `AgentStreamEventType.Usage` — the budget's own running total, after every Brain call | 1.6 / 4.7 |
 | Going in circles | `IdenticalCallLimit(int)` — a bound on asks the ledger already answered | 4.5 |
+| Citation | `CiteKnowledge(cite, prefix)` · `"citeKnowledge"` · `PromptRequest.CiteKnowledge` — one line per recalled source on an answer, after the Judge | 2.5 |
 
 These are not backends, so the three-verb rule does not govern them: two channels, a door, a
-judgment delegate, a switch and a bound. Say that on camera rather than letting a viewer hunt for
+judgment delegate, two switches and a bound. Citation's backend is Knowledge's own seam: a source
+that can say where a passage came from is still row 3, in its sourced shape. Say that on camera rather than letting a viewer hunt for
 `UseSelection(broker)` — a matrix that explains its own boundaries is the same promise as one
 that names its gaps.
 

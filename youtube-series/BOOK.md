@@ -55,10 +55,10 @@ Nine parts, matching the nine parts of the series, ~38 chapters.
 
 - **A · The capability matrix.** All twenty, three modes each, exact signatures, the two
   documented gaps with their reasons — and the loop capabilities (narration, streamed outcome,
-  selection, enforcement, live spend, the going-in-circles bound) with why they are deliberately
-  not triads.
+  selection, enforcement, live spend, the going-in-circles bound, citation) with why they are
+  deliberately not triads.
 - **B · The readiness profiles.** What each requires, verbatim, and how to certify.
-- **C · The conformance vectors.** All 83 (and counting — every release adds the vector that
+- **C · The conformance vectors.** All 88 (and counting — every release adds the vector that
   proves it, failing first), what each pins, and how to write your own.
 - **D · Exception families.** What each tells a caller about whether to retry.
 - **E · The design worksheet** from chapter 2, as a one-page form.

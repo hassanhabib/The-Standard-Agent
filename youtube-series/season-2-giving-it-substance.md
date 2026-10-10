@@ -179,7 +179,7 @@ design error in agent apps. Sessions are 4.8.
 
 ## 2.5 — Knowledge: grounding on your data
 
-**Runtime** 16 min · **Branch** `series/s2e5-knowledge` · **Docs** how-to §9
+**Runtime** 21 min · **Branch** `series/s2e5-knowledge` · **Docs** how-to §9
 
 **Cold open**
 > "It's confidently wrong about your product because it has never read your docs."
@@ -194,17 +194,55 @@ design error in agent apps. Sessions are 4.8.
 - `KnowledgeMaxResults` — why the default is small, and what happens to cost and precision when
   you raise it.
 
-**All three modes — all demonstrated (+3 min)**
-- **Local** `.Knowledge("Knowledge")` — a folder.
-- **External** `.UseKnowledge(new PostgresKnowledgeBroker(cs))`, and the MsSql package as a second.
-- **Custom** `.OnKnowledge(async query => await MyVectorStoreAsync(query))` — `Func<string, ValueTask<IReadOnlyList<string>>>`.
+**Where did that answer come from? (+5 min)**
+- The second question a grounded agent gets, from a bank's compliance team, a helpdesk lead, a
+  developer reading an answer about an API: *which document said that?* Ask the model to cite and
+  watch it cite when it feels like it. A citation the model may or may not write is not a citation.
+- `KnowledgeResult { Text, Score, Source }` — a passage, the score its source ranked it by, and a
+  source a reader can follow back: a title, a path, an address. A score means something only
+  beside the same source's other scores; a full-text rank and a vector distance are different
+  scales.
+- The folder is citable out of the box: each passage is sourced by its path relative to the
+  folder, forward slashes on every platform.
+- `.CiteKnowledge()` — and the answer ends with `Source: policies/refunds.md`. The model never wrote
+  that line; the agent did, from the sources Recall put on the run. Show the Brain's prompt: the
+  passage reads exactly as it did before citation existed. The source travels beside it.
+- The rules, each one on screen:
+  - **Off unless asked.** An agent that never called it answers byte for byte as before.
+  - **After the Judge.** The Judge scores the model's words, not lines the agent added.
+  - **Only an answer is cited.** A refusal, a question back, a held act or a failure credits
+    nothing. Neither does an answer held to a response schema: a line after JSON breaks the JSON.
+  - **Once per source,** in the order recalled, skipping one the answer already credits.
+  - **One answer on every door** — the batched result, the streamed response, the streamed outcome
+    and the session's record carry the same text.
+  - **The deployment decides first.** `.CiteKnowledge()` cites for every caller,
+    `.CiteKnowledge(cite: false)` forbids it, and an agent that said nothing lets each request
+    decide with `PromptRequest.CiteKnowledge` — or `citeKnowledge` on the Host's V1 run request.
+    In the document: `"citeKnowledge": true`, `false`, or the line's prefix.
+- What a citation claims, and say it out loud: **the source was recalled into the run that
+  answered.** Not that the model relied on it. Honest about the one thing it can know.
 
-The Custom mode is the escape hatch for vector databases the framework ships no package for. Say so, because that is the question the comments will ask.
+**All three modes — all demonstrated (+3 min)**
+- **Local** `.Knowledge("Knowledge")` — a folder. Sourced by path.
+- **External** `.UseKnowledge(new PostgresKnowledgeBroker(cs))`, and the MsSql package as a second.
+  Both return plain passages, so they keep working and are never cited. A store that knows a row's
+  title or URL implements `ISourcedKnowledgeBroker` instead and joins with the same
+  `.UseKnowledge(broker)`.
+- **Custom** `.OnKnowledge(async query => await MyVectorStoreAsync(query))` — `Func<string, ValueTask<IReadOnlyList<string>>>`.
+  The sourced form is `.OnSourcedKnowledge(async query => ...)`, returning `KnowledgeResult`s.
+
+The Custom mode is the escape hatch for vector databases the framework ships no package for. Say so, because that is the question the comments will ask. Then show the sourced form, because the next question is *and can it cite them?*
 
 **The gotcha**
 This vector was **vacuous when first written** — it passed with the ranking deliberately inverted,
 and was caught by sabotage-testing and rewritten. Tell that story in sixty seconds. It teaches
 viewers more about trusting a framework than any feature demo, and it's the honest history.
+
+The second gotcha is the reason citation exists at all. A deployment asked its model, in the
+instructions, to end each grounded answer with its source. It mostly didn't. The fix was not a
+better instruction; it was moving the citation out of the model's hands. Whenever a behaviour
+matters, ask who is guaranteeing it — and if the answer is "the model, usually", it is not
+guaranteed.
 
 **What changed in the shape** — Data, third foundation. Data is now full at Core: Skill, Knowledge,
 Memory.

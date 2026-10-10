@@ -45,7 +45,8 @@ it's the mechanism. Erosion that hurt immediately would get fixed immediately.
   on domain concepts.
 - The three kinds, and why the distinction is load-bearing:
   - **Nature brokers** (13) — one per foundation. Skill, Knowledge, Memory, Session, Generator,
-    Usage, Classifier, Verifier, Policy, Approval, EffectLedger, Tool, Mcp.
+    Usage, Classifier, Verifier, Policy, Approval, EffectLedger, Tool, Mcp. Knowledge's seam comes
+    in two shapes, plain and sourced; a foundation is composed over one of them, never both.
   - **Utility brokers** (3) — logging, time, audit. Held by any tier. Exempt because **none of them
     can change what the agent decides or does.** That sentence is the test.
   - **Decorating brokers** (2) — redaction, resilience. Wrapped around another broker at
@@ -200,8 +201,9 @@ teaches more than a clean example would.
   4. Every tier holds 2–3 of the tier **directly** below it.
 - Write rule 4 from scratch on camera, then sabotage-verify it with a throwaway one-dependency
   orchestration and watch it name the service and the count.
-- Reflection over constructors, **per constructor rather than per type** — Memory and Knowledge each
-  offer two one-broker overloads, and counting across them reads as two and is wrong.
+- Reflection over constructors, **per constructor rather than per type** — Memory offers two
+  one-broker overloads and Knowledge three (files, plain, sourced), and counting across them reads
+  as several and is wrong.
 - Generalise hard: **this technique is language-agnostic and the most portable thing in the series.**
   Any codebase with layering rules can enforce them this way, and almost none do.
 
