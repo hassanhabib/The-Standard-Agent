@@ -684,7 +684,11 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
         // stub, so nothing is retrieved and no vector is disturbed by this one existing.
         string? knowledgePath = null;
 
-        if (vector.Knowledge is not { Count: > 0 })
+        if (vector.KnowledgePassages is { Count: > 0 } knowledgePassages)
+        {
+            agent.OnKnowledge(async query => knowledgePassages);
+        }
+        else if (vector.Knowledge is not { Count: > 0 })
         {
             agent.UseKnowledge(new StubKnowledgeBroker());
         }
@@ -700,6 +704,11 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
             }
 
             agent.Knowledge(knowledgePath, maxResults: vector.KnowledgeMaxResults);
+        }
+
+        if (vector.CiteKnowledge is bool citeKnowledge)
+        {
+            agent.CiteKnowledge(citeKnowledge, prefix: vector.CitationPrefix ?? "Source: ");
         }
 
         if (string.IsNullOrEmpty(vector.Constitution) is false)
@@ -776,7 +785,9 @@ async Task<VectorRun> RunVectorAsync(Vector vector)
 
         CallerTools =
             [.. (spec.CallerTools ?? []).Select(tool =>
-                new ToolDefinition(tool.Name, tool.Description, tool.ParametersJson))]
+                new ToolDefinition(tool.Name, tool.Description, tool.ParametersJson))],
+
+        CiteKnowledge = spec.CiteKnowledge
     };
 
     if (vector.Requests is { Count: > 0 })

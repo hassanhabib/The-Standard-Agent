@@ -196,6 +196,11 @@ the deterministic core of the Standard.
 | `ask-approved-act-runs` | The authority's yes runs the act — the third side of the Ask triangle (§4.9) |
 | `a-grant-is-for-what-it-was-granted-for` | A grant needs a named scope; an unscoped tool is asked each time (§4.9) |
 | `knowledge-retrieves-by-relevance` | Retrieval returns the passage that answers, not the first found |
+| `a-grounded-answer-cites-its-sources` | With citation on, an answer ends with one line per recalled source, written by the implementation rather than the model; the folder's source is the document's relative path (§4.2) |
+| `citation-is-off-unless-asked-for` | Nobody asked for citation, so the answer is returned byte for byte (§4.2) |
+| `a-run-that-did-not-answer-cites-nothing` | Knowledge was recalled and the Gate refused; a refusal credits no source (§4.2) |
+| `a-passage-with-no-source-is-never-cited` | A plain broker keeps working, its passage reaches the Brain, and a passage with no known origin is never cited (§3.7, §4.1) |
+| `a-configured-citation-cannot-be-declined-by-a-request` | What the deployment configured wins: a caller asking for no citation still receives the cited answer, with the configured prefix (§4.2) |
 | `guardian-screens-once-per-prompt` | An unchanged prompt is screened once, not once per turn |
 | `open-circuit-falls-back-to-secondary` | An unhealthy provider degrades rather than fails (§4.10) |
 | `open-circuit-falls-back-on-the-native-protocol` | The same degradation on the native seam; the text alternative becomes a final answer, never a cast (§4.10, §6) |

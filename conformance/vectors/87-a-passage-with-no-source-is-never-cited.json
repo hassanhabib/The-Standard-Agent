@@ -1,0 +1,15 @@
+{
+  "name": "a-passage-with-no-source-is-never-cited",
+  "description": "SPEC.md 3.7, 4.1 (v1.18): a plain knowledge broker keeps working and is lifted to passages with no known origin. The passage still reaches the Brain; with citation on, the answer is returned unchanged, because a passage whose source is unknown is never cited. An implementation that credits a blank, or drops plain brokers, fails here.",
+  "generatorReplies": ["FINAL: enterprise customers have 90 days"],
+  "tools": {},
+  "prompt": "what is our refund policy for enterprise customers",
+  "knowledgePassages": [
+    "Refund policy. Enterprise customers may request a refund within 90 days of purchase."
+  ],
+  "citeKnowledge": true,
+  "expect": {
+    "result": "enterprise customers have 90 days",
+    "brainSees": "within 90 days of purchase"
+  }
+}

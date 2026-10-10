@@ -139,4 +139,14 @@ public partial class StandardAgentFromJsonTests
             json,
             $"'{key}' lists nothing. A control that lists nothing is not a control: remove the "
                 + "key, or list what it should hold.");
+
+    [Theory]
+    [InlineData("""{ "citeKnowledge": 1 }""")]
+    [InlineData("""{ "citeKnowledge": "" }""")]
+    [InlineData("""{ "citeKnowledge": { "prefix": "Source: " } }""")]
+    public void ShouldThrowInvalidAgentConfigurationExceptionOnFromJsonIfCitationIsNotAFlagOrAPrefix(
+        string json) =>
+        ShouldRefuse(
+            json,
+            "'citeKnowledge' must be true, false, or the text each citation line starts with.");
 }

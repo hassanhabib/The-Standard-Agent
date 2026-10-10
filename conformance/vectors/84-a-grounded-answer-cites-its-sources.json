@@ -1,0 +1,19 @@
+{
+  "name": "a-grounded-answer-cites-its-sources",
+  "description": "SPEC.md 4.2 (v1.18): with citation on, a run that answered ends with one line per source of the knowledge recalled into it, after a blank line. The source of a passage from the built-in knowledge folder is the document's path relative to the folder. The model never wrote the line: the implementation did, so an implementation that only asks the model to cite fails here, because this scripted Brain never will.",
+  "generatorReplies": ["FINAL: enterprise customers have 90 days"],
+  "tools": {},
+  "prompt": "what is our refund policy for enterprise customers",
+  "knowledge": {
+    "refunds.md": "Refund policy. Enterprise customers may request a refund within 90 days of purchase.",
+    "shipping.md": "Shipping policy. Orders ship within two business days.",
+    "holidays.md": "The office is closed on public holidays."
+  },
+  "knowledgeMaxResults": 1,
+  "citeKnowledge": true,
+  "expect": {
+    "result": "enterprise customers have 90 days\n\nSource: refunds.md",
+    "brainSees": "90 days",
+    "brainNeverSees": "Source: refunds.md"
+  }
+}

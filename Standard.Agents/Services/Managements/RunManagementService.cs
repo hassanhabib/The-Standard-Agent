@@ -41,6 +41,13 @@ public partial class RunManagementService : IRunManagementService
 
     private readonly int identicalCallLimit;
 
+    private const string DefaultKnowledgeCitationPrefix = "Source: ";
+
+    // Citation (SPEC.md §4.2): what the deployment configured, null when it expressed no opinion,
+    // and what each citation line starts with.
+    private readonly bool? configuredCiteKnowledge;
+    private readonly string knowledgeCitationPrefix;
+
     private readonly IDataCoordinationService dataCoordinationService;
     private readonly IDecisionCoordinationService decisionCoordinationService;
     private readonly IDirectionCoordinationService directionCoordinationService;
@@ -97,9 +104,13 @@ public partial class RunManagementService : IRunManagementService
         ToolSelector? toolSelector = null,
         IEnumerable<string>? describedToolNames = null,
         PrincipalResolver? principalResolver = null,
-        int identicalCallLimit = DefaultIdenticalCallLimit)
+        int identicalCallLimit = DefaultIdenticalCallLimit,
+        bool? configuredCiteKnowledge = null,
+        string knowledgeCitationPrefix = DefaultKnowledgeCitationPrefix)
     {
         this.identicalCallLimit = identicalCallLimit;
+        this.configuredCiteKnowledge = configuredCiteKnowledge;
+        this.knowledgeCitationPrefix = knowledgeCitationPrefix;
         this.compensateOnFailure = compensateOnFailure;
         this.dataCoordinationService = dataCoordinationService;
         this.decisionCoordinationService = decisionCoordinationService;

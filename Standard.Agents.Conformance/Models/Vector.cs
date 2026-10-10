@@ -179,7 +179,15 @@ public sealed record Vector(
     Dictionary<string, string>? ToolDescriptions = null,
 
     // How many times a run may ask for an act the ledger already answered (SPEC.md §4.10, v1.14).
-    int? IdenticalCallLimit = null);
+    int? IdenticalCallLimit = null,
+
+    // Citation (SPEC.md §4.2, v1.18). CiteKnowledge is what the deployment configured — null for
+    // no opinion — and CitationPrefix what each line starts with. KnowledgePassages are served by
+    // a plain broker that cannot say where a passage came from, so a vector can certify that a
+    // passage with no source is never cited; the Knowledge folder is the sourced one.
+    bool? CiteKnowledge = null,
+    string? CitationPrefix = null,
+    List<string>? KnowledgePassages = null);
 
 /// <summary>A stub tool's declared narration templates, as a vector writes them.</summary>
 // A typo'd field must fail loudly, not silently delete the assertion or the input it
