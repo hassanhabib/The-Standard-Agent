@@ -6,12 +6,14 @@
 using Standard.Agents.Brokers.Files;
 using Standard.Agents.Brokers.Knowledges;
 using Standard.Agents.Brokers.Loggings;
+using Standard.Agents.Models.Foundations.Knowledges;
 
 namespace Standard.Agents.Services.Foundations.Knowledges;
 
 public partial class KnowledgeService : IKnowledgeService
 {
     private readonly IKnowledgeBroker? knowledgeBroker;
+    private readonly ISourcedKnowledgeBroker? sourcedKnowledgeBroker;
     private readonly IFileBroker? fileBroker;
     private readonly string knowledgePath;
     private readonly string searchPattern;
@@ -24,6 +26,16 @@ public partial class KnowledgeService : IKnowledgeService
         ILoggingBroker loggingBroker)
     {
         this.knowledgeBroker = knowledgeBroker;
+        this.knowledgePath = string.Empty;
+        this.searchPattern = string.Empty;
+        this.loggingBroker = loggingBroker;
+    }
+
+    public KnowledgeService(
+        ISourcedKnowledgeBroker sourcedKnowledgeBroker,
+        ILoggingBroker loggingBroker)
+    {
+        this.sourcedKnowledgeBroker = sourcedKnowledgeBroker;
         this.knowledgePath = string.Empty;
         this.searchPattern = string.Empty;
         this.loggingBroker = loggingBroker;
@@ -54,6 +66,9 @@ public partial class KnowledgeService : IKnowledgeService
             ? await SelectKnowledgeFromFilesAsync(this.fileBroker, query)
             : await this.knowledgeBroker!.SelectKnowledgeAsync(query);
     });
+
+    public async ValueTask<IReadOnlyList<KnowledgeResult>> RetrieveSourcedKnowledgeAsync(string query) =>
+        [];
 
     private async ValueTask<IReadOnlyList<string>> SelectKnowledgeFromFilesAsync(
         IFileBroker fileBroker,

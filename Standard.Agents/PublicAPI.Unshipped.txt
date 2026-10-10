@@ -1,1 +1,24 @@
 #nullable enable
+Standard.Agents.Brokers.Knowledges.FunctionSourcedKnowledgeBroker
+Standard.Agents.Brokers.Knowledges.FunctionSourcedKnowledgeBroker.FunctionSourcedKnowledgeBroker(System.Func<string!, System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult!>!>>! retrieve) -> void
+Standard.Agents.Brokers.Knowledges.FunctionSourcedKnowledgeBroker.SelectSourcedKnowledgeAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult!>!>
+Standard.Agents.Brokers.Knowledges.ISourcedKnowledgeBroker
+Standard.Agents.Brokers.Knowledges.ISourcedKnowledgeBroker.SelectSourcedKnowledgeAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult!>!>
+Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult
+Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.<Clone>$() -> Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult!
+Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.Equals(Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult? other) -> bool
+Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.KnowledgeResult() -> void
+Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.Score.get -> double?
+Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.Score.init -> void
+Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.Source.get -> string!
+Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.Source.init -> void
+Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.Text.get -> string!
+Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.Text.init -> void
+Standard.Agents.Services.Foundations.Knowledges.IKnowledgeService.RetrieveSourcedKnowledgeAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult!>!>
+Standard.Agents.Services.Foundations.Knowledges.KnowledgeService.KnowledgeService(Standard.Agents.Brokers.Knowledges.ISourcedKnowledgeBroker! sourcedKnowledgeBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+Standard.Agents.Services.Foundations.Knowledges.KnowledgeService.RetrieveSourcedKnowledgeAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult!>!>
+override Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.Equals(object? obj) -> bool
+override Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.GetHashCode() -> int
+override Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.ToString() -> string!
+static Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.operator !=(Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult? left, Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult? right) -> bool
+static Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.operator ==(Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult? left, Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult? right) -> bool
