@@ -50,7 +50,8 @@ POST api/V1/agents/runs
   "maxTokens": 400,
   "seed": 7,
   "stop": [],
-  "providerOptionsJson": null
+  "providerOptionsJson": null,
+  "citeKnowledge": null
 }
 ```
 
@@ -68,6 +69,14 @@ wins over the caller's `history`; `callerTools` are vocabulary the model may nam
 capability the agent runs; inference fields the deployment configured win over the caller's.
 Deliberately absent, as on the contract: executable tools, permissions, budget, redaction,
 approvals, principal. The wire has no field in which to ask for them.
+
+**Citation.** `citeKnowledge` asks for the answer to end with the sources of the knowledge
+recalled into its run, one line each, `Source: ` by default (SPEC.md §4.2,
+[how-to.md §9](how-to.md)). `null`, or leaving it out, expresses no opinion. What the deployment configured wins, in both directions: a deployment
+composed with `.CiteKnowledge()` cites whatever the request says, one composed with
+`.CiteKnowledge(false)` never cites, and only a deployment that expressed no opinion lets the
+request decide. The sources come from a knowledge broker that knows them (`OnSourcedKnowledge`);
+a run that did not answer cites nothing.
 
 **The pending effect.** Only `Responded` makes the result an answer. A run that ends
 `AwaitingApproval` or `AwaitingInput` carries the act it is waiting on, so a stateless caller
