@@ -160,7 +160,8 @@ who has never seen your code build one that passes the same tests.
   - **Reliable** — guardians that see what they guard, durable decision log, run isolation,
     cancellation, timeouts.
   - **Enterprise** — identity-aware authorization, approval before irreversible acts, run-once
-    effects, budgets, ranked retrieval.
+    effects, budgets, ranked retrieval, and answers that cite their sources only when they
+    answered.
   - **Critical** — conversation and effects that survive a process, compensation, native tool calls
     that round-trip, and **adversarial evaluation**: a poisoned knowledge passage, a poisoned
     memory, and a cross-tenant request, each with the Brain scripted as *fooled*. The defense
