@@ -10,14 +10,14 @@ namespace Standard.Agents.Services.Foundations.Knowledges;
 
 public partial class KnowledgeService
 {
-    private delegate ValueTask<IReadOnlyList<string>> ReturningDocumentsFunction();
+    private delegate ValueTask<T> ReturningKnowledgeFunction<T>();
 
-    private async ValueTask<IReadOnlyList<string>> TryCatch(
-        ReturningDocumentsFunction returningDocumentsFunction)
+    private async ValueTask<T> TryCatch<T>(
+        ReturningKnowledgeFunction<T> returningKnowledgeFunction)
     {
         try
         {
-            return await returningDocumentsFunction();
+            return await returningKnowledgeFunction();
         }
         catch (InvalidKnowledgeException invalidKnowledgeException)
         {
