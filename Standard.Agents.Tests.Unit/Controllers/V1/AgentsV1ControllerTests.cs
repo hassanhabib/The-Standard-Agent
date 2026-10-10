@@ -223,6 +223,39 @@ public partial class AgentsV1ControllerTests
     }
 
     [Fact]
+    public async Task ShouldPostRunAndCarryTheCitationRequestAsync()
+    {
+        // given — a caller asking for the sources of what grounded the answer
+        var request = new AgentRunRequestV1
+        {
+            Prompt = "what is the refund window",
+            SessionId = "trip-3",
+            CiteKnowledge = true
+        };
+
+        var expectedPromptRequest = new PromptRequest
+        {
+            Prompt = "what is the refund window",
+            SessionId = "trip-3",
+            CiteKnowledge = true
+        };
+
+        PromptRequest? actualPromptRequest = null;
+
+        this.agentMock.Setup(agent =>
+            agent.RunAsync(It.IsAny<PromptRequest>(), It.IsAny<CancellationToken>()))
+                .Callback<PromptRequest, CancellationToken>((promptRequest, _) =>
+                    actualPromptRequest = promptRequest)
+                .ReturnsAsync(new AgentOutcome("the answer", AgentStatus.Responded));
+
+        // when
+        await this.agentsV1Controller.PostRunAsync(request);
+
+        // then — the caller's opinion reached the contract; the agent decides whether it counts
+        actualPromptRequest.Should().BeEquivalentTo(expectedPromptRequest);
+    }
+
+    [Fact]
     public async Task ShouldReturnBadRequestOnPostRunIfPromptIsEmptyAsync()
     {
         // given
