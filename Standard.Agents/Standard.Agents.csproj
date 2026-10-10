@@ -563,7 +563,17 @@
          server over standard input and output, and the agent document's mcp entry may be a
          command. Both transports page tools/list and read every kind of content. No SPEC change.
          New routines, no shipped model changed: segment 2 advances, 3/4 reset. -->
-    <Version>5.1.0.0</Version>
+    <!-- 6.0.0.0 "Answers That Cite Their Sources": a knowledge source could hand the agent
+         passages and nothing else, so an agent that had to credit where an answer came from baked
+         the title into the passage and hoped the model repeated it. KnowledgeResult { Text, Score,
+         Source } and ISourcedKnowledgeBroker sit beside the string broker, which still works and is
+         lifted to passages with no source; the knowledge folder sources each passage by its
+         relative path; AgentContext carries the run's GroundingSources; and .CiteKnowledge() (or
+         "citeKnowledge" in the document, or PromptRequest.CiteKnowledge when the deployment has no
+         opinion) appends one "Source: " line per recalled source to a run that answered, after
+         the Judge, the same on every door and in the session. SPEC 1.18. New models and a new
+         member of shipped AgentContext and PromptRequest: segment 1 advances, 2/3/4 reset. -->
+    <Version>6.0.0.0</Version>
 
     <Authors>Hassan Habib</Authors>
     <Company>Hassan Habib</Company>
