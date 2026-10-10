@@ -117,8 +117,13 @@ Standard.Agents.Brokers.Generators.IGeneratorBrokerV1.HonorsRequest.get -> bool
 Standard.Agents.Brokers.Knowledges.FunctionKnowledgeBroker
 Standard.Agents.Brokers.Knowledges.FunctionKnowledgeBroker.FunctionKnowledgeBroker(System.Func<string!, System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>>! retrieve) -> void
 Standard.Agents.Brokers.Knowledges.FunctionKnowledgeBroker.SelectKnowledgeAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
+Standard.Agents.Brokers.Knowledges.FunctionSourcedKnowledgeBroker
+Standard.Agents.Brokers.Knowledges.FunctionSourcedKnowledgeBroker.FunctionSourcedKnowledgeBroker(System.Func<string!, System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult!>!>>! retrieve) -> void
+Standard.Agents.Brokers.Knowledges.FunctionSourcedKnowledgeBroker.SelectSourcedKnowledgeAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult!>!>
 Standard.Agents.Brokers.Knowledges.IKnowledgeBroker
 Standard.Agents.Brokers.Knowledges.IKnowledgeBroker.SelectKnowledgeAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
+Standard.Agents.Brokers.Knowledges.ISourcedKnowledgeBroker
+Standard.Agents.Brokers.Knowledges.ISourcedKnowledgeBroker.SelectSourcedKnowledgeAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult!>!>
 Standard.Agents.Brokers.Loggings.ILoggingBroker
 Standard.Agents.Brokers.Loggings.ILoggingBroker.LogCriticalAsync(System.Exception! exception) -> System.Threading.Tasks.ValueTask
 Standard.Agents.Brokers.Loggings.ILoggingBroker.LogDebugAsync(string! message) -> System.Threading.Tasks.ValueTask
@@ -540,6 +545,8 @@ Standard.Agents.Models.Clients.Agents.PromptRequest
 Standard.Agents.Models.Clients.Agents.PromptRequest.<Clone>$() -> Standard.Agents.Models.Clients.Agents.PromptRequest!
 Standard.Agents.Models.Clients.Agents.PromptRequest.CallerTools.get -> System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Generators.V1.ToolDefinition!>!
 Standard.Agents.Models.Clients.Agents.PromptRequest.CallerTools.init -> void
+Standard.Agents.Models.Clients.Agents.PromptRequest.CiteKnowledge.get -> bool?
+Standard.Agents.Models.Clients.Agents.PromptRequest.CiteKnowledge.init -> void
 Standard.Agents.Models.Clients.Agents.PromptRequest.Equals(Standard.Agents.Models.Clients.Agents.PromptRequest? other) -> bool
 Standard.Agents.Models.Clients.Agents.PromptRequest.History.get -> System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Sessions.AgentTurn!>!
 Standard.Agents.Models.Clients.Agents.PromptRequest.History.init -> void
@@ -785,6 +792,16 @@ Standard.Agents.Models.Foundations.Knowledges.Exceptions.KnowledgeServiceExcepti
 Standard.Agents.Models.Foundations.Knowledges.Exceptions.KnowledgeServiceException.KnowledgeServiceException(string! message, Xeptions.Xeption? innerException) -> void
 Standard.Agents.Models.Foundations.Knowledges.Exceptions.KnowledgeValidationException
 Standard.Agents.Models.Foundations.Knowledges.Exceptions.KnowledgeValidationException.KnowledgeValidationException(string! message, Xeptions.Xeption? innerException) -> void
+Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult
+Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.<Clone>$() -> Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult!
+Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.Equals(Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult? other) -> bool
+Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.KnowledgeResult() -> void
+Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.Score.get -> double?
+Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.Score.init -> void
+Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.Source.get -> string!
+Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.Source.init -> void
+Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.Text.get -> string!
+Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.Text.init -> void
 Standard.Agents.Models.Foundations.Memorys.Exceptions.FailedMemoryDependencyException
 Standard.Agents.Models.Foundations.Memorys.Exceptions.FailedMemoryDependencyException.FailedMemoryDependencyException(string! message, System.Exception! innerException) -> void
 Standard.Agents.Models.Foundations.Memorys.Exceptions.FailedMemoryServiceException
@@ -925,6 +942,8 @@ Standard.Agents.Models.Orchestrations.Agents.AgentContext.CompletionTokens.init 
 Standard.Agents.Models.Orchestrations.Agents.AgentContext.DirectionType.get -> string!
 Standard.Agents.Models.Orchestrations.Agents.AgentContext.DirectionType.init -> void
 Standard.Agents.Models.Orchestrations.Agents.AgentContext.Equals(Standard.Agents.Models.Orchestrations.Agents.AgentContext? other) -> bool
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.GroundingSources.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Standard.Agents.Models.Orchestrations.Agents.AgentContext.GroundingSources.init -> void
 Standard.Agents.Models.Orchestrations.Agents.AgentContext.History.get -> System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Brokers.Sessions.AgentTurn!>!
 Standard.Agents.Models.Orchestrations.Agents.AgentContext.History.init -> void
 Standard.Agents.Models.Orchestrations.Agents.AgentContext.Inference.get -> Standard.Agents.Models.Brokers.Generators.ResolvedInference?
@@ -1154,10 +1173,13 @@ Standard.Agents.Services.Foundations.Judges.JudgeService.EvaluateAsync(string! t
 Standard.Agents.Services.Foundations.Judges.JudgeService.JudgeService(Standard.Agents.Brokers.Verifiers.IVerifierBroker! verifierBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
 Standard.Agents.Services.Foundations.Knowledges.IKnowledgeService
 Standard.Agents.Services.Foundations.Knowledges.IKnowledgeService.RetrieveKnowledgeAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
+Standard.Agents.Services.Foundations.Knowledges.IKnowledgeService.RetrieveSourcedKnowledgeAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult!>!>
 Standard.Agents.Services.Foundations.Knowledges.KnowledgeService
 Standard.Agents.Services.Foundations.Knowledges.KnowledgeService.KnowledgeService(Standard.Agents.Brokers.Files.IFileBroker! fileBroker, string! knowledgePath, string! searchPattern, int maxResults, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, double minimumScore = 0) -> void
 Standard.Agents.Services.Foundations.Knowledges.KnowledgeService.KnowledgeService(Standard.Agents.Brokers.Knowledges.IKnowledgeBroker! knowledgeBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
+Standard.Agents.Services.Foundations.Knowledges.KnowledgeService.KnowledgeService(Standard.Agents.Brokers.Knowledges.ISourcedKnowledgeBroker! sourcedKnowledgeBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
 Standard.Agents.Services.Foundations.Knowledges.KnowledgeService.RetrieveKnowledgeAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
+Standard.Agents.Services.Foundations.Knowledges.KnowledgeService.RetrieveSourcedKnowledgeAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult!>!>
 Standard.Agents.Services.Foundations.Memorys.IMemoryService
 Standard.Agents.Services.Foundations.Memorys.IMemoryService.RecallMemoriesAsync() -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
 Standard.Agents.Services.Foundations.Memorys.IMemoryService.RememberAsync(string! memory) -> System.Threading.Tasks.ValueTask
@@ -1223,7 +1245,7 @@ Standard.Agents.Services.Managements.RunManagementService.ProcessPromptStreamAsy
 Standard.Agents.Services.Managements.RunManagementService.RunAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
 Standard.Agents.Services.Managements.RunManagementService.RunAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
 Standard.Agents.Services.Managements.RunManagementService.RunAsync(string! prompt, string! sessionId, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Clients.Agents.AgentOutcome!>
-Standard.Agents.Services.Managements.RunManagementService.RunManagementService(Standard.Agents.Services.Coordinations.Data.IDataCoordinationService! dataCoordinationService, Standard.Agents.Services.Coordinations.Decision.IDecisionCoordinationService! decisionCoordinationService, Standard.Agents.Services.Coordinations.Direction.IDirectionCoordinationService! directionCoordinationService, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, int maxTurns = 7, Standard.Agents.Brokers.Times.ITimeBroker? timeBroker = null, Standard.Agents.Models.Coordinations.Agents.AgentBudget? budget = null, int maxHistoryTurns = 20, bool compensateOnFailure = false, bool screenToolOutput = false, Standard.Agents.Brokers.Telemetries.ITelemetryBroker? telemetryBroker = null, string? contractSchema = null, double? configuredTemperature = null, int? configuredMaxTokens = null, System.Collections.Generic.IEnumerable<string!>? configuredToolNames = null, System.Collections.Generic.IReadOnlyDictionary<string!, Standard.Agents.Models.Coordinations.Agents.ToolNarration!>? toolNarrations = null, Standard.Agents.Models.Coordinations.Agents.ToolSelector? toolSelector = null, System.Collections.Generic.IEnumerable<string!>? describedToolNames = null, Standard.Agents.Models.Coordinations.Agents.PrincipalResolver? principalResolver = null, int identicalCallLimit = 8) -> void
+Standard.Agents.Services.Managements.RunManagementService.RunManagementService(Standard.Agents.Services.Coordinations.Data.IDataCoordinationService! dataCoordinationService, Standard.Agents.Services.Coordinations.Decision.IDecisionCoordinationService! decisionCoordinationService, Standard.Agents.Services.Coordinations.Direction.IDirectionCoordinationService! directionCoordinationService, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker, int maxTurns = 7, Standard.Agents.Brokers.Times.ITimeBroker? timeBroker = null, Standard.Agents.Models.Coordinations.Agents.AgentBudget? budget = null, int maxHistoryTurns = 20, bool compensateOnFailure = false, bool screenToolOutput = false, Standard.Agents.Brokers.Telemetries.ITelemetryBroker? telemetryBroker = null, string? contractSchema = null, double? configuredTemperature = null, int? configuredMaxTokens = null, System.Collections.Generic.IEnumerable<string!>? configuredToolNames = null, System.Collections.Generic.IReadOnlyDictionary<string!, Standard.Agents.Models.Coordinations.Agents.ToolNarration!>? toolNarrations = null, Standard.Agents.Models.Coordinations.Agents.ToolSelector? toolSelector = null, System.Collections.Generic.IEnumerable<string!>? describedToolNames = null, Standard.Agents.Models.Coordinations.Agents.PrincipalResolver? principalResolver = null, int identicalCallLimit = 8, bool? configuredCiteKnowledge = null, string! knowledgeCitationPrefix = "Source: ") -> void
 Standard.Agents.Services.Managements.RunManagementService.RunStreamAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request) -> Standard.Agents.Models.Clients.Agents.AgentRunStream!
 Standard.Agents.Services.Managements.RunManagementService.RunStreamAsync(Standard.Agents.Models.Clients.Agents.PromptRequest! request, System.Threading.CancellationToken cancellationToken) -> Standard.Agents.Models.Clients.Agents.AgentRunStream!
 Standard.Agents.Services.Orchestrations.Data.Recollections.IRecollectionOrchestrationService
@@ -1238,10 +1260,10 @@ Standard.Agents.Services.Orchestrations.Data.Recollections.RecollectionOrchestra
 Standard.Agents.Services.Orchestrations.Data.Recollections.RecollectionOrchestrationService.RecordSessionAsync(Standard.Agents.Models.Brokers.Sessions.AgentSession! session) -> System.Threading.Tasks.ValueTask
 Standard.Agents.Services.Orchestrations.Data.Recollections.RecollectionOrchestrationService.RememberAsync(string! memory) -> System.Threading.Tasks.ValueTask
 Standard.Agents.Services.Orchestrations.Data.Retrievals.IRetrievalOrchestrationService
-Standard.Agents.Services.Orchestrations.Data.Retrievals.IRetrievalOrchestrationService.RetrieveGroundingAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
+Standard.Agents.Services.Orchestrations.Data.Retrievals.IRetrievalOrchestrationService.RetrieveGroundingAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult!>!>
 Standard.Agents.Services.Orchestrations.Data.Retrievals.IRetrievalOrchestrationService.RetrieveInstructionsAsync(string! route) -> System.Threading.Tasks.ValueTask<string!>
 Standard.Agents.Services.Orchestrations.Data.Retrievals.RetrievalOrchestrationService
-Standard.Agents.Services.Orchestrations.Data.Retrievals.RetrievalOrchestrationService.RetrieveGroundingAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
+Standard.Agents.Services.Orchestrations.Data.Retrievals.RetrievalOrchestrationService.RetrieveGroundingAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult!>!>
 Standard.Agents.Services.Orchestrations.Data.Retrievals.RetrievalOrchestrationService.RetrieveInstructionsAsync(string! route) -> System.Threading.Tasks.ValueTask<string!>
 Standard.Agents.Services.Orchestrations.Decision.Guardians.GuardianOrchestrationService
 Standard.Agents.Services.Orchestrations.Decision.Guardians.GuardianOrchestrationService.CheckShapeAsync(string! answer, string! schema) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Foundations.Contracts.ContractVerdict!>
@@ -1288,6 +1310,7 @@ Standard.Agents.StandardAgent.AllowTools(params string![]! toolNames) -> Standar
 Standard.Agents.StandardAgent.Audit(string! path) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Brain(string! apiUrl, string! apiKey, string! model, double? temperature = null, int? maxTokens = null, int timeoutSeconds = 120) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Budget(int? maxTokens = null, decimal? maxCostUsd = null, System.TimeSpan? maxWallClock = null, decimal costPerThousandTokens = 0) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.CiteKnowledge(bool cite = true, string! prefix = "Source: ") -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.CompensateOnFailure() -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Constitution(string! path) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Consumption(string! path) -> Standard.Agents.StandardAgent!
@@ -1328,6 +1351,7 @@ Standard.Agents.StandardAgent.OnRedaction(System.Func<string!, System.Collection
 Standard.Agents.StandardAgent.OnSelectTools(System.Func<string!, System.Collections.Generic.IReadOnlyList<string!>!, System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>>! selector) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.OnSessions(System.Func<string!, System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Sessions.AgentSession?>>! select, System.Func<Standard.Agents.Models.Brokers.Sessions.AgentSession!, System.Threading.Tasks.ValueTask>! upsert) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.OnSkills(System.Func<System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Skills.Skill!>!>>! select) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.OnSourcedKnowledge(System.Func<string!, System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult!>!>>! retrieve) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.OnTelemetry(System.Action<string!, System.Collections.Generic.IReadOnlyDictionary<string!, object?>!>! record) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.OnUsage(System.Func<string!, System.Threading.Tasks.ValueTask<int>>! count) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.Permissions(Standard.Agents.Models.Orchestrations.Effects.PermissionMode mode) -> Standard.Agents.StandardAgent!
@@ -1377,6 +1401,7 @@ Standard.Agents.StandardAgent.UseGate(Standard.Agents.Brokers.Classifiers.IClass
 Standard.Agents.StandardAgent.UseGenerator(Standard.Agents.Brokers.Generators.IGeneratorBroker! broker) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.UseJudge(Standard.Agents.Brokers.Verifiers.IVerifierBroker! broker) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.UseKnowledge(Standard.Agents.Brokers.Knowledges.IKnowledgeBroker! broker) -> Standard.Agents.StandardAgent!
+Standard.Agents.StandardAgent.UseKnowledge(Standard.Agents.Brokers.Knowledges.ISourcedKnowledgeBroker! broker) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.UseLogging(Standard.Agents.Brokers.Loggings.ILoggingBroker! broker) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.UseMcp(Standard.Agents.Brokers.Mcps.IMcpBroker! broker) -> Standard.Agents.StandardAgent!
 Standard.Agents.StandardAgent.UseMemory(Standard.Agents.Brokers.Memorys.IMemoryBroker! broker) -> Standard.Agents.StandardAgent!
@@ -1488,6 +1513,9 @@ override Standard.Agents.Models.Foundations.Gates.SkillDirective.ToString() -> s
 override Standard.Agents.Models.Foundations.Judges.Judgement.Equals(object? obj) -> bool
 override Standard.Agents.Models.Foundations.Judges.Judgement.GetHashCode() -> int
 override Standard.Agents.Models.Foundations.Judges.Judgement.ToString() -> string!
+override Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.Equals(object? obj) -> bool
+override Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.GetHashCode() -> int
+override Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.ToString() -> string!
 override Standard.Agents.Models.Foundations.Skills.Skill.Equals(object? obj) -> bool
 override Standard.Agents.Models.Foundations.Skills.Skill.GetHashCode() -> int
 override Standard.Agents.Models.Foundations.Skills.Skill.ToString() -> string!
@@ -1566,6 +1594,8 @@ static Standard.Agents.Models.Foundations.Gates.SkillDirective.operator !=(Stand
 static Standard.Agents.Models.Foundations.Gates.SkillDirective.operator ==(Standard.Agents.Models.Foundations.Gates.SkillDirective? left, Standard.Agents.Models.Foundations.Gates.SkillDirective? right) -> bool
 static Standard.Agents.Models.Foundations.Judges.Judgement.operator !=(Standard.Agents.Models.Foundations.Judges.Judgement? left, Standard.Agents.Models.Foundations.Judges.Judgement? right) -> bool
 static Standard.Agents.Models.Foundations.Judges.Judgement.operator ==(Standard.Agents.Models.Foundations.Judges.Judgement? left, Standard.Agents.Models.Foundations.Judges.Judgement? right) -> bool
+static Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.operator !=(Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult? left, Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult? right) -> bool
+static Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.operator ==(Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult? left, Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult? right) -> bool
 static Standard.Agents.Models.Foundations.Skills.Skill.operator !=(Standard.Agents.Models.Foundations.Skills.Skill? left, Standard.Agents.Models.Foundations.Skills.Skill? right) -> bool
 static Standard.Agents.Models.Foundations.Skills.Skill.operator ==(Standard.Agents.Models.Foundations.Skills.Skill? left, Standard.Agents.Models.Foundations.Skills.Skill? right) -> bool
 static Standard.Agents.Models.Foundations.Usages.AgentUsage.None.get -> Standard.Agents.Models.Foundations.Usages.AgentUsage!
