@@ -123,6 +123,8 @@ public sealed partial class StandardAgent
         new("maxTurns", "How many turns a run may take.", [IntegerKind], "7"),
         new("identicalCallLimit", "How many times a run may ask for an act the ledger already answered.",
             [IntegerKind], "8"),
+        new("citeKnowledge", "End each answer with the sources of its knowledge: true, false, or the line's prefix.",
+            [BooleanKind, StringKind], "true"),
         new("allowTools", "The only tools the agent may call; empty closes the perimeter.", [ArrayKind],
             "[\"calculator\"]", ItemsKind: StringKind),
         new("permissions", "The disposition toward acts nothing names.", [StringKind], "\"Ask\"",

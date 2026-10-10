@@ -291,6 +291,21 @@ public partial class StandardAgent
 
                 break;
 
+            // true or false is the deployment's decision; text is that decision made with the
+            // words each citation line starts with (SPEC.md §4.2).
+            case "citeKnowledge" when value?.GetValueKind() is JsonValueKind.String:
+                agent.CiteKnowledge(prefix: CitationPrefix(value, key));
+
+                break;
+
+            case "citeKnowledge" when value?.GetValueKind() is JsonValueKind.True or JsonValueKind.False:
+                agent.CiteKnowledge(cite: Truth(value, key));
+
+                break;
+
+            case "citeKnowledge":
+                throw new InvalidAgentConfigurationException(CitationRefusal(key));
+
             case "allowTools":
                 agent.AllowTools(Texts(value, key));
 
@@ -600,6 +615,18 @@ public partial class StandardAgent
         node as JsonObject
             ?? throw new InvalidAgentConfigurationException(
                 $"'{key}' must be an object.");
+
+    private static string CitationRefusal(string key) =>
+        $"'{key}' must be true, false, or the text each citation line starts with.";
+
+    private static string CitationPrefix(JsonNode? node, string key)
+    {
+        string prefix = node!.GetValue<string>();
+
+        return string.IsNullOrWhiteSpace(prefix)
+            ? throw new InvalidAgentConfigurationException(CitationRefusal(key))
+            : prefix;
+    }
 
     private static bool Truth(JsonNode? node, string key) =>
         node?.GetValueKind() switch

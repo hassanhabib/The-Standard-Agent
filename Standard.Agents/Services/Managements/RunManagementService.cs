@@ -495,6 +495,10 @@ public partial class RunManagementService : IRunManagementService
         await this.loggingBroker.LogResetAsync();
         await AnnounceResolutionAsync(request);
 
+        // Resolved once, at the top, like every other request field: two turns of one run never
+        // disagree about whether its answer is cited (SPEC.md §4.2).
+        bool citingKnowledge = IsCitingKnowledge(request);
+
         // Selection (SPEC.md §4.15): what this run is OFFERED, resolved once at the top and
         // carried on the run — the offering is rendered two tiers below (the text catalog and
         // the native tool list), and neither renderer should gain a parameter for it. Recorded,
@@ -685,6 +689,13 @@ public partial class RunManagementService : IRunManagementService
                 && AgentRun.Current?.HandoffOutcome?.Status is AgentStatus.Responded)
             {
                 context = context with { Status = AgentStatus.Responded };
+            }
+
+            // After the Judge, before the Response event and the session write, so every door
+            // carries the one cited answer (SPEC.md §4.2) — see RunManagementService.Citations.cs.
+            if (citingKnowledge)
+            {
+                context = WithCitations(context);
             }
 
             await this.loggingBroker.LogOutcomeAsync($"turn {turn}: {context.Status}");

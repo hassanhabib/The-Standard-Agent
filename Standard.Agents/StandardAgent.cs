@@ -1147,7 +1147,11 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="broker">The knowledge broker to use.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent UseKnowledge(IKnowledgeBroker broker) =>
-        Set(() => this.knowledgeBroker = broker);
+    Set(() =>
+    {
+        this.knowledgeBroker = broker;
+        this.sourcedKnowledgeBroker = null;
+    });
 
     /// <summary>
     /// Retrieves knowledge with your own code — the <b>Custom</b> mode (SPEC.md §4.8). Ranking is
@@ -1156,7 +1160,11 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="retrieve">A <c>query =&gt; passages</c> delegate.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent OnKnowledge(Func<string, ValueTask<IReadOnlyList<string>>> retrieve) =>
-        Set(() => this.knowledgeBroker = new FunctionKnowledgeBroker(retrieve));
+    Set(() =>
+    {
+        this.knowledgeBroker = new FunctionKnowledgeBroker(retrieve);
+        this.sourcedKnowledgeBroker = null;
+    });
 
     /// <summary>
     /// Swaps in a knowledge broker that says where each passage came from — the <b>External</b>
@@ -1167,7 +1175,11 @@ public sealed partial class StandardAgent : IAgent
     /// <param name="broker">The sourced knowledge broker to use.</param>
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent UseKnowledge(ISourcedKnowledgeBroker broker) =>
-        Set(() => this.sourcedKnowledgeBroker = broker);
+    Set(() =>
+    {
+        this.sourcedKnowledgeBroker = broker;
+        this.knowledgeBroker = null;
+    });
 
     /// <summary>
     /// Retrieves sourced knowledge with your own code — the <b>Custom</b> mode (SPEC.md §4.8):
@@ -1178,7 +1190,11 @@ public sealed partial class StandardAgent : IAgent
     /// <returns>The same agent, so calls can be chained.</returns>
     public StandardAgent OnSourcedKnowledge(
         Func<string, ValueTask<IReadOnlyList<KnowledgeResult>>> retrieve) =>
-        Set(() => this.sourcedKnowledgeBroker = new FunctionSourcedKnowledgeBroker(retrieve));
+    Set(() =>
+    {
+        this.sourcedKnowledgeBroker = new FunctionSourcedKnowledgeBroker(retrieve);
+        this.knowledgeBroker = null;
+    });
 
     /// <summary>
     /// Ends every answer with the sources of the knowledge recalled into its run (SPEC.md §4.2):
