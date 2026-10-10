@@ -110,7 +110,8 @@ public class AgentsV1Controller : ControllerBase
             CallerTools = [.. request.CallerTools.Select(tool =>
                 new ToolDefinition(tool.Name, tool.Description, tool.ParametersJson))],
 
-            ProviderOptionsJson = request.ProviderOptionsJson
+            ProviderOptionsJson = request.ProviderOptionsJson,
+            CiteKnowledge = request.CiteKnowledge
         };
     }
 
