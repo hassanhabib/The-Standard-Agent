@@ -5,6 +5,7 @@
 
 using FluentAssertions;
 using Moq;
+using Standard.Agents.Models.Foundations.Knowledges;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Xunit;
 
@@ -152,7 +153,12 @@ public partial class DataCoordinationServiceTests
     {
         // given
         AgentContext inputContext = CreateRandomAgentContext();
-        List<string> randomKnowledge = [CreateRandomString(), CreateRandomString()];
+
+        List<KnowledgeResult> randomKnowledgeResults =
+            [CreateRandomKnowledgeResult(CreateRandomString()), CreateRandomKnowledgeResult(string.Empty)];
+
+        List<string> expectedObservations =
+            [.. randomKnowledgeResults.Select(knowledgeResult => knowledgeResult.Text)];
 
         this.skillServiceMock.Setup(service =>
             service.RetrieveSkillsAsync())
@@ -163,18 +169,69 @@ public partial class DataCoordinationServiceTests
                 .ReturnsAsync([]);
 
         this.knowledgeServiceMock.Setup(service =>
-            service.RetrieveKnowledgeAsync(It.IsAny<string>()))
-                .ReturnsAsync(randomKnowledge);
+            service.RetrieveSourcedKnowledgeAsync(It.IsAny<string>()))
+                .ReturnsAsync(randomKnowledgeResults);
+
+        // when
+        AgentContext actualContext =
+            await this.dataCoordinationService.RecallAsync(inputContext);
+
+        // then — the passages alone, exactly as an unsourced broker's would read
+        actualContext.Observations.Should().Equal(expectedObservations);
+
+        this.knowledgeServiceMock.Verify(service =>
+            service.RetrieveSourcedKnowledgeAsync(inputContext.Prompt),
+                Times.Once);
+
+        this.knowledgeServiceMock.VerifyNoOtherCalls();
+    }
+
+    // The run's sources, once each and in the order first recalled (SPEC.md §3.2). Recall runs
+    // every turn, so a source an earlier turn recalled is already on the context and keeps its
+    // place; a passage with no source adds nothing, because it can never be cited.
+    [Fact]
+    public async Task ShouldCarryTheSourcesOfRecalledKnowledgeOnRecallAsync()
+    {
+        // given
+        string earlierSource = CreateRandomString();
+        string newSource = CreateRandomString();
+
+        AgentContext inputContext =
+            CreateRandomAgentContext() with { GroundingSources = [earlierSource] };
+
+        List<KnowledgeResult> randomKnowledgeResults =
+        [
+            CreateRandomKnowledgeResult(newSource),
+            CreateRandomKnowledgeResult(string.Empty),
+            CreateRandomKnowledgeResult(earlierSource),
+            CreateRandomKnowledgeResult(newSource)
+        ];
+
+        List<string> expectedGroundingSources = [earlierSource, newSource];
+
+        this.skillServiceMock.Setup(service =>
+            service.RetrieveSkillsAsync())
+                .ReturnsAsync(CreateRandomString());
+
+        this.memoryServiceMock.Setup(service =>
+            service.RecallMemoriesAsync())
+                .ReturnsAsync([]);
+
+        this.knowledgeServiceMock.Setup(service =>
+            service.RetrieveSourcedKnowledgeAsync(inputContext.Prompt))
+                .ReturnsAsync(randomKnowledgeResults);
 
         // when
         AgentContext actualContext =
             await this.dataCoordinationService.RecallAsync(inputContext);
 
         // then
-        actualContext.Observations.Should().Contain(randomKnowledge);
+        actualContext.GroundingSources.Should().Equal(expectedGroundingSources);
 
         this.knowledgeServiceMock.Verify(service =>
-            service.RetrieveKnowledgeAsync(inputContext.Prompt),
+            service.RetrieveSourcedKnowledgeAsync(inputContext.Prompt),
                 Times.Once);
+
+        this.knowledgeServiceMock.VerifyNoOtherCalls();
     }
 }
