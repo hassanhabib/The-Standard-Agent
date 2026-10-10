@@ -1,4 +1,6 @@
 #nullable enable
+*REMOVED*Standard.Agents.Services.Orchestrations.Data.Retrievals.IRetrievalOrchestrationService.RetrieveGroundingAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
+*REMOVED*Standard.Agents.Services.Orchestrations.Data.Retrievals.RetrievalOrchestrationService.RetrieveGroundingAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<string!>!>
 Standard.Agents.Brokers.Knowledges.FunctionSourcedKnowledgeBroker
 Standard.Agents.Brokers.Knowledges.FunctionSourcedKnowledgeBroker.FunctionSourcedKnowledgeBroker(System.Func<string!, System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult!>!>>! retrieve) -> void
 Standard.Agents.Brokers.Knowledges.FunctionSourcedKnowledgeBroker.SelectSourcedKnowledgeAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult!>!>
@@ -19,6 +21,8 @@ Standard.Agents.Models.Orchestrations.Agents.AgentContext.GroundingSources.init 
 Standard.Agents.Services.Foundations.Knowledges.IKnowledgeService.RetrieveSourcedKnowledgeAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult!>!>
 Standard.Agents.Services.Foundations.Knowledges.KnowledgeService.KnowledgeService(Standard.Agents.Brokers.Knowledges.ISourcedKnowledgeBroker! sourcedKnowledgeBroker, Standard.Agents.Brokers.Loggings.ILoggingBroker! loggingBroker) -> void
 Standard.Agents.Services.Foundations.Knowledges.KnowledgeService.RetrieveSourcedKnowledgeAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult!>!>
+Standard.Agents.Services.Orchestrations.Data.Retrievals.IRetrievalOrchestrationService.RetrieveGroundingAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult!>!>
+Standard.Agents.Services.Orchestrations.Data.Retrievals.RetrievalOrchestrationService.RetrieveGroundingAsync(string! query) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyList<Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult!>!>
 override Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.Equals(object? obj) -> bool
 override Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.GetHashCode() -> int
 override Standard.Agents.Models.Foundations.Knowledges.KnowledgeResult.ToString() -> string!

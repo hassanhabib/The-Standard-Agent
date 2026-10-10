@@ -6,6 +6,7 @@
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Models.Brokers.Mcps;
 using Standard.Agents.Models.Foundations.ExternalTools.Exceptions;
+using Standard.Agents.Models.Foundations.Knowledges;
 using Standard.Agents.Services.Foundations.ExternalTools;
 using Standard.Agents.Services.Foundations.Knowledges;
 using Standard.Agents.Services.Foundations.Skills;
@@ -165,11 +166,11 @@ public partial class RetrievalOrchestrationService : IRetrievalOrchestrationServ
     public ValueTask<IReadOnlyList<McpTool>> RetrieveRemoteToolsAsync() =>
     TryCatch(async () => await DiscoverRemoteToolsAsync());
 
-    public ValueTask<IReadOnlyList<string>> RetrieveGroundingAsync(string query) =>
+    public ValueTask<IReadOnlyList<KnowledgeResult>> RetrieveGroundingAsync(string query) =>
     TryCatch(async () =>
     {
-        IReadOnlyList<string> knowledge =
-            await this.knowledgeService.RetrieveKnowledgeAsync(query);
+        IReadOnlyList<KnowledgeResult> knowledge =
+            await this.knowledgeService.RetrieveSourcedKnowledgeAsync(query);
 
         await this.loggingBroker.LogProcessAsync(
             "Data", $"Retrieved {knowledge.Count} knowledge matches");
