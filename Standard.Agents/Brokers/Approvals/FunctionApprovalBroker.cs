@@ -3,6 +3,7 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
+using Standard.Agents.Models.Brokers.Approvals;
 using Standard.Agents.Models.Orchestrations.Effects;
 
 namespace Standard.Agents.Brokers.Approvals;

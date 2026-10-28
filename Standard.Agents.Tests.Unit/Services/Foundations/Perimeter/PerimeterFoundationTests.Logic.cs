@@ -5,7 +5,7 @@
 
 using FluentAssertions;
 using Moq;
-using Standard.Agents.Brokers.Approvals;
+using Standard.Agents.Models.Brokers.Approvals;
 using Standard.Agents.Models.Orchestrations.Effects;
 using Xunit;
 

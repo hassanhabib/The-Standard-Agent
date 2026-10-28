@@ -1,1 +1,29 @@
 #nullable enable
+*REMOVED*Standard.Agents.Brokers.Approvals.ApprovalDecision
+*REMOVED*Standard.Agents.Brokers.Approvals.ApprovalDecision.Approved = 0 -> Standard.Agents.Brokers.Approvals.ApprovalDecision
+*REMOVED*Standard.Agents.Brokers.Approvals.ApprovalDecision.Denied = 1 -> Standard.Agents.Brokers.Approvals.ApprovalDecision
+*REMOVED*Standard.Agents.Brokers.Approvals.ApprovalDecision.Pending = 2 -> Standard.Agents.Brokers.Approvals.ApprovalDecision
+*REMOVED*Standard.Agents.Brokers.Approvals.FunctionApprovalBroker.FunctionApprovalBroker(System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentEffect!, System.Threading.Tasks.ValueTask<Standard.Agents.Brokers.Approvals.ApprovalDecision>>! request) -> void
+*REMOVED*Standard.Agents.Brokers.Approvals.FunctionApprovalBroker.RequestAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Brokers.Approvals.ApprovalDecision>
+*REMOVED*Standard.Agents.Brokers.Approvals.IApprovalBroker.RequestAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Brokers.Approvals.ApprovalDecision>
+*REMOVED*Standard.Agents.Brokers.Approvals.NotConfiguredApprovalBroker.RequestAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Brokers.Approvals.ApprovalDecision>
+*REMOVED*Standard.Agents.Brokers.Approvals.RequireApprovalBroker.RequestAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Brokers.Approvals.ApprovalDecision>
+*REMOVED*Standard.Agents.Services.Foundations.Approvals.ApprovalService.RequestApprovalAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Brokers.Approvals.ApprovalDecision>
+*REMOVED*Standard.Agents.Services.Foundations.Approvals.IApprovalService.RequestApprovalAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Brokers.Approvals.ApprovalDecision>
+*REMOVED*Standard.Agents.Services.Orchestrations.Direction.Perimeters.IPerimeterOrchestrationService.RequestApprovalAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Brokers.Approvals.ApprovalDecision>
+*REMOVED*Standard.Agents.Services.Orchestrations.Direction.Perimeters.PerimeterOrchestrationService.RequestApprovalAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Brokers.Approvals.ApprovalDecision>
+*REMOVED*Standard.Agents.StandardAgent.OnApproval(System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentEffect!, System.Threading.Tasks.ValueTask<Standard.Agents.Brokers.Approvals.ApprovalDecision>>! request) -> Standard.Agents.StandardAgent!
+Standard.Agents.Brokers.Approvals.FunctionApprovalBroker.FunctionApprovalBroker(System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentEffect!, System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Approvals.ApprovalDecision>>! request) -> void
+Standard.Agents.Brokers.Approvals.FunctionApprovalBroker.RequestAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Approvals.ApprovalDecision>
+Standard.Agents.Brokers.Approvals.IApprovalBroker.RequestAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Approvals.ApprovalDecision>
+Standard.Agents.Brokers.Approvals.NotConfiguredApprovalBroker.RequestAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Approvals.ApprovalDecision>
+Standard.Agents.Brokers.Approvals.RequireApprovalBroker.RequestAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Approvals.ApprovalDecision>
+Standard.Agents.Models.Brokers.Approvals.ApprovalDecision
+Standard.Agents.Models.Brokers.Approvals.ApprovalDecision.Approved = 0 -> Standard.Agents.Models.Brokers.Approvals.ApprovalDecision
+Standard.Agents.Models.Brokers.Approvals.ApprovalDecision.Denied = 1 -> Standard.Agents.Models.Brokers.Approvals.ApprovalDecision
+Standard.Agents.Models.Brokers.Approvals.ApprovalDecision.Pending = 2 -> Standard.Agents.Models.Brokers.Approvals.ApprovalDecision
+Standard.Agents.Services.Foundations.Approvals.ApprovalService.RequestApprovalAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Approvals.ApprovalDecision>
+Standard.Agents.Services.Foundations.Approvals.IApprovalService.RequestApprovalAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Approvals.ApprovalDecision>
+Standard.Agents.Services.Orchestrations.Direction.Perimeters.IPerimeterOrchestrationService.RequestApprovalAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Approvals.ApprovalDecision>
+Standard.Agents.Services.Orchestrations.Direction.Perimeters.PerimeterOrchestrationService.RequestApprovalAsync(Standard.Agents.Models.Orchestrations.Effects.AgentEffect! effect) -> System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Approvals.ApprovalDecision>
+Standard.Agents.StandardAgent.OnApproval(System.Func<Standard.Agents.Models.Orchestrations.Effects.AgentEffect!, System.Threading.Tasks.ValueTask<Standard.Agents.Models.Brokers.Approvals.ApprovalDecision>>! request) -> Standard.Agents.StandardAgent!

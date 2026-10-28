@@ -4,7 +4,7 @@
 // ---------------------------------------------------------------
 
 using FluentAssertions;
-using Standard.Agents.Brokers.Approvals;
+using Standard.Agents.Models.Brokers.Approvals;
 using Standard.Agents.Models.Orchestrations.Effects;
 using Standard.Agents.Tools;
 using Xunit;

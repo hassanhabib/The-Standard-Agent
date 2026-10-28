@@ -5,7 +5,7 @@
 
 using FluentAssertions;
 using Moq;
-using Standard.Agents.Brokers.Approvals;
+using Standard.Agents.Models.Brokers.Approvals;
 using Standard.Agents.Models.Brokers.Effects;
 using Standard.Agents.Models.Foundations.Approvals.Exceptions;
 using Standard.Agents.Models.Foundations.EffectLedgers.Exceptions;

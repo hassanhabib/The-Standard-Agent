@@ -1095,6 +1095,8 @@ can choose a permitted path — the same way it recovers from a malformed call.
 
 **Human approval, with `.RequireApproval(...)`.** Name the acts that need a person:
 
+Import `Standard.Agents.Models.Brokers.Approvals` for `ApprovalDecision`.
+
 ```csharp
 .RequireApproval("wire_transfer")
 .OnApproval(async effect => await AskTheDutyOfficerAsync(effect)

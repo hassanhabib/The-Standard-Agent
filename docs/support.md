@@ -112,6 +112,20 @@ against it, and provider packages written for it need no change. See
 remains installable; provider packages are versioned independently and are not required to move
 with the core.
 
+### Upcoming approval-model namespace change (breaking)
+
+`ApprovalDecision` moves from `Standard.Agents.Brokers.Approvals` to
+`Standard.Agents.Models.Brokers.Approvals`. Update imports and any fully qualified references,
+then rebuild approval providers and applications against the new contract. Keep the broker
+namespace import when implementing `IApprovalBroker`; the interface remains there and public.
+The `Approved`, `Denied`, and `Pending` values and their behavior are unchanged.
+
+This is a breaking type-identity change, not a compatible file move. The removed type/members
+and affected signatures are recorded with `*REMOVED*` entries in `PublicAPI.Unshipped.txt`,
+alongside the new declarations; `PublicAPI.Shipped.txt` stays the released baseline until release
+consolidation. The release must identify the breaking migration and apply the appropriate
+model-version segment; no version is advanced by this branch.
+
 ---
 
 ## Version numbers
