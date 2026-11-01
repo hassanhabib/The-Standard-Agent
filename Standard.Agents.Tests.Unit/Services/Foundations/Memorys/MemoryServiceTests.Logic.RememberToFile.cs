@@ -3,7 +3,6 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
-using System.Linq;
 using Moq;
 using Standard.Agents.Services.Foundations.Memorys;
 using Xunit;

@@ -8,7 +8,6 @@ using Moq;
 using Standard.Agents.Brokers.Knowledges;
 using Standard.Agents.Brokers.Memorys;
 using Standard.Agents.Brokers.Skills;
-using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Foundations.Skills;
 using Standard.Agents.Tools;
 using Xunit;

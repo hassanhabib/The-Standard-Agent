@@ -3,7 +3,6 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
-using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Models.Orchestrations.Effects;
 
 namespace Standard.Agents.Models.Coordinations.Directions;

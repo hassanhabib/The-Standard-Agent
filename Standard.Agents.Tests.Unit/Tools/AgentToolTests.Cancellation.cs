@@ -3,11 +3,11 @@
 // Licensed under the The Standard Software License (TSSL)
 // ---------------------------------------------------------------
 
-using Standard.Agents.Models.Foundations.Skills;
 using FluentAssertions;
 using Moq;
 using Standard.Agents.Brokers.Memorys;
 using Standard.Agents.Brokers.Skills;
+using Standard.Agents.Models.Foundations.Skills;
 using Standard.Agents.Tools;
 using Xunit;
 

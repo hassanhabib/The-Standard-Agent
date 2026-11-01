@@ -4,9 +4,9 @@
 // ---------------------------------------------------------------
 
 using System.Runtime.CompilerServices;
+using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Coordinations.Agents;
 using Standard.Agents.Models.Loggings;
-using Standard.Agents.Models.Clients.Agents;
 using Standard.Agents.Models.Orchestrations.Agents;
 using Standard.Agents.Models.Orchestrations.Effects;
 using Standard.Agents.Services.Coordinations.Decision;

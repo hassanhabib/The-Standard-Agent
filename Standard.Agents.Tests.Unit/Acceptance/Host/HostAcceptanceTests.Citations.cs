@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Standard.Agents.Host.Models.V1;
 using Standard.Agents.Models.Foundations.Knowledges;
-using Standard.Agents.Models.Orchestrations.Agents;
 using Xunit;
 
 namespace Standard.Agents.Tests.Unit.Acceptance.Host;

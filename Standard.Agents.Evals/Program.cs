@@ -12,7 +12,6 @@
 // score nobody can attribute is a score nobody can investigate.
 
 using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using Standard.Agents;
 using Standard.Agents.Evals;
