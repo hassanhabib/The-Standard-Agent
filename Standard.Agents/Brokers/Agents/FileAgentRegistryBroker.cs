@@ -22,26 +22,24 @@ public sealed class FileAgentRegistryBroker : IAgentRegistryBroker
 
     public async ValueTask<IReadOnlyList<RegisteredAgent>> SelectAgentsAsync()
     {
-        if (Directory.Exists(this.agentsPath) is false)
-        {
-            return [];
-        }
-
         List<RegisteredAgent> agents = [];
 
-        foreach (string documentPath in Directory
-            .EnumerateFiles(this.agentsPath, "*.json")
-            .OrderBy(path => path, StringComparer.Ordinal))
+        if (Directory.Exists(this.agentsPath))
         {
-            StandardAgent composed =
-                StandardAgent.FromJson(await File.ReadAllTextAsync(documentPath));
+            foreach (string documentPath in Directory
+                .EnumerateFiles(this.agentsPath, searchPattern: "*.json")
+                .OrderBy(path => path, StringComparer.Ordinal))
+            {
+                StandardAgent composed =
+                    StandardAgent.FromJson(json: await File.ReadAllTextAsync(documentPath));
 
-            agents.Add(new RegisteredAgent(
-                Name: string.IsNullOrWhiteSpace(composed.Name)
-                    ? Path.GetFileNameWithoutExtension(documentPath)
-                    : composed.Name,
-                Description: composed.Description,
-                Agent: composed));
+                agents.Add(item: new RegisteredAgent(
+                    Name: string.IsNullOrWhiteSpace(composed.Name)
+                        ? Path.GetFileNameWithoutExtension(documentPath)
+                        : composed.Name,
+                    Description: composed.Description,
+                    Agent: composed));
+            }
         }
 
         return agents;
