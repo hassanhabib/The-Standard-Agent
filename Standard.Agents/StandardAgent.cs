@@ -16,41 +16,24 @@ using Standard.Agents.Brokers.Contracts;
 using Standard.Agents.Brokers.Effects;
 using Standard.Agents.Brokers.Files;
 using Standard.Agents.Brokers.Generators;
-using Standard.Agents.Brokers.Generators;
 using Standard.Agents.Brokers.Knowledges;
 using Standard.Agents.Brokers.Loggings;
 using Standard.Agents.Brokers.Mcps;
 using Standard.Agents.Brokers.Memorys;
-<<<<<<< TODO: Unmerged change from project 'Standard.Agents (net10.0)', Before:
-using Standard.Agents.Brokers.Policies;
-=======
-using Standard.Agents.Brokers.Generators;
->>>>>>> After
-using Standard.Agents.Brokers.Policies;
 using Standard.Agents.Brokers.Policies;
 using Standard.Agents.Brokers.Redactions;
 using Standard.Agents.Brokers.Resiliences;
 using Standard.Agents.Brokers.Sessions;
 using Standard.Agents.Brokers.Skills;
 using Standard.Agents.Brokers.Telemetries;
-<<<<<<< TODO: Unmerged change from project 'Standard.Agents (net10.0)', Before:
 using Standard.Agents.Brokers.Times;
 using Standard.Agents.Brokers.Tools;
-using Standard.Agents.Brokers.Verifiers;
-=======
 using Standard.Agents.Brokers.Usages;
-using Standard.Agents.Brokers.Verifiers;
->>>>>>> After
 using Standard.Agents.Brokers.Verifiers;
 using Standard.Agents.Models.Brokers.Agents;
 using Standard.Agents.Models.Brokers.Audits;
-<<<<<<< TODO: Unmerged change from project 'Standard.Agents (net10.0)', Before:
-using Standard.Agents.Models.Brokers.Generators;
-using Standard.Agents.Models.Brokers.Generators.V1;
-=======
 using Standard.Agents.Models.Brokers.Effects;
-using Standard.Agents.Models.Brokers.Generators.V1;
->>>>>>> After
+using Standard.Agents.Models.Brokers.Generators;
 using Standard.Agents.Models.Brokers.Generators.V1;
 using Standard.Agents.Models.Brokers.Sessions;
 using Standard.Agents.Models.Clients.Agents;
@@ -59,13 +42,8 @@ using Standard.Agents.Models.Foundations.Brains;
 using Standard.Agents.Models.Foundations.Knowledges;
 using Standard.Agents.Models.Foundations.Skills;
 using Standard.Agents.Models.Loggings;
-<<<<<<< TODO: Unmerged change from project 'Standard.Agents (net10.0)', Before:
-using Standard.Agents.Prompts;
-using Standard.Agents.Services.Managements;
-=======
 using Standard.Agents.Models.Orchestrations.Effects;
-using Standard.Agents.Services.Managements;
->>>>>>> After
+using Standard.Agents.Prompts;
 using Standard.Agents.Services.Managements;
 using Standard.Agents.Tools;
 
